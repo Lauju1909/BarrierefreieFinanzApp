@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
-  <title>Barrierefreie Finanzen - Mit Tages-, Monats-, 3-Monats-, 6-Monats- & Jahresansicht (NVDA)</title>
+  <title>Barrierefreie Finanzen - Mit flexiblen Zeiträumen & anpassbarem Design (NVDA)</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="theme-high-contrast" id="app-body">
+<body class="theme-light font-normal" id="app-body">
 
   <!-- Live-Regionen für NVDA Screenreader Mitteilungen -->
   <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -155,7 +155,7 @@
     <!-- Schnellsprunglinks für NVDA -->
     <nav class="skip-links" aria-label="Schnellnavigation">
       <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
-      <a href="#overview-mode-bar" class="skip-link">Zum Ansichtsmodus springen</a>
+      <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
       <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
     </nav>
 
@@ -177,14 +177,6 @@
             <span aria-hidden="true">🔒</span>
             <span>Sperren (L)</span>
           </button>
-          <div class="theme-selector">
-            <label for="theme-select" class="sr-only">Kontrastfarbe wählen</label>
-            <select id="theme-select" class="theme-select" onchange="changeTheme(this.value)">
-              <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
-              <option value="theme-dark">⚪ Weiß auf Schwarz (Dunkel)</option>
-              <option value="theme-light">🔵 Blau auf Weiß (Hell)</option>
-            </select>
-          </div>
         </div>
       </div>
     </header>
@@ -212,41 +204,30 @@
         </button>
         <button id="tab-settings" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
           <span class="tab-key-hint" aria-hidden="true">5</span>
-          <span>⚙️ <strong>Backup & Einstellungen</strong></span>
+          <span>⚙️ <strong>Einstellungen & Backup</strong></span>
         </button>
       </div>
     </nav>
 
     <!-- =========================================================================
-         ANSICHTS-MODUS UMSCHALTER: TAG, MONAT, 3 MONATE, 6 MONATE, JAHR
+         EINHEITLICHE ZEITRAUM- & NAVIGATION LEISTE (DROPDOWN CONTROL FIELD)
          ========================================================================= -->
-    <div class="mode-switch-container" id="overview-mode-bar" role="region" aria-label="Zeitraum auswählen">
-      <div class="mode-switch-inner">
-        <span style="font-weight: bold; color: var(--text-primary);">Zeitraum:</span>
-        <button id="mode-btn-day" class="mode-toggle-btn" onclick="setOverviewMode('day')" title="Nur Buchungen an einem bestimmten Tag anzeigen">
-          📍 <strong>Tag</strong>
-        </button>
-        <button id="mode-btn-month" class="mode-toggle-btn active" onclick="setOverviewMode('month')" title="Ganzen Monat anzeigen">
-          📅 <strong>Monat</strong>
-        </button>
-        <button id="mode-btn-quarter" class="mode-toggle-btn" onclick="setOverviewMode('quarter')" title="3 Monate / Quartal anzeigen">
-          📊 <strong>3 Monate</strong>
-        </button>
-        <button id="mode-btn-halfyear" class="mode-toggle-btn" onclick="setOverviewMode('halfyear')" title="6 Monate / Halbjahr anzeigen">
-          📈 <strong>6 Monate</strong>
-        </button>
-        <button id="mode-btn-year" class="mode-toggle-btn" onclick="setOverviewMode('year')" title="Ganzes Jahr anzeigen">
-          🗓️ <strong>Jahr</strong>
-        </button>
-      </div>
-    </div>
+    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitraum und Navigation">
+      <div class="time-picker-inner">
+        <div class="time-select-wrapper">
+          <label for="overview-period-select" class="time-select-label">📊 <strong>Zeitraum:</strong></label>
+          <select id="overview-period-select" class="time-dropdown" onchange="handlePeriodDropdownChange(this.value)">
+            <option value="day">📍 Tag (Tagesgenau)</option>
+            <option value="month" selected>📅 Monat (Gesamter Monat)</option>
+            <option value="quarter">📊 3 Monate (Quartal)</option>
+            <option value="halfyear">📈 6 Monate (Halbjahr)</option>
+            <option value="year">🗓️ Ganzes Jahr</option>
+          </select>
+        </div>
 
-    <!-- =========================================================================
-         ZEIT-NAVIGATION LEISTE (PASST SICH DEM AUSGEWÄHLTEN MODUS AN)
-         ========================================================================= -->
-    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitnavigation">
-      <div class="time-picker-inner" id="time-picker-content">
-        <!-- Befüllt per JavaScript für Tag, Monat, 3M, 6M oder Jahr -->
+        <div id="sub-time-navigation-wrapper" class="time-select-wrapper">
+          <!-- Befüllt per JavaScript mit den Pfeiltasten und Unterauswahlen -->
+        </div>
       </div>
     </div>
 
@@ -729,19 +710,45 @@
       </div>
 
       <!-- =======================================================================
-           ANSICHT 5: BACKUP, SICHERHEIT, DATENSCHUTZ & ZUKUNFTS-PROGNOSE
+           ANSICHT 5: EINSTELLUNGEN, DESIGN & BACKUP
            ======================================================================= -->
       <div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
         <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Datensicherung, Zukunfts-Prognose & Einstellungen</h2>
+          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Einstellungen, Design & Datensicherung</h2>
 
-          <!-- GITHUB AUTO-UPDATER -->
+          <!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
+          <section class="settings-box" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
+            <h3 id="theme-settings-heading">🎨 Darstellung, Design & Schriftgröße</h3>
+            <p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
+
+            <div class="form-row-2" style="margin-top: 10px;">
+              <div class="form-group">
+                <label for="settings-theme-select" class="field-label"><strong>Farbkontrast / Design:</strong></label>
+                <select id="settings-theme-select" class="large-select" onchange="changeTheme(this.value)">
+                  <option value="theme-light" selected>🌐 Standard Web-Design (Hell & Modern)</option>
+                  <option value="theme-dark">⚪ Dunkel-Modus (Weiß auf Dunkelgrau/Schwarz)</option>
+                  <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="settings-fontsize-select" class="field-label"><strong>Schriftgröße / Textgröße:</strong></label>
+                <select id="settings-fontsize-select" class="large-select" onchange="changeFontSize(this.value)">
+                  <option value="font-normal" selected>Normal (Standard 100%)</option>
+                  <option value="font-large">Groß (125% - Größere Schrift)</option>
+                  <option value="font-xlarge">Sehr groß (150% - Riesige Schrift)</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. GITHUB AUTO-UPDATER -->
           <section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
-            <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App aktualisieren)</h3>
-            <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
+            <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App-Status)</h3>
+            <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.6.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.7.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -751,10 +758,10 @@
             </div>
           </section>
 
-          <!-- DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
-          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-action);">
+          <!-- 3. DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
+          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
             <h3 id="backup-restore-heading">💾 Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
-            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen, um sie auf einen USB-Stick zu kopieren oder auf einen neuen Computer zu übertragen:</p>
+            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen oder auf einen neuen PC übertragen:</p>
 
             <div class="form-actions" style="margin-top: 10px;">
               <button type="button" class="btn btn-secondary" onclick="exportEncryptedBackup()" style="flex: 1;">
@@ -767,7 +774,7 @@
             </div>
           </section>
 
-          <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
+          <!-- 4. LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
           <section class="settings-box" aria-labelledby="manage-recurring-heading">
             <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
             <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen, bearbeiten und löschen:</p>
@@ -776,7 +783,7 @@
             </div>
           </section>
 
-          <!-- PIN ändern -->
+          <!-- 5. PIN ÄNDERN -->
           <section class="settings-box" aria-labelledby="set-pin-heading">
             <h3 id="set-pin-heading">🔒 Sicherheits-PIN / Passwort ändern</h3>
             <form id="form-change-pin" onsubmit="handleChangePin(event)">
@@ -792,7 +799,7 @@
             </form>
           </section>
 
-          <!-- Daten löschen / Reset -->
+          <!-- 6. DATEN LÖSCHEN / RESET -->
           <section class="settings-box danger-box" aria-labelledby="set-reset-heading">
             <h3 id="set-reset-heading">⚠️ DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
             <p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
@@ -806,7 +813,7 @@
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.6.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.7.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 

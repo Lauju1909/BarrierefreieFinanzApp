@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
-  <title>Barrierefreie Finanzen - Mit Tages-, Monats-, 3-Monats-, 6-Monats- & Jahresansicht (NVDA)</title>
+  <title>Barrierefreie Finanzen - Mit flexiblen Zeiträumen & anpassbarem Design (NVDA)</title>
   <style>
 /* ==========================================================================
-   BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & v2.2.0 MASTER
+   BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & v2.7.0 MASTER
    ========================================================================== */
 
 :root {
@@ -20,24 +20,47 @@
   --radius-lg: 14px;
 }
 
-.theme-high-contrast {
-  --bg-primary: #000000;
-  --bg-surface: #111111;
-  --bg-surface-elevated: #1F1F1F;
-  --bg-hover: #2D2D2D;
-  --text-primary: #FFFF00;
-  --text-secondary: #FFFFFF;
-  --text-muted: #D0D0D0;
-  --border-color: #FFFF00;
-  --border-subtle: #666666;
-  --accent-income: #00FF66;
-  --accent-expense: #FF4444;
-  --accent-action: #00FFFF;
-  --accent-future: #FFB300;
-  --focus-color: #FFFF00;
+body.font-normal {
+  --font-size-base: 18px;
+  --font-size-lg: 22px;
+  --font-size-xl: 26px;
+  --font-size-hero: 36px;
 }
 
-.theme-dark {
+body.font-large {
+  --font-size-base: 22px;
+  --font-size-lg: 26px;
+  --font-size-xl: 30px;
+  --font-size-hero: 42px;
+}
+
+body.font-xlarge {
+  --font-size-base: 26px;
+  --font-size-lg: 30px;
+  --font-size-xl: 36px;
+  --font-size-hero: 50px;
+}
+
+/* 1. STANDARD THEME (HELL, BLAU & WEISS - WIE JEDE INTERNETSEITE) */
+body.theme-light {
+  --bg-primary: #F4F7FB;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #EAF0F8;
+  --bg-hover: #D8E4F2;
+  --text-primary: #0B2545;
+  --text-secondary: #133E6E;
+  --text-muted: #475569;
+  --border-color: #133E6E;
+  --border-subtle: #CBD5E1;
+  --accent-income: #15803D;
+  --accent-expense: #B91C1C;
+  --accent-action: #0284C7;
+  --accent-future: #B45309;
+  --focus-color: #0284C7;
+}
+
+/* 2. DUNKEL-MODUS */
+body.theme-dark {
   --bg-primary: #0B0F19;
   --bg-surface: #151D2A;
   --bg-surface-elevated: #222E42;
@@ -54,21 +77,22 @@
   --focus-color: #38BDF8;
 }
 
-.theme-light {
-  --bg-primary: #F4F7FB;
-  --bg-surface: #FFFFFF;
-  --bg-surface-elevated: #EAF0F8;
-  --bg-hover: #D8E4F2;
-  --text-primary: #0B2545;
-  --text-secondary: #133E6E;
-  --text-muted: #475569;
-  --border-color: #133E6E;
-  --border-subtle: #CBD5E1;
-  --accent-income: #15803D;
-  --accent-expense: #B91C1C;
-  --accent-action: #0284C7;
-  --accent-future: #B45309;
-  --focus-color: #0284C7;
+/* 3. GELB AUF SCHWARZ (MAXIMALER KONTRAST FÜR SEHBEHINDERTE) */
+body.theme-high-contrast {
+  --bg-primary: #000000;
+  --bg-surface: #111111;
+  --bg-surface-elevated: #1F1F1F;
+  --bg-hover: #2D2D2D;
+  --text-primary: #FFFF00;
+  --text-secondary: #FFFFFF;
+  --text-muted: #D0D0D0;
+  --border-color: #FFFF00;
+  --border-subtle: #666666;
+  --accent-income: #00FF66;
+  --accent-expense: #FF4444;
+  --accent-action: #00FFFF;
+  --accent-future: #FFB300;
+  --focus-color: #FFFF00;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -125,7 +149,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .header-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .today-badge { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); padding: 8px 14px; border-radius: var(--radius-md); font-size: 16px; color: var(--text-primary); }
 .btn-lock { background-color: var(--bg-surface-elevated); color: var(--text-secondary); border: 2px solid var(--border-color); padding: 10px 16px; font-size: 16px; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; }
-.theme-select { background-color: var(--bg-surface-elevated); color: var(--text-primary); border: 2px solid var(--border-color); padding: 10px 14px; font-size: 16px; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; min-height: 48px; }
 
 .nav-tabs-wrapper { background-color: var(--bg-surface); border-bottom: 3px solid var(--border-subtle); position: sticky; top: 0; z-index: 100; }
 .tab-list { max-width: 1200px; margin: 0 auto; display: flex; overflow-x: auto; gap: 8px; padding: 10px 16px; }
@@ -135,48 +158,11 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .tab-key-hint { background-color: var(--border-subtle); color: var(--text-secondary); padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 900; }
 .tab-btn.active .tab-key-hint { background-color: var(--bg-primary); color: var(--text-primary); }
 
-/* UMSCHALTER: ZEITRÄUME (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR) */
-.mode-switch-container {
-  background-color: var(--bg-surface);
-  border-bottom: 2px solid var(--border-subtle);
-  padding: 10px 16px;
-}
-
-.mode-switch-inner {
-  max-width: 1200px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.mode-toggle-btn {
-  background-color: var(--bg-surface-elevated);
-  color: var(--text-secondary);
-  border: 2px solid var(--border-subtle);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  min-height: 48px;
-  transition: all 0.15s ease-in-out;
-}
-
-.mode-toggle-btn:hover { background-color: var(--bg-hover); }
-
-.mode-toggle-btn.active {
-  background-color: var(--text-primary);
-  color: var(--bg-primary);
-  border-color: var(--text-primary);
-}
-
-/* ZEIT-WÄHLER LEISTEN */
+/* ZEITRAUM & NAVIGATION LEISTE (DROPDOWN-STEUERUNG) */
 .time-picker-container {
   background-color: var(--bg-surface-elevated);
-  border-bottom: 2px solid var(--border-color);
-  padding: 12px 16px;
+  border-bottom: 3px solid var(--border-color);
+  padding: 14px 16px;
 }
 
 .time-picker-inner {
@@ -186,13 +172,14 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .time-select-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .time-select-label {
@@ -207,8 +194,8 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 10px 16px;
-  font-size: 19px;
-  font-weight: 900;
+  font-size: 18px;
+  font-weight: 800;
   cursor: pointer;
   min-height: 48px;
 }
@@ -341,8 +328,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .btn-danger { background-color: var(--bg-surface-elevated); color: var(--accent-expense); border-color: var(--accent-expense); }
 .btn-danger:hover { background-color: var(--accent-expense); color: #000; }
 
-.year-overview-box, .future-forecast-box { padding: 24px !important; }
-.year-header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
 .table-responsive { overflow-x: auto; border: 2px solid var(--border-subtle); border-radius: var(--radius-md); }
 .annual-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
 .annual-table th, .annual-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
@@ -351,14 +336,13 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .annual-table tfoot th, .annual-table tfoot td { background-color: var(--bg-surface-elevated); font-weight: 900; border-top: 2px solid var(--border-color); font-size: 18px; }
 .text-right { text-align: right; }
 .text-center { text-align: center; }
-.btn-jump-month { background-color: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
 .settings-box { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px; }
 .danger-box { border-color: var(--accent-expense); }
 .app-footer { background-color: var(--bg-surface); border-top: 2px solid var(--border-color); padding: 20px 16px; text-align: center; margin-top: 40px; font-size: 15px; color: var(--text-muted); }
 
 </style>
 </head>
-<body class="theme-high-contrast" id="app-body">
+<body class="theme-light font-normal" id="app-body">
 
   <!-- Live-Regionen für NVDA Screenreader Mitteilungen -->
   <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -506,7 +490,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
     <!-- Schnellsprunglinks für NVDA -->
     <nav class="skip-links" aria-label="Schnellnavigation">
       <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
-      <a href="#overview-mode-bar" class="skip-link">Zum Ansichtsmodus springen</a>
+      <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
       <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
     </nav>
 
@@ -528,14 +512,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             <span aria-hidden="true">🔒</span>
             <span>Sperren (L)</span>
           </button>
-          <div class="theme-selector">
-            <label for="theme-select" class="sr-only">Kontrastfarbe wählen</label>
-            <select id="theme-select" class="theme-select" onchange="changeTheme(this.value)">
-              <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
-              <option value="theme-dark">⚪ Weiß auf Schwarz (Dunkel)</option>
-              <option value="theme-light">🔵 Blau auf Weiß (Hell)</option>
-            </select>
-          </div>
         </div>
       </div>
     </header>
@@ -563,41 +539,30 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
         </button>
         <button id="tab-settings" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
           <span class="tab-key-hint" aria-hidden="true">5</span>
-          <span>⚙️ <strong>Backup & Einstellungen</strong></span>
+          <span>⚙️ <strong>Einstellungen & Backup</strong></span>
         </button>
       </div>
     </nav>
 
     <!-- =========================================================================
-         ANSICHTS-MODUS UMSCHALTER: TAG, MONAT, 3 MONATE, 6 MONATE, JAHR
+         EINHEITLICHE ZEITRAUM- & NAVIGATION LEISTE (DROPDOWN CONTROL FIELD)
          ========================================================================= -->
-    <div class="mode-switch-container" id="overview-mode-bar" role="region" aria-label="Zeitraum auswählen">
-      <div class="mode-switch-inner">
-        <span style="font-weight: bold; color: var(--text-primary);">Zeitraum:</span>
-        <button id="mode-btn-day" class="mode-toggle-btn" onclick="setOverviewMode('day')" title="Nur Buchungen an einem bestimmten Tag anzeigen">
-          📍 <strong>Tag</strong>
-        </button>
-        <button id="mode-btn-month" class="mode-toggle-btn active" onclick="setOverviewMode('month')" title="Ganzen Monat anzeigen">
-          📅 <strong>Monat</strong>
-        </button>
-        <button id="mode-btn-quarter" class="mode-toggle-btn" onclick="setOverviewMode('quarter')" title="3 Monate / Quartal anzeigen">
-          📊 <strong>3 Monate</strong>
-        </button>
-        <button id="mode-btn-halfyear" class="mode-toggle-btn" onclick="setOverviewMode('halfyear')" title="6 Monate / Halbjahr anzeigen">
-          📈 <strong>6 Monate</strong>
-        </button>
-        <button id="mode-btn-year" class="mode-toggle-btn" onclick="setOverviewMode('year')" title="Ganzes Jahr anzeigen">
-          🗓️ <strong>Jahr</strong>
-        </button>
-      </div>
-    </div>
+    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitraum und Navigation">
+      <div class="time-picker-inner">
+        <div class="time-select-wrapper">
+          <label for="overview-period-select" class="time-select-label">📊 <strong>Zeitraum:</strong></label>
+          <select id="overview-period-select" class="time-dropdown" onchange="handlePeriodDropdownChange(this.value)">
+            <option value="day">📍 Tag (Tagesgenau)</option>
+            <option value="month" selected>📅 Monat (Gesamter Monat)</option>
+            <option value="quarter">📊 3 Monate (Quartal)</option>
+            <option value="halfyear">📈 6 Monate (Halbjahr)</option>
+            <option value="year">🗓️ Ganzes Jahr</option>
+          </select>
+        </div>
 
-    <!-- =========================================================================
-         ZEIT-NAVIGATION LEISTE (PASST SICH DEM AUSGEWÄHLTEN MODUS AN)
-         ========================================================================= -->
-    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitnavigation">
-      <div class="time-picker-inner" id="time-picker-content">
-        <!-- Befüllt per JavaScript für Tag, Monat, 3M, 6M oder Jahr -->
+        <div id="sub-time-navigation-wrapper" class="time-select-wrapper">
+          <!-- Befüllt per JavaScript mit den Pfeiltasten und Unterauswahlen -->
+        </div>
       </div>
     </div>
 
@@ -1080,19 +1045,45 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
       </div>
 
       <!-- =======================================================================
-           ANSICHT 5: BACKUP, SICHERHEIT, DATENSCHUTZ & ZUKUNFTS-PROGNOSE
+           ANSICHT 5: EINSTELLUNGEN, DESIGN & BACKUP
            ======================================================================= -->
       <div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
         <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Datensicherung, Zukunfts-Prognose & Einstellungen</h2>
+          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Einstellungen, Design & Datensicherung</h2>
 
-          <!-- GITHUB AUTO-UPDATER -->
+          <!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
+          <section class="settings-box" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
+            <h3 id="theme-settings-heading">🎨 Darstellung, Design & Schriftgröße</h3>
+            <p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
+
+            <div class="form-row-2" style="margin-top: 10px;">
+              <div class="form-group">
+                <label for="settings-theme-select" class="field-label"><strong>Farbkontrast / Design:</strong></label>
+                <select id="settings-theme-select" class="large-select" onchange="changeTheme(this.value)">
+                  <option value="theme-light" selected>🌐 Standard Web-Design (Hell & Modern)</option>
+                  <option value="theme-dark">⚪ Dunkel-Modus (Weiß auf Dunkelgrau/Schwarz)</option>
+                  <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="settings-fontsize-select" class="field-label"><strong>Schriftgröße / Textgröße:</strong></label>
+                <select id="settings-fontsize-select" class="large-select" onchange="changeFontSize(this.value)">
+                  <option value="font-normal" selected>Normal (Standard 100%)</option>
+                  <option value="font-large">Groß (125% - Größere Schrift)</option>
+                  <option value="font-xlarge">Sehr groß (150% - Riesige Schrift)</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <!-- 2. GITHUB AUTO-UPDATER -->
           <section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
-            <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App aktualisieren)</h3>
-            <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
+            <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App-Status)</h3>
+            <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.6.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.7.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -1102,10 +1093,10 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
           </section>
 
-          <!-- DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
-          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-action);">
+          <!-- 3. DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
+          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
             <h3 id="backup-restore-heading">💾 Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
-            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen, um sie auf einen USB-Stick zu kopieren oder auf einen neuen Computer zu übertragen:</p>
+            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen oder auf einen neuen PC übertragen:</p>
 
             <div class="form-actions" style="margin-top: 10px;">
               <button type="button" class="btn btn-secondary" onclick="exportEncryptedBackup()" style="flex: 1;">
@@ -1118,7 +1109,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
           </section>
 
-          <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
+          <!-- 4. LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
           <section class="settings-box" aria-labelledby="manage-recurring-heading">
             <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
             <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen, bearbeiten und löschen:</p>
@@ -1127,7 +1118,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
           </section>
 
-          <!-- PIN ändern -->
+          <!-- 5. PIN ÄNDERN -->
           <section class="settings-box" aria-labelledby="set-pin-heading">
             <h3 id="set-pin-heading">🔒 Sicherheits-PIN / Passwort ändern</h3>
             <form id="form-change-pin" onsubmit="handleChangePin(event)">
@@ -1143,7 +1134,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </form>
           </section>
 
-          <!-- Daten löschen / Reset -->
+          <!-- 6. DATEN LÖSCHEN / RESET -->
           <section class="settings-box danger-box" aria-labelledby="set-reset-heading">
             <h3 id="set-reset-heading">⚠️ DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
             <p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
@@ -1157,7 +1148,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.6.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.7.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
@@ -1305,18 +1296,12 @@ function resetInactivityTimer() {
 // --------------------------------------------------------------------------
 // 5. ZEITRAUM- & ANSICHTS-MODI (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
 // --------------------------------------------------------------------------
-function setOverviewMode(mode) {
+
+const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
+
+function handlePeriodDropdownChange(mode) {
   currentOverviewMode = mode;
-
-  ['day', 'month', 'quarter', 'halfyear', 'year'].forEach(m => {
-    const btn = document.getElementById(`mode-btn-${m}`);
-    if (btn) {
-      if (m === mode) btn.classList.add('active');
-      else btn.classList.remove('active');
-    }
-  });
-
-  renderTimePickerBar();
+  renderSubTimeNavigation();
   updateOverview();
 
   const names = {
@@ -1326,24 +1311,37 @@ function setOverviewMode(mode) {
     halfyear: '6-Monate-Ansicht (Halbjahr)',
     year: 'Jahres-Ansicht'
   };
-  announceNVDA(`Modus gewechselt zu ${names[mode] || mode}.`);
+  announceNVDA(`Zeitraum gewechselt zu ${names[mode] || mode}.`);
 }
 
-function renderTimePickerBar() {
-  const container = document.getElementById('time-picker-content');
+function setOverviewMode(mode) {
+  currentOverviewMode = mode;
+  const select = document.getElementById('overview-period-select');
+  if (select) select.value = mode;
+  renderSubTimeNavigation();
+  updateOverview();
+}
+
+function renderSubTimeNavigation() {
+  const container = document.getElementById('sub-time-navigation-wrapper');
   if (!container) return;
+
+  const select = document.getElementById('overview-period-select');
+  if (select && select.value !== currentOverviewMode) {
+    select.value = currentOverviewMode;
+  }
 
   if (currentOverviewMode === 'day') {
     container.innerHTML = `
       <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
-        ◀ Gestern / Vorheriger Tag
+        ◀ Gestern
       </button>
       <div class="time-select-wrapper">
         <label for="global-day-select" class="time-select-label">📍 <strong>Tag:</strong></label>
         <input type="date" id="global-day-select" class="time-date-input" value="${selectedDateStr}" onchange="handleDayChange(this.value)">
       </div>
       <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
-        Nächster Tag / Morgen ▶
+        Morgen ▶
       </button>
       <button class="btn btn-time-today" onclick="setDayToToday()" title="Zum heutigen Tag springen (Taste T)">
         📍 Heute (T)
@@ -1352,7 +1350,7 @@ function renderTimePickerBar() {
   } else if (currentOverviewMode === 'month') {
     container.innerHTML = `
       <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen" aria-label="Vorheriger Monat">
-        ◀ Vorheriger Monat
+        ◀ Vormonat
       </button>
       <div class="time-select-wrapper">
         <label for="global-month-select" class="time-select-label">📅 <strong>Monat:</strong></label>
@@ -1374,7 +1372,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Quartal
       </button>
       <div class="time-select-wrapper">
-        <label for="global-quarter-select" class="time-select-label">📊 <strong>3 Monate (Quartal):</strong></label>
+        <label for="global-quarter-select" class="time-select-label">📊 <strong>Quartal:</strong></label>
         <select id="global-quarter-select" class="time-dropdown" onchange="handleQuarterChange(this.value)">
           <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>Q1 ${selectedYear} (Januar - März)</option>
           <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>Q2 ${selectedYear} (April - Juni)</option>
@@ -1396,7 +1394,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Halbjahr
       </button>
       <div class="time-select-wrapper">
-        <label for="global-halfyear-select" class="time-select-label">📈 <strong>6 Monate (Halbjahr):</strong></label>
+        <label for="global-halfyear-select" class="time-select-label">📈 <strong>Halbjahr:</strong></label>
         <select id="global-halfyear-select" class="time-dropdown" onchange="handleHalfyearChange(this.value)">
           <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>1. Halbjahr ${selectedYear} (Januar - Juni)</option>
           <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>2. Halbjahr ${selectedYear} (Juli - Dezember)</option>
@@ -1415,7 +1413,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Jahr
       </button>
       <div class="time-select-wrapper">
-        <label for="global-year-select" class="time-select-label">🗓️ <strong>Ganzes Jahr:</strong></label>
+        <label for="global-year-select" class="time-select-label">🗓️ <strong>Jahr:</strong></label>
         <select id="global-year-select" class="time-dropdown" onchange="handleYearChange(this.value)">
           <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>Jahr 2025</option>
           <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>Jahr 2026</option>
@@ -1432,6 +1430,11 @@ function renderTimePickerBar() {
     `;
   }
 }
+
+function renderTimePickerBar() {
+  renderSubTimeNavigation();
+}
+
 
 function generateMonthOptions(selectedVal) {
   let html = '';
@@ -3013,9 +3016,9 @@ function switchView(viewName) {
     }
   });
 
-  const modeBar = document.getElementById('overview-mode-bar');
+  // unified control bar
   const timeBar = document.getElementById('time-picker-bar');
-  if (modeBar) modeBar.style.display = viewName === 'overview' ? 'block' : 'none';
+  // unified control bar
   if (timeBar) timeBar.style.display = viewName === 'overview' ? 'block' : 'none';
 
   if (viewName === 'overview') updateOverview();
@@ -3039,7 +3042,7 @@ function changeTheme(themeClass) {
 function initTheme() {
   const saved = localStorage.getItem(STORAGE_THEME_KEY) || 'theme-high-contrast';
   document.body.className = saved;
-  const sel = document.getElementById('theme-select');
+  const sel = document.getElementById('settings-theme-select');
   if (sel) sel.value = saved;
 }
 

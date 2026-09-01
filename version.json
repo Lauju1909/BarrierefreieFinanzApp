@@ -1,12 +1,13 @@
 {
-  "version": "2.6.0",
+  "version": "2.7.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Universeller abwaertskompatibler Backup-Import (unterstuetzt alle Dateiformate: v2.0 Hex, v2.5 Base64, JSON)",
-    "Sofortiger Live-Import in die Uebersicht",
-    "Aufgeraeumte Einstellungen ohne doppelte Prognosen oder Startguthaben-Felder",
-    "Jahres- und Mehr-Monatsansichten direkt in der Hauptuebersicht",
+    "Design & Kontrasteinstellungen in Einstellungen verlegt (Standard: Hell wie jede Internetseite)",
+    "Einstellbare Schriftgroessen: Normal (100%), Gross (125%) und Sehr Gross (150%)",
+    "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
+    "Universeller abwaertskompatibler Backup-Import mit Sofort-Live-Anzeige",
+    "Aufgeraeumte Einstellungen und Hauptuebersicht",
     "Dauerhafter zentraler Datensafe im Systemprofil",
     "Buchungen & Dauerauftraege direkt bearbeiten (Edit-Funktion)",
     "100% Eigenstaendige und portable Haushaltsbuch.exe mit Hintergrund-Auto-Updater",

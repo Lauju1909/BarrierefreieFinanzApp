@@ -139,18 +139,12 @@ function resetInactivityTimer() {
 // --------------------------------------------------------------------------
 // 5. ZEITRAUM- & ANSICHTS-MODI (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
 // --------------------------------------------------------------------------
-function setOverviewMode(mode) {
+
+const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
+
+function handlePeriodDropdownChange(mode) {
   currentOverviewMode = mode;
-
-  ['day', 'month', 'quarter', 'halfyear', 'year'].forEach(m => {
-    const btn = document.getElementById(`mode-btn-${m}`);
-    if (btn) {
-      if (m === mode) btn.classList.add('active');
-      else btn.classList.remove('active');
-    }
-  });
-
-  renderTimePickerBar();
+  renderSubTimeNavigation();
   updateOverview();
 
   const names = {
@@ -160,24 +154,37 @@ function setOverviewMode(mode) {
     halfyear: '6-Monate-Ansicht (Halbjahr)',
     year: 'Jahres-Ansicht'
   };
-  announceNVDA(`Modus gewechselt zu ${names[mode] || mode}.`);
+  announceNVDA(`Zeitraum gewechselt zu ${names[mode] || mode}.`);
 }
 
-function renderTimePickerBar() {
-  const container = document.getElementById('time-picker-content');
+function setOverviewMode(mode) {
+  currentOverviewMode = mode;
+  const select = document.getElementById('overview-period-select');
+  if (select) select.value = mode;
+  renderSubTimeNavigation();
+  updateOverview();
+}
+
+function renderSubTimeNavigation() {
+  const container = document.getElementById('sub-time-navigation-wrapper');
   if (!container) return;
+
+  const select = document.getElementById('overview-period-select');
+  if (select && select.value !== currentOverviewMode) {
+    select.value = currentOverviewMode;
+  }
 
   if (currentOverviewMode === 'day') {
     container.innerHTML = `
       <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
-        ◀ Gestern / Vorheriger Tag
+        ◀ Gestern
       </button>
       <div class="time-select-wrapper">
         <label for="global-day-select" class="time-select-label">📍 <strong>Tag:</strong></label>
         <input type="date" id="global-day-select" class="time-date-input" value="${selectedDateStr}" onchange="handleDayChange(this.value)">
       </div>
       <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
-        Nächster Tag / Morgen ▶
+        Morgen ▶
       </button>
       <button class="btn btn-time-today" onclick="setDayToToday()" title="Zum heutigen Tag springen (Taste T)">
         📍 Heute (T)
@@ -186,7 +193,7 @@ function renderTimePickerBar() {
   } else if (currentOverviewMode === 'month') {
     container.innerHTML = `
       <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen" aria-label="Vorheriger Monat">
-        ◀ Vorheriger Monat
+        ◀ Vormonat
       </button>
       <div class="time-select-wrapper">
         <label for="global-month-select" class="time-select-label">📅 <strong>Monat:</strong></label>
@@ -208,7 +215,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Quartal
       </button>
       <div class="time-select-wrapper">
-        <label for="global-quarter-select" class="time-select-label">📊 <strong>3 Monate (Quartal):</strong></label>
+        <label for="global-quarter-select" class="time-select-label">📊 <strong>Quartal:</strong></label>
         <select id="global-quarter-select" class="time-dropdown" onchange="handleQuarterChange(this.value)">
           <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>Q1 ${selectedYear} (Januar - März)</option>
           <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>Q2 ${selectedYear} (April - Juni)</option>
@@ -230,7 +237,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Halbjahr
       </button>
       <div class="time-select-wrapper">
-        <label for="global-halfyear-select" class="time-select-label">📈 <strong>6 Monate (Halbjahr):</strong></label>
+        <label for="global-halfyear-select" class="time-select-label">📈 <strong>Halbjahr:</strong></label>
         <select id="global-halfyear-select" class="time-dropdown" onchange="handleHalfyearChange(this.value)">
           <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>1. Halbjahr ${selectedYear} (Januar - Juni)</option>
           <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>2. Halbjahr ${selectedYear} (Juli - Dezember)</option>
@@ -249,7 +256,7 @@ function renderTimePickerBar() {
         ◀ Vorheriges Jahr
       </button>
       <div class="time-select-wrapper">
-        <label for="global-year-select" class="time-select-label">🗓️ <strong>Ganzes Jahr:</strong></label>
+        <label for="global-year-select" class="time-select-label">🗓️ <strong>Jahr:</strong></label>
         <select id="global-year-select" class="time-dropdown" onchange="handleYearChange(this.value)">
           <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>Jahr 2025</option>
           <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>Jahr 2026</option>
@@ -266,6 +273,11 @@ function renderTimePickerBar() {
     `;
   }
 }
+
+function renderTimePickerBar() {
+  renderSubTimeNavigation();
+}
+
 
 function generateMonthOptions(selectedVal) {
   let html = '';
@@ -1847,9 +1859,9 @@ function switchView(viewName) {
     }
   });
 
-  const modeBar = document.getElementById('overview-mode-bar');
+  // unified control bar
   const timeBar = document.getElementById('time-picker-bar');
-  if (modeBar) modeBar.style.display = viewName === 'overview' ? 'block' : 'none';
+  // unified control bar
   if (timeBar) timeBar.style.display = viewName === 'overview' ? 'block' : 'none';
 
   if (viewName === 'overview') updateOverview();
@@ -1873,6 +1885,6 @@ function changeTheme(themeClass) {
 function initTheme() {
   const saved = localStorage.getItem(STORAGE_THEME_KEY) || 'theme-high-contrast';
   document.body.className = saved;
-  const sel = document.getElementById('theme-select');
+  const sel = document.getElementById('settings-theme-select');
   if (sel) sel.value = saved;
 }
