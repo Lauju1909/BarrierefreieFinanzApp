@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -22,22 +23,25 @@ namespace HaushaltsbuchApp
                 ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
 
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string localHtml = Path.Combine(baseDir, "Haushaltsbuch_App.html");
-                string defaultAppDir = @"C:\Users\lauri\.gemini\antigravity\scratch\BarrierefreieFinanzApp";
-                string targetDir = File.Exists(localHtml) ? baseDir : defaultAppDir;
-                string targetHtml = Path.Combine(targetDir, "Haushaltsbuch_App.html");
-                string localVersionFile = Path.Combine(targetDir, "version.json");
+                string targetHtml = Path.Combine(baseDir, "Haushaltsbuch_App.html");
+                string localVersionFile = Path.Combine(baseDir, "version.json");
 
-                // Check and apply update silently and fast before launching
-                CheckAndApplyUpdate(targetDir, targetHtml, localVersionFile);
+                // 1. If HTML does not exist, unpack it from embedded resource immediately!
+                if (!File.Exists(targetHtml))
+                {
+                    UnpackEmbeddedApp(targetHtml);
+                }
+
+                // 2. Check GitHub for updates in background
+                CheckAndApplyUpdate(targetHtml, localVersionFile);
 
                 if (!File.Exists(targetHtml))
                 {
-                    MessageBox.Show("Die Datei Haushaltsbuch_App.html wurde nicht gefunden!\nPfad: " + targetHtml, "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    MessageBox.Show("Die App-Datei konnte nicht geladen werden!", "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // Launch clean standalone window
+                // 3. Launch in clean native app window
                 string edgePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe");
                 if (!File.Exists(edgePath))
                 {
@@ -64,11 +68,45 @@ namespace HaushaltsbuchApp
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Fehler beim Starten: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
-        private static void CheckAndApplyUpdate(string targetDir, string targetHtml, string localVersionFile)
+        private static void UnpackEmbeddedApp(string targetHtml)
+        {
+            try
+            {
+                Assembly asm = Assembly.GetExecutingAssembly();
+                string resourceName = "embedded_app.html";
+                
+                // Find resource matching name
+                foreach (string name in asm.GetManifestResourceNames())
+                {
+                    if (name.EndsWith("embedded_app.html", StringComparison.OrdinalIgnoreCase))
+                    {
+                        resourceName = name;
+                        break;
+                    }
+                }
+
+                using (Stream stream = asm.GetManifestResourceStream(resourceName))
+                {
+                    if (stream != null)
+                    {
+                        using (FileStream fs = new FileStream(targetHtml, FileMode.Create, FileAccess.Write))
+                        {
+                            stream.CopyTo(fs);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // Ignore fallback
+            }
+        }
+
+        private static void CheckAndApplyUpdate(string targetHtml, string localVersionFile)
         {
             try
             {
@@ -91,7 +129,6 @@ namespace HaushaltsbuchApp
                         string remoteVer = rm.Groups[1].Value;
                         if (IsNewerVersion(remoteVer, localVer) || !File.Exists(targetHtml))
                         {
-                            // Download updated HTML to temp file and atomically replace
                             string tmpHtml = targetHtml + ".tmp";
                             client.DownloadFile(APP_HTML_URL, tmpHtml);
                             if (File.Exists(tmpHtml) && new FileInfo(tmpHtml).Length > 1000)
@@ -106,7 +143,7 @@ namespace HaushaltsbuchApp
             }
             catch
             {
-                // If offline or timeout, proceed seamlessly with existing local files without blocking user!
+                // If offline or slow connection, run existing version seamlessly
             }
         }
 
@@ -125,7 +162,6 @@ namespace HaushaltsbuchApp
         }
     }
 
-    // WebClient with configurable timeout (e.g. 2.5 seconds)
     public class TimeoutWebClient : WebClient
     {
         private readonly int _timeoutMs;
