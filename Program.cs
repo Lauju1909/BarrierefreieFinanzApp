@@ -5,6 +5,7 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows.Forms;
 
 namespace HaushaltsbuchApp
@@ -14,6 +15,12 @@ namespace HaushaltsbuchApp
         private const string GITHUB_RAW_BASE = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main";
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
+        private const int LOCAL_SERVER_PORT = 48123;
+
+        private static string _centralVaultPath;
+        private static string _centralHtmlPath;
+        private static HttpListener _httpListener;
+        private static Thread _serverThread;
 
         [STAThread]
         static void Main()
@@ -26,7 +33,7 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. ZENTRALER SPEICHERORT IM WINDOWS APPDATA
+                // 1. FESTE SPEICHERPFADE AUF DER FESTPLATTE (FUER ALLE VERSIONEN IMMER AM SELBEN ORT!)
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
@@ -36,9 +43,9 @@ namespace HaushaltsbuchApp
 
                 string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
                 string centralProfileDir = Path.Combine(centralAppDir, "Profile");
-                string centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
+                _centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(centralAppDir, "version.json");
-                string centralVaultPath = Path.Combine(centralAppDir, "database.vault");
+                _centralVaultPath = Path.Combine(centralAppDir, "Haushaltsbuch_Daten.vault");
 
                 try
                 {
@@ -48,56 +55,37 @@ namespace HaushaltsbuchApp
                 catch { }
 
                 // 2. ENTPACKEN ODER SYNCHRONISIEREN
-                if (!File.Exists(centralHtmlPath))
+                if (!File.Exists(_centralHtmlPath))
                 {
-                    UnpackEmbeddedApp(centralHtmlPath);
+                    UnpackEmbeddedApp(_centralHtmlPath);
                 }
 
-                if (File.Exists(localHtmlInBaseDir) && !File.Exists(centralHtmlPath))
+                if (File.Exists(localHtmlInBaseDir) && !File.Exists(_centralHtmlPath))
                 {
-                    try { File.Copy(localHtmlInBaseDir, centralHtmlPath, true); } catch { }
+                    try { File.Copy(localHtmlInBaseDir, _centralHtmlPath, true); } catch { }
                 }
 
                 // 3. BACKGROUND UPDATE CHECK
-                CheckAndApplyUpdate(centralHtmlPath, centralVersionPath);
+                CheckAndApplyUpdate(_centralHtmlPath, centralVersionPath);
 
-                string targetHtml = File.Exists(centralHtmlPath) ? centralHtmlPath : localHtmlInBaseDir;
+                string targetHtml = File.Exists(_centralHtmlPath) ? _centralHtmlPath : localHtmlInBaseDir;
                 if (!File.Exists(targetHtml))
                 {
                     UnpackEmbeddedApp(targetHtml);
                 }
 
-                if (!File.Exists(targetHtml))
-                {
-                    MessageBox.Show("Die App konnte nicht initialisiert werden!", "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                // 4. AUTOMATISCHE DATENRETTUNG AUS ALTEN VERSIONEN IN DIE FESTPLATTEN-DATEI
+                MigrateAllOldDataToDiskVault(_centralVaultPath, localAppData);
 
-                // 4. AUTOMATISCHE DATENRETTUNG: Suche nach vorhandenen Daten aus frueheren Versionen
-                RecoverOldVaultIfMissing(centralVaultPath, localAppData);
+                // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
+                InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 5. CROSS-BROWSER INJEKTION: Falls database.vault existiert, in HTML einbinden
-                if (File.Exists(centralVaultPath))
-                {
-                    try
-                    {
-                        string vaultJson = File.ReadAllText(centralVaultPath);
-                        if (!string.IsNullOrEmpty(vaultJson) && vaultJson.Contains("salt"))
-                        {
-                            string htmlContent = File.ReadAllText(targetHtml);
-                            string injection = "<script>window.__INITIAL_VAULT__ = " + vaultJson + ";</script>";
-                            if (!htmlContent.Contains("window.__INITIAL_VAULT__"))
-                            {
-                                htmlContent = htmlContent.Replace("<body", injection + "\n<body");
-                                File.WriteAllText(targetHtml, htmlContent);
-                            }
-                        }
-                    }
-                    catch { }
-                }
+                // 6. LOKALER FESTPLATTEN-SERVER STARTEN (Speichert Daten direkt in Haushaltsbuch_Daten.vault)
+                StartLocalVaultServer();
 
-                // 6. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
-                LaunchBestBrowser(targetHtml, centralProfileDir);
+                // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
+                string serverUrl = string.Format("http://127.0.0.1:{0}/", LOCAL_SERVER_PORT);
+                LaunchBestBrowser(serverUrl, targetHtml, centralProfileDir);
             }
             catch (Exception ex)
             {
@@ -105,16 +93,142 @@ namespace HaushaltsbuchApp
             }
         }
 
-        private static void RecoverOldVaultIfMissing(string targetVaultPath, string localAppData)
+        private static void StartLocalVaultServer()
+        {
+            try
+            {
+                _httpListener = new HttpListener();
+                _httpListener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", LOCAL_SERVER_PORT));
+                _httpListener.Start();
+
+                _serverThread = new Thread(() =>
+                {
+                    while (_httpListener != null && _httpListener.IsListening)
+                    {
+                        try
+                        {
+                            var ctx = _httpListener.GetContext();
+                            ThreadPool.QueueUserWorkItem((state) => HandleHttpRequest(ctx));
+                        }
+                        catch { }
+                    }
+                });
+                _serverThread.IsBackground = true;
+                _serverThread.Start();
+            }
+            catch { }
+        }
+
+        private static void HandleHttpRequest(HttpListenerContext ctx)
+        {
+            try
+            {
+                var req = ctx.Request;
+                var res = ctx.Response;
+
+                res.Headers.Add("Access-Control-Allow-Origin", "*");
+                res.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+                res.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
+
+                if (req.HttpMethod == "OPTIONS")
+                {
+                    res.StatusCode = 200;
+                    res.Close();
+                    return;
+                }
+
+                string rawUrl = req.Url.AbsolutePath;
+
+                // API: TRESOR VON FESTPLATTE LADEN
+                if (rawUrl == "/api/get_vault")
+                {
+                    string vaultJson = File.Exists(_centralVaultPath) ? File.ReadAllText(_centralVaultPath) : "{}";
+                    byte[] buf = Encoding.UTF8.GetBytes(vaultJson);
+                    res.ContentType = "application/json; charset=utf-8";
+                    res.ContentLength64 = buf.Length;
+                    res.OutputStream.Write(buf, 0, buf.Length);
+                    res.Close();
+                    return;
+                }
+
+                // API: TRESOR DIREKT AUF FESTPLATTE SPEICHERN
+                if (rawUrl == "/api/save_vault" && req.HttpMethod == "POST")
+                {
+                    using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
+                    {
+                        string body = reader.ReadToEnd();
+                        if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
+                        {
+                            File.WriteAllText(_centralVaultPath, body);
+                            InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
+                        }
+                    }
+
+                    byte[] buf = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
+                    res.ContentType = "application/json; charset=utf-8";
+                    res.ContentLength64 = buf.Length;
+                    res.OutputStream.Write(buf, 0, buf.Length);
+                    res.Close();
+                    return;
+                }
+
+                // HAUPTSEITE AUSLIEFERN
+                if (File.Exists(_centralHtmlPath))
+                {
+                    byte[] htmlBytes = File.ReadAllBytes(_centralHtmlPath);
+                    res.ContentType = "text/html; charset=utf-8";
+                    res.ContentLength64 = htmlBytes.Length;
+                    res.OutputStream.Write(htmlBytes, 0, htmlBytes.Length);
+                    res.Close();
+                    return;
+                }
+
+                res.StatusCode = 404;
+                res.Close();
+            }
+            catch { }
+        }
+
+        private static void InjectDiskVaultIntoHtml(string htmlPath, string vaultPath)
+        {
+            try
+            {
+                if (!File.Exists(htmlPath)) return;
+                string vaultJson = File.Exists(vaultPath) ? File.ReadAllText(vaultPath) : "{}";
+                string html = File.ReadAllText(htmlPath);
+
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + ";</script>";
+
+                if (html.Contains("id=\"disk-vault-data\""))
+                {
+                    html = Regex.Replace(html, "<script id=\"disk-vault-data\">[\\s\\S]*?</script>", scriptTag);
+                }
+                else
+                {
+                    html = html.Replace("<body", scriptTag + "\n<body");
+                }
+
+                File.WriteAllText(htmlPath, html);
+            }
+            catch { }
+        }
+
+        private static void MigrateAllOldDataToDiskVault(string targetVaultPath, string localAppData)
         {
             try
             {
                 if (File.Exists(targetVaultPath) && new FileInfo(targetVaultPath).Length > 20)
                 {
-                    return; // Bereits vorhanden
+                    return;
                 }
 
-                // Suche nach bisherigen LevelDB-Ordnern in Edge, Chrome, Brave und AppProfile
+                string oldVault = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
+                if (File.Exists(oldVault) && new FileInfo(oldVault).Length > 20)
+                {
+                    File.Copy(oldVault, targetVaultPath, true);
+                    return;
+                }
+
                 string[] searchDirs = new string[]
                 {
                     Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"),
@@ -168,19 +282,13 @@ namespace HaushaltsbuchApp
                             if (ascii.Contains("barrierefreie_finanzen_salt_v1"))
                             {
                                 Match mSalt = Regex.Match(ascii, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44})");
-                                if (mSalt.Success)
-                                {
-                                    bestSalt = mSalt.Groups[1].Value;
-                                }
+                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
                             }
 
                             if (ascii.Contains("barrierefreie_finanzen_enc_v1"))
                             {
                                 Match mVault = Regex.Match(ascii, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,})");
-                                if (mVault.Success)
-                                {
-                                    bestVault = mVault.Groups[1].Value;
-                                }
+                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
                             }
                         }
                         catch { }
@@ -197,9 +305,9 @@ namespace HaushaltsbuchApp
             return null;
         }
 
-        private static void LaunchBestBrowser(string htmlPath, string profileDir)
+        private static void LaunchBestBrowser(string serverUrl, string fallbackHtmlPath, string profileDir)
         {
-            string fileUri = "file:///" + htmlPath.Replace('\\', '/');
+            string url = serverUrl;
 
             // 1. GOOGLE CHROME
             string chromePath = FindBrowserPath(new string[]
@@ -211,7 +319,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(chromePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", url, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = chromePath,
@@ -234,7 +342,7 @@ namespace HaushaltsbuchApp
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = firefoxPath,
-                    Arguments = string.Format("-new-window \"{0}\"", fileUri),
+                    Arguments = string.Format("-new-window \"{0}\"", url),
                     UseShellExecute = false
                 });
                 return;
@@ -250,7 +358,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(edgePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", url, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = edgePath,
@@ -270,7 +378,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(bravePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", url, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = bravePath,
@@ -283,7 +391,7 @@ namespace HaushaltsbuchApp
             // 5. STANDARD FALLBACK
             Process.Start(new ProcessStartInfo
             {
-                FileName = htmlPath,
+                FileName = url,
                 UseShellExecute = true
             });
         }
