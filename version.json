@@ -1,8 +1,10 @@
 {
-  "version": "3.2.0",
+  "version": "3.3.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
+    "Unzerstoerbare Datenrettung & Cross-Browser Synchronisation (database.vault)",
+    "Automatischer Schutz gegen Browser-Wechsel (Daten bleiben zwischen Chrome, Firefox & Edge erhalten)",
     "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) im Dropdown-Zeitraum-Auswahlfeld",
     "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag)",
     "Neue Einnahme-Kategorien: Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",

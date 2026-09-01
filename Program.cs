@@ -25,24 +25,19 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. DYNAMISCHE WINDOWS-SPEICHERPFADE (FUNKTIONIERT AUF JEDEM RECHNER!)
+                // 1. ZENTRALER SPEICHERORT IM WINDOWS APPDATA
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                if (string.IsNullOrEmpty(localAppData))
-                {
-                    localAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                }
-                if (string.IsNullOrEmpty(localAppData))
-                {
-                    localAppData = baseDir;
-                }
+                if (string.IsNullOrEmpty(localAppData)) localAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                if (string.IsNullOrEmpty(localAppData)) localAppData = baseDir;
 
                 string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
                 string centralProfileDir = Path.Combine(centralAppDir, "Profile");
                 string centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(centralAppDir, "version.json");
+                string centralVaultPath = Path.Combine(centralAppDir, "database.vault");
 
                 try
                 {
@@ -51,24 +46,21 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 2. IMMER ZUERST AUS EINGEBETTETER RESSOURCE ENTPACKEN WENN NICHT EXISTENT
+                // 2. ENTPACKEN ODER SYNCHRONISIEREN
                 if (!File.Exists(centralHtmlPath))
                 {
                     UnpackEmbeddedApp(centralHtmlPath);
                 }
 
-                // Falls es neben der Exe liegt, synchronisiere
                 if (File.Exists(localHtmlInBaseDir) && !File.Exists(centralHtmlPath))
                 {
                     try { File.Copy(localHtmlInBaseDir, centralHtmlPath, true); } catch { }
                 }
 
-                // 3. Im Hintergrund auf GitHub nach Updates pruefen (ohne zu blockieren)
+                // 3. BACKGROUND UPDATE CHECK
                 CheckAndApplyUpdate(centralHtmlPath, centralVersionPath);
 
-                // Falls AppData blockiert ist, nutze lokale Datei im selben Ordner
                 string targetHtml = File.Exists(centralHtmlPath) ? centralHtmlPath : localHtmlInBaseDir;
-
                 if (!File.Exists(targetHtml))
                 {
                     UnpackEmbeddedApp(targetHtml);
@@ -80,7 +72,27 @@ namespace HaushaltsbuchApp
                     return;
                 }
 
-                // 4. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
+                // 4. CROSS-BROWSER RETTUNG: Falls database.vault existiert, in HTML injizieren
+                if (File.Exists(centralVaultPath))
+                {
+                    try
+                    {
+                        string vaultJson = File.ReadAllText(centralVaultPath);
+                        if (!string.IsNullOrEmpty(vaultJson) && vaultJson.Contains("salt"))
+                        {
+                            string htmlContent = File.ReadAllText(targetHtml);
+                            string injection = "<script>window.__INITIAL_VAULT__ = " + vaultJson + ";</script>";
+                            if (!htmlContent.Contains("window.__INITIAL_VAULT__"))
+                            {
+                                htmlContent = htmlContent.Replace("<body", injection + "\n<body");
+                                File.WriteAllText(targetHtml, htmlContent);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                // 5. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
                 LaunchBestBrowser(targetHtml, centralProfileDir);
             }
             catch (Exception ex)
