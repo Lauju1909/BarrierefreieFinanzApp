@@ -19,41 +19,49 @@ namespace HaushaltsbuchApp
         {
             try
             {
-                // Force TLS 1.2
                 ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
 
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string targetHtml = Path.Combine(baseDir, "Haushaltsbuch_App.html");
-                string localVersionFile = Path.Combine(baseDir, "version.json");
+                // 1. ZENTRALER, FESTE SPEICHERORT IM APPDATA (DATEN GEHEN NIE VERLOREN!)
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
+                string centralProfileDir = Path.Combine(centralAppDir, "Profile");
+                string centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
+                string centralVersionPath = Path.Combine(centralAppDir, "version.json");
 
-                // 1. If HTML does not exist, unpack it from embedded resource immediately!
-                if (!File.Exists(targetHtml))
+                if (!Directory.Exists(centralAppDir)) Directory.CreateDirectory(centralAppDir);
+                if (!Directory.Exists(centralProfileDir)) Directory.CreateDirectory(centralProfileDir);
+
+                // 2. Falls zentrales HTML noch nicht existiert, aus eingebetteter Ressource entpacken
+                if (!File.Exists(centralHtmlPath))
                 {
-                    UnpackEmbeddedApp(targetHtml);
+                    UnpackEmbeddedApp(centralHtmlPath);
                 }
 
-                // 2. Check GitHub for updates in background
-                CheckAndApplyUpdate(targetHtml, localVersionFile);
+                // 3. Im Hintergrund auf GitHub nach Updates prüfen (ersetzt nur HTML, Profil bleibt 100% erhalten!)
+                CheckAndApplyUpdate(centralHtmlPath, centralVersionPath);
 
-                if (!File.Exists(targetHtml))
+                if (!File.Exists(centralHtmlPath))
                 {
-                    MessageBox.Show("Die App-Datei konnte nicht geladen werden!", "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show("Die App-Datei konnte nicht geladen werden!\nPfad: " + centralHtmlPath, "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // 3. Launch in clean native app window
+                // 4. Edge im App-Modus mit FESTEM User-Data-Dir starten
                 string edgePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe");
                 if (!File.Exists(edgePath))
                 {
                     edgePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Microsoft\Edge\Application\msedge.exe");
                 }
 
+                string fileUri = "file:///" + centralHtmlPath.Replace('\\', '/');
+
                 if (File.Exists(edgePath))
                 {
+                    string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, centralProfileDir);
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = edgePath,
-                        Arguments = "--app=\"" + targetHtml + "\" --window-size=1280,880",
+                        Arguments = args,
                         UseShellExecute = false
                     });
                 }
@@ -61,14 +69,14 @@ namespace HaushaltsbuchApp
                 {
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = targetHtml,
+                        FileName = centralHtmlPath,
                         UseShellExecute = true
                     });
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Fehler beim Starten: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -79,7 +87,6 @@ namespace HaushaltsbuchApp
                 Assembly asm = Assembly.GetExecutingAssembly();
                 string resourceName = "embedded_app.html";
                 
-                // Find resource matching name
                 foreach (string name in asm.GetManifestResourceNames())
                 {
                     if (name.EndsWith("embedded_app.html", StringComparison.OrdinalIgnoreCase))
@@ -102,7 +109,7 @@ namespace HaushaltsbuchApp
             }
             catch
             {
-                // Ignore fallback
+                // Fallback
             }
         }
 
@@ -143,7 +150,7 @@ namespace HaushaltsbuchApp
             }
             catch
             {
-                // If offline or slow connection, run existing version seamlessly
+                // Offline fallback
             }
         }
 
