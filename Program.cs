@@ -20,10 +20,9 @@ namespace HaushaltsbuchApp
         private const int BASE_PORT = 48123;
 
         private static string _centralAppDir;
-        private static string _centralVaultPath;
-        private static string _centralBakPath;
+        private static string _centralVaultPath; // 1. Hauptdatei (.vault)
+        private static string _centralBakPath;   // 2. Sicherungsdatei (.vault.bak)
         private static string _centralHtmlPath;
-        private static List<string> _allBackupVaultPaths = new List<string>();
 
         private static TcpListener _tcpListener;
         private static Thread _serverThread;
@@ -42,19 +41,18 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. BESTE SCHREIBGESCHÜTZTE / FREIE SPEICHERVERZEICHNISSE FINDEN (100% RECHTE-KOMPATIBEL!)
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
-                _centralAppDir = FindBestWritableDirectory(baseDir);
+                // 1. DEN EINEN FESTEN BESTEN SCHREIBBAREN SPEICHERORT WÄHLEN
+                _centralAppDir = DetermineSingleBestStorageDirectory(baseDir);
                 string centralProfileDir = Path.Combine(_centralAppDir, "Profile");
                 _centralHtmlPath = Path.Combine(_centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(_centralAppDir, "version.json");
+                
+                // EXAKT 2 DATEIEN (Hauptdatei + Backup):
                 _centralVaultPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault");
                 _centralBakPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault.bak");
-
-                // Zusätzliche redundante Speicherorte für maximale Ausfallsicherheit
-                RegisterAllBackupLocations();
 
                 try
                 {
@@ -83,13 +81,13 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(targetHtml);
                 }
 
-                // 4. MULTI-DIRECTORY SELBST-REPARATUR & DATEN-RETTUNG
-                AutoRepairVaultAcrossAllLocations();
+                // 4. DATENRETTUNG & AUTOMATISCHE BEREINIGUNG ALTER DUPLIKATE (MÜLL ENTFERNEN)
+                MigrateAndCleanUpOldDuplicates(_centralAppDir, _centralVaultPath, _centralBakPath);
 
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN
+                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN (TcpListener)
                 bool serverStarted = StartLocalVaultServer();
 
                 string launchUrl = serverStarted 
@@ -132,7 +130,7 @@ namespace HaushaltsbuchApp
             }
         }
 
-        private static string FindBestWritableDirectory(string baseDir)
+        private static string DetermineSingleBestStorageDirectory(string baseDir)
         {
             string[] candidateRoots = new string[]
             {
@@ -141,10 +139,22 @@ namespace HaushaltsbuchApp
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 @"C:\Users\Public",
-                Path.GetTempPath(),
                 baseDir
             };
 
+            // Prüfe zuerst, wo bereits eine gültige Tresordatei liegt (Speicherort merken)
+            foreach (string root in candidateRoots)
+            {
+                if (string.IsNullOrEmpty(root)) continue;
+                string dir = Path.Combine(root, "HaushaltsbuchApp");
+                string vaultFile = Path.Combine(dir, "Haushaltsbuch_Daten.vault");
+                if (IsValidVaultJsonFile(vaultFile))
+                {
+                    return dir;
+                }
+            }
+
+            // Wenn noch keine Datei existiert: Finde den ersten voll beschreibbaren Ordner
             foreach (string root in candidateRoots)
             {
                 if (string.IsNullOrEmpty(root)) continue;
@@ -154,13 +164,12 @@ namespace HaushaltsbuchApp
                     string target = Path.Combine(root, "HaushaltsbuchApp");
                     if (!Directory.Exists(target)) Directory.CreateDirectory(target);
 
-                    // Teste Schreibrechte
                     string testFile = Path.Combine(target, ".perm_test_" + Guid.NewGuid().ToString("N"));
                     File.WriteAllText(testFile, "OK", Encoding.UTF8);
                     if (File.Exists(testFile))
                     {
                         File.Delete(testFile);
-                        return target; // Schreibrechte 100% verifiziert!
+                        return target;
                     }
                 }
                 catch { }
@@ -169,89 +178,78 @@ namespace HaushaltsbuchApp
             return baseDir;
         }
 
-        private static void RegisterAllBackupLocations()
+        private static void MigrateAndCleanUpOldDuplicates(string activeDir, string vaultPath, string bakPath)
         {
             try
             {
-                string[] roots = new string[]
+                string bestData = null;
+
+                // 1. Prüfe ob in activeDir bereits eine gültige Datei liegt
+                if (IsValidVaultJsonFile(vaultPath))
+                {
+                    bestData = File.ReadAllText(vaultPath, Encoding.UTF8);
+                }
+                else if (IsValidVaultJsonFile(bakPath))
+                {
+                    bestData = File.ReadAllText(bakPath, Encoding.UTF8);
+                    File.Copy(bakPath, vaultPath, true);
+                }
+
+                // 2. Prüfe andere Orte und übernehme Daten falls Hauptdatei leer war
+                string[] candidateRoots = new string[]
                 {
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
                     Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     @"C:\Users\Public",
                     AppDomain.CurrentDomain.BaseDirectory
                 };
 
-                foreach (string r in roots)
+                foreach (string root in candidateRoots)
                 {
-                    if (!string.IsNullOrEmpty(r))
+                    if (string.IsNullOrEmpty(root)) continue;
+                    string dir = Path.Combine(root, "HaushaltsbuchApp");
+
+                    // Wenn es nicht der aktive Ordner ist -> Aufräumen!
+                    if (!string.Equals(dir, activeDir, StringComparison.OrdinalIgnoreCase) && Directory.Exists(dir))
                     {
-                        string p = Path.Combine(r, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
-                        if (!string.Equals(p, _centralVaultPath, StringComparison.OrdinalIgnoreCase))
+                        string foreignVault = Path.Combine(dir, "Haushaltsbuch_Daten.vault");
+                        string foreignBak = Path.Combine(dir, "Haushaltsbuch_Daten.vault.bak");
+
+                        if (string.IsNullOrEmpty(bestData))
                         {
-                            _allBackupVaultPaths.Add(p);
+                            if (IsValidVaultJsonFile(foreignVault))
+                            {
+                                bestData = File.ReadAllText(foreignVault, Encoding.UTF8);
+                                File.WriteAllText(vaultPath, bestData, Encoding.UTF8);
+                                File.WriteAllText(bakPath, bestData, Encoding.UTF8);
+                            }
                         }
+
+                        // Überflüssige Duplikate löschen, damit kein Müll rumliegt
+                        try { if (File.Exists(foreignVault)) File.Delete(foreignVault); } catch { }
+                        try { if (File.Exists(foreignBak)) File.Delete(foreignBak); } catch { }
                     }
                 }
-            }
-            catch { }
-        }
 
-        private static void AutoRepairVaultAcrossAllLocations()
-        {
-            try
-            {
-                if (IsValidVaultJsonFile(_centralVaultPath))
+                // LevelDB Migration falls immer noch leer
+                if (string.IsNullOrEmpty(bestData))
                 {
-                    // Hauptdatei ist gültig -> Backup aktualisieren
-                    SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
-                    return;
-                }
-
-                if (IsValidVaultJsonFile(_centralBakPath))
-                {
-                    File.Copy(_centralBakPath, _centralVaultPath, true);
-                    SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
-                    return;
-                }
-
-                // Suche in allen redundanten Speicherorten
-                foreach (string backupFile in _allBackupVaultPaths)
-                {
-                    if (IsValidVaultJsonFile(backupFile))
+                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    MigrateAllOldDataToDiskVault(vaultPath, localAppData);
+                    if (File.Exists(vaultPath))
                     {
-                        File.Copy(backupFile, _centralVaultPath, true);
-                        SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
-                        return;
+                        try { File.Copy(vaultPath, bakPath, true); } catch { }
                     }
                 }
-
-                // Suche in LevelDB
-                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                MigrateAllOldDataToDiskVault(_centralVaultPath, localAppData);
-            }
-            catch { }
-        }
-
-        private static void SaveVaultToAllRedundantLocations(string body)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(body) || !body.Contains("salt")) return;
-
-                // 1. In .bak der Hauptdatei speichern
-                try { File.WriteAllText(_centralBakPath, body, Encoding.UTF8); } catch { }
-
-                // 2. An allen alternativen Orten spiegeln (z. B. C:\Users\Public)
-                foreach (string path in _allBackupVaultPaths)
+                else
                 {
-                    try
+                    // Exakt 2 Dateien pflegen (.vault und .vault.bak)
+                    if (File.Exists(vaultPath) && !File.Exists(bakPath))
                     {
-                        string dir = Path.GetDirectoryName(path);
-                        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                        File.WriteAllText(path, body, Encoding.UTF8);
+                        try { File.Copy(vaultPath, bakPath, true); } catch { }
                     }
-                    catch { }
                 }
             }
             catch { }
@@ -356,6 +354,7 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        // API: SAVE VAULT (Schreibt exakt in .vault und .vault.bak am selben Ort)
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -374,10 +373,16 @@ namespace HaushaltsbuchApp
                                 string tmpPath = _centralVaultPath + ".tmp";
                                 File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
+                                // 1. Vorherige Version ins Backup kopieren (.vault.bak)
+                                if (File.Exists(_centralVaultPath))
+                                {
+                                    try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
+                                }
+
+                                // 2. Neue Version zur Hauptdatei machen (.vault)
                                 File.Copy(tmpPath, _centralVaultPath, true);
                                 try { File.Delete(tmpPath); } catch { }
 
-                                SaveVaultToAllRedundantLocations(body);
                                 InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
                             }
 
