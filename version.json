@@ -1,16 +1,16 @@
 {
-  "version": "3.1.0",
+  "version": "3.2.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag wie z. B. Freitag)",
+    "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) im Dropdown-Zeitraum-Auswahlfeld",
+    "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag)",
     "Neue Einnahme-Kategorien: Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
     "Google Chrome als 1. Standard-Browser, Mozilla Firefox als 2. Prioritaet",
-    "Microsoft Edge, Brave & Windows-Standard als Fallback",
     "100% Eigenstaendige Einzeldatei-Exe (null feste Entwicklerpfade, laeuft ueberall)",
     "Dauerhafter zentraler Datensafe im Windows-Benutzerprofil",
     "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
-    "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
+    "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Woche, Monat, 3M, 6M, Jahr)",
     "Universeller abwaertskompatibler Backup-Import mit Sofort-Live-Anzeige",
     "AES-GCM 256-Bit Verschluesselung & DSGVO-Datenschutz",
     "Volle NVDA Screenreader Barrierefreiheit"

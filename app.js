@@ -1,3 +1,67 @@
+
+let currentWeekDateStr = new Date().toISOString().split('T')[0];
+
+function getWeekBoundaries(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const diffToMonday = (dayOfWeek + 6) % 7;
+  
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - diffToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const formatDate = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const target = new Date(monday.valueOf());
+  const dayNr = (monday.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3);
+  const firstThursday = target.valueOf();
+  target.setMonth(0, 1);
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  }
+  const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+
+  return {
+    mondayStr: formatDate(monday),
+    sundayStr: formatDate(sunday),
+    weekNum: weekNum,
+    mondayObj: monday,
+    sundayObj: sunday
+  };
+}
+
+function changeWeekRelative(direction) {
+  const d = new Date(currentWeekDateStr + 'T00:00:00');
+  d.setDate(d.getDate() + (direction * 7));
+  currentWeekDateStr = d.toISOString().split('T')[0];
+  renderSubTimeNavigation();
+  updateOverview();
+  const w = getWeekBoundaries(currentWeekDateStr);
+  announceNVDA(`Gewechselt zu Kalenderwoche ${w.weekNum}.`);
+}
+
+function setWeekToCurrent() {
+  currentWeekDateStr = new Date().toISOString().split('T')[0];
+  renderSubTimeNavigation();
+  updateOverview();
+  announceNVDA('Zur aktuellen Kalenderwoche gesprungen.');
+}
+
+function handleWeekChange(val) {
+  if (!val) return;
+  currentWeekDateStr = val;
+  renderSubTimeNavigation();
+  updateOverview();
+}
+
 /**
  * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH (v2.2.0)
  * 100% DSGVO-konform, militärisch verschlüsselt mit AES-GCM 256-Bit
@@ -149,6 +213,7 @@ function handlePeriodDropdownChange(mode) {
 
   const names = {
     day: 'Tages-Ansicht',
+    week: 'Wochen-Ansicht (Kalenderwoche)',
     month: 'Monats-Ansicht',
     quarter: '3-Monate-Ansicht (Quartal)',
     halfyear: '6-Monate-Ansicht (Halbjahr)',
@@ -174,7 +239,7 @@ function renderSubTimeNavigation() {
     select.value = currentOverviewMode;
   }
 
-  if (currentOverviewMode === 'day') {
+    if (currentOverviewMode === 'day') {
     container.innerHTML = `
       <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
         ◀ Gestern
@@ -188,6 +253,25 @@ function renderSubTimeNavigation() {
       </button>
       <button class="btn btn-time-today" onclick="setDayToToday()" title="Zum heutigen Tag springen (Taste T)">
         📍 Heute (T)
+      </button>
+    `;
+  } else if (currentOverviewMode === 'week') {
+    const wb = getWeekBoundaries(currentWeekDateStr);
+    const monFormatted = formatDateGerman(wb.mondayStr);
+    const sunFormatted = formatDateGerman(wb.sundayStr);
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeWeekRelative(-1)" title="Eine Woche zurückgehen" aria-label="Vorherige Woche">
+        ◀ Vorherige Woche
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-week-select" class="time-select-label">📆 <strong>KW ${wb.weekNum} (${wb.mondayStr.slice(8,10)}.${wb.mondayStr.slice(5,7)}. - ${wb.sundayStr.slice(8,10)}.${wb.sundayStr.slice(5,7)}.):</strong></label>
+        <input type="date" id="global-week-select" class="time-date-input" value="${currentWeekDateStr}" onchange="handleWeekChange(this.value)" title="Datum in der gewünschten Woche wählen">
+      </div>
+      <button class="btn btn-time-nav" onclick="changeWeekRelative(1)" title="Eine Woche vorwärtsgehen" aria-label="Nächste Woche">
+        Nächste Woche ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setWeekToCurrent()" title="Zur aktuellen Woche springen">
+        📆 Diese Woche
       </button>
     `;
   } else if (currentOverviewMode === 'month') {
