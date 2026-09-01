@@ -1,21 +1,13 @@
 {
-  "version": "3.6.0",
+  "version": "3.7.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Master Audited Release (100% gepruefte Sicherheit, Barrierefreiheit und mathematische Genauigkeit)",
-    "Echte atomare Festplatten-Speicherung (Haushaltsbuch_Daten.vault) mit automatischem Backup-Schutz (.bak)",
-    "Lokaler, gesicherter Festplatten-Dienst mit Origin-Pruefung gegen boesartige Webseiten",
-    "Automatische Datenrettung: Findet und stellt alte Daten aus allen Browsern (Edge, Chrome, Brave) automatisch wieder her",
-    "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) im Dropdown-Zeitraum-Auswahlfeld",
-    "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag)",
-    "Neue Einnahme-Kategorien: Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
-    "Google Chrome als 1. Standard-Browser, Mozilla Firefox als 2. Prioritaet, Edge/Brave/System als Fallback",
-    "100% Eigenstaendige Einzeldatei-Exe (null feste Entwicklerpfade, laeuft ueberall)",
-    "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
-    "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Woche, Monat, 3M, 6M, Jahr)",
-    "Universeller abwaertskompatibler Backup-Import mit Sofort-Live-Anzeige",
-    "AES-GCM 256-Bit Verschluesselung & DSGVO-Datenschutz",
-    "Volle NVDA Screenreader Barrierefreiheit (WCAG 2.2 AAA)"
+    "Frische eigenstaendige Haushaltsbuch.exe mit vollem Festplatten-Tresor (Haushaltsbuch_Daten.vault)",
+    "Automatische Datenmigration & Schutz gegen jeden Datenverlust",
+    "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) & Woechentliche Dauerauftraege",
+    "Einnahmen fuer Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
+    "Standard-Browser: 1. Google Chrome, 2. Mozilla Firefox, 3. Edge/Brave/System",
+    "Volle Barrierefreiheit fuer NVDA Screenreader (WCAG 2.2 AAA)"
   ]
 }
