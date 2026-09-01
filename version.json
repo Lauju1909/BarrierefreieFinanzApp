@@ -1,14 +1,14 @@
 {
-  "version": "4.1.0",
+  "version": "4.2.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "NVDA-Sprachoptimierung: Kein unnoetiges 'Geben Sie oben einen Preis ein' mehr beim Wechseln von Tag, Woche, Monat oder Jahr",
+    "Volle Uebersicht: Jede Buchung (einmalig & dauerhaft) direkt in der Uebersicht bearbeitbar und loeschbar",
+    "Multi-Layer Selbst-Reparatur: Automatische Reparatur beschaedigter Dateien aus .bak, IndexedDB und LocalStorage",
     "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
-    "Dauerhafter Festplatten-Tresor (Haushaltsbuch_Daten.vault) mit Heartbeat-Keepalive",
-    "Nie wieder Datenverlust beim Schliessen und Wieder-Oeffnen der App",
+    "NVDA-Sprachoptimierung: Vollkommen ruhige und praezise Screenreader-Navigation",
     "Wochen-Uebersicht (KW) & Woechentliche Dauerauftraege",
-    "Blindengeld & Pflegegeld Einnahmekategorien",
+    "Blindengeld & Pflegegeld Einnahmen",
     "Standard-Browser: 1. Google Chrome, 2. Mozilla Firefox, 3. Edge/Brave/System",
     "Volle Barrierefreiheit fuer NVDA Screenreader (WCAG 2.2 AAA)"
   ]

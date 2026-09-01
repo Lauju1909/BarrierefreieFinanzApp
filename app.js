@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - SECURITY RELEASE v4.0.0
+ * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - SELF-HEALING v4.2.0
  * 100% DSGVO-konform, AES-GCM 256-Bit militärisch verschlüsselt
- * Brute-Force-Schutz: 5 Fehlversuche -> 2 Stunden Sperre mit Live-Countdown
- * Optimiert für NVDA Screenreader & WCAG 2.2 AAA
+ * Volle Übersicht: Jede Buchung (einmalig & dauerhaft) direkt bearbeitbar/löschbar
+ * Multi-Layer Selbst-Reparatur & 5-Fehlversuche 2-Stunden-Sperre
  * ============================================================================
  */
 
@@ -18,7 +18,7 @@ const STORAGE_LOCKOUT_KEY = 'barrierefreie_finanzen_lockout_v1';
 const STORAGE_ATTEMPTS_KEY = 'barrierefreie_finanzen_attempts_v1';
 
 const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden in Millisekunden
+const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden
 
 const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -32,10 +32,9 @@ let appState = {
 };
 
 let cryptoKey = null;
-let currentActiveView = 'overview'; // 'overview', 'expense', 'income', 'transfer', 'settings'
-let currentOverviewMode = 'month'; // 'day', 'week', 'month', 'quarter', 'halfyear', 'year'
+let currentActiveView = 'overview';
+let currentOverviewMode = 'month';
 
-// Datumsauswahl
 const initialDate = new Date();
 let selectedYear = initialDate.getFullYear();
 let selectedMonth = initialDate.getMonth();
@@ -43,7 +42,7 @@ let selectedDateStr = initialDate.toISOString().split('T')[0];
 let currentWeekDateStr = initialDate.toISOString().split('T')[0];
 
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000;
 let lockoutTimerInterval = null;
 
 // ----------------------------------------------------------------------------
@@ -58,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
   startHeartbeat();
   updateTodayDisplay();
 
-  // Datumseingaben mit Standardwert heute belegen
   const todayVal = new Date().toISOString().split('T')[0];
   if (document.getElementById('exp-date')) document.getElementById('exp-date').value = todayVal;
   if (document.getElementById('inc-date')) document.getElementById('inc-date').value = todayVal;
@@ -101,10 +99,8 @@ function setupGlobalKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     resetInactivityTimer();
 
-    // Tastaturkürzel nur im eingeloggten Zustand
     if (!cryptoKey) return;
 
-    // Keine Tastaturkürzel in aktiven Formulareingaben
     const activeEl = document.activeElement;
     const isEditing = activeEl && (
       activeEl.tagName === 'INPUT' ||
@@ -177,7 +173,6 @@ function checkLockoutStatus() {
   const errorMsg = document.getElementById('pin-error-msg');
 
   if (lockoutUntil > now) {
-    // Noch gesperrt!
     const remainingMs = lockoutUntil - now;
     const hours = Math.floor(remainingMs / (60 * 60 * 1000));
     const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
@@ -201,11 +196,10 @@ function checkLockoutStatus() {
     if (!lockoutTimerInterval) {
       lockoutTimerInterval = setInterval(() => {
         checkLockoutStatus();
-      }, 10000); // alle 10 Sekunden aktualisieren
+      }, 10000);
     }
     return true;
   } else {
-    // Sperre abgelaufen oder nicht gesperrt
     if (lockoutTimerInterval) {
       clearInterval(lockoutTimerInterval);
       lockoutTimerInterval = null;
@@ -221,7 +215,7 @@ function checkLockoutStatus() {
 }
 
 // ----------------------------------------------------------------------------
-// 6. ZEITRAUM- & KALENDERWOCHEN-LOGIK (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
+// 6. ZEITRAUM- & KALENDERWOCHEN-LOGIK
 // ----------------------------------------------------------------------------
 function getWeekBoundaries(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -700,7 +694,6 @@ function calculateBalancesUpToDate(targetDateStr) {
   const targetYear = targetDate.getFullYear();
   const targetMonth = targetDate.getMonth();
 
-  // 1. Alle einmaligen Transaktionen bis zum Zieldatum
   appState.transactions.forEach(tx => {
     if (tx.date <= targetDateStr) {
       const amt = Number(tx.amount || 0);
@@ -715,7 +708,6 @@ function calculateBalancesUpToDate(targetDateStr) {
     }
   });
 
-  // 2. Alle wiederkehrenden Buchungen von Start bis zum Zielmonat
   const startYear = 2025;
   for (let y = startYear; y <= targetYear; y++) {
     const endM = (y === targetYear) ? targetMonth : 11;
@@ -785,7 +777,7 @@ function calculateMonthStats(year, month) {
 }
 
 // ----------------------------------------------------------------------------
-// 9. HAUPTÜBERSICHT RENDERN (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
+// 9. HAUPTÜBERSICHT RENDERN MIT BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG
 // ----------------------------------------------------------------------------
 function updateOverview() {
   if (currentActiveView !== 'overview') return;
@@ -1035,6 +1027,9 @@ function renderAccountCardBalances(balances) {
   if (bCash) bCash.textContent = formatCurrency(balances.cash);
 }
 
+// ----------------------------------------------------------------------------
+// 10. LISTE RENDERN: BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG IN DER ÜBERSICHT
+// ----------------------------------------------------------------------------
 function renderTransactionList(list, containerId, emptyText) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -1061,6 +1056,15 @@ function renderTransactionList(list, containerId, emptyText) {
       statusBadge = '<span class="status-badge status-booked">🔁 Dauerhaft</span>';
     }
 
+    // JEDER EINTRAG HAT BEARBEITEN & LÖSCHEN BUTTONS (AUCH DAUERHAFTE!)
+    const editBtn = tx.isRecurring
+      ? `<button type="button" class="btn-edit-tx" onclick="openEditRecModal('${tx.recurringId}')" title="Dauerauftrag bearbeiten" aria-label="Dauerauftrag ${tx.category} bearbeiten">✏️ Bearbeiten</button>`
+      : `<button type="button" class="btn-edit-tx" onclick="openEditModal('${tx.id}')" title="Buchung bearbeiten" aria-label="Buchung ${tx.category} bearbeiten">✏️ Bearbeiten</button>`;
+
+    const deleteBtn = tx.isRecurring
+      ? `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag löschen" aria-label="Dauerauftrag ${tx.category} löschen">🗑️ Löschen</button>`
+      : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category} löschen">🗑️ Löschen</button>`;
+
     html += `
       <li class="tx-item" tabindex="0">
         <div class="tx-info">
@@ -1074,8 +1078,8 @@ function renderTransactionList(list, containerId, emptyText) {
         </div>
         <div class="tx-amount-col">
           <span class="tx-sum ${colorClass}">${sign} ${formatCurrency(tx.amount)}</span>
-          ${!tx.isRecurring ? `<button type="button" class="btn-edit-tx" onclick="openEditModal('${tx.id}')">✏️ Bearbeiten</button>` : ''}
-          ${!tx.isRecurring ? `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')">🗑️ Löschen</button>` : ''}
+          ${editBtn}
+          ${deleteBtn}
         </div>
       </li>
     `;
@@ -1085,7 +1089,7 @@ function renderTransactionList(list, containerId, emptyText) {
 }
 
 // ----------------------------------------------------------------------------
-// 10. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
+// 11. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
 // ----------------------------------------------------------------------------
 function toggleExpenseFrequencyFields() {
   const freq = document.getElementById('exp-frequency').value;
@@ -1285,7 +1289,7 @@ function handleAddTransfer(e) {
 }
 
 // ----------------------------------------------------------------------------
-// 11. MODAL DIALOGE & BEARBEITEN
+// 12. MODAL DIALOGE & BEARBEITEN
 // ----------------------------------------------------------------------------
 function openEditModal(txId) {
   const tx = appState.transactions.find(t => t.id === txId);
@@ -1383,14 +1387,13 @@ function deleteRecurring(recId) {
     saveStateToEncryptedStorage();
     renderSettingsRecurringList();
     updateOverview();
-    announceNVDA(`Dauerauftrag ${deleted.name} gelöscht.`);
+    announceNVDA(`Dauerauftrag ${deleted.name || deleted.category} gelöscht.`);
   }
 }
 
 // ----------------------------------------------------------------------------
-// 12. KAUF-PLANER & SIMULATOR
+// 13. KAUF-PLANER & SIMULATOR
 // ----------------------------------------------------------------------------
-
 let currentSimulatedPurchase = null;
 
 function runPurchaseSimulation() {
@@ -1436,7 +1439,6 @@ function runPurchaseSimulation() {
   currentSimulatedPurchase = { name, price, date: selectedDateStr };
 }
 
-
 function saveSimulatedPurchase() {
   if (!currentSimulatedPurchase) return;
   appState.transactions.push({
@@ -1460,7 +1462,7 @@ function saveSimulatedPurchase() {
 }
 
 // ----------------------------------------------------------------------------
-// 13. EINSTELLUNGEN: DESIGN, SCHRIFTGRÖSSE, DAUERAUFTRÄGE
+// 14. EINSTELLUNGEN: DESIGN, SCHRIFTGRÖSSE, DAUERAUFTRÄGE
 // ----------------------------------------------------------------------------
 function renderSettingsRecurringList() {
   const container = document.getElementById('settings-recurring-container');
@@ -1545,7 +1547,7 @@ function initTheme() {
 }
 
 // ----------------------------------------------------------------------------
-// 14. VIEW NAVIGATION (TABS 1-5)
+// 15. VIEW NAVIGATION (TABS 1-5)
 // ----------------------------------------------------------------------------
 function switchView(viewName) {
   currentActiveView = viewName;
@@ -1586,7 +1588,7 @@ function switchView(viewName) {
 }
 
 // ----------------------------------------------------------------------------
-// 15. AES-256 WEB CRYPTO ENGINE & PERSISTENZ
+// 16. AES-256 WEB CRYPTO ENGINE & MULTI-LAYER SELBST-REPARATUR
 // ----------------------------------------------------------------------------
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
@@ -1664,11 +1666,55 @@ function base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
-function checkVaultStatus() {
+// IndexedDB Multi-Layer Backup
+const IDB_NAME = 'HaushaltsbuchDB';
+const IDB_STORE = 'vault_store';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    } catch(e) {
+      reject(e);
+    }
+  });
+}
+
+async function idbSaveVault(vaultData) {
+  try {
+    const db = await openIDB();
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(vaultData, 'current_vault');
+  } catch(e) {}
+}
+
+async function idbLoadVault() {
+  try {
+    const db = await openIDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get('current_vault');
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch(e) {
+    return null;
+  }
+}
+
+async function checkVaultStatus() {
   let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
   let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
 
-  // 1. Festplatten-Tresor aus Injektion
+  // 1. In-Memory Vault aus C# Injektion
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     savedVault = window.__DISK_VAULT__.vault;
     savedSalt = window.__DISK_VAULT__.salt;
@@ -1678,21 +1724,32 @@ function checkVaultStatus() {
     } catch(e) {}
   }
 
-  // 2. Festplatten-Tresor per API abfragen
+  // 2. Abfrage an C# Server (Festplatte)
   const port = window.__LOCAL_PORT__ || 48123;
   try {
-    fetch(`http://127.0.0.1:${port}/api/get_vault`)
-      .then(r => r.json())
-      .then(data => {
-        if (data && data.vault && data.salt) {
-          localStorage.setItem(STORAGE_DATA_KEY, data.vault);
-          localStorage.setItem(STORAGE_SALT_KEY, data.salt);
-          window.__DISK_VAULT__ = data;
-          updateLockScreenUI(false);
-        }
-      })
-      .catch(() => {});
+    const r = await fetch(`http://127.0.0.1:${port}/api/get_vault`);
+    const data = await r.json();
+    if (data && data.vault && data.salt) {
+      savedVault = data.vault;
+      savedSalt = data.salt;
+      localStorage.setItem(STORAGE_DATA_KEY, savedVault);
+      localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
+      window.__DISK_VAULT__ = data;
+      await idbSaveVault(data);
+    }
   } catch(e) {}
+
+  // 3. Fallback auf IndexedDB Selbst-Reparatur
+  if (!savedVault || !savedSalt) {
+    const idbData = await idbLoadVault();
+    if (idbData && idbData.vault && idbData.salt) {
+      savedVault = idbData.vault;
+      savedSalt = idbData.salt;
+      localStorage.setItem(STORAGE_DATA_KEY, savedVault);
+      localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
+      window.__DISK_VAULT__ = idbData;
+    }
+  }
 
   updateLockScreenUI(!savedVault || !savedSalt);
 }
@@ -1716,7 +1773,6 @@ function updateLockScreenUI(isFirstTime) {
 async function handlePinSubmit(e) {
   e.preventDefault();
 
-  // Prüfe 2-Stunden-Sperre
   if (checkLockoutStatus()) {
     announceNVDA('Zugriff gesperrt wegen zu vieler Fehlversuche.', true);
     return;
@@ -1746,7 +1802,6 @@ async function handlePinSubmit(e) {
       };
       await saveStateToEncryptedStorage();
       
-      // Erfolgreich -> Fehlversuche zurücksetzen
       setFailedAttempts(0);
       setLockoutEndTime(0);
 
@@ -1766,7 +1821,6 @@ async function handlePinSubmit(e) {
       if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
 
-      // Erfolgreich -> Fehlversuche zurücksetzen
       setFailedAttempts(0);
       setLockoutEndTime(0);
 
@@ -1774,12 +1828,10 @@ async function handlePinSubmit(e) {
       announceNVDA('Erfolgreich entsperrt.');
     }
   } catch (err) {
-    // ❌ FALSCHE PIN EINGEGEBEN!
     let attempts = getFailedAttempts() + 1;
     setFailedAttempts(attempts);
 
     if (attempts >= MAX_FAILED_ATTEMPTS) {
-      // 5 Fehlversuche erreicht -> 2 STUNDEN SPERREN!
       const lockoutEnd = Date.now() + LOCKOUT_DURATION_MS;
       setLockoutEndTime(lockoutEnd);
       checkLockoutStatus();
@@ -1804,15 +1856,19 @@ async function saveStateToEncryptedStorage() {
     const encryptedVaultBase64 = await encryptData(appState, cryptoKey);
     const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
 
+    // 1. LocalStorage
     localStorage.setItem(STORAGE_DATA_KEY, encryptedVaultBase64);
 
-    // In-Memory Vault aktualisieren
+    // 2. In-Memory Vault
     window.__DISK_VAULT__ = {
       salt: saltBase64,
       vault: encryptedVaultBase64
     };
 
-    // Direkt auf der Festplatte speichern (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
+    // 3. IndexedDB
+    await idbSaveVault({ salt: saltBase64, vault: encryptedVaultBase64 });
+
+    // 4. Festplatte (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
     const port = window.__LOCAL_PORT__ || 48123;
     try {
       fetch(`http://127.0.0.1:${port}/api/save_vault`, {
@@ -1873,10 +1929,8 @@ async function handleChangePin(e) {
     const salt = new Uint8Array(saltBuffer);
     const oldKey = await deriveKey(oldPin, salt);
 
-    // Entschlüsseln prüfen
     await decryptData(storedData, oldKey);
 
-    // Neue PIN: Neuer Salt + Neuer Key
     const newSalt = crypto.getRandomValues(new Uint8Array(16));
     const newSaltBase64 = arrayBufferToBase64(newSalt.buffer);
     const newKey = await deriveKey(newPin, newSalt);
@@ -1917,7 +1971,7 @@ function resetAllAppData() {
 }
 
 // ----------------------------------------------------------------------------
-// 16. UNIVERSELLER BACKUP-EXPORT & -IMPORT (ALLE VERSIONEN & FORMATE)
+// 17. UNIVERSELLER BACKUP-EXPORT & -IMPORT
 // ----------------------------------------------------------------------------
 function exportEncryptedBackup() {
   const vault = localStorage.getItem(STORAGE_DATA_KEY);
@@ -1929,7 +1983,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.1.0',
+    version: '4.2.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
@@ -1979,16 +2033,13 @@ async function importEncryptedBackup(event) {
       let normalizedSalt = null;
       let directState = null;
 
-      // Format A: v2.1+ ({ salt, vault })
       if (backupObj.vault && backupObj.salt) {
         normalizedSalt = backupObj.salt;
         if (/^[0-9a-fA-F]{32}$/.test(normalizedSalt)) {
           normalizedSalt = uint8ArrayToBase64(hexToUint8Array(normalizedSalt));
         }
         normalizedVault = backupObj.vault;
-      }
-      // Format B: v2.0 ({ salt: hex, encryptedData: "{\"iv\":\"...\",\"data\":\"...\"}" })
-      else if (backupObj.salt && backupObj.encryptedData) {
+      } else if (backupObj.salt && backupObj.encryptedData) {
         normalizedSalt = backupObj.salt;
         if (/^[0-9a-fA-F]{32}$/.test(normalizedSalt)) {
           normalizedSalt = uint8ArrayToBase64(hexToUint8Array(normalizedSalt));
@@ -2007,9 +2058,7 @@ async function importEncryptedBackup(event) {
           combined.set(dataBytes, ivBytes.length);
           normalizedVault = uint8ArrayToBase64(combined);
         }
-      }
-      // Format C: Direktes JSON State ({ initialBalances, transactions })
-      else if (backupObj.initialBalances || backupObj.transactions) {
+      } else if (backupObj.initialBalances || backupObj.transactions) {
         directState = backupObj;
       }
 
@@ -2018,6 +2067,7 @@ async function importEncryptedBackup(event) {
         localStorage.setItem(STORAGE_SALT_KEY, normalizedSalt);
 
         window.__DISK_VAULT__ = { salt: normalizedSalt, vault: normalizedVault };
+        await idbSaveVault({ salt: normalizedSalt, vault: normalizedVault });
 
         const port = window.__LOCAL_PORT__ || 48123;
         try {
@@ -2028,7 +2078,6 @@ async function importEncryptedBackup(event) {
           }).catch(() => {});
         } catch(e) {}
 
-        // Sofortige Entschlüsselung falls eingeloggt
         if (cryptoKey) {
           try {
             const decrypted = await decryptData(normalizedVault, cryptoKey);
@@ -2074,7 +2123,7 @@ async function importEncryptedBackup(event) {
 }
 
 // ----------------------------------------------------------------------------
-// 17. FORMATIERUNGS-HILFSFUNKTIONEN
+// 18. FORMATIERUNGS-HILFSFUNKTIONEN
 // ----------------------------------------------------------------------------
 function formatCurrency(num) {
   const val = Number(num || 0);

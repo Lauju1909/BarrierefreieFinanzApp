@@ -18,6 +18,7 @@ namespace HaushaltsbuchApp
         private const int BASE_PORT = 48123;
 
         private static string _centralVaultPath;
+        private static string _centralBakPath;
         private static string _centralHtmlPath;
         private static HttpListener _httpListener;
         private static Thread _serverThread;
@@ -49,6 +50,7 @@ namespace HaushaltsbuchApp
                 _centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(centralAppDir, "version.json");
                 _centralVaultPath = Path.Combine(centralAppDir, "Haushaltsbuch_Daten.vault");
+                _centralBakPath = Path.Combine(centralAppDir, "Haushaltsbuch_Daten.vault.bak");
 
                 try
                 {
@@ -77,8 +79,8 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(targetHtml);
                 }
 
-                // 4. AUTOMATISCHE DATENRETTUNG AUS ALTEN VERSIONEN IN DIE FESTPLATTEN-DATEI
-                MigrateAllOldDataToDiskVault(_centralVaultPath, localAppData);
+                // 4. SELBST-REPARATUR: DATEIEN PRÜFEN UND BEI BESCHÄDIGUNG AUTOMATISCH REPARIEREN
+                AutoRepairVaultFiles(_centralVaultPath, _centralBakPath, localAppData);
 
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
@@ -93,7 +95,7 @@ namespace HaushaltsbuchApp
                 // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
                 Process browserProc = LaunchBestBrowser(launchUrl, targetHtml, centralProfileDir);
 
-                // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat-Überwachung & Server am Laufen halten!)
+                // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat-Überwachung)
                 _lastHeartbeat = DateTime.Now;
                 int checks = 0;
                 while (_isRunning)
@@ -101,7 +103,6 @@ namespace HaushaltsbuchApp
                     Thread.Sleep(1000);
                     checks++;
 
-                    // Wenn nach 10 Sekunden kein Lebenszeichen mehr vom Browser kommt (Browser geschlossen) -> sauber beenden
                     if (checks > 10)
                     {
                         TimeSpan idle = DateTime.Now - _lastHeartbeat;
@@ -124,6 +125,48 @@ namespace HaushaltsbuchApp
             catch (Exception ex)
             {
                 MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private static void AutoRepairVaultFiles(string vaultPath, string bakPath, string localAppData)
+        {
+            try
+            {
+                bool isVaultValid = IsValidVaultJsonFile(vaultPath);
+                bool isBakValid = IsValidVaultJsonFile(bakPath);
+
+                // Fall 1: Hauptdatei beschädigt/leer, aber Backup vorhanden -> Aus Backup reparieren!
+                if (!isVaultValid && isBakValid)
+                {
+                    File.Copy(bakPath, vaultPath, true);
+                    return;
+                }
+
+                // Fall 2: Hauptdatei intakt -> Backup aktualisieren
+                if (isVaultValid)
+                {
+                    try { File.Copy(vaultPath, bakPath, true); } catch { }
+                    return;
+                }
+
+                // Fall 3: Weder Haupt- noch Backup-Datei intakt -> Automatische Tiefenrettung aus Browser-LevelDB
+                MigrateAllOldDataToDiskVault(vaultPath, localAppData);
+            }
+            catch { }
+        }
+
+        private static bool IsValidVaultJsonFile(string path)
+        {
+            try
+            {
+                if (!File.Exists(path)) return false;
+                if (new FileInfo(path).Length < 20) return false;
+                string text = File.ReadAllText(path, Encoding.UTF8).Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                return text.StartsWith("{") && text.EndsWith("}") && text.Contains("salt") && text.Contains("vault");
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -156,10 +199,7 @@ namespace HaushaltsbuchApp
                     _serverThread.Start();
                     return true;
                 }
-                catch
-                {
-                    // Port besetzt, naechsten versuchen
-                }
+                catch { }
             }
             return false;
         }
@@ -184,7 +224,7 @@ namespace HaushaltsbuchApp
 
                 string rawUrl = req.Url.AbsolutePath;
 
-                // API: HEARTBEAT (hält Server am Leben solange App offen ist)
+                // API: HEARTBEAT
                 if (rawUrl == "/api/heartbeat")
                 {
                     _lastHeartbeat = DateTime.Now;
@@ -226,21 +266,17 @@ namespace HaushaltsbuchApp
                         {
                             body = body.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
                             
-                            // 1. Atomares Schreiben auf die Festplatte
                             string tmpPath = _centralVaultPath + ".tmp";
-                            string bakPath = _centralVaultPath + ".bak";
-
                             File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
                             if (File.Exists(_centralVaultPath))
                             {
-                                try { File.Copy(_centralVaultPath, bakPath, true); } catch { }
+                                try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
                             }
 
                             File.Copy(tmpPath, _centralVaultPath, true);
                             try { File.Delete(tmpPath); } catch { }
 
-                            // 2. Sofort in die HTML-Datei injizieren
                             InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
                         }
                     }
