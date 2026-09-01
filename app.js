@@ -1711,11 +1711,12 @@ async function idbLoadVault() {
 }
 
 
-async function checkVaultStatus() {
-  let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
-  let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
 
-  // 1. In-Memory Vault aus C# Injektion
+async function checkVaultStatus() {
+  let savedVault = null;
+  let savedSalt = null;
+
+  // 1. In-Memory Vault aus C# Injektion (aus der Datei im EXE-Ordner)
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     savedVault = window.__DISK_VAULT__.vault;
     savedSalt = window.__DISK_VAULT__.salt;
@@ -1725,7 +1726,7 @@ async function checkVaultStatus() {
     } catch(e) {}
   }
 
-  // 2. Abfrage an C# Server (Festplatte)
+  // 2. Abfrage an lokalen Server (liest Haushaltsbuch_Daten.vault im EXE-Ordner)
   const port = window.__LOCAL_PORT__ || 48123;
   try {
     const r = await fetch(`http://127.0.0.1:${port}/api/get_vault`);
@@ -1737,37 +1738,16 @@ async function checkVaultStatus() {
       localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
       window.__DISK_VAULT__ = data;
       await idbSaveVault(data);
+    } else {
+      // Wenn im EXE-Ordner keine Datei existiert -> Bereinige auch Browser-Cache!
+      localStorage.removeItem(STORAGE_DATA_KEY);
+      localStorage.removeItem(STORAGE_SALT_KEY);
+      savedVault = null;
+      savedSalt = null;
     }
   } catch(e) {}
 
-  // 3. Fallback auf IndexedDB Selbst-Reparatur
-  if (!savedVault || !savedSalt) {
-    const idbData = await idbLoadVault();
-    if (idbData && idbData.vault && idbData.salt) {
-      savedVault = idbData.vault;
-      savedSalt = idbData.salt;
-      localStorage.setItem(STORAGE_DATA_KEY, savedVault);
-      localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
-      window.__DISK_VAULT__ = idbData;
-    }
-  }
-
-  // 4. Automatische Tiefenrettung aus alten Versionen (LevelDB / Browser)
-  if (!savedVault || !savedSalt) {
-    try {
-      const recR = await fetch(`http://127.0.0.1:${port}/api/deep_recovery`);
-      const recData = await recR.json();
-      if (recData && recData.vault && recData.salt) {
-        savedVault = recData.vault;
-        savedSalt = recData.salt;
-        localStorage.setItem(STORAGE_DATA_KEY, savedVault);
-        localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
-        window.__DISK_VAULT__ = recData;
-        await idbSaveVault(recData);
-      }
-    } catch(e) {}
-  }
-
+  // Wenn keine Datei im EXE-Ordner liegt -> Neuer PIN-Einrichtungsbildschirm
   updateLockScreenUI(!savedVault || !savedSalt);
 }
 
@@ -1779,11 +1759,11 @@ function updateLockScreenUI(isFirstTime) {
   if (firstTimeHint) firstTimeHint.style.display = isFirstTime ? 'block' : 'none';
 
   if (isFirstTime) {
-    if (lockHeading) lockHeading.textContent = 'Willkommen! PIN eingeben';
-    if (lockInstructions) lockInstructions.textContent = 'Gib deine PIN ein, um dein Haushaltsbuch zu öffnen (oder eine neue PIN festzulegen).';
+    if (lockHeading) lockHeading.textContent = 'Willkommen! Neue PIN festlegen';
+    if (lockInstructions) lockInstructions.textContent = 'Gib eine neue PIN oder ein Passwort ein (z. B. 1234), um deinen sicheren Datentresor in diesem Ordner zu erstellen.';
   } else {
     if (lockHeading) lockHeading.textContent = 'Sicherer AES-256 Zugang';
-    if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:';
+    if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind geschützt. Bitte gib deine PIN oder dein Passwort ein:';
   }
 }
 
@@ -1804,25 +1784,15 @@ async function handlePinSubmit(e) {
   let storedData = localStorage.getItem(STORAGE_DATA_KEY);
   let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
 
-  // Vor dem Erstellen eines leeren Tresors: Tiefenabfrage an C# Deep Recovery!
-  if (!storedData || !saltBase64) {
-    const port = window.__LOCAL_PORT__ || 48123;
-    try {
-      const recR = await fetch(`http://127.0.0.1:${port}/api/deep_recovery`);
-      const recData = await recR.json();
-      if (recData && recData.vault && recData.salt) {
-        storedData = recData.vault;
-        saltBase64 = recData.salt;
-        localStorage.setItem(STORAGE_DATA_KEY, storedData);
-        localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
-        window.__DISK_VAULT__ = recData;
-      }
-    } catch(e) {}
+  // Synchronisation mit Festplattendatei im EXE-Ordner
+  if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
+    storedData = window.__DISK_VAULT__.vault;
+    saltBase64 = window.__DISK_VAULT__.salt;
   }
 
   try {
-    if (!storedData) {
-      // Neuer Datensafe
+    if (!storedData || !saltBase64) {
+      // Neuer Datensafe direkt im EXE-Ordner
       const salt = crypto.getRandomValues(new Uint8Array(16));
       saltBase64 = arrayBufferToBase64(salt.buffer);
       localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
@@ -1839,9 +1809,9 @@ async function handlePinSubmit(e) {
       setLockoutEndTime(0);
 
       unlockApp();
-      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
+      announceNVDA('Neuer Datensafe im aktuellen Ordner erfolgreich eingerichtet.');
     } else {
-      // Vorhandener Datensafe (auch aus vorherigen Versionen!)
+      // Vorhandener Datensafe im EXE-Ordner entsperren
       const saltBuffer = base64ToArrayBuffer(saltBase64);
       const salt = new Uint8Array(saltBuffer);
       const key = await deriveKey(enteredPin, salt);
@@ -1881,7 +1851,6 @@ async function handlePinSubmit(e) {
     }
   }
 }
-
 
 
 async function saveStateToEncryptedStorage() {
@@ -2029,7 +1998,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.7.0',
+    version: '4.8.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,

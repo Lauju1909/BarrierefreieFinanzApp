@@ -45,7 +45,7 @@ namespace HaushaltsbuchApp
 
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
 
-                // 1. SPEICHERORT: DIREKT IM ORDNER DER EXE! (Fallback auf %LOCALAPPDATA% falls keine Schreibrechte)
+                // 1. SPEICHERORT: AUSSCHLIESSLICH IM ORDNER DER EXE
                 _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
                 _profileDir = Path.Combine(_activeStorageDir, "Profile");
                 _htmlPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_App.html");
@@ -60,7 +60,7 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 2. ENTPACKEN ODER INITIALISIEREN DER HTML-DATEI
+                // 2. ENTPACKEN ODER SYNCHRONISIEREN DER HTML-DATEI
                 if (!File.Exists(_htmlPath))
                 {
                     UnpackEmbeddedApp(_htmlPath);
@@ -74,8 +74,8 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(_htmlPath);
                 }
 
-                // 4. MAXIMALE TIEFENRETTUNG: DATEN AUS ALLEN ORTEN DIREKT IN DEN EXE-ORDNER RETTEN
-                PerformUltimateDataRescue(_activeStorageDir, _vaultPath, _bakPath);
+                // 4. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
+                PurgeAllExternalStorageLocations(_activeStorageDir);
 
                 // 5. INJEKTION DER DATEN IN DIE HTML
                 InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
@@ -87,7 +87,7 @@ namespace HaushaltsbuchApp
                     ? string.Format("http://127.0.0.1:{0}/", _activePort) 
                     : ("file:///" + _htmlPath.Replace('\\', '/'));
 
-                // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
+                // 7. BROWSER STARTEN
                 Process browserProc = LaunchBestBrowser(launchUrl, _htmlPath, _profileDir);
 
                 // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat)
@@ -125,7 +125,6 @@ namespace HaushaltsbuchApp
 
         private static string GetPrimaryExeStorageDirectory(string baseDir)
         {
-            // 1. Priorität: DIREKT IM ORDNER DER EXE
             try
             {
                 string testFile = Path.Combine(baseDir, ".write_test_" + Guid.NewGuid().ToString("N"));
@@ -138,7 +137,6 @@ namespace HaushaltsbuchApp
             }
             catch { }
 
-            // 2. Priorität: %LOCALAPPDATA%\HaushaltsbuchApp
             string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
             if (!string.IsNullOrEmpty(localApp))
             {
@@ -151,203 +149,53 @@ namespace HaushaltsbuchApp
                 catch { }
             }
 
-            // 3. Priorität: %APPDATA%\HaushaltsbuchApp
-            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            if (!string.IsNullOrEmpty(appData))
-            {
-                string dir = Path.Combine(appData, "HaushaltsbuchApp");
-                try
-                {
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                    return dir;
-                }
-                catch { }
-            }
-
             return baseDir;
         }
 
-        private static void PerformUltimateDataRescue(string activeDir, string vaultPath, string bakPath)
-        {
-            try
-            {
-                // Wenn Hauptdatei bereits intakt ist -> Backup synchronisieren & fertig
-                if (IsValidVaultJsonFile(vaultPath))
-                {
-                    try { File.Copy(vaultPath, bakPath, true); } catch { }
-                    return;
-                }
-
-                // Wenn Backup intakt ist -> Hauptdatei daraus reparieren
-                if (IsValidVaultJsonFile(bakPath))
-                {
-                    File.Copy(bakPath, vaultPath, true);
-                    return;
-                }
-
-                // Tiefenrettung aus allen früheren Ordnern, Browsern und Backups
-                string foundVault = DeepScanAllPreviousSources();
-                if (!string.IsNullOrEmpty(foundVault))
-                {
-                    File.WriteAllText(vaultPath, foundVault, Encoding.UTF8);
-                    try { File.WriteAllText(bakPath, foundVault, Encoding.UTF8); } catch { }
-                    return;
-                }
-            }
-            catch { }
-        }
-
-        private static string DeepScanAllPreviousSources()
+        private static void PurgeAllExternalStorageLocations(string activeDir)
         {
             try
             {
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-                // 1. Prüfe alte AppData-Ordner
+                List<string> externalDirs = new List<string>();
+
                 if (!string.IsNullOrEmpty(localAppData))
                 {
-                    string old1 = Path.Combine(localAppData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
-                    if (IsValidVaultJsonFile(old1)) return File.ReadAllText(old1, Encoding.UTF8);
-
-                    string oldBak = Path.Combine(localAppData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault.bak");
-                    if (IsValidVaultJsonFile(oldBak)) return File.ReadAllText(oldBak, Encoding.UTF8);
-
-                    string oldDb = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
-                    if (IsValidVaultJsonFile(oldDb)) return File.ReadAllText(oldDb, Encoding.UTF8);
+                    externalDirs.Add(Path.Combine(localAppData, "HaushaltsbuchApp"));
                 }
-
                 if (!string.IsNullOrEmpty(appData))
                 {
-                    string oldRoaming = Path.Combine(appData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
-                    if (IsValidVaultJsonFile(oldRoaming)) return File.ReadAllText(oldRoaming, Encoding.UTF8);
+                    externalDirs.Add(Path.Combine(appData, "HaushaltsbuchApp"));
                 }
 
-                // 2. Scanne LevelDB-Ordner aller Browser (Chrome, Edge, Brave)
-                List<string> candidateFolders = new List<string>();
-                if (!string.IsNullOrEmpty(localAppData))
+                foreach (string dir in externalDirs)
                 {
-                    candidateFolders.Add(Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"));
-                    candidateFolders.Add(Path.Combine(localAppData, @"HaushaltsbuchApp\Profile\Default\Local Storage\leveldb"));
-                    candidateFolders.Add(Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\Local Storage\leveldb"));
-                    candidateFolders.Add(Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\Local Storage\leveldb"));
-
-                    for (int i = 1; i <= 10; i++)
+                    // Lösche nur, wenn es NICHT der aktive EXE-Ordner ist!
+                    if (!string.Equals(Path.GetFullPath(dir), Path.GetFullPath(activeDir), StringComparison.OrdinalIgnoreCase))
                     {
-                        candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Google\Chrome\User Data\Profile {0}\Local Storage\leveldb", i)));
-                        candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Microsoft\Edge\User Data\Profile {0}\Local Storage\leveldb", i)));
-                    }
-                }
-
-                foreach (string dir in candidateFolders)
-                {
-                    if (Directory.Exists(dir))
-                    {
-                        string match = ScanLevelDbWithPrintFilter(dir);
-                        if (!string.IsNullOrEmpty(match)) return match;
-                    }
-                }
-
-                // 3. Scanne Downloads, Desktop, Dokumente nach Backups (.json)
-                string[] userDirs = new string[]
-                {
-                    Path.Combine(userProfile, "Downloads"),
-                    Path.Combine(userProfile, "Desktop"),
-                    Path.Combine(userProfile, "Documents")
-                };
-
-                foreach (string udir in userDirs)
-                {
-                    if (Directory.Exists(udir))
-                    {
-                        string[] files = Directory.GetFiles(udir, "*.json");
-                        foreach (string f in files)
+                        if (Directory.Exists(dir))
                         {
-                            if (IsValidVaultJsonFile(f))
+                            try
                             {
-                                return File.ReadAllText(f, Encoding.UTF8);
+                                string f1 = Path.Combine(dir, "Haushaltsbuch_Daten.vault");
+                                string f2 = Path.Combine(dir, "Haushaltsbuch_Daten.vault.bak");
+                                string f3 = Path.Combine(dir, "database.vault");
+
+                                if (File.Exists(f1)) File.Delete(f1);
+                                if (File.Exists(f2)) File.Delete(f2);
+                                if (File.Exists(f3)) File.Delete(f3);
+
+                                // Wenn der Ordner leer ist, komplett aufräumen
+                                Directory.Delete(dir, true);
                             }
+                            catch { }
                         }
                     }
                 }
             }
             catch { }
-
-            return null;
-        }
-
-        private static string ScanLevelDbWithPrintFilter(string dir)
-        {
-            try
-            {
-                string bestSalt = null;
-                string bestVault = null;
-
-                string[] files = Directory.GetFiles(dir, "*.*");
-                foreach (string file in files)
-                {
-                    if (file.EndsWith(".ldb", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try
-                        {
-                            byte[] bytes;
-                            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            {
-                                using (var ms = new MemoryStream())
-                                {
-                                    fs.CopyTo(ms);
-                                    bytes = ms.ToArray();
-                                }
-                            }
-
-                            StringBuilder sb = new StringBuilder(bytes.Length);
-                            for (int i = 0; i < bytes.Length; i++)
-                            {
-                                byte b = bytes[i];
-                                if (b >= 32 && b <= 126)
-                                {
-                                    sb.Append((char)b);
-                                }
-                            }
-                            string printable = sb.ToString();
-
-                            if (printable.Contains("barrierefreie_finanzen_salt_v1"))
-                            {
-                                Match mSalt = Regex.Match(printable, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44}?)(?:barrierefreie|$|\x00)");
-                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
-                            }
-
-                            if (printable.Contains("barrierefreie_finanzen_enc_v1"))
-                            {
-                                Match mVault = Regex.Match(printable, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,}?)(?:barrierefreie|$|\x00)");
-                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
-                            }
-
-                            if (string.IsNullOrEmpty(bestSalt) && printable.Contains("\"salt\""))
-                            {
-                                Match mSalt = Regex.Match(printable, "\"salt\"\\s*:\\s*\"([A-Za-z0-9+/=]{16,44})\"");
-                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
-                            }
-
-                            if (string.IsNullOrEmpty(bestVault) && printable.Contains("\"vault\""))
-                            {
-                                Match mVault = Regex.Match(printable, "\"vault\"\\s*:\\s*\"([A-Za-z0-9+/=]{50,})\"");
-                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(bestSalt) && !string.IsNullOrEmpty(bestVault))
-                {
-                    return string.Format("{{\"salt\":\"{0}\",\"vault\":\"{1}\"}}", bestSalt, bestVault);
-                }
-            }
-            catch { }
-
-            return null;
         }
 
         private static bool IsValidVaultJsonFile(string path)
@@ -487,16 +335,6 @@ namespace HaushaltsbuchApp
                                 if (string.IsNullOrEmpty(vaultJson)) vaultJson = "{}";
                             }
                             byte[] data = Encoding.UTF8.GetBytes(vaultJson);
-                            SendHttpResponse(stream, 200, "application/json", data);
-                            return;
-                        }
-
-                        if (url.StartsWith("/api/deep_recovery"))
-                        {
-                            _lastHeartbeat = DateTime.Now;
-                            string rescued = DeepScanAllPreviousSources();
-                            if (string.IsNullOrEmpty(rescued)) rescued = "{}";
-                            byte[] data = Encoding.UTF8.GetBytes(rescued);
                             SendHttpResponse(stream, 200, "application/json", data);
                             return;
                         }

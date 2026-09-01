@@ -1,15 +1,16 @@
 {
-  "version": "4.7.0",
+  "version": "4.8.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Direkte Speicherung im Ordner der EXE: Alle Daten (Haushaltsbuch_Daten.vault) liegen direkt neben der Haushaltsbuch.exe",
-    "100% Portabel & Transparent: Ideal fuer Desktop, USB-Stick oder eigene Ordner",
-    "Maximaler Fehlerschutz: Vollstaendig gepufferter TCP HTTP-Server & atomare Speicherung",
-    "All-Version Tiefenrettung: Erkennt und uebertraegt alte Daten aus allen vorherigen Versionen direkt in den EXE-Ordner",
-    "Direkt-Wiederherstellung auf dem Sperrbildschirm: 1-Klick Import",
+    "Strikte Einzelordner-Speicherung: Nur noch exakt die Datei im Ordner der EXE wird verwendet",
+    "Automatische Bereinigung: Alle alten externen Kopien und Duplikate werden beim Start automatisch geloescht",
+    "Keine Geisterdaten: Wenn du deine Datei loeschst, startet die App sauber neu und holt keine alten Daten mehr aus fremden Ordnern zurueck",
+    "Manuelle Sicherungs-Wiederherstellung auf Wunsch ueber den Sperrbildschirm-Button verfuegbar",
+    "100% Portabel: Laeuft direkt aus jedem Ordner oder USB-Stick",
+    "Maximaler Fehlerschutz mit gepuffertem TCP-Server",
     "Volle Uebersicht: Jede Buchung direkt bearbeitbar und loeschbar",
-    "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
-    "NVDA-Sprachoptimierung: Ruhige Screenreader-Bedienung (WCAG 2.2 AAA)"
+    "2-Stunden-Sperre nach 5 Fehlversuchen",
+    "NVDA-Sprachoptimierung (WCAG 2.2 AAA)"
   ]
 }
