@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,7 +21,7 @@ namespace HaushaltsbuchApp
         private static string _centralVaultPath;
         private static string _centralBakPath;
         private static string _centralHtmlPath;
-        private static HttpListener _httpListener;
+        private static TcpListener _tcpListener;
         private static Thread _serverThread;
         private static int _activePort = BASE_PORT;
         private static DateTime _lastHeartbeat = DateTime.Now;
@@ -37,7 +38,7 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. FESTE SPEICHERPFADE AUF DER FESTPLATTE (FUER ALLE VERSIONEN IMMER AM SELBEN ORT!)
+                // 1. FESTE SPEICHERPFADE IM BENUTZERVERZEICHNIS (KEINE ADMIN-RECHTE ERFORDERLICH!)
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
@@ -85,7 +86,7 @@ namespace HaushaltsbuchApp
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. LOKALEN SERVER STARTEN
+                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN (TcpListener - Funktioniert ohne Admin-Rechte auf jedem PC!)
                 bool serverStarted = StartLocalVaultServer();
 
                 string launchUrl = serverStarted 
@@ -117,9 +118,9 @@ namespace HaushaltsbuchApp
                     }
                 }
 
-                if (_httpListener != null)
+                if (_tcpListener != null)
                 {
-                    try { _httpListener.Stop(); } catch { }
+                    try { _tcpListener.Stop(); } catch { }
                 }
             }
             catch (Exception ex)
@@ -176,21 +177,20 @@ namespace HaushaltsbuchApp
             {
                 try
                 {
-                    var listener = new HttpListener();
-                    listener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", port));
+                    var listener = new TcpListener(IPAddress.Loopback, port);
                     listener.Start();
 
-                    _httpListener = listener;
+                    _tcpListener = listener;
                     _activePort = port;
 
                     _serverThread = new Thread(() =>
                     {
-                        while (_isRunning && _httpListener != null && _httpListener.IsListening)
+                        while (_isRunning && _tcpListener != null)
                         {
                             try
                             {
-                                var ctx = _httpListener.GetContext();
-                                ThreadPool.QueueUserWorkItem((state) => HandleHttpRequest(ctx));
+                                var client = _tcpListener.AcceptTcpClient();
+                                ThreadPool.QueueUserWorkItem((state) => HandleTcpClient(client));
                             }
                             catch { }
                         }
@@ -204,105 +204,132 @@ namespace HaushaltsbuchApp
             return false;
         }
 
-        private static void HandleHttpRequest(HttpListenerContext ctx)
+        private static void HandleTcpClient(TcpClient client)
         {
             try
             {
-                var req = ctx.Request;
-                var res = ctx.Response;
-
-                res.Headers.Add("Access-Control-Allow-Origin", "*");
-                res.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                res.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-
-                if (req.HttpMethod == "OPTIONS")
+                using (client)
                 {
-                    res.StatusCode = 200;
-                    res.Close();
-                    return;
-                }
-
-                string rawUrl = req.Url.AbsolutePath;
-
-                // API: HEARTBEAT
-                if (rawUrl == "/api/heartbeat")
-                {
-                    _lastHeartbeat = DateTime.Now;
-                    byte[] buf = Encoding.UTF8.GetBytes("{\"status\":\"alive\"}");
-                    res.ContentType = "application/json; charset=utf-8";
-                    res.ContentLength64 = buf.Length;
-                    res.OutputStream.Write(buf, 0, buf.Length);
-                    res.Close();
-                    return;
-                }
-
-                // API: TRESOR VON FESTPLATTE LADEN
-                if (rawUrl == "/api/get_vault")
-                {
-                    _lastHeartbeat = DateTime.Now;
-                    string vaultJson = "{}";
-                    if (File.Exists(_centralVaultPath))
+                    using (var stream = client.GetStream())
                     {
-                        vaultJson = File.ReadAllText(_centralVaultPath, Encoding.UTF8);
-                        vaultJson = vaultJson.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
-                        if (string.IsNullOrEmpty(vaultJson)) vaultJson = "{}";
-                    }
-                    byte[] buf = Encoding.UTF8.GetBytes(vaultJson);
-                    res.ContentType = "application/json; charset=utf-8";
-                    res.ContentLength64 = buf.Length;
-                    res.OutputStream.Write(buf, 0, buf.Length);
-                    res.Close();
-                    return;
-                }
+                        var buffer = new byte[65536];
+                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
+                        if (bytesRead <= 0) return;
 
-                // API: TRESOR DIREKT UND DAUERHAFT AUF FESTPLATTE SPEICHERN
-                if (rawUrl == "/api/save_vault" && req.HttpMethod == "POST")
-                {
-                    _lastHeartbeat = DateTime.Now;
-                    using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
-                    {
-                        string body = reader.ReadToEnd();
-                        if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
+                        string rawReq = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                        string[] lines = rawReq.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                        if (lines.Length == 0) return;
+
+                        string[] reqLine = lines[0].Split(' ');
+                        if (reqLine.Length < 2) return;
+
+                        string method = reqLine[0].ToUpper();
+                        string url = reqLine[1];
+
+                        // OPTIONS (CORS Pre-flight)
+                        if (method == "OPTIONS")
                         {
-                            body = body.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
-                            
-                            string tmpPath = _centralVaultPath + ".tmp";
-                            File.WriteAllText(tmpPath, body, Encoding.UTF8);
+                            SendHttpResponse(stream, 200, "text/plain", new byte[0]);
+                            return;
+                        }
 
+                        // API: HEARTBEAT
+                        if (url.StartsWith("/api/heartbeat"))
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"alive\"}");
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
+                        // API: GET VAULT
+                        if (url.StartsWith("/api/get_vault"))
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            string vaultJson = "{}";
                             if (File.Exists(_centralVaultPath))
                             {
-                                try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
+                                vaultJson = File.ReadAllText(_centralVaultPath, Encoding.UTF8);
+                                vaultJson = vaultJson.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                                if (string.IsNullOrEmpty(vaultJson)) vaultJson = "{}";
+                            }
+                            byte[] data = Encoding.UTF8.GetBytes(vaultJson);
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
+                        // API: SAVE VAULT (POST)
+                        if (url.StartsWith("/api/save_vault") && method == "POST")
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            
+                            int headerEnd = rawReq.IndexOf("\r\n\r\n");
+                            string body = "";
+                            if (headerEnd >= 0)
+                            {
+                                body = rawReq.Substring(headerEnd + 4);
                             }
 
-                            File.Copy(tmpPath, _centralVaultPath, true);
-                            try { File.Delete(tmpPath); } catch { }
+                            if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
+                            {
+                                body = body.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                                
+                                string tmpPath = _centralVaultPath + ".tmp";
+                                File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
-                            InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
+                                if (File.Exists(_centralVaultPath))
+                                {
+                                    try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
+                                }
+
+                                File.Copy(tmpPath, _centralVaultPath, true);
+                                try { File.Delete(tmpPath); } catch { }
+
+                                InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
+                            }
+
+                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
                         }
+
+                        // HAUPTSEITE HTML
+                        if (File.Exists(_centralHtmlPath))
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            byte[] htmlBytes = File.ReadAllBytes(_centralHtmlPath);
+                            SendHttpResponse(stream, 200, "text/html", htmlBytes);
+                            return;
+                        }
+
+                        SendHttpResponse(stream, 404, "text/plain", Encoding.UTF8.GetBytes("Not Found"));
                     }
-
-                    byte[] buf = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
-                    res.ContentType = "application/json; charset=utf-8";
-                    res.ContentLength64 = buf.Length;
-                    res.OutputStream.Write(buf, 0, buf.Length);
-                    res.Close();
-                    return;
                 }
+            }
+            catch { }
+        }
 
-                // HAUPTSEITE AUSLIEFERN
-                if (File.Exists(_centralHtmlPath))
+        private static void SendHttpResponse(Stream stream, int statusCode, string contentType, byte[] payload)
+        {
+            try
+            {
+                string statusText = statusCode == 200 ? "OK" : (statusCode == 404 ? "Not Found" : "Error");
+                StringBuilder sb = new StringBuilder();
+                sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
+                sb.Append("Access-Control-Allow-Origin: *\r\n");
+                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
+                sb.Append("Access-Control-Allow-Headers: Content-Type\r\n");
+                sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
+                sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));
+                sb.Append("Connection: close\r\n\r\n");
+
+                byte[] headerBytes = Encoding.UTF8.GetBytes(sb.ToString());
+                stream.Write(headerBytes, 0, headerBytes.Length);
+                if (payload.Length > 0)
                 {
-                    _lastHeartbeat = DateTime.Now;
-                    byte[] htmlBytes = File.ReadAllBytes(_centralHtmlPath);
-                    res.ContentType = "text/html; charset=utf-8";
-                    res.ContentLength64 = htmlBytes.Length;
-                    res.OutputStream.Write(htmlBytes, 0, htmlBytes.Length);
-                    res.Close();
-                    return;
+                    stream.Write(payload, 0, payload.Length);
                 }
-
-                res.StatusCode = 404;
-                res.Close();
+                stream.Flush();
             }
             catch { }
         }
