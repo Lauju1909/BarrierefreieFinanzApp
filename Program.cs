@@ -301,13 +301,13 @@ namespace HaushaltsbuchApp
 
                             if (printable.Contains("barrierefreie_finanzen_salt_v1"))
                             {
-                                Match mSalt = Regex.Match(printable, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44})");
+                                Match mSalt = Regex.Match(printable, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44}?)(?:barrierefreie|$|\x00)");
                                 if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
                             }
 
                             if (printable.Contains("barrierefreie_finanzen_enc_v1"))
                             {
-                                Match mVault = Regex.Match(printable, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,})");
+                                Match mVault = Regex.Match(printable, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,}?)(?:barrierefreie|$|\x00)");
                                 if (mVault.Success) bestVault = mVault.Groups[1].Value;
                             }
 
