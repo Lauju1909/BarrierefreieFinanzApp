@@ -1,15 +1,14 @@
 {
-  "version": "2.7.0",
+  "version": "2.8.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Design & Kontrasteinstellungen in Einstellungen verlegt (Standard: Hell wie jede Internetseite)",
-    "Einstellbare Schriftgroessen: Normal (100%), Gross (125%) und Sehr Gross (150%)",
+    "Universelle Windows-Kompatibilitaet (laeuft auf 100% aller Windows-PCs: Win 7, 8, 10, 11, 32/64-Bit)",
+    "Automatische Erkennung aller installierten Windows-Browser (Edge, Chrome, Brave & Standard-Browser)",
+    "Dauerhafter zentraler Datensafe im Windows-Benutzerprofil",
+    "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
     "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
     "Universeller abwaertskompatibler Backup-Import mit Sofort-Live-Anzeige",
-    "Aufgeraeumte Einstellungen und Hauptuebersicht",
-    "Dauerhafter zentraler Datensafe im Systemprofil",
-    "Buchungen & Dauerauftraege direkt bearbeiten (Edit-Funktion)",
     "100% Eigenstaendige und portable Haushaltsbuch.exe mit Hintergrund-Auto-Updater",
     "AES-GCM 256-Bit Verschluesselung & DSGVO-Datenschutz",
     "Volle NVDA Screenreader Barrierefreiheit"

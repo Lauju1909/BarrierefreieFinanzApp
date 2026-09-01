@@ -19,9 +19,14 @@ namespace HaushaltsbuchApp
         {
             try
             {
-                ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072;
+                // TLS 1.2 & TLS 1.3 fuer alle Windows Versionen
+                try
+                {
+                    ServicePointManager.SecurityProtocol = (SecurityProtocolType)3072 | (SecurityProtocolType)12288 | SecurityProtocolType.Tls12;
+                }
+                catch { }
 
-                // 1. ZENTRALER, FESTE SPEICHERORT IM APPDATA (DATEN GEHEN NIE VERLOREN!)
+                // 1. ZENTRALER, FESTE SPEICHERORT IM WINDOWS APPDATA (DATEN GEHEN AUF KEINEM PC VERLOREN!)
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
                 string centralProfileDir = Path.Combine(centralAppDir, "Profile");
@@ -37,7 +42,7 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(centralHtmlPath);
                 }
 
-                // 3. Im Hintergrund auf GitHub nach Updates prüfen (ersetzt nur HTML, Profil bleibt 100% erhalten!)
+                // 3. Im Hintergrund auf GitHub nach Updates pruefen (ohne Blockieren bei Offline)
                 CheckAndApplyUpdate(centralHtmlPath, centralVersionPath);
 
                 if (!File.Exists(centralHtmlPath))
@@ -46,27 +51,23 @@ namespace HaushaltsbuchApp
                     return;
                 }
 
-                // 4. Edge im App-Modus mit FESTEM User-Data-Dir starten
-                string edgePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe");
-                if (!File.Exists(edgePath))
-                {
-                    edgePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Microsoft\Edge\Application\msedge.exe");
-                }
-
+                // 4. Universeller Windows Browser-Starter (Edge, Chrome, Brave oder Standard)
+                string browserPath = FindBestBrowserPath();
                 string fileUri = "file:///" + centralHtmlPath.Replace('\\', '/');
 
-                if (File.Exists(edgePath))
+                if (!string.IsNullOrEmpty(browserPath) && File.Exists(browserPath))
                 {
                     string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, centralProfileDir);
                     Process.Start(new ProcessStartInfo
                     {
-                        FileName = edgePath,
+                        FileName = browserPath,
                         Arguments = args,
                         UseShellExecute = false
                     });
                 }
                 else
                 {
+                    // Fallback fuer jeden Windows-Rechner: Oeffnen im Standard-Browser
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = centralHtmlPath,
@@ -78,6 +79,37 @@ namespace HaushaltsbuchApp
             {
                 MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static string FindBestBrowserPath()
+        {
+            string[] candidatePaths = new string[]
+            {
+                // 1. Microsoft Edge (Standard auf Windows 10 & 11)
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Microsoft\Edge\Application\msedge.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Microsoft\Edge\Application\msedge.exe"),
+
+                // 2. Google Chrome (Sehr haeufig auf Windows 7, 8, 10, 11)
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Google\Chrome\Application\chrome.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Google\Chrome\Application\chrome.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"Google\Chrome\Application\chrome.exe"),
+
+                // 3. Brave Browser
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"BraveSoftware\Brave-Browser\Application\brave.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"BraveSoftware\Brave-Browser\Application\brave.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), @"BraveSoftware\Brave-Browser\Application\brave.exe")
+            };
+
+            foreach (string path in candidatePaths)
+            {
+                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                {
+                    return path;
+                }
+            }
+
+            return null;
         }
 
         private static void UnpackEmbeddedApp(string targetHtml)
