@@ -20,8 +20,8 @@ namespace HaushaltsbuchApp
         private const int BASE_PORT = 48123;
 
         private static string _centralAppDir;
-        private static string _centralVaultPath; // 1. Hauptdatei (.vault)
-        private static string _centralBakPath;   // 2. Sicherungsdatei (.vault.bak)
+        private static string _centralVaultPath;
+        private static string _centralBakPath;
         private static string _centralHtmlPath;
 
         private static TcpListener _tcpListener;
@@ -44,13 +44,11 @@ namespace HaushaltsbuchApp
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
-                // 1. DEN EINEN FESTEN BESTEN SCHREIBBAREN SPEICHERORT WÄHLEN
+                // 1. BESTEN SPEICHERORT BESTIMMEN
                 _centralAppDir = DetermineSingleBestStorageDirectory(baseDir);
                 string centralProfileDir = Path.Combine(_centralAppDir, "Profile");
                 _centralHtmlPath = Path.Combine(_centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(_centralAppDir, "version.json");
-                
-                // EXAKT 2 DATEIEN (Hauptdatei + Backup):
                 _centralVaultPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault");
                 _centralBakPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault.bak");
 
@@ -81,13 +79,13 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(targetHtml);
                 }
 
-                // 4. DATENRETTUNG & AUTOMATISCHE BEREINIGUNG ALTER DUPLIKATE (MÜLL ENTFERNEN)
-                MigrateAndCleanUpOldDuplicates(_centralAppDir, _centralVaultPath, _centralBakPath);
+                // 4. TIEFENRETTUNG: DATEN AUS ALLEN VORHERIGEN VERSIONEN & BROWSERN RETTEN
+                PerformUltimateDataRescue(_centralAppDir, _centralVaultPath, _centralBakPath);
 
-                // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
+                // 5. INJEKTION IN DIE HTML-DATEI
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN (TcpListener)
+                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
 
                 string launchUrl = serverStarted 
@@ -97,7 +95,7 @@ namespace HaushaltsbuchApp
                 // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
                 Process browserProc = LaunchBestBrowser(launchUrl, targetHtml, centralProfileDir);
 
-                // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat-Überwachung)
+                // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat)
                 _lastHeartbeat = DateTime.Now;
                 int checks = 0;
                 while (_isRunning)
@@ -142,7 +140,6 @@ namespace HaushaltsbuchApp
                 baseDir
             };
 
-            // Prüfe zuerst, wo bereits eine gültige Tresordatei liegt (Speicherort merken)
             foreach (string root in candidateRoots)
             {
                 if (string.IsNullOrEmpty(root)) continue;
@@ -154,7 +151,6 @@ namespace HaushaltsbuchApp
                 }
             }
 
-            // Wenn noch keine Datei existiert: Finde den ersten voll beschreibbaren Ordner
             foreach (string root in candidateRoots)
             {
                 if (string.IsNullOrEmpty(root)) continue;
@@ -178,81 +174,181 @@ namespace HaushaltsbuchApp
             return baseDir;
         }
 
-        private static void MigrateAndCleanUpOldDuplicates(string activeDir, string vaultPath, string bakPath)
+        private static void PerformUltimateDataRescue(string activeDir, string vaultPath, string bakPath)
         {
             try
             {
-                string bestData = null;
-
-                // 1. Prüfe ob in activeDir bereits eine gültige Datei liegt
+                // Wenn bereits eine gültige Datei mit echten Daten (> 50 Zeichen) existiert -> fertig
                 if (IsValidVaultJsonFile(vaultPath))
                 {
-                    bestData = File.ReadAllText(vaultPath, Encoding.UTF8);
-                }
-                else if (IsValidVaultJsonFile(bakPath))
-                {
-                    bestData = File.ReadAllText(bakPath, Encoding.UTF8);
-                    File.Copy(bakPath, vaultPath, true);
+                    try { File.Copy(vaultPath, bakPath, true); } catch { }
+                    return;
                 }
 
-                // 2. Prüfe andere Orte und übernehme Daten falls Hauptdatei leer war
-                string[] candidateRoots = new string[]
+                if (IsValidVaultJsonFile(bakPath))
                 {
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                    Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    @"C:\Users\Public",
-                    AppDomain.CurrentDomain.BaseDirectory
+                    File.Copy(bakPath, vaultPath, true);
+                    return;
+                }
+
+                // TIEFENRETTUNG AUS ALLEN VORHERIGEN VERSIONEN (Chrome, Edge, Firefox, LevelDB, Downloads)
+                string foundVault = DeepScanAllPreviousSources();
+                if (!string.IsNullOrEmpty(foundVault))
+                {
+                    File.WriteAllText(vaultPath, foundVault, Encoding.UTF8);
+                    try { File.WriteAllText(bakPath, foundVault, Encoding.UTF8); } catch { }
+                    return;
+                }
+            }
+            catch { }
+        }
+
+        private static string DeepScanAllPreviousSources()
+        {
+            try
+            {
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+
+                List<string> candidateFolders = new List<string>();
+
+                // 1. Chrome LevelDB
+                if (!string.IsNullOrEmpty(localAppData))
+                {
+                    candidateFolders.Add(Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"));
+                    candidateFolders.Add(Path.Combine(localAppData, @"HaushaltsbuchApp\Profile\Default\Local Storage\leveldb"));
+                    candidateFolders.Add(Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\Local Storage\leveldb"));
+                    candidateFolders.Add(Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\Local Storage\leveldb"));
+                }
+
+                // 2. Profile 1 bis Profile 10 in Chrome / Edge
+                if (!string.IsNullOrEmpty(localAppData))
+                {
+                    for (int i = 1; i <= 10; i++)
+                    {
+                        candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Google\Chrome\User Data\Profile {0}\Local Storage\leveldb", i)));
+                        candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Microsoft\Edge\User Data\Profile {0}\Local Storage\leveldb", i)));
+                    }
+                }
+
+                // 3. Ältere Dateispeicherorte
+                if (!string.IsNullOrEmpty(localAppData))
+                {
+                    string oldVault = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
+                    if (IsValidVaultJsonFile(oldVault)) return File.ReadAllText(oldVault, Encoding.UTF8);
+                }
+
+                // 4. Scanne alle LevelDB-Ordner mit Print-Filter
+                foreach (string dir in candidateFolders)
+                {
+                    if (Directory.Exists(dir))
+                    {
+                        string match = ScanLevelDbWithPrintFilter(dir);
+                        if (!string.IsNullOrEmpty(match)) return match;
+                    }
+                }
+
+                // 5. Scanne Downloads, Desktop, Dokumente nach Sicherungsdateien
+                string[] userDirs = new string[]
+                {
+                    Path.Combine(userProfile, "Downloads"),
+                    Path.Combine(userProfile, "Desktop"),
+                    Path.Combine(userProfile, "Documents")
                 };
 
-                foreach (string root in candidateRoots)
+                foreach (string udir in userDirs)
                 {
-                    if (string.IsNullOrEmpty(root)) continue;
-                    string dir = Path.Combine(root, "HaushaltsbuchApp");
-
-                    // Wenn es nicht der aktive Ordner ist -> Aufräumen!
-                    if (!string.Equals(dir, activeDir, StringComparison.OrdinalIgnoreCase) && Directory.Exists(dir))
+                    if (Directory.Exists(udir))
                     {
-                        string foreignVault = Path.Combine(dir, "Haushaltsbuch_Daten.vault");
-                        string foreignBak = Path.Combine(dir, "Haushaltsbuch_Daten.vault.bak");
-
-                        if (string.IsNullOrEmpty(bestData))
+                        string[] files = Directory.GetFiles(udir, "*.json");
+                        foreach (string f in files)
                         {
-                            if (IsValidVaultJsonFile(foreignVault))
+                            if (IsValidVaultJsonFile(f))
                             {
-                                bestData = File.ReadAllText(foreignVault, Encoding.UTF8);
-                                File.WriteAllText(vaultPath, bestData, Encoding.UTF8);
-                                File.WriteAllText(bakPath, bestData, Encoding.UTF8);
+                                return File.ReadAllText(f, Encoding.UTF8);
                             }
                         }
-
-                        // Überflüssige Duplikate löschen, damit kein Müll rumliegt
-                        try { if (File.Exists(foreignVault)) File.Delete(foreignVault); } catch { }
-                        try { if (File.Exists(foreignBak)) File.Delete(foreignBak); } catch { }
-                    }
-                }
-
-                // LevelDB Migration falls immer noch leer
-                if (string.IsNullOrEmpty(bestData))
-                {
-                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                    MigrateAllOldDataToDiskVault(vaultPath, localAppData);
-                    if (File.Exists(vaultPath))
-                    {
-                        try { File.Copy(vaultPath, bakPath, true); } catch { }
-                    }
-                }
-                else
-                {
-                    // Exakt 2 Dateien pflegen (.vault und .vault.bak)
-                    if (File.Exists(vaultPath) && !File.Exists(bakPath))
-                    {
-                        try { File.Copy(vaultPath, bakPath, true); } catch { }
                     }
                 }
             }
             catch { }
+
+            return null;
+        }
+
+        private static string ScanLevelDbWithPrintFilter(string dir)
+        {
+            try
+            {
+                string bestSalt = null;
+                string bestVault = null;
+
+                string[] files = Directory.GetFiles(dir, "*.*");
+                foreach (string file in files)
+                {
+                    if (file.EndsWith(".ldb", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            byte[] bytes;
+                            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            {
+                                using (var ms = new MemoryStream())
+                                {
+                                    fs.CopyTo(ms);
+                                    bytes = ms.ToArray();
+                                }
+                            }
+
+                            // EXTRACT ALL PRINTABLE ASCII CHARACTERS (Strips binary headers, Snappy bytes, and UTF-16 null bytes)
+                            StringBuilder sb = new StringBuilder(bytes.Length);
+                            for (int i = 0; i < bytes.Length; i++)
+                            {
+                                byte b = bytes[i];
+                                if (b >= 32 && b <= 126)
+                                {
+                                    sb.Append((char)b);
+                                }
+                            }
+                            string printable = sb.ToString();
+
+                            if (printable.Contains("barrierefreie_finanzen_salt_v1"))
+                            {
+                                Match mSalt = Regex.Match(printable, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44})");
+                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
+                            }
+
+                            if (printable.Contains("barrierefreie_finanzen_enc_v1"))
+                            {
+                                Match mVault = Regex.Match(printable, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,})");
+                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
+                            }
+
+                            if (string.IsNullOrEmpty(bestSalt) && printable.Contains("\"salt\""))
+                            {
+                                Match mSalt = Regex.Match(printable, "\"salt\"\\s*:\\s*\"([A-Za-z0-9+/=]{16,44})\"");
+                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
+                            }
+
+                            if (string.IsNullOrEmpty(bestVault) && printable.Contains("\"vault\""))
+                            {
+                                Match mVault = Regex.Match(printable, "\"vault\"\\s*:\\s*\"([A-Za-z0-9+/=]{50,})\"");
+                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(bestSalt) && !string.IsNullOrEmpty(bestVault))
+                {
+                    return string.Format("{{\"salt\":\"{0}\",\"vault\":\"{1}\"}}", bestSalt, bestVault);
+                }
+            }
+            catch { }
+
+            return null;
         }
 
         private static bool IsValidVaultJsonFile(string path)
@@ -354,7 +450,17 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // API: SAVE VAULT (Schreibt exakt in .vault und .vault.bak am selben Ort)
+                        // API: DEEP RECOVERY
+                        if (url.StartsWith("/api/deep_recovery"))
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            string rescued = DeepScanAllPreviousSources();
+                            if (string.IsNullOrEmpty(rescued)) rescued = "{}";
+                            byte[] data = Encoding.UTF8.GetBytes(rescued);
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -373,13 +479,11 @@ namespace HaushaltsbuchApp
                                 string tmpPath = _centralVaultPath + ".tmp";
                                 File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
-                                // 1. Vorherige Version ins Backup kopieren (.vault.bak)
                                 if (File.Exists(_centralVaultPath))
                                 {
                                     try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
                                 }
 
-                                // 2. Neue Version zur Hauptdatei machen (.vault)
                                 File.Copy(tmpPath, _centralVaultPath, true);
                                 try { File.Delete(tmpPath); } catch { }
 
@@ -414,7 +518,7 @@ namespace HaushaltsbuchApp
                 StringBuilder sb = new StringBuilder();
                 sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
                 sb.Append("Access-Control-Allow-Origin: *\r\n");
-                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
+                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS");
                 sb.Append("Access-Control-Allow-Headers: Content-Type\r\n");
                 sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
                 sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));
@@ -459,98 +563,6 @@ namespace HaushaltsbuchApp
                 File.WriteAllText(htmlPath, html, Encoding.UTF8);
             }
             catch { }
-        }
-
-        private static void MigrateAllOldDataToDiskVault(string targetVaultPath, string localAppData)
-        {
-            try
-            {
-                if (File.Exists(targetVaultPath) && new FileInfo(targetVaultPath).Length > 20)
-                {
-                    return;
-                }
-
-                string oldVault = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
-                if (File.Exists(oldVault) && new FileInfo(oldVault).Length > 20)
-                {
-                    File.Copy(oldVault, targetVaultPath, true);
-                    return;
-                }
-
-                string[] searchDirs = new string[]
-                {
-                    Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"),
-                    Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\Local Storage\leveldb"),
-                    Path.Combine(localAppData, @"HaushaltsbuchApp\Profile\Default\Local Storage\leveldb"),
-                    Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\Local Storage\leveldb")
-                };
-
-                foreach (string dir in searchDirs)
-                {
-                    if (Directory.Exists(dir))
-                    {
-                        string foundJson = ScanLevelDbFolder(dir);
-                        if (!string.IsNullOrEmpty(foundJson))
-                        {
-                            File.WriteAllText(targetVaultPath, foundJson, Encoding.UTF8);
-                            return;
-                        }
-                    }
-                }
-            }
-            catch { }
-        }
-
-        private static string ScanLevelDbFolder(string dir)
-        {
-            try
-            {
-                string bestSalt = null;
-                string bestVault = null;
-
-                string[] files = Directory.GetFiles(dir, "*.*");
-                foreach (string file in files)
-                {
-                    if (file.EndsWith(".ldb", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
-                    {
-                        try
-                        {
-                            byte[] bytes;
-                            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-                            {
-                                using (var ms = new MemoryStream())
-                                {
-                                    fs.CopyTo(ms);
-                                    bytes = ms.ToArray();
-                                }
-                            }
-
-                            string ascii = Encoding.ASCII.GetString(bytes);
-
-                            if (ascii.Contains("barrierefreie_finanzen_salt_v1"))
-                            {
-                                Match mSalt = Regex.Match(ascii, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44})");
-                                if (mSalt.Success) bestSalt = mSalt.Groups[1].Value;
-                            }
-
-                            if (ascii.Contains("barrierefreie_finanzen_enc_v1"))
-                            {
-                                Match mVault = Regex.Match(ascii, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,})");
-                                if (mVault.Success) bestVault = mVault.Groups[1].Value;
-                            }
-                        }
-                        catch { }
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(bestSalt) && !string.IsNullOrEmpty(bestVault))
-                {
-                    return string.Format("{{\"salt\":\"{0}\",\"vault\":\"{1}\"}}", bestSalt, bestVault);
-                }
-            }
-            catch { }
-
-            return null;
         }
 
         private static Process LaunchBestBrowser(string url, string fallbackHtmlPath, string profileDir)

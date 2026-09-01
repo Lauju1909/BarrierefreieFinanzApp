@@ -1710,6 +1710,7 @@ async function idbLoadVault() {
   }
 }
 
+
 async function checkVaultStatus() {
   let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
   let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
@@ -1751,6 +1752,22 @@ async function checkVaultStatus() {
     }
   }
 
+  // 4. Automatische Tiefenrettung aus alten Versionen (LevelDB / Browser)
+  if (!savedVault || !savedSalt) {
+    try {
+      const recR = await fetch(`http://127.0.0.1:${port}/api/deep_recovery`);
+      const recData = await recR.json();
+      if (recData && recData.vault && recData.salt) {
+        savedVault = recData.vault;
+        savedSalt = recData.salt;
+        localStorage.setItem(STORAGE_DATA_KEY, savedVault);
+        localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
+        window.__DISK_VAULT__ = recData;
+        await idbSaveVault(recData);
+      }
+    } catch(e) {}
+  }
+
   updateLockScreenUI(!savedVault || !savedSalt);
 }
 
@@ -1762,8 +1779,8 @@ function updateLockScreenUI(isFirstTime) {
   if (firstTimeHint) firstTimeHint.style.display = isFirstTime ? 'block' : 'none';
 
   if (isFirstTime) {
-    if (lockHeading) lockHeading.textContent = 'Willkommen! Neue PIN festlegen';
-    if (lockInstructions) lockInstructions.textContent = 'Gib eine neue PIN oder ein Passwort ein (z. B. 1234), um deinen sicheren Datentresor auf diesem Computer zu erstellen.';
+    if (lockHeading) lockHeading.textContent = 'Willkommen! PIN eingeben';
+    if (lockInstructions) lockInstructions.textContent = 'Gib deine PIN ein, um dein Haushaltsbuch zu öffnen (oder eine neue PIN festzulegen).';
   } else {
     if (lockHeading) lockHeading.textContent = 'Sicherer AES-256 Zugang';
     if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:';
@@ -1784,8 +1801,24 @@ async function handlePinSubmit(e) {
 
   if (!enteredPin) return;
 
-  const storedData = localStorage.getItem(STORAGE_DATA_KEY);
+  let storedData = localStorage.getItem(STORAGE_DATA_KEY);
   let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+
+  // Vor dem Erstellen eines leeren Tresors: Tiefenabfrage an C# Deep Recovery!
+  if (!storedData || !saltBase64) {
+    const port = window.__LOCAL_PORT__ || 48123;
+    try {
+      const recR = await fetch(`http://127.0.0.1:${port}/api/deep_recovery`);
+      const recData = await recR.json();
+      if (recData && recData.vault && recData.salt) {
+        storedData = recData.vault;
+        saltBase64 = recData.salt;
+        localStorage.setItem(STORAGE_DATA_KEY, storedData);
+        localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
+        window.__DISK_VAULT__ = recData;
+      }
+    } catch(e) {}
+  }
 
   try {
     if (!storedData) {
@@ -1808,7 +1841,7 @@ async function handlePinSubmit(e) {
       unlockApp();
       announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
     } else {
-      // Vorhandener Datensafe
+      // Vorhandener Datensafe (auch aus vorherigen Versionen!)
       const saltBuffer = base64ToArrayBuffer(saltBase64);
       const salt = new Uint8Array(saltBuffer);
       const key = await deriveKey(enteredPin, salt);
@@ -1825,7 +1858,7 @@ async function handlePinSubmit(e) {
       setLockoutEndTime(0);
 
       unlockApp();
-      announceNVDA('Erfolgreich entsperrt.');
+      announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
     }
   } catch (err) {
     let attempts = getFailedAttempts() + 1;
@@ -1848,6 +1881,7 @@ async function handlePinSubmit(e) {
     }
   }
 }
+
 
 async function saveStateToEncryptedStorage() {
   if (!cryptoKey) return;
@@ -1983,7 +2017,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.4.0',
+    version: '4.5.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,

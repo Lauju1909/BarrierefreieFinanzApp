@@ -1,11 +1,11 @@
 {
-  "version": "4.4.0",
+  "version": "4.5.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Saubere 2-Stellen-Speicherung: Exakt eine Hauptdatei (.vault) und ein Backup (.vault.bak) am besten Ort",
-    "Automatische Bereinigung: Entfernt alte Duplikate und Test-Dateien vollstaendig",
-    "Speicherort-Erkennung: Merkt sich genau, wo die Daten liegen",
+    "All-Version Tiefenrettung: Erkennt und stellt Daten aus allen aelteren Versionen (Chrome, Edge, Firefox, LevelDB) mit Print-Filter vollautomatisch wieder her",
+    "Direkt-Wiederherstellung auf dem Sperrbildschirm: 1-Klick Import fuer beliebige alte Sicherungsdateien",
+    "Saubere 2-Stellen-Speicherung (.vault & .vault.bak)",
     "Volle Uebersicht: Jede Buchung (einmalig & dauerhaft) direkt in der Uebersicht bearbeitbar und loeschbar",
     "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
     "NVDA-Sprachoptimierung: Ruhige Screenreader-Bedienung",
