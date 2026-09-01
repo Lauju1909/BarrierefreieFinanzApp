@@ -1092,7 +1092,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.3.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.4.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -1149,45 +1149,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
                 <tbody id="forecast-table-body">
                   <!-- Befüllt per JS -->
                 </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- GROSSE 12-MONATS JAHRESÜBERSICHT -->
-          <section class="settings-box year-overview-box" aria-labelledby="year-overview-heading">
-            <div class="year-header-bar">
-              <div>
-                <h3 id="year-overview-heading" class="section-title">📅 Jahresübersicht (Januar bis Dezember)</h3>
-                <p class="field-hint">Historische und geplante Werte für alle 12 Monate des Jahres:</p>
-              </div>
-              <div class="year-select-wrap">
-                <label for="year-view-select" class="sr-only">Jahr wählen</label>
-                <select id="year-view-select" class="filter-select" onchange="renderAnnualTable(this.value)">
-                  <option value="2026" selected>Jahr 2026</option>
-                  <option value="2025">Jahr 2025</option>
-                  <option value="2027">Jahr 2027</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="table-responsive" tabindex="0" role="region" aria-label="Jahrestabelle">
-              <table class="annual-table" id="annual-summary-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Monat</th>
-                    <th scope="col" class="text-right">Einnahmen</th>
-                    <th scope="col" class="text-right">Ausgaben</th>
-                    <th scope="col" class="text-right">Noch übrig</th>
-                    <th scope="col" class="text-center">Status</th>
-                    <th scope="col" class="text-center">Aktion</th>
-                  </tr>
-                </thead>
-                <tbody id="annual-table-body">
-                  <!-- Befüllt per JS -->
-                </tbody>
-                <tfoot id="annual-table-foot">
-                  <!-- Summenzeile Gesamt Jahr -->
-                </tfoot>
               </table>
             </div>
           </section>
@@ -1261,7 +1222,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.3.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
@@ -2167,7 +2128,7 @@ function updateOverview() {
   // Simulator & Settings
   runPurchaseSimulation();
   renderSettingsRecurringList();
-  renderAnnualTable(document.getElementById('year-view-select') ? document.getElementById('year-view-select').value : selectedYear);
+  // Jahresansicht jetzt nativ in Uebersicht
   renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
 }
 
@@ -2487,69 +2448,7 @@ function saveSimulatedPurchase() {
 // --------------------------------------------------------------------------
 // 12. JAHRESTABELLE & PROGNOSE
 // --------------------------------------------------------------------------
-function renderAnnualTable(yearStr) {
-  const year = parseInt(yearStr, 10);
-  const tbody = document.getElementById('annual-table-body');
-  const tfoot = document.getElementById('annual-table-foot');
-  if (!tbody) return;
 
-  tbody.innerHTML = '';
-  let sumIncome = 0;
-  let sumExpense = 0;
-
-  for (let m = 0; m < 12; m++) {
-    const stats = calculateMonthStats(year, m);
-    sumIncome += stats.income;
-    sumExpense += stats.expense;
-
-    const tr = document.createElement('tr');
-    const isPlus = stats.leftover >= 0;
-    tr.innerHTML = `
-      <td><strong>${MONTH_NAMES[m]} ${year}</strong></td>
-      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-      <td class="text-right" style="font-weight: bold; color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-        ${isPlus ? '+' : ''} ${formatCurrency(stats.leftover)}
-      </td>
-      <td class="text-center">
-        <span class="status-badge ${isPlus ? 'status-booked' : 'status-future'}">
-          ${isPlus ? '🟢 Plus' : '🔴 Minus'}
-        </span>
-      </td>
-      <td class="text-center">
-        <button class="btn-jump-month" onclick="jumpToSpecificMonth(${year}, ${m})" title="Diesen Monat öffnen">Öffnen</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  if (tfoot) {
-    const sumLeft = sumIncome - sumExpense;
-    const isPlus = sumLeft >= 0;
-    tfoot.innerHTML = `
-      <tr>
-        <th>GESAMT ${year}:</th>
-        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(sumIncome)}</td>
-        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(sumExpense)}</td>
-        <td class="text-right" style="color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-          ${isPlus ? '+' : ''} ${formatCurrency(sumLeft)}
-        </td>
-        <td class="text-center"><strong>${isPlus ? '🟢 Jahres-Plus' : '🔴 Jahres-Minus'}</strong></td>
-        <td></td>
-      </tr>
-    `;
-  }
-}
-
-function jumpToSpecificMonth(year, month) {
-  selectedYear = year;
-  selectedMonth = month;
-  selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  currentOverviewMode = 'month';
-  setOverviewMode('month');
-  switchView('overview');
-  announceNVDA(`Gewechselt zu ${MONTH_NAMES[month]} ${year}.`);
-}
 
 function renderFutureForecast(monthsAheadStr) {
   const monthsAhead = parseInt(monthsAheadStr, 10);

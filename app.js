@@ -897,7 +897,7 @@ function updateOverview() {
   // Simulator & Settings
   runPurchaseSimulation();
   renderSettingsRecurringList();
-  renderAnnualTable(document.getElementById('year-view-select') ? document.getElementById('year-view-select').value : selectedYear);
+  // Jahresansicht jetzt nativ in Uebersicht
   renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
 }
 
@@ -1217,69 +1217,7 @@ function saveSimulatedPurchase() {
 // --------------------------------------------------------------------------
 // 12. JAHRESTABELLE & PROGNOSE
 // --------------------------------------------------------------------------
-function renderAnnualTable(yearStr) {
-  const year = parseInt(yearStr, 10);
-  const tbody = document.getElementById('annual-table-body');
-  const tfoot = document.getElementById('annual-table-foot');
-  if (!tbody) return;
 
-  tbody.innerHTML = '';
-  let sumIncome = 0;
-  let sumExpense = 0;
-
-  for (let m = 0; m < 12; m++) {
-    const stats = calculateMonthStats(year, m);
-    sumIncome += stats.income;
-    sumExpense += stats.expense;
-
-    const tr = document.createElement('tr');
-    const isPlus = stats.leftover >= 0;
-    tr.innerHTML = `
-      <td><strong>${MONTH_NAMES[m]} ${year}</strong></td>
-      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-      <td class="text-right" style="font-weight: bold; color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-        ${isPlus ? '+' : ''} ${formatCurrency(stats.leftover)}
-      </td>
-      <td class="text-center">
-        <span class="status-badge ${isPlus ? 'status-booked' : 'status-future'}">
-          ${isPlus ? '🟢 Plus' : '🔴 Minus'}
-        </span>
-      </td>
-      <td class="text-center">
-        <button class="btn-jump-month" onclick="jumpToSpecificMonth(${year}, ${m})" title="Diesen Monat öffnen">Öffnen</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-
-  if (tfoot) {
-    const sumLeft = sumIncome - sumExpense;
-    const isPlus = sumLeft >= 0;
-    tfoot.innerHTML = `
-      <tr>
-        <th>GESAMT ${year}:</th>
-        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(sumIncome)}</td>
-        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(sumExpense)}</td>
-        <td class="text-right" style="color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-          ${isPlus ? '+' : ''} ${formatCurrency(sumLeft)}
-        </td>
-        <td class="text-center"><strong>${isPlus ? '🟢 Jahres-Plus' : '🔴 Jahres-Minus'}</strong></td>
-        <td></td>
-      </tr>
-    `;
-  }
-}
-
-function jumpToSpecificMonth(year, month) {
-  selectedYear = year;
-  selectedMonth = month;
-  selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  currentOverviewMode = 'month';
-  setOverviewMode('month');
-  switchView('overview');
-  announceNVDA(`Gewechselt zu ${MONTH_NAMES[month]} ${year}.`);
-}
 
 function renderFutureForecast(monthsAheadStr) {
   const monthsAhead = parseInt(monthsAheadStr, 10);

@@ -1,8 +1,9 @@
 {
-  "version": "2.3.0",
+  "version": "2.4.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
+    "Aufgeraeumte Einstellungen (Jahresansicht vollstaendig in der Hauptuebersicht integriert)",
     "Dauerhafter zentraler Datensafe im Systemprofil (Daten bleiben bei Updates & Exe-Verschiebungen fuer immer erhalten)",
     "Buchungen & Dauerauftraege direkt in der Liste bearbeiten (Edit-Funktion)",
     "Zeitraum-Umschalter in der Uebersicht: Tag, Monat, 3 Monate, 6 Monate, Jahr",

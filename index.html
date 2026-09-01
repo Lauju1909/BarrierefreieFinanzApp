@@ -741,7 +741,7 @@
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.3.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.4.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -798,45 +798,6 @@
                 <tbody id="forecast-table-body">
                   <!-- Befüllt per JS -->
                 </tbody>
-              </table>
-            </div>
-          </section>
-
-          <!-- GROSSE 12-MONATS JAHRESÜBERSICHT -->
-          <section class="settings-box year-overview-box" aria-labelledby="year-overview-heading">
-            <div class="year-header-bar">
-              <div>
-                <h3 id="year-overview-heading" class="section-title">📅 Jahresübersicht (Januar bis Dezember)</h3>
-                <p class="field-hint">Historische und geplante Werte für alle 12 Monate des Jahres:</p>
-              </div>
-              <div class="year-select-wrap">
-                <label for="year-view-select" class="sr-only">Jahr wählen</label>
-                <select id="year-view-select" class="filter-select" onchange="renderAnnualTable(this.value)">
-                  <option value="2026" selected>Jahr 2026</option>
-                  <option value="2025">Jahr 2025</option>
-                  <option value="2027">Jahr 2027</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="table-responsive" tabindex="0" role="region" aria-label="Jahrestabelle">
-              <table class="annual-table" id="annual-summary-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Monat</th>
-                    <th scope="col" class="text-right">Einnahmen</th>
-                    <th scope="col" class="text-right">Ausgaben</th>
-                    <th scope="col" class="text-right">Noch übrig</th>
-                    <th scope="col" class="text-center">Status</th>
-                    <th scope="col" class="text-center">Aktion</th>
-                  </tr>
-                </thead>
-                <tbody id="annual-table-body">
-                  <!-- Befüllt per JS -->
-                </tbody>
-                <tfoot id="annual-table-foot">
-                  <!-- Summenzeile Gesamt Jahr -->
-                </tfoot>
               </table>
             </div>
           </section>
@@ -910,7 +871,7 @@
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.3.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
