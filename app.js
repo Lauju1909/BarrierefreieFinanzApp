@@ -1125,7 +1125,7 @@ function toggleTransferFrequencyFields() {
   if (document.getElementById('trf-month-day-group')) document.getElementById('trf-month-day-group').style.display = isWeekly ? 'none' : 'block';
 }
 
-function handleAddExpense(e) {
+async function handleAddExpense(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const freq = document.getElementById('exp-frequency').value;
@@ -1172,7 +1172,7 @@ function handleAddExpense(e) {
     announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
   }
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   document.getElementById('form-add-expense').reset();
   document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
   toggleExpenseFrequencyFields();
@@ -1180,7 +1180,7 @@ function handleAddExpense(e) {
   switchView('overview');
 }
 
-function handleAddIncome(e) {
+async function handleAddIncome(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('inc-amount').value);
   const freq = document.getElementById('inc-frequency').value;
@@ -1224,7 +1224,7 @@ function handleAddIncome(e) {
     announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
   }
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   document.getElementById('form-add-income').reset();
   document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
   toggleIncomeFrequencyFields();
@@ -1232,7 +1232,7 @@ function handleAddIncome(e) {
   switchView('overview');
 }
 
-function handleAddTransfer(e) {
+async function handleAddTransfer(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('trf-amount').value);
   const freq = document.getElementById('trf-frequency').value;
@@ -1280,7 +1280,7 @@ function handleAddTransfer(e) {
     announceNVDA(`Umbuchung über ${formatCurrency(amount)} gespeichert!`);
   }
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   document.getElementById('form-add-transfer').reset();
   document.getElementById('trf-date').value = new Date().toISOString().split('T')[0];
   toggleTransferFrequencyFields();
@@ -1313,7 +1313,7 @@ function closeEditModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function saveEditedTransaction(e) {
+async function saveEditedTransaction(e) {
   e.preventDefault();
   const id = document.getElementById('edit-tx-id').value;
   const tx = appState.transactions.find(t => t.id === id);
@@ -1325,17 +1325,17 @@ function saveEditedTransaction(e) {
   tx.category = document.getElementById('edit-tx-category').value;
   tx.description = document.getElementById('edit-tx-desc').value.trim();
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   closeEditModal();
   updateOverview();
   announceNVDA('Buchung erfolgreich aktualisiert!');
 }
 
-function deleteTransaction(txId) {
+async function deleteTransaction(txId) {
   const idx = appState.transactions.findIndex(t => t.id === txId);
   if (idx !== -1) {
     const deleted = appState.transactions.splice(idx, 1)[0];
-    saveStateToEncryptedStorage();
+    await saveStateToEncryptedStorage();
     updateOverview();
     announceNVDA(`Buchung über ${formatCurrency(deleted.amount)} gelöscht.`);
   }
@@ -1362,7 +1362,7 @@ function closeEditRecModal() {
   if (modal) modal.style.display = 'none';
 }
 
-function saveEditedRecurring(e) {
+async function saveEditedRecurring(e) {
   e.preventDefault();
   const id = document.getElementById('edit-rec-id').value;
   const rec = appState.recurring.find(r => r.id === id);
@@ -1373,18 +1373,18 @@ function saveEditedRecurring(e) {
   rec.day = parseInt(document.getElementById('edit-rec-day').value, 10) || 1;
   rec.name = document.getElementById('edit-rec-name').value.trim();
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   closeEditRecModal();
   renderSettingsRecurringList();
   updateOverview();
   announceNVDA('Dauerauftrag erfolgreich aktualisiert!');
 }
 
-function deleteRecurring(recId) {
+async function deleteRecurring(recId) {
   const idx = appState.recurring.findIndex(r => r.id === recId);
   if (idx !== -1) {
     const deleted = appState.recurring.splice(idx, 1)[0];
-    saveStateToEncryptedStorage();
+    await saveStateToEncryptedStorage();
     renderSettingsRecurringList();
     updateOverview();
     announceNVDA(`Dauerauftrag ${deleted.name || deleted.category} gelöscht.`);
@@ -1439,7 +1439,7 @@ function runPurchaseSimulation() {
   currentSimulatedPurchase = { name, price, date: selectedDateStr };
 }
 
-function saveSimulatedPurchase() {
+async function saveSimulatedPurchase() {
   if (!currentSimulatedPurchase) return;
   appState.transactions.push({
     id: `tx_${Date.now()}`,
@@ -1452,7 +1452,7 @@ function saveSimulatedPurchase() {
     date: currentSimulatedPurchase.date
   });
 
-  saveStateToEncryptedStorage();
+  await saveStateToEncryptedStorage();
   updateOverview();
   announceNVDA(`Geplanter Kauf ${currentSimulatedPurchase.name} gespeichert!`);
 
@@ -1883,6 +1883,7 @@ async function handlePinSubmit(e) {
 }
 
 
+
 async function saveStateToEncryptedStorage() {
   if (!cryptoKey) return;
 
@@ -1904,12 +1905,15 @@ async function saveStateToEncryptedStorage() {
 
     // 4. Festplatte (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
     const port = window.__LOCAL_PORT__ || 48123;
+    const payload = JSON.stringify({ salt: saltBase64, vault: encryptedVaultBase64 });
+
     try {
-      fetch(`http://127.0.0.1:${port}/api/save_vault`, {
+      await fetch(`http://127.0.0.1:${port}/api/save_vault`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ salt: saltBase64, vault: encryptedVaultBase64 })
-      }).catch(() => {});
+        body: payload,
+        keepalive: true
+      });
     } catch(e) {}
 
   } catch (err) {
@@ -1917,6 +1921,14 @@ async function saveStateToEncryptedStorage() {
     announceNVDA('Fehler beim Speichern der Daten!', true);
   }
 }
+
+// Sofortiges Speichern beim Verlassen des Fensters
+window.addEventListener('beforeunload', function() {
+  if (cryptoKey) {
+    saveStateToEncryptedStorage();
+  }
+});
+
 
 function unlockApp() {
   const lockScreen = document.getElementById('lock-screen');
@@ -2017,7 +2029,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.5.0',
+    version: '4.6.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,

@@ -178,7 +178,6 @@ namespace HaushaltsbuchApp
         {
             try
             {
-                // Wenn bereits eine gültige Datei mit echten Daten (> 50 Zeichen) existiert -> fertig
                 if (IsValidVaultJsonFile(vaultPath))
                 {
                     try { File.Copy(vaultPath, bakPath, true); } catch { }
@@ -191,7 +190,6 @@ namespace HaushaltsbuchApp
                     return;
                 }
 
-                // TIEFENRETTUNG AUS ALLEN VORHERIGEN VERSIONEN (Chrome, Edge, Firefox, LevelDB, Downloads)
                 string foundVault = DeepScanAllPreviousSources();
                 if (!string.IsNullOrEmpty(foundVault))
                 {
@@ -213,33 +211,23 @@ namespace HaushaltsbuchApp
 
                 List<string> candidateFolders = new List<string>();
 
-                // 1. Chrome LevelDB
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     candidateFolders.Add(Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"));
                     candidateFolders.Add(Path.Combine(localAppData, @"HaushaltsbuchApp\Profile\Default\Local Storage\leveldb"));
                     candidateFolders.Add(Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\Local Storage\leveldb"));
                     candidateFolders.Add(Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\Local Storage\leveldb"));
-                }
 
-                // 2. Profile 1 bis Profile 10 in Chrome / Edge
-                if (!string.IsNullOrEmpty(localAppData))
-                {
                     for (int i = 1; i <= 10; i++)
                     {
                         candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Google\Chrome\User Data\Profile {0}\Local Storage\leveldb", i)));
                         candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Microsoft\Edge\User Data\Profile {0}\Local Storage\leveldb", i)));
                     }
-                }
 
-                // 3. Ältere Dateispeicherorte
-                if (!string.IsNullOrEmpty(localAppData))
-                {
                     string oldVault = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
                     if (IsValidVaultJsonFile(oldVault)) return File.ReadAllText(oldVault, Encoding.UTF8);
                 }
 
-                // 4. Scanne alle LevelDB-Ordner mit Print-Filter
                 foreach (string dir in candidateFolders)
                 {
                     if (Directory.Exists(dir))
@@ -249,7 +237,6 @@ namespace HaushaltsbuchApp
                     }
                 }
 
-                // 5. Scanne Downloads, Desktop, Dokumente nach Sicherungsdateien
                 string[] userDirs = new string[]
                 {
                     Path.Combine(userProfile, "Downloads"),
@@ -301,7 +288,6 @@ namespace HaushaltsbuchApp
                                 }
                             }
 
-                            // EXTRACT ALL PRINTABLE ASCII CHARACTERS (Strips binary headers, Snappy bytes, and UTF-16 null bytes)
                             StringBuilder sb = new StringBuilder(bytes.Length);
                             for (int i = 0; i < bytes.Length; i++)
                             {
@@ -405,21 +391,65 @@ namespace HaushaltsbuchApp
             {
                 using (client)
                 {
+                    client.ReceiveTimeout = 6000;
+                    client.SendTimeout = 6000;
                     using (var stream = client.GetStream())
                     {
-                        var buffer = new byte[65536];
-                        int bytesRead = stream.Read(buffer, 0, buffer.Length);
-                        if (bytesRead <= 0) return;
+                        var ms = new MemoryStream();
+                        var buffer = new byte[8192];
+                        int headerEnd = -1;
+                        int contentLength = 0;
 
-                        string rawReq = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        string[] lines = rawReq.Split(new string[] { "\r\n" }, StringSplitOptions.None);
-                        if (lines.Length == 0) return;
+                        // 1. HTTP-Header vollständig empfangen
+                        while (true)
+                        {
+                            int read = stream.Read(buffer, 0, buffer.Length);
+                            if (read <= 0) break;
+                            ms.Write(buffer, 0, read);
 
-                        string[] reqLine = lines[0].Split(' ');
-                        if (reqLine.Length < 2) return;
+                            string currentText = Encoding.UTF8.GetString(ms.ToArray());
+                            headerEnd = currentText.IndexOf("\r\n\r\n");
+                            if (headerEnd >= 0)
+                            {
+                                Match clMatch = Regex.Match(currentText, @"Content-Length:\s*(\d+)", RegexOptions.IgnoreCase);
+                                if (clMatch.Success) contentLength = int.Parse(clMatch.Groups[1].Value);
+                                break;
+                            }
+                        }
 
-                        string method = reqLine[0].ToUpper();
-                        string url = reqLine[1];
+                        if (headerEnd < 0) return;
+
+                        // 2. HTTP-Body vollständig nach Content-Length empfangen (verhindert Abschneiden!)
+                        byte[] allBytes = ms.ToArray();
+                        string allText = Encoding.UTF8.GetString(allBytes);
+                        string headerPart = allText.Substring(0, headerEnd);
+                        int headerByteCount = Encoding.UTF8.GetByteCount(headerPart) + 4;
+                        int bodyBytesRead = allBytes.Length - headerByteCount;
+
+                        while (contentLength > 0 && bodyBytesRead < contentLength)
+                        {
+                            int toRead = Math.Min(buffer.Length, contentLength - bodyBytesRead);
+                            int read = stream.Read(buffer, 0, toRead);
+                            if (read <= 0) break;
+                            ms.Write(buffer, 0, read);
+                            bodyBytesRead += read;
+                        }
+
+                        allBytes = ms.ToArray();
+                        string body = "";
+                        if (contentLength > 0 && allBytes.Length >= headerByteCount + contentLength)
+                        {
+                            body = Encoding.UTF8.GetString(allBytes, headerByteCount, contentLength);
+                        }
+
+                        string[] reqLines = headerPart.Split(new string[] { "\r\n" }, StringSplitOptions.None);
+                        if (reqLines.Length == 0) return;
+
+                        string[] reqFirst = reqLines[0].Split(' ');
+                        if (reqFirst.Length < 2) return;
+
+                        string method = reqFirst[0].ToUpper();
+                        string url = reqFirst[1];
 
                         if (method == "OPTIONS")
                         {
@@ -450,7 +480,6 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // API: DEEP RECOVERY
                         if (url.StartsWith("/api/deep_recovery"))
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -461,16 +490,10 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        // API: SAVE VAULT (100% vollständig gepuffert!)
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
-                            
-                            int headerEnd = rawReq.IndexOf("\r\n\r\n");
-                            string body = "";
-                            if (headerEnd >= 0)
-                            {
-                                body = rawReq.Substring(headerEnd + 4);
-                            }
 
                             if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
                             {
@@ -518,7 +541,7 @@ namespace HaushaltsbuchApp
                 StringBuilder sb = new StringBuilder();
                 sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
                 sb.Append("Access-Control-Allow-Origin: *\r\n");
-                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+                sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
                 sb.Append("Access-Control-Allow-Headers: Content-Type\r\n");
                 sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
                 sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));

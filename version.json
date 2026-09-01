@@ -1,15 +1,16 @@
 {
-  "version": "4.5.0",
+  "version": "4.6.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "All-Version Tiefenrettung: Erkennt und stellt Daten aus allen aelteren Versionen (Chrome, Edge, Firefox, LevelDB) mit Print-Filter vollautomatisch wieder her",
-    "Direkt-Wiederherstellung auf dem Sperrbildschirm: 1-Klick Import fuer beliebige alte Sicherungsdateien",
+    "Vollstaendig gepufferter TCP HTTP-Server: Verhindert jegliches Abschneiden von Daten beim Schliessen der App",
+    "Keep-Alive & BeforeUnload Echtzeit-Schutz: Schreibt alle neuen Eingaben vor dem Schliessen garantiert auf die Festplatte",
+    "All-Version Tiefenrettung: Automatische Datenmigration aus allen aelteren Browser-Versionen",
+    "Direkt-Wiederherstellung auf dem Sperrbildschirm: 1-Klick Import",
     "Saubere 2-Stellen-Speicherung (.vault & .vault.bak)",
     "Volle Uebersicht: Jede Buchung (einmalig & dauerhaft) direkt in der Uebersicht bearbeitbar und loeschbar",
     "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
     "NVDA-Sprachoptimierung: Ruhige Screenreader-Bedienung",
-    "Standard-Browser: 1. Google Chrome, 2. Mozilla Firefox, 3. Edge/Brave/System",
     "Volle Barrierefreiheit fuer NVDA Screenreader (WCAG 2.2 AAA)"
   ]
 }
