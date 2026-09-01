@@ -15,12 +15,13 @@ namespace HaushaltsbuchApp
         private const string GITHUB_RAW_BASE = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main";
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
-        private const int LOCAL_SERVER_PORT = 48123;
+        private const int BASE_PORT = 48123;
 
         private static string _centralVaultPath;
         private static string _centralHtmlPath;
         private static HttpListener _httpListener;
         private static Thread _serverThread;
+        private static int _activePort = BASE_PORT;
 
         [STAThread]
         static void Main()
@@ -80,12 +81,12 @@ namespace HaushaltsbuchApp
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. LOKALER FESTPLATTEN-SERVER STARTEN (Speichert Daten direkt in Haushaltsbuch_Daten.vault)
-                StartLocalVaultServer();
+                // 6. LOKALER FESTPLATTEN-SERVER STARTEN
+                bool serverStarted = StartLocalVaultServer();
 
                 // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
-                string serverUrl = string.Format("http://127.0.0.1:{0}/", LOCAL_SERVER_PORT);
-                LaunchBestBrowser(serverUrl, targetHtml, centralProfileDir);
+                string launchUrl = serverStarted ? string.Format("http://127.0.0.1:{0}/", _activePort) : ("file:///" + targetHtml.Replace('\\', '/'));
+                LaunchBestBrowser(launchUrl, targetHtml, centralProfileDir);
             }
             catch (Exception ex)
             {
@@ -93,30 +94,41 @@ namespace HaushaltsbuchApp
             }
         }
 
-        private static void StartLocalVaultServer()
+        private static bool StartLocalVaultServer()
         {
-            try
+            for (int port = BASE_PORT; port <= BASE_PORT + 10; port++)
             {
-                _httpListener = new HttpListener();
-                _httpListener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", LOCAL_SERVER_PORT));
-                _httpListener.Start();
-
-                _serverThread = new Thread(() =>
+                try
                 {
-                    while (_httpListener != null && _httpListener.IsListening)
+                    var listener = new HttpListener();
+                    listener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", port));
+                    listener.Start();
+
+                    _httpListener = listener;
+                    _activePort = port;
+
+                    _serverThread = new Thread(() =>
                     {
-                        try
+                        while (_httpListener != null && _httpListener.IsListening)
                         {
-                            var ctx = _httpListener.GetContext();
-                            ThreadPool.QueueUserWorkItem((state) => HandleHttpRequest(ctx));
+                            try
+                            {
+                                var ctx = _httpListener.GetContext();
+                                ThreadPool.QueueUserWorkItem((state) => HandleHttpRequest(ctx));
+                            }
+                            catch { }
                         }
-                        catch { }
-                    }
-                });
-                _serverThread.IsBackground = true;
-                _serverThread.Start();
+                    });
+                    _serverThread.IsBackground = true;
+                    _serverThread.Start();
+                    return true;
+                }
+                catch
+                {
+                    // Port besetzt, versuche naechsten
+                }
             }
-            catch { }
+            return false;
         }
 
         private static void HandleHttpRequest(HttpListenerContext ctx)
@@ -126,7 +138,24 @@ namespace HaushaltsbuchApp
                 var req = ctx.Request;
                 var res = ctx.Response;
 
-                res.Headers.Add("Access-Control-Allow-Origin", "*");
+                // 🔒 SICHERHEITSAUDIT: Pruefe Herkunft (Nur Loopback & Lokale Aufrufe erlaubt!)
+                string origin = req.Headers["Origin"];
+                if (!string.IsNullOrEmpty(origin))
+                {
+                    if (!origin.StartsWith("http://127.0.0.1") && !origin.StartsWith("http://localhost") && !origin.StartsWith("null"))
+                    {
+                        // Boesartige externe Webseite versucht lokalen Dienst anzugreifen -> 403 Blockieren!
+                        res.StatusCode = 403;
+                        res.Close();
+                        return;
+                    }
+                    res.Headers.Add("Access-Control-Allow-Origin", origin);
+                }
+                else
+                {
+                    res.Headers.Add("Access-Control-Allow-Origin", "*");
+                }
+
                 res.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
                 res.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
 
@@ -151,7 +180,7 @@ namespace HaushaltsbuchApp
                     return;
                 }
 
-                // API: TRESOR DIREKT AUF FESTPLATTE SPEICHERN
+                // API: TRESOR ATOMAR DIREKT AUF FESTPLATTE SPEICHERN
                 if (rawUrl == "/api/save_vault" && req.HttpMethod == "POST")
                 {
                     using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
@@ -159,7 +188,20 @@ namespace HaushaltsbuchApp
                         string body = reader.ReadToEnd();
                         if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
                         {
-                            File.WriteAllText(_centralVaultPath, body);
+                            // Atomarer Schreibvorgang mit Backup-Sicherung
+                            string tmpPath = _centralVaultPath + ".tmp";
+                            string bakPath = _centralVaultPath + ".bak";
+
+                            File.WriteAllText(tmpPath, body, Encoding.UTF8);
+
+                            if (File.Exists(_centralVaultPath))
+                            {
+                                try { File.Copy(_centralVaultPath, bakPath, true); } catch { }
+                            }
+
+                            File.Copy(tmpPath, _centralVaultPath, true);
+                            try { File.Delete(tmpPath); } catch { }
+
                             InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
                         }
                     }
@@ -197,7 +239,7 @@ namespace HaushaltsbuchApp
                 string vaultJson = File.Exists(vaultPath) ? File.ReadAllText(vaultPath) : "{}";
                 string html = File.ReadAllText(htmlPath);
 
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + ";</script>";
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__LOCAL_PORT__ = " + _activePort + ";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {
@@ -208,7 +250,7 @@ namespace HaushaltsbuchApp
                     html = html.Replace("<body", scriptTag + "\n<body");
                 }
 
-                File.WriteAllText(htmlPath, html);
+                File.WriteAllText(htmlPath, html, Encoding.UTF8);
             }
             catch { }
         }
@@ -244,7 +286,7 @@ namespace HaushaltsbuchApp
                         string foundJson = ScanLevelDbFolder(dir);
                         if (!string.IsNullOrEmpty(foundJson))
                         {
-                            File.WriteAllText(targetVaultPath, foundJson);
+                            File.WriteAllText(targetVaultPath, foundJson, Encoding.UTF8);
                             return;
                         }
                     }
@@ -305,10 +347,8 @@ namespace HaushaltsbuchApp
             return null;
         }
 
-        private static void LaunchBestBrowser(string serverUrl, string fallbackHtmlPath, string profileDir)
+        private static void LaunchBestBrowser(string url, string fallbackHtmlPath, string profileDir)
         {
-            string url = serverUrl;
-
             // 1. GOOGLE CHROME
             string chromePath = FindBrowserPath(new string[]
             {
