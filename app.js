@@ -1,8 +1,8 @@
 /**
  * ============================================================================
- * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - STABLE v3.8.0
- * 100% DSGVO-konform, AES-GCM 256-Bit verschlüsselt
- * Echte permanente Speicherung ohne unerwünschtes Sperren
+ * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - SECURITY RELEASE v4.0.0
+ * 100% DSGVO-konform, AES-GCM 256-Bit militärisch verschlüsselt
+ * Brute-Force-Schutz: 5 Fehlversuche -> 2 Stunden Sperre mit Live-Countdown
  * Optimiert für NVDA Screenreader & WCAG 2.2 AAA
  * ============================================================================
  */
@@ -14,6 +14,11 @@ const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
 const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
+const STORAGE_LOCKOUT_KEY = 'barrierefreie_finanzen_lockout_v1';
+const STORAGE_ATTEMPTS_KEY = 'barrierefreie_finanzen_attempts_v1';
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden in Millisekunden
 
 const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -38,7 +43,8 @@ let selectedDateStr = initialDate.toISOString().split('T')[0];
 let currentWeekDateStr = initialDate.toISOString().split('T')[0];
 
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten entspanntes Timeout
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten
+let lockoutTimerInterval = null;
 
 // ----------------------------------------------------------------------------
 // 2. INITIALISIERUNG
@@ -48,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDatePickers();
   setupGlobalKeyboardShortcuts();
   checkVaultStatus();
+  checkLockoutStatus();
   startHeartbeat();
   updateTodayDisplay();
 
@@ -57,6 +64,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (document.getElementById('inc-date')) document.getElementById('inc-date').value = todayVal;
   if (document.getElementById('trf-date')) document.getElementById('trf-date').value = todayVal;
 });
+
+function startHeartbeat() {
+  const port = window.__LOCAL_PORT__ || 48123;
+  setInterval(() => {
+    fetch(`http://127.0.0.1:${port}/api/heartbeat`).catch(() => {});
+  }, 3000);
+}
 
 function updateTodayDisplay() {
   const now = new Date();
@@ -124,9 +138,6 @@ function setupGlobalKeyboardShortcuts() {
   ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
     window.addEventListener(evt, resetInactivityTimer, { passive: true });
   });
-
-  // WICHTIG: KEIN visibilitychange Auto-Lock mehr!
-  // Dadurch wird die App niemals gesperrt, wenn man Tabs wechselt oder Eingaben macht!
 }
 
 function resetInactivityTimer() {
@@ -140,7 +151,77 @@ function resetInactivityTimer() {
 }
 
 // ----------------------------------------------------------------------------
-// 5. ZEITRAUM- & KALENDERWOCHEN-LOGIK (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
+// 5. BRUTE-FORCE SCHUTZ & 2-STUNDEN SPERRE
+// ----------------------------------------------------------------------------
+function getFailedAttempts() {
+  return parseInt(localStorage.getItem(STORAGE_ATTEMPTS_KEY) || '0', 10);
+}
+
+function setFailedAttempts(count) {
+  localStorage.setItem(STORAGE_ATTEMPTS_KEY, String(count));
+}
+
+function getLockoutEndTime() {
+  return parseInt(localStorage.getItem(STORAGE_LOCKOUT_KEY) || '0', 10);
+}
+
+function setLockoutEndTime(timestamp) {
+  localStorage.setItem(STORAGE_LOCKOUT_KEY, String(timestamp));
+}
+
+function checkLockoutStatus() {
+  const lockoutUntil = getLockoutEndTime();
+  const now = Date.now();
+  const pinInput = document.getElementById('pin-input');
+  const btnUnlock = document.getElementById('btn-unlock');
+  const errorMsg = document.getElementById('pin-error-msg');
+
+  if (lockoutUntil > now) {
+    // Noch gesperrt!
+    const remainingMs = lockoutUntil - now;
+    const hours = Math.floor(remainingMs / (60 * 60 * 1000));
+    const minutes = Math.ceil((remainingMs % (60 * 60 * 1000)) / (60 * 1000));
+
+    let timeText = `${minutes} Minute(n)`;
+    if (hours > 0) {
+      timeText = `${hours} Stunde(n) und ${minutes} Minute(n)`;
+    }
+
+    if (pinInput) {
+      pinInput.disabled = true;
+      pinInput.value = '';
+    }
+    if (btnUnlock) btnUnlock.disabled = true;
+
+    if (errorMsg) {
+      errorMsg.textContent = `⛔ ZUGRIFF GESPERRT: Du hast die PIN 5 Mal falsch eingegeben. Aus Sicherheitsgründen ist die App noch für ${timeText} gesperrt.`;
+      errorMsg.style.display = 'block';
+    }
+
+    if (!lockoutTimerInterval) {
+      lockoutTimerInterval = setInterval(() => {
+        checkLockoutStatus();
+      }, 10000); // alle 10 Sekunden aktualisieren
+    }
+    return true;
+  } else {
+    // Sperre abgelaufen oder nicht gesperrt
+    if (lockoutTimerInterval) {
+      clearInterval(lockoutTimerInterval);
+      lockoutTimerInterval = null;
+    }
+    if (lockoutUntil !== 0) {
+      setLockoutEndTime(0);
+      setFailedAttempts(0);
+    }
+    if (pinInput) pinInput.disabled = false;
+    if (btnUnlock) btnUnlock.disabled = false;
+    return false;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// 6. ZEITRAUM- & KALENDERWOCHEN-LOGIK (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
 // ----------------------------------------------------------------------------
 function getWeekBoundaries(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -527,7 +608,7 @@ function setYearToCurrent() {
 }
 
 // ----------------------------------------------------------------------------
-// 6. DAUERAUFTRÄGE LOGIK & BERECHNUNGEN
+// 7. DAUERAUFTRÄGE LOGIK & BERECHNUNGEN
 // ----------------------------------------------------------------------------
 function isRecurringDueInMonth(rec, year, month) {
   if (!rec.active && rec.active !== undefined) return false;
@@ -604,7 +685,7 @@ function getRecurringTransactionsForMonth(year, month) {
 }
 
 // ----------------------------------------------------------------------------
-// 7. FINANZIELLE MATHEMATIK & KONTOSTÄNDE
+// 8. FINANZIELLE MATHEMATIK & KONTOSTÄNDE
 // ----------------------------------------------------------------------------
 function calculateBalancesUpToDate(targetDateStr) {
   const balances = {
@@ -704,7 +785,7 @@ function calculateMonthStats(year, month) {
 }
 
 // ----------------------------------------------------------------------------
-// 8. HAUPTÜBERSICHT RENDERN (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
+// 9. HAUPTÜBERSICHT RENDERN (TAG, WOCHE, MONAT, 3M, 6M, JAHR)
 // ----------------------------------------------------------------------------
 function updateOverview() {
   if (currentActiveView !== 'overview') return;
@@ -1004,7 +1085,7 @@ function renderTransactionList(list, containerId, emptyText) {
 }
 
 // ----------------------------------------------------------------------------
-// 9. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
+// 10. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
 // ----------------------------------------------------------------------------
 function toggleExpenseFrequencyFields() {
   const freq = document.getElementById('exp-frequency').value;
@@ -1204,7 +1285,7 @@ function handleAddTransfer(e) {
 }
 
 // ----------------------------------------------------------------------------
-// 10. MODAL DIALOGE & BEARBEITEN
+// 11. MODAL DIALOGE & BEARBEITEN
 // ----------------------------------------------------------------------------
 function openEditModal(txId) {
   const tx = appState.transactions.find(t => t.id === txId);
@@ -1307,7 +1388,7 @@ function deleteRecurring(recId) {
 }
 
 // ----------------------------------------------------------------------------
-// 11. KAUF-PLANER & SIMULATOR
+// 12. KAUF-PLANER & SIMULATOR
 // ----------------------------------------------------------------------------
 let currentSimulatedPurchase = null;
 
@@ -1369,7 +1450,7 @@ function saveSimulatedPurchase() {
 }
 
 // ----------------------------------------------------------------------------
-// 12. EINSTELLUNGEN: DESIGN, SCHRIFTGRÖSSE, DAUERAUFTRÄGE
+// 13. EINSTELLUNGEN: DESIGN, SCHRIFTGRÖSSE, DAUERAUFTRÄGE
 // ----------------------------------------------------------------------------
 function renderSettingsRecurringList() {
   const container = document.getElementById('settings-recurring-container');
@@ -1454,7 +1535,7 @@ function initTheme() {
 }
 
 // ----------------------------------------------------------------------------
-// 13. VIEW NAVIGATION (TABS 1-5)
+// 14. VIEW NAVIGATION (TABS 1-5)
 // ----------------------------------------------------------------------------
 function switchView(viewName) {
   currentActiveView = viewName;
@@ -1495,7 +1576,7 @@ function switchView(viewName) {
 }
 
 // ----------------------------------------------------------------------------
-// 14. AES-256 WEB CRYPTO ENGINE (PBKDF2 100.000 + AES-GCM + PERSISTENCE)
+// 15. AES-256 WEB CRYPTO ENGINE & PERSISTENZ
 // ----------------------------------------------------------------------------
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
@@ -1573,17 +1654,9 @@ function base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
-
-function startHeartbeat() {
-  const port = window.__LOCAL_PORT__ || 48123;
-  setInterval(function() {
-    fetch('http://127.0.0.1:' + port + '/api/heartbeat').catch(function() {});
-  }, 3000);
-}
-
 function checkVaultStatus() {
-  var savedVault = localStorage.getItem(STORAGE_DATA_KEY);
-  var savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
+  let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
+  let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
 
   // 1. Festplatten-Tresor aus Injektion
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
@@ -1596,11 +1669,11 @@ function checkVaultStatus() {
   }
 
   // 2. Festplatten-Tresor per API abfragen
-  var port = window.__LOCAL_PORT__ || 48123;
+  const port = window.__LOCAL_PORT__ || 48123;
   try {
-    fetch('http://127.0.0.1:' + port + '/api/get_vault')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
+    fetch(`http://127.0.0.1:${port}/api/get_vault`)
+      .then(r => r.json())
+      .then(data => {
         if (data && data.vault && data.salt) {
           localStorage.setItem(STORAGE_DATA_KEY, data.vault);
           localStorage.setItem(STORAGE_SALT_KEY, data.salt);
@@ -1608,16 +1681,16 @@ function checkVaultStatus() {
           updateLockScreenUI(false);
         }
       })
-      .catch(function() {});
+      .catch(() => {});
   } catch(e) {}
 
   updateLockScreenUI(!savedVault || !savedSalt);
 }
 
 function updateLockScreenUI(isFirstTime) {
-  var firstTimeHint = document.getElementById('first-time-hint');
-  var lockHeading = document.getElementById('lock-heading');
-  var lockInstructions = document.getElementById('lock-instructions');
+  const firstTimeHint = document.getElementById('first-time-hint');
+  const lockHeading = document.getElementById('lock-heading');
+  const lockInstructions = document.getElementById('lock-instructions');
 
   if (firstTimeHint) firstTimeHint.style.display = isFirstTime ? 'block' : 'none';
 
@@ -1627,6 +1700,121 @@ function updateLockScreenUI(isFirstTime) {
   } else {
     if (lockHeading) lockHeading.textContent = 'Sicherer AES-256 Zugang';
     if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:';
+  }
+}
+
+async function handlePinSubmit(e) {
+  e.preventDefault();
+
+  // Prüfe 2-Stunden-Sperre
+  if (checkLockoutStatus()) {
+    announceNVDA('Zugriff gesperrt wegen zu vieler Fehlversuche.', true);
+    return;
+  }
+
+  const pinInput = document.getElementById('pin-input');
+  const errorMsg = document.getElementById('pin-error-msg');
+  const enteredPin = pinInput.value.trim();
+
+  if (!enteredPin) return;
+
+  const storedData = localStorage.getItem(STORAGE_DATA_KEY);
+  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+
+  try {
+    if (!storedData) {
+      // Neuer Datensafe
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      saltBase64 = arrayBufferToBase64(salt.buffer);
+      localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
+
+      cryptoKey = await deriveKey(enteredPin, salt);
+      appState = {
+        initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
+        transactions: [],
+        recurring: []
+      };
+      await saveStateToEncryptedStorage();
+      
+      // Erfolgreich -> Fehlversuche zurücksetzen
+      setFailedAttempts(0);
+      setLockoutEndTime(0);
+
+      unlockApp();
+      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
+    } else {
+      // Vorhandener Datensafe
+      const saltBuffer = base64ToArrayBuffer(saltBase64);
+      const salt = new Uint8Array(saltBuffer);
+      const key = await deriveKey(enteredPin, salt);
+
+      const decrypted = await decryptData(storedData, key);
+      cryptoKey = key;
+      appState = decrypted;
+
+      if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+      if (!appState.transactions) appState.transactions = [];
+      if (!appState.recurring) appState.recurring = [];
+
+      // Erfolgreich -> Fehlversuche zurücksetzen
+      setFailedAttempts(0);
+      setLockoutEndTime(0);
+
+      unlockApp();
+      announceNVDA('Erfolgreich entsperrt.');
+    }
+  } catch (err) {
+    // ❌ FALSCHE PIN EINGEGEBEN!
+    let attempts = getFailedAttempts() + 1;
+    setFailedAttempts(attempts);
+
+    if (attempts >= MAX_FAILED_ATTEMPTS) {
+      // 5 Fehlversuche erreicht -> 2 STUNDEN SPERREN!
+      const lockoutEnd = Date.now() + LOCKOUT_DURATION_MS;
+      setLockoutEndTime(lockoutEnd);
+      checkLockoutStatus();
+      announceNVDA('5 Fehlversuche erreicht! Der Zugriff ist für 2 Stunden gesperrt.', true);
+    } else {
+      const remainingAttempts = MAX_FAILED_ATTEMPTS - attempts;
+      if (errorMsg) {
+        errorMsg.textContent = `❌ Falsche PIN oder Passwort! Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
+        errorMsg.style.display = 'block';
+      }
+      pinInput.value = '';
+      pinInput.focus();
+      announceNVDA(`Falsche PIN. Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
+    }
+  }
+}
+
+async function saveStateToEncryptedStorage() {
+  if (!cryptoKey) return;
+
+  try {
+    const encryptedVaultBase64 = await encryptData(appState, cryptoKey);
+    const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+
+    localStorage.setItem(STORAGE_DATA_KEY, encryptedVaultBase64);
+
+    // In-Memory Vault aktualisieren
+    window.__DISK_VAULT__ = {
+      salt: saltBase64,
+      vault: encryptedVaultBase64
+    };
+
+    // Direkt auf der Festplatte speichern (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
+    const port = window.__LOCAL_PORT__ || 48123;
+    try {
+      fetch(`http://127.0.0.1:${port}/api/save_vault`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ salt: saltBase64, vault: encryptedVaultBase64 })
+      }).catch(() => {});
+    } catch(e) {}
+
+  } catch (err) {
+    console.error('Verschlüsselungsfehler:', err);
+    announceNVDA('Fehler beim Speichern der Daten!', true);
   }
 }
 
@@ -1656,7 +1844,7 @@ function lockApp() {
   }
 
   checkVaultStatus();
-  startHeartbeat();
+  checkLockoutStatus();
   announceNVDA('App gesperrt.');
 }
 
@@ -1698,7 +1886,18 @@ function resetAllAppData() {
   if (confirm('WARNUNG: Möchtest du wirklich ALLE deine Finanzdaten und die PIN unwiderruflich löschen?')) {
     localStorage.removeItem(STORAGE_DATA_KEY);
     localStorage.removeItem(STORAGE_SALT_KEY);
+    localStorage.removeItem(STORAGE_ATTEMPTS_KEY);
+    localStorage.removeItem(STORAGE_LOCKOUT_KEY);
     window.__DISK_VAULT__ = null;
+
+    const port = window.__LOCAL_PORT__ || 48123;
+    try {
+      fetch(`http://127.0.0.1:${port}/api/save_vault`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      }).catch(() => {});
+    } catch(e) {}
 
     cryptoKey = null;
     appState = { initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 }, transactions: [], recurring: [] };
@@ -1708,7 +1907,7 @@ function resetAllAppData() {
 }
 
 // ----------------------------------------------------------------------------
-// 15. UNIVERSELLER BACKUP-EXPORT & -IMPORT (ALLE VERSIONEN & FORMATE)
+// 16. UNIVERSELLER BACKUP-EXPORT & -IMPORT (ALLE VERSIONEN & FORMATE)
 // ----------------------------------------------------------------------------
 function exportEncryptedBackup() {
   const vault = localStorage.getItem(STORAGE_DATA_KEY);
@@ -1720,7 +1919,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '3.8.0',
+    version: '4.0.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
@@ -1810,6 +2009,15 @@ async function importEncryptedBackup(event) {
 
         window.__DISK_VAULT__ = { salt: normalizedSalt, vault: normalizedVault };
 
+        const port = window.__LOCAL_PORT__ || 48123;
+        try {
+          fetch(`http://127.0.0.1:${port}/api/save_vault`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ salt: normalizedSalt, vault: normalizedVault })
+          }).catch(() => {});
+        } catch(e) {}
+
         // Sofortige Entschlüsselung falls eingeloggt
         if (cryptoKey) {
           try {
@@ -1856,7 +2064,7 @@ async function importEncryptedBackup(event) {
 }
 
 // ----------------------------------------------------------------------------
-// 16. FORMATIERUNGS-HILFSFUNKTIONEN
+// 17. FORMATIERUNGS-HILFSFUNKTIONEN
 // ----------------------------------------------------------------------------
 function formatCurrency(num) {
   const val = Number(num || 0);
