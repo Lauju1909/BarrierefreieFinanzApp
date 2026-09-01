@@ -1,10 +1,10 @@
 {
-  "version": "4.0.0",
+  "version": "4.1.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN, Eingabefeld leeren & neu fokussieren",
-    "Automatische 2-Stunden-Sperre bei 5 Fehlversuchen mit persistentem Countdown",
+    "NVDA-Sprachoptimierung: Kein unnoetiges 'Geben Sie oben einen Preis ein' mehr beim Wechseln von Tag, Woche, Monat oder Jahr",
+    "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
     "Dauerhafter Festplatten-Tresor (Haushaltsbuch_Daten.vault) mit Heartbeat-Keepalive",
     "Nie wieder Datenverlust beim Schliessen und Wieder-Oeffnen der App",
     "Wochen-Uebersicht (KW) & Woechentliche Dauerauftraege",

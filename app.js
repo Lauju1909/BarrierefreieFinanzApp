@@ -1390,6 +1390,7 @@ function deleteRecurring(recId) {
 // ----------------------------------------------------------------------------
 // 12. KAUF-PLANER & SIMULATOR
 // ----------------------------------------------------------------------------
+
 let currentSimulatedPurchase = null;
 
 function runPurchaseSimulation() {
@@ -1399,11 +1400,19 @@ function runPurchaseSimulation() {
   const actionBox = document.getElementById('sim-save-action');
   if (!priceInput || !resultBox) return;
 
-  const price = parseFloat(priceInput.value);
+  const rawVal = priceInput.value.trim();
+  if (!rawVal) {
+    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>';
+    if (actionBox) actionBox.style.display = 'none';
+    currentSimulatedPurchase = null;
+    return;
+  }
+
+  const price = parseFloat(rawVal);
   const name = (nameInput && nameInput.value.trim()) || 'Wunsch';
 
   if (isNaN(price) || price <= 0) {
-    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, wie viel Geld danach noch übrig bleibt.</em></p>';
+    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>';
     if (actionBox) actionBox.style.display = 'none';
     currentSimulatedPurchase = null;
     return;
@@ -1426,6 +1435,7 @@ function runPurchaseSimulation() {
   if (actionBox) actionBox.style.display = 'block';
   currentSimulatedPurchase = { name, price, date: selectedDateStr };
 }
+
 
 function saveSimulatedPurchase() {
   if (!currentSimulatedPurchase) return;
@@ -1919,7 +1929,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.0.0',
+    version: '4.1.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
