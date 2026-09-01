@@ -1092,7 +1092,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.5.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.6.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -1157,7 +1157,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.5.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.6.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
@@ -2848,6 +2848,23 @@ function exportEncryptedBackup() {
   announceNVDA('Verschlüsseltes Backup erfolgreich heruntergeladen!');
 }
 
+
+function hexToUint8Array(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+  }
+  return bytes;
+}
+
+function uint8ArrayToBase64(uint8) {
+  let binary = '';
+  for (let i = 0; i < uint8.byteLength; i++) {
+    binary += String.fromCharCode(uint8[i]);
+  }
+  return btoa(binary);
+}
+
 async function importEncryptedBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2855,17 +2872,54 @@ async function importEncryptedBackup(event) {
   const reader = new FileReader();
   reader.onload = async function(e) {
     try {
-      const backup = JSON.parse(e.target.result);
+      const backupObj = JSON.parse(e.target.result);
       
-      // Fall A: Verschlüsselter Datentresor (Standard-Backup)
-      if (backup.vault && backup.salt) {
-        localStorage.setItem(STORAGE_DATA_KEY, backup.vault);
-        localStorage.setItem(STORAGE_SALT_KEY, backup.salt);
+      let normalizedVault = null;
+      let normalizedSalt = null;
+      let directState = null;
 
-        // Versuche sofortige Live-Entschlüsselung im laufenden Betrieb
+      // Format A: v2.1+ ({ salt, vault })
+      if (backupObj.vault && backupObj.salt) {
+        normalizedSalt = backupObj.salt;
+        if (/^[0-9a-fA-F]{32}$/.test(normalizedSalt)) {
+          normalizedSalt = uint8ArrayToBase64(hexToUint8Array(normalizedSalt));
+        }
+        normalizedVault = backupObj.vault;
+      }
+      // Format B: v2.0 ({ salt: hex, encryptedData: "{\"iv\":\"...\",\"data\":\"...\"}" })
+      else if (backupObj.salt && backupObj.encryptedData) {
+        normalizedSalt = backupObj.salt;
+        if (/^[0-9a-fA-F]{32}$/.test(normalizedSalt)) {
+          normalizedSalt = uint8ArrayToBase64(hexToUint8Array(normalizedSalt));
+        }
+
+        let encParsed = backupObj.encryptedData;
+        if (typeof encParsed === 'string') {
+          try { encParsed = JSON.parse(encParsed); } catch(err) {}
+        }
+
+        if (encParsed && encParsed.iv && encParsed.data) {
+          const ivBytes = hexToUint8Array(encParsed.iv);
+          const dataBytes = hexToUint8Array(encParsed.data);
+          const combined = new Uint8Array(ivBytes.length + dataBytes.length);
+          combined.set(ivBytes, 0);
+          combined.set(dataBytes, ivBytes.length);
+          normalizedVault = uint8ArrayToBase64(combined);
+        }
+      }
+      // Format C: Direktes JSON State ({ initialBalances, transactions })
+      else if (backupObj.initialBalances || backupObj.transactions) {
+        directState = backupObj;
+      }
+
+      if (normalizedVault && normalizedSalt) {
+        localStorage.setItem(STORAGE_DATA_KEY, normalizedVault);
+        localStorage.setItem(STORAGE_SALT_KEY, normalizedSalt);
+
+        // Falls bereits eingeloggt, versuche sofortige Entschlüsselung
         if (cryptoKey) {
           try {
-            const decrypted = await decryptData(backup.vault, cryptoKey);
+            const decrypted = await decryptData(normalizedVault, cryptoKey);
             appState = decrypted;
             if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
             if (!appState.transactions) appState.transactions = [];
@@ -2876,29 +2930,26 @@ async function importEncryptedBackup(event) {
             announceNVDA('Sicherung erfolgreich importiert und live geladen! Alle Buchungen sind sofort sichtbar.');
             return;
           } catch (err) {
-            // Falls das Backup mit einer anderen PIN erstellt wurde -> Lock Screen zum Entsperren mit jener PIN
+            // PIN unterscheidet sich -> Lock Screen mit PIN-Abfrage
             lockApp();
-            announceNVDA('Sicherungsdatei importiert. Bitte gib die PIN ein, mit der die Sicherung erstellt wurde.');
+            announceNVDA('Sicherung importiert. Bitte gib die PIN deiner Sicherungsdatei ein.');
             return;
           }
         } else {
-          announceNVDA('Sicherungsdatei importiert. Bitte entsperre mit deiner PIN.');
+          announceNVDA('Sicherung importiert. Bitte mit deiner PIN entsperren.');
           lockApp();
           return;
         }
-      }
-
-      // Fall B: Unverschlüsseltes JSON State Backup
-      if (backup.initialBalances || backup.transactions) {
+      } else if (directState) {
         appState = {
-          initialBalances: backup.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
-          transactions: backup.transactions || [],
-          recurring: backup.recurring || []
+          initialBalances: directState.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
+          transactions: directState.transactions || [],
+          recurring: directState.recurring || []
         };
         await saveStateToEncryptedStorage();
         updateOverview();
         switchView('overview');
-        announceNVDA('Finanzdaten erfolgreich importiert und verschlüsselt gespeichert!');
+        announceNVDA('Finanzdaten erfolgreich importiert und gespeichert!');
         return;
       }
 
@@ -2910,6 +2961,7 @@ async function importEncryptedBackup(event) {
   };
   reader.readAsText(file);
 }
+
 
 
 

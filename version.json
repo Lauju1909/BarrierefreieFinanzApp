@@ -1,10 +1,11 @@
 {
-  "version": "2.5.0",
+  "version": "2.6.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Sofortiger Live-Backup-Import (Importierte Daten werden sofort live im Fenster entschluesselt und angezeigt)",
-    "Aufgeraeumte Einstellungen: Nur noch Auto-Updater, Backup, Dauerauftraege, PIN und Loeschung",
+    "Universeller abwaertskompatibler Backup-Import (unterstuetzt alle Dateiformate: v2.0 Hex, v2.5 Base64, JSON)",
+    "Sofortiger Live-Import in die Uebersicht",
+    "Aufgeraeumte Einstellungen ohne doppelte Prognosen oder Startguthaben-Felder",
     "Jahres- und Mehr-Monatsansichten direkt in der Hauptuebersicht",
     "Dauerhafter zentraler Datensafe im Systemprofil",
     "Buchungen & Dauerauftraege direkt bearbeiten (Edit-Funktion)",
