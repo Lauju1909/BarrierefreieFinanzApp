@@ -19,10 +19,12 @@ namespace HaushaltsbuchApp
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
         private const int BASE_PORT = 48123;
 
-        private static string _centralAppDir;
-        private static string _centralVaultPath;
-        private static string _centralBakPath;
-        private static string _centralHtmlPath;
+        private static string _activeStorageDir;
+        private static string _vaultPath;
+        private static string _bakPath;
+        private static string _htmlPath;
+        private static string _versionPath;
+        private static string _profileDir;
 
         private static TcpListener _tcpListener;
         private static Thread _serverThread;
@@ -42,58 +44,51 @@ namespace HaushaltsbuchApp
                 catch { }
 
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
-                // 1. BESTEN SPEICHERORT BESTIMMEN
-                _centralAppDir = DetermineSingleBestStorageDirectory(baseDir);
-                string centralProfileDir = Path.Combine(_centralAppDir, "Profile");
-                _centralHtmlPath = Path.Combine(_centralAppDir, "Haushaltsbuch_App.html");
-                string centralVersionPath = Path.Combine(_centralAppDir, "version.json");
-                _centralVaultPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault");
-                _centralBakPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault.bak");
+                // 1. SPEICHERORT: DIREKT IM ORDNER DER EXE! (Fallback auf %LOCALAPPDATA% falls keine Schreibrechte)
+                _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
+                _profileDir = Path.Combine(_activeStorageDir, "Profile");
+                _htmlPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_App.html");
+                _versionPath = Path.Combine(_activeStorageDir, "version.json");
+                _vaultPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_Daten.vault");
+                _bakPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_Daten.vault.bak");
 
                 try
                 {
-                    if (!Directory.Exists(_centralAppDir)) Directory.CreateDirectory(_centralAppDir);
-                    if (!Directory.Exists(centralProfileDir)) Directory.CreateDirectory(centralProfileDir);
+                    if (!Directory.Exists(_activeStorageDir)) Directory.CreateDirectory(_activeStorageDir);
+                    if (!Directory.Exists(_profileDir)) Directory.CreateDirectory(_profileDir);
                 }
                 catch { }
 
-                // 2. ENTPACKEN ODER SYNCHRONISIEREN
-                if (!File.Exists(_centralHtmlPath))
+                // 2. ENTPACKEN ODER INITIALISIEREN DER HTML-DATEI
+                if (!File.Exists(_htmlPath))
                 {
-                    UnpackEmbeddedApp(_centralHtmlPath);
+                    UnpackEmbeddedApp(_htmlPath);
                 }
 
-                if (File.Exists(localHtmlInBaseDir) && !File.Exists(_centralHtmlPath))
+                // 3. BACKGROUND UPDATE CHECK VON GITHUB
+                CheckAndApplyUpdate(_htmlPath, _versionPath);
+
+                if (!File.Exists(_htmlPath))
                 {
-                    try { File.Copy(localHtmlInBaseDir, _centralHtmlPath, true); } catch { }
+                    UnpackEmbeddedApp(_htmlPath);
                 }
 
-                // 3. BACKGROUND UPDATE CHECK
-                CheckAndApplyUpdate(_centralHtmlPath, centralVersionPath);
+                // 4. MAXIMALE TIEFENRETTUNG: DATEN AUS ALLEN ORTEN DIREKT IN DEN EXE-ORDNER RETTEN
+                PerformUltimateDataRescue(_activeStorageDir, _vaultPath, _bakPath);
 
-                string targetHtml = File.Exists(_centralHtmlPath) ? _centralHtmlPath : localHtmlInBaseDir;
-                if (!File.Exists(targetHtml))
-                {
-                    UnpackEmbeddedApp(targetHtml);
-                }
+                // 5. INJEKTION DER DATEN IN DIE HTML
+                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
 
-                // 4. TIEFENRETTUNG: DATEN AUS ALLEN VORHERIGEN VERSIONEN & BROWSERN RETTEN
-                PerformUltimateDataRescue(_centralAppDir, _centralVaultPath, _centralBakPath);
-
-                // 5. INJEKTION IN DIE HTML-DATEI
-                InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
-
-                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN
+                // 6. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
 
                 string launchUrl = serverStarted 
                     ? string.Format("http://127.0.0.1:{0}/", _activePort) 
-                    : ("file:///" + targetHtml.Replace('\\', '/'));
+                    : ("file:///" + _htmlPath.Replace('\\', '/'));
 
                 // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
-                Process browserProc = LaunchBestBrowser(launchUrl, targetHtml, centralProfileDir);
+                Process browserProc = LaunchBestBrowser(launchUrl, _htmlPath, _profileDir);
 
                 // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat)
                 _lastHeartbeat = DateTime.Now;
@@ -124,49 +119,47 @@ namespace HaushaltsbuchApp
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("Hinweis: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
 
-        private static string DetermineSingleBestStorageDirectory(string baseDir)
+        private static string GetPrimaryExeStorageDirectory(string baseDir)
         {
-            string[] candidateRoots = new string[]
+            // 1. Priorität: DIREKT IM ORDNER DER EXE
+            try
             {
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                @"C:\Users\Public",
-                baseDir
-            };
-
-            foreach (string root in candidateRoots)
-            {
-                if (string.IsNullOrEmpty(root)) continue;
-                string dir = Path.Combine(root, "HaushaltsbuchApp");
-                string vaultFile = Path.Combine(dir, "Haushaltsbuch_Daten.vault");
-                if (IsValidVaultJsonFile(vaultFile))
+                string testFile = Path.Combine(baseDir, ".write_test_" + Guid.NewGuid().ToString("N"));
+                File.WriteAllText(testFile, "OK", Encoding.UTF8);
+                if (File.Exists(testFile))
                 {
-                    return dir;
+                    File.Delete(testFile);
+                    return baseDir;
                 }
             }
+            catch { }
 
-            foreach (string root in candidateRoots)
+            // 2. Priorität: %LOCALAPPDATA%\HaushaltsbuchApp
+            string localApp = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrEmpty(localApp))
             {
-                if (string.IsNullOrEmpty(root)) continue;
-
+                string dir = Path.Combine(localApp, "HaushaltsbuchApp");
                 try
                 {
-                    string target = Path.Combine(root, "HaushaltsbuchApp");
-                    if (!Directory.Exists(target)) Directory.CreateDirectory(target);
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    return dir;
+                }
+                catch { }
+            }
 
-                    string testFile = Path.Combine(target, ".perm_test_" + Guid.NewGuid().ToString("N"));
-                    File.WriteAllText(testFile, "OK", Encoding.UTF8);
-                    if (File.Exists(testFile))
-                    {
-                        File.Delete(testFile);
-                        return target;
-                    }
+            // 3. Priorität: %APPDATA%\HaushaltsbuchApp
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (!string.IsNullOrEmpty(appData))
+            {
+                string dir = Path.Combine(appData, "HaushaltsbuchApp");
+                try
+                {
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    return dir;
                 }
                 catch { }
             }
@@ -178,18 +171,21 @@ namespace HaushaltsbuchApp
         {
             try
             {
+                // Wenn Hauptdatei bereits intakt ist -> Backup synchronisieren & fertig
                 if (IsValidVaultJsonFile(vaultPath))
                 {
                     try { File.Copy(vaultPath, bakPath, true); } catch { }
                     return;
                 }
 
+                // Wenn Backup intakt ist -> Hauptdatei daraus reparieren
                 if (IsValidVaultJsonFile(bakPath))
                 {
                     File.Copy(bakPath, vaultPath, true);
                     return;
                 }
 
+                // Tiefenrettung aus allen früheren Ordnern, Browsern und Backups
                 string foundVault = DeepScanAllPreviousSources();
                 if (!string.IsNullOrEmpty(foundVault))
                 {
@@ -209,8 +205,27 @@ namespace HaushaltsbuchApp
                 string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
                 string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
-                List<string> candidateFolders = new List<string>();
+                // 1. Prüfe alte AppData-Ordner
+                if (!string.IsNullOrEmpty(localAppData))
+                {
+                    string old1 = Path.Combine(localAppData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
+                    if (IsValidVaultJsonFile(old1)) return File.ReadAllText(old1, Encoding.UTF8);
 
+                    string oldBak = Path.Combine(localAppData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault.bak");
+                    if (IsValidVaultJsonFile(oldBak)) return File.ReadAllText(oldBak, Encoding.UTF8);
+
+                    string oldDb = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
+                    if (IsValidVaultJsonFile(oldDb)) return File.ReadAllText(oldDb, Encoding.UTF8);
+                }
+
+                if (!string.IsNullOrEmpty(appData))
+                {
+                    string oldRoaming = Path.Combine(appData, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
+                    if (IsValidVaultJsonFile(oldRoaming)) return File.ReadAllText(oldRoaming, Encoding.UTF8);
+                }
+
+                // 2. Scanne LevelDB-Ordner aller Browser (Chrome, Edge, Brave)
+                List<string> candidateFolders = new List<string>();
                 if (!string.IsNullOrEmpty(localAppData))
                 {
                     candidateFolders.Add(Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"));
@@ -223,9 +238,6 @@ namespace HaushaltsbuchApp
                         candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Google\Chrome\User Data\Profile {0}\Local Storage\leveldb", i)));
                         candidateFolders.Add(Path.Combine(localAppData, string.Format(@"Microsoft\Edge\User Data\Profile {0}\Local Storage\leveldb", i)));
                     }
-
-                    string oldVault = Path.Combine(localAppData, @"HaushaltsbuchApp\database.vault");
-                    if (IsValidVaultJsonFile(oldVault)) return File.ReadAllText(oldVault, Encoding.UTF8);
                 }
 
                 foreach (string dir in candidateFolders)
@@ -237,6 +249,7 @@ namespace HaushaltsbuchApp
                     }
                 }
 
+                // 3. Scanne Downloads, Desktop, Dokumente nach Backups (.json)
                 string[] userDirs = new string[]
                 {
                     Path.Combine(userProfile, "Downloads"),
@@ -354,7 +367,7 @@ namespace HaushaltsbuchApp
 
         private static bool StartLocalVaultServer()
         {
-            for (int port = BASE_PORT; port <= BASE_PORT + 10; port++)
+            for (int port = BASE_PORT; port <= BASE_PORT + 12; port++)
             {
                 try
                 {
@@ -400,7 +413,6 @@ namespace HaushaltsbuchApp
                         int headerEnd = -1;
                         int contentLength = 0;
 
-                        // 1. HTTP-Header vollständig empfangen
                         while (true)
                         {
                             int read = stream.Read(buffer, 0, buffer.Length);
@@ -419,7 +431,6 @@ namespace HaushaltsbuchApp
 
                         if (headerEnd < 0) return;
 
-                        // 2. HTTP-Body vollständig nach Content-Length empfangen (verhindert Abschneiden!)
                         byte[] allBytes = ms.ToArray();
                         string allText = Encoding.UTF8.GetString(allBytes);
                         string headerPart = allText.Substring(0, headerEnd);
@@ -469,9 +480,9 @@ namespace HaushaltsbuchApp
                         {
                             _lastHeartbeat = DateTime.Now;
                             string vaultJson = "{}";
-                            if (File.Exists(_centralVaultPath))
+                            if (File.Exists(_vaultPath))
                             {
-                                vaultJson = File.ReadAllText(_centralVaultPath, Encoding.UTF8);
+                                vaultJson = File.ReadAllText(_vaultPath, Encoding.UTF8);
                                 vaultJson = vaultJson.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
                                 if (string.IsNullOrEmpty(vaultJson)) vaultJson = "{}";
                             }
@@ -490,7 +501,6 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // API: SAVE VAULT (100% vollständig gepuffert!)
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -499,18 +509,18 @@ namespace HaushaltsbuchApp
                             {
                                 body = body.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
                                 
-                                string tmpPath = _centralVaultPath + ".tmp";
+                                string tmpPath = _vaultPath + ".tmp";
                                 File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
-                                if (File.Exists(_centralVaultPath))
+                                if (File.Exists(_vaultPath))
                                 {
-                                    try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
+                                    try { File.Copy(_vaultPath, _bakPath, true); } catch { }
                                 }
 
-                                File.Copy(tmpPath, _centralVaultPath, true);
+                                File.Copy(tmpPath, _vaultPath, true);
                                 try { File.Delete(tmpPath); } catch { }
 
-                                InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
+                                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
                             }
 
                             byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
@@ -518,10 +528,10 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        if (File.Exists(_centralHtmlPath))
+                        if (File.Exists(_htmlPath))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            byte[] htmlBytes = File.ReadAllBytes(_centralHtmlPath);
+                            byte[] htmlBytes = File.ReadAllBytes(_htmlPath);
                             SendHttpResponse(stream, 200, "text/html", htmlBytes);
                             return;
                         }

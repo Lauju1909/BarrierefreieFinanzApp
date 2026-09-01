@@ -2029,7 +2029,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.6.0',
+    version: '4.7.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
