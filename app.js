@@ -1,8 +1,8 @@
 /**
  * ============================================================================
- * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - MASTER AUDITED v3.6.0
- * 100% DSGVO-konform, AES-GCM 256-Bit militärisch verschlüsselt
- * Echter Festplatten-Tresor (Haushaltsbuch_Daten.vault)
+ * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - STABLE v3.8.0
+ * 100% DSGVO-konform, AES-GCM 256-Bit verschlüsselt
+ * Echte permanente Speicherung ohne unerwünschtes Sperren
  * Optimiert für NVDA Screenreader & WCAG 2.2 AAA
  * ============================================================================
  */
@@ -38,7 +38,7 @@ let selectedDateStr = initialDate.toISOString().split('T')[0];
 let currentWeekDateStr = initialDate.toISOString().split('T')[0];
 
 let inactivityTimer = null;
-const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 Minuten
+const INACTIVITY_TIMEOUT_MS = 30 * 60 * 1000; // 30 Minuten entspanntes Timeout
 
 // ----------------------------------------------------------------------------
 // 2. INITIALISIERUNG
@@ -124,11 +124,8 @@ function setupGlobalKeyboardShortcuts() {
     window.addEventListener(evt, resetInactivityTimer, { passive: true });
   });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden && cryptoKey) {
-      lockApp();
-    }
-  });
+  // WICHTIG: KEIN visibilitychange Auto-Lock mehr!
+  // Dadurch wird die App niemals gesperrt, wenn man Tabs wechselt oder Eingaben macht!
 }
 
 function resetInactivityTimer() {
@@ -136,7 +133,7 @@ function resetInactivityTimer() {
   if (cryptoKey) {
     inactivityTimer = setTimeout(() => {
       lockApp();
-      announceNVDA('Automatisch gesperrt wegen 5 Minuten Inaktivität.');
+      announceNVDA('Automatisch gesperrt wegen 30 Minuten Inaktivität.');
     }, INACTIVITY_TIMEOUT_MS);
   }
 }
@@ -146,7 +143,7 @@ function resetInactivityTimer() {
 // ----------------------------------------------------------------------------
 function getWeekBoundaries(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  const dayOfWeek = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const dayOfWeek = d.getDay();
   const diffToMonday = (dayOfWeek + 6) % 7;
   
   const monday = new Date(d);
@@ -965,7 +962,6 @@ function renderTransactionList(list, containerId, emptyText) {
     return;
   }
 
-  // Sortiere nach Datum absteigend
   const sorted = [...list].sort((a, b) => b.date.localeCompare(a.date));
 
   let html = '<ul class="tx-list">';
@@ -1498,7 +1494,7 @@ function switchView(viewName) {
 }
 
 // ----------------------------------------------------------------------------
-// 14. AES-256 WEB CRYPTO ENGINE (PBKDF2 100.000 + AES-GCM + DISK SYNC)
+// 14. AES-256 WEB CRYPTO ENGINE (PBKDF2 100.000 + AES-GCM + PERSISTENCE)
 // ----------------------------------------------------------------------------
 async function deriveKey(password, salt) {
   const enc = new TextEncoder();
@@ -1562,7 +1558,7 @@ function arrayBufferToBase64(buffer) {
   let binary = '';
   const bytes = new Uint8Array(buffer);
   for (let i = 0; i < bytes.byteLength; i++) {
-    binary += String.fromCharCode(uint8[i] !== undefined ? uint8[i] : bytes[i]);
+    binary += String.fromCharCode(bytes[i]);
   }
   return btoa(binary);
 }
@@ -1580,7 +1576,7 @@ function checkVaultStatus() {
   let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
   let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
 
-  // 1. Festplatten-Tresor (Haushaltsbuch_Daten.vault)
+  // Festplatten-Tresor (Injektion aus Program.cs)
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     savedVault = window.__DISK_VAULT__.vault;
     savedSalt = window.__DISK_VAULT__.salt;
@@ -1589,20 +1585,6 @@ function checkVaultStatus() {
       localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
     } catch(e) {}
   }
-
-  // 2. Abfrage an den lokalen Festplatten-Dienst
-  try {
-    fetch('http://127.0.0.1:48123/api/get_vault')
-      .then(r => r.json())
-      .then(diskData => {
-        if (diskData && diskData.vault && diskData.salt) {
-          localStorage.setItem(STORAGE_DATA_KEY, diskData.vault);
-          localStorage.setItem(STORAGE_SALT_KEY, diskData.salt);
-          window.__DISK_VAULT__ = diskData;
-        }
-      })
-      .catch(() => {});
-  } catch(e) {}
 
   const isFirstTime = !savedVault || !savedSalt;
   const firstTimeHint = document.getElementById('first-time-hint');
@@ -1690,15 +1672,6 @@ async function saveStateToEncryptedStorage() {
       vault: encryptedVaultBase64
     };
 
-    // Direkt auf Festplatte speichern (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
-    try {
-      fetch('http://127.0.0.1:48123/api/save_vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ salt: saltBase64, vault: encryptedVaultBase64 })
-      }).catch(() => {});
-    } catch(e) {}
-
   } catch (err) {
     console.error('Verschlüsselungsfehler:', err);
     announceNVDA('Fehler beim Speichern der verschlüsselten Daten!', true);
@@ -1774,14 +1747,6 @@ function resetAllAppData() {
     localStorage.removeItem(STORAGE_SALT_KEY);
     window.__DISK_VAULT__ = null;
 
-    try {
-      fetch('http://127.0.0.1:48123/api/save_vault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      }).catch(() => {});
-    } catch(e) {}
-
     cryptoKey = null;
     appState = { initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 }, transactions: [], recurring: [] };
     lockApp();
@@ -1802,7 +1767,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '3.6.0',
+    version: '3.8.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
@@ -1890,15 +1855,7 @@ async function importEncryptedBackup(event) {
         localStorage.setItem(STORAGE_DATA_KEY, normalizedVault);
         localStorage.setItem(STORAGE_SALT_KEY, normalizedSalt);
 
-        // In-Memory & Festplatte sofort synchronisieren
         window.__DISK_VAULT__ = { salt: normalizedSalt, vault: normalizedVault };
-        try {
-          fetch('http://127.0.0.1:48123/api/save_vault', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ salt: normalizedSalt, vault: normalizedVault })
-          }).catch(() => {});
-        } catch(e) {}
 
         // Sofortige Entschlüsselung falls eingeloggt
         if (cryptoKey) {

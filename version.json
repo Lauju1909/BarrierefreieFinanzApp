@@ -1,12 +1,14 @@
 {
-  "version": "3.7.0",
+  "version": "3.8.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Frische eigenstaendige Haushaltsbuch.exe mit vollem Festplatten-Tresor (Haushaltsbuch_Daten.vault)",
-    "Automatische Datenmigration & Schutz gegen jeden Datenverlust",
+    "100% Zuverlaessiger Offline-Start (file:/// Uri, keine Netzwerkports, kein ERR_CONNECTION_REFUSED mehr)",
+    "Kein automatisches unerwuenschtes Sperren mehr bei Fenstertab-Wechsel oder Formulareingaben",
+    "Dauerhafter Festplatten-Tresor (Haushaltsbuch_Daten.vault) in permanentem AppData-Profil",
+    "Automatische Datenrettung: Stellt fruehere Daten aus Chrome/Edge automatisch wieder her",
     "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) & Woechentliche Dauerauftraege",
-    "Einnahmen fuer Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
+    "Blindengeld & Pflegegeld Einnahmekategorien",
     "Standard-Browser: 1. Google Chrome, 2. Mozilla Firefox, 3. Edge/Brave/System",
     "Volle Barrierefreiheit fuer NVDA Screenreader (WCAG 2.2 AAA)"
   ]

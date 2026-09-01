@@ -5,7 +5,6 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Windows.Forms;
 
 namespace HaushaltsbuchApp
@@ -15,13 +14,9 @@ namespace HaushaltsbuchApp
         private const string GITHUB_RAW_BASE = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main";
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
-        private const int BASE_PORT = 48123;
 
         private static string _centralVaultPath;
         private static string _centralHtmlPath;
-        private static HttpListener _httpListener;
-        private static Thread _serverThread;
-        private static int _activePort = BASE_PORT;
 
         [STAThread]
         static void Main()
@@ -81,154 +76,14 @@ namespace HaushaltsbuchApp
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. LOKALER FESTPLATTEN-SERVER STARTEN
-                bool serverStarted = StartLocalVaultServer();
-
-                // 7. BROWSER STARTEN (Chrome -> Firefox -> Edge -> Brave -> Fallback)
-                string launchUrl = serverStarted ? string.Format("http://127.0.0.1:{0}/", _activePort) : ("file:///" + targetHtml.Replace('\\', '/'));
-                LaunchBestBrowser(launchUrl, targetHtml, centralProfileDir);
+                // 6. BROWSER DIREKT MIT DER FESTPLATTENDATEI STARTEN (100% ZUVERLÄSSIG, KEIN 127.0.0.1 PORT-FEHLER!)
+                string fileUri = "file:///" + targetHtml.Replace('\\', '/');
+                LaunchBestBrowser(fileUri, targetHtml, centralProfileDir);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-        }
-
-        private static bool StartLocalVaultServer()
-        {
-            for (int port = BASE_PORT; port <= BASE_PORT + 10; port++)
-            {
-                try
-                {
-                    var listener = new HttpListener();
-                    listener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", port));
-                    listener.Start();
-
-                    _httpListener = listener;
-                    _activePort = port;
-
-                    _serverThread = new Thread(() =>
-                    {
-                        while (_httpListener != null && _httpListener.IsListening)
-                        {
-                            try
-                            {
-                                var ctx = _httpListener.GetContext();
-                                ThreadPool.QueueUserWorkItem((state) => HandleHttpRequest(ctx));
-                            }
-                            catch { }
-                        }
-                    });
-                    _serverThread.IsBackground = true;
-                    _serverThread.Start();
-                    return true;
-                }
-                catch
-                {
-                    // Port besetzt, versuche naechsten
-                }
-            }
-            return false;
-        }
-
-        private static void HandleHttpRequest(HttpListenerContext ctx)
-        {
-            try
-            {
-                var req = ctx.Request;
-                var res = ctx.Response;
-
-                // 🔒 SICHERHEITSAUDIT: Pruefe Herkunft (Nur Loopback & Lokale Aufrufe erlaubt!)
-                string origin = req.Headers["Origin"];
-                if (!string.IsNullOrEmpty(origin))
-                {
-                    if (!origin.StartsWith("http://127.0.0.1") && !origin.StartsWith("http://localhost") && !origin.StartsWith("null"))
-                    {
-                        // Boesartige externe Webseite versucht lokalen Dienst anzugreifen -> 403 Blockieren!
-                        res.StatusCode = 403;
-                        res.Close();
-                        return;
-                    }
-                    res.Headers.Add("Access-Control-Allow-Origin", origin);
-                }
-                else
-                {
-                    res.Headers.Add("Access-Control-Allow-Origin", "*");
-                }
-
-                res.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                res.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-
-                if (req.HttpMethod == "OPTIONS")
-                {
-                    res.StatusCode = 200;
-                    res.Close();
-                    return;
-                }
-
-                string rawUrl = req.Url.AbsolutePath;
-
-                // API: TRESOR VON FESTPLATTE LADEN
-                if (rawUrl == "/api/get_vault")
-                {
-                    string vaultJson = File.Exists(_centralVaultPath) ? File.ReadAllText(_centralVaultPath) : "{}";
-                    byte[] buf = Encoding.UTF8.GetBytes(vaultJson);
-                    res.ContentType = "application/json; charset=utf-8";
-                    res.ContentLength64 = buf.Length;
-                    res.OutputStream.Write(buf, 0, buf.Length);
-                    res.Close();
-                    return;
-                }
-
-                // API: TRESOR ATOMAR DIREKT AUF FESTPLATTE SPEICHERN
-                if (rawUrl == "/api/save_vault" && req.HttpMethod == "POST")
-                {
-                    using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
-                    {
-                        string body = reader.ReadToEnd();
-                        if (!string.IsNullOrEmpty(body) && body.Contains("salt"))
-                        {
-                            // Atomarer Schreibvorgang mit Backup-Sicherung
-                            string tmpPath = _centralVaultPath + ".tmp";
-                            string bakPath = _centralVaultPath + ".bak";
-
-                            File.WriteAllText(tmpPath, body, Encoding.UTF8);
-
-                            if (File.Exists(_centralVaultPath))
-                            {
-                                try { File.Copy(_centralVaultPath, bakPath, true); } catch { }
-                            }
-
-                            File.Copy(tmpPath, _centralVaultPath, true);
-                            try { File.Delete(tmpPath); } catch { }
-
-                            InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
-                        }
-                    }
-
-                    byte[] buf = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
-                    res.ContentType = "application/json; charset=utf-8";
-                    res.ContentLength64 = buf.Length;
-                    res.OutputStream.Write(buf, 0, buf.Length);
-                    res.Close();
-                    return;
-                }
-
-                // HAUPTSEITE AUSLIEFERN
-                if (File.Exists(_centralHtmlPath))
-                {
-                    byte[] htmlBytes = File.ReadAllBytes(_centralHtmlPath);
-                    res.ContentType = "text/html; charset=utf-8";
-                    res.ContentLength64 = htmlBytes.Length;
-                    res.OutputStream.Write(htmlBytes, 0, htmlBytes.Length);
-                    res.Close();
-                    return;
-                }
-
-                res.StatusCode = 404;
-                res.Close();
-            }
-            catch { }
         }
 
         private static void InjectDiskVaultIntoHtml(string htmlPath, string vaultPath)
@@ -237,9 +92,9 @@ namespace HaushaltsbuchApp
             {
                 if (!File.Exists(htmlPath)) return;
                 string vaultJson = File.Exists(vaultPath) ? File.ReadAllText(vaultPath) : "{}";
-                string html = File.ReadAllText(htmlPath);
+                string html = File.ReadAllText(htmlPath, Encoding.UTF8);
 
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__LOCAL_PORT__ = " + _activePort + ";</script>";
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + ";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {
@@ -349,7 +204,7 @@ namespace HaushaltsbuchApp
 
         private static void LaunchBestBrowser(string url, string fallbackHtmlPath, string profileDir)
         {
-            // 1. GOOGLE CHROME
+            // 1. GOOGLE CHROME (Standard-Browser)
             string chromePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Google\Chrome\Application\chrome.exe"),
