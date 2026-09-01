@@ -898,7 +898,7 @@ function updateOverview() {
   runPurchaseSimulation();
   renderSettingsRecurringList();
   // Jahresansicht jetzt nativ in Uebersicht
-  renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
+  // Zukunfts-Vorschau in Uebersicht integriert
 }
 
 function renderPeriodSummaryTable(breakdown) {
@@ -1219,40 +1219,7 @@ function saveSimulatedPurchase() {
 // --------------------------------------------------------------------------
 
 
-function renderFutureForecast(monthsAheadStr) {
-  const monthsAhead = parseInt(monthsAheadStr, 10);
-  const tbody = document.getElementById('forecast-table-body');
-  if (!tbody) return;
 
-  tbody.innerHTML = '';
-  const now = new Date();
-  let curY = now.getFullYear();
-  let curM = now.getMonth();
-
-  let runningTotal = calculateBalancesUpToDate(now.toISOString().split('T')[0]).total;
-
-  for (let i = 1; i <= monthsAhead; i++) {
-    curM++;
-    if (curM > 11) { curM = 0; curY++; }
-
-    const stats = calculateMonthStats(curY, curM);
-    runningTotal += stats.leftover;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${MONTH_NAMES[curM]} ${curY}</strong></td>
-      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-      <td class="text-right" style="font-weight: bold; color: ${stats.leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-        ${stats.leftover >= 0 ? '+' : ''} ${formatCurrency(stats.leftover)}
-      </td>
-      <td class="text-right" style="font-weight: 900; color: var(--text-primary);">
-        ${formatCurrency(runningTotal)}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
 
 // --------------------------------------------------------------------------
 // 13. FORMULAR HANDLER (ADD EXPENSE, INCOME, TRANSFER)
@@ -1657,13 +1624,7 @@ function unlockApp() {
   if (lockScreen) lockScreen.style.display = 'none';
   if (appWrapper) appWrapper.style.display = 'block';
 
-  // Formulare vorbefüllen
-  if (appState.initialBalances) {
-    if (document.getElementById('init-bank')) document.getElementById('init-bank').value = appState.initialBalances.bank || '';
-    if (document.getElementById('init-paypal')) document.getElementById('init-paypal').value = appState.initialBalances.paypal || '';
-    if (document.getElementById('init-savings')) document.getElementById('init-savings').value = appState.initialBalances.savings || '';
-    if (document.getElementById('init-cash')) document.getElementById('init-cash').value = appState.initialBalances.cash || '';
-  }
+
 
   updateOverview();
   resetInactivityTimer();
@@ -1721,41 +1682,71 @@ function exportEncryptedBackup() {
   announceNVDA('Verschlüsseltes Backup erfolgreich heruntergeladen!');
 }
 
-function importEncryptedBackup(event) {
+async function importEncryptedBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const backup = JSON.parse(e.target.result);
+      
+      // Fall A: Verschlüsselter Datentresor (Standard-Backup)
       if (backup.vault && backup.salt) {
         localStorage.setItem(STORAGE_DATA_KEY, backup.vault);
         localStorage.setItem(STORAGE_SALT_KEY, backup.salt);
-        announceNVDA('Sicherung erfolgreich importiert! Bitte entsperre jetzt mit deiner PIN.');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        announceNVDA('Fehler: Ungültige Sicherungsdatei.', true);
+
+        // Versuche sofortige Live-Entschlüsselung im laufenden Betrieb
+        if (cryptoKey) {
+          try {
+            const decrypted = await decryptData(backup.vault, cryptoKey);
+            appState = decrypted;
+            if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+            if (!appState.transactions) appState.transactions = [];
+            if (!appState.recurring) appState.recurring = [];
+
+            updateOverview();
+            switchView('overview');
+            announceNVDA('Sicherung erfolgreich importiert und live geladen! Alle Buchungen sind sofort sichtbar.');
+            return;
+          } catch (err) {
+            // Falls das Backup mit einer anderen PIN erstellt wurde -> Lock Screen zum Entsperren mit jener PIN
+            lockApp();
+            announceNVDA('Sicherungsdatei importiert. Bitte gib die PIN ein, mit der die Sicherung erstellt wurde.');
+            return;
+          }
+        } else {
+          announceNVDA('Sicherungsdatei importiert. Bitte entsperre mit deiner PIN.');
+          lockApp();
+          return;
+        }
       }
+
+      // Fall B: Unverschlüsseltes JSON State Backup
+      if (backup.initialBalances || backup.transactions) {
+        appState = {
+          initialBalances: backup.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
+          transactions: backup.transactions || [],
+          recurring: backup.recurring || []
+        };
+        await saveStateToEncryptedStorage();
+        updateOverview();
+        switchView('overview');
+        announceNVDA('Finanzdaten erfolgreich importiert und verschlüsselt gespeichert!');
+        return;
+      }
+
+      announceNVDA('Fehler: Unbekanntes Dateiformat.', true);
     } catch (err) {
+      console.error('Import-Fehler:', err);
       announceNVDA('Fehler beim Lesen der Backup-Datei.', true);
     }
   };
   reader.readAsText(file);
 }
 
-function handleSetInitialBalances(e) {
-  e.preventDefault();
-  appState.initialBalances = {
-    bank: parseFloat(document.getElementById('init-bank').value) || 0,
-    paypal: parseFloat(document.getElementById('init-paypal').value) || 0,
-    savings: parseFloat(document.getElementById('init-savings').value) || 0,
-    cash: parseFloat(document.getElementById('init-cash').value) || 0
-  };
-  saveStateToEncryptedStorage();
-  updateOverview();
-  announceNVDA('Start-Kontostände gespeichert.');
-}
+
+
 
 async function handleChangePin(e) {
   e.preventDefault();

@@ -741,7 +741,7 @@
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.4.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.5.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -767,41 +767,6 @@
             </div>
           </section>
 
-          <!-- ZUKUNFTS-VORSCHAU & PROGNOSE -->
-          <section class="settings-box future-forecast-box" aria-labelledby="future-forecast-heading">
-            <div class="year-header-bar">
-              <div>
-                <h3 id="future-forecast-heading" class="section-title">🔮 Zukunfts-Vorschau & Prognose (Monat & Jahr)</h3>
-                <p class="field-hint">Hier siehst du, wie sich deine Finanzen in den kommenden Monaten entwickeln werden:</p>
-              </div>
-              <div class="year-select-wrap">
-                <label for="forecast-range-select" class="sr-only">Zukunfts-Zeitraum wählen</label>
-                <select id="forecast-range-select" class="filter-select" onchange="renderFutureForecast(this.value)">
-                  <option value="6" selected>Nächste 6 Monate vorausschauen</option>
-                  <option value="12">Ganzes Jahr vorausschauen (12 Monate)</option>
-                  <option value="3">Nächste 3 Monate vorausschauen</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="table-responsive" tabindex="0" role="region" aria-label="Zukunfts-Prognose Tabelle">
-              <table class="annual-table" id="forecast-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Zukunfts-Monat</th>
-                    <th scope="col" class="text-right">Geplante Einnahmen</th>
-                    <th scope="col" class="text-right">Geplante Fixkosten</th>
-                    <th scope="col" class="text-right">Monatliches Plus</th>
-                    <th scope="col" class="text-right">Voraussichtlicher Kontostand</th>
-                  </tr>
-                </thead>
-                <tbody id="forecast-table-body">
-                  <!-- Befüllt per JS -->
-                </tbody>
-              </table>
-            </div>
-          </section>
-
           <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
           <section class="settings-box" aria-labelledby="manage-recurring-heading">
             <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
@@ -809,36 +774,6 @@
             <div id="settings-recurring-container">
               <!-- Wird per JS befüllt -->
             </div>
-          </section>
-
-          <!-- Startguthaben manuell anpassen -->
-          <section class="settings-box" aria-labelledby="set-balances-heading">
-            <h3 id="set-balances-heading">💰 Start-Kontostände manuell anpassen</h3>
-            <form id="form-init-balances" onsubmit="handleSetInitialBalances(event)">
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="init-bank" class="field-label">🏦 Startguthaben Bankkonto (€):</label>
-                  <input type="number" step="0.01" id="init-bank" class="large-input" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                  <label for="init-paypal" class="field-label">🅿️ Startguthaben PayPal (€):</label>
-                  <input type="number" step="0.01" id="init-paypal" class="large-input" placeholder="0.00">
-                </div>
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="init-savings" class="field-label">📈 Startguthaben Tagesgeld (€):</label>
-                  <input type="number" step="0.01" id="init-savings" class="large-input" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                  <label for="init-cash" class="field-label">💵 Startguthaben Bargeld (€):</label>
-                  <input type="number" step="0.01" id="init-cash" class="large-input" placeholder="0.00">
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-secondary">💾 <strong>Startguthaben speichern</strong></button>
-            </form>
           </section>
 
           <!-- PIN ändern -->
@@ -871,7 +806,7 @@
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.5.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 

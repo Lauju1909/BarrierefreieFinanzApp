@@ -1,17 +1,15 @@
 {
-  "version": "2.4.0",
+  "version": "2.5.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Aufgeraeumte Einstellungen (Jahresansicht vollstaendig in der Hauptuebersicht integriert)",
-    "Dauerhafter zentraler Datensafe im Systemprofil (Daten bleiben bei Updates & Exe-Verschiebungen fuer immer erhalten)",
-    "Buchungen & Dauerauftraege direkt in der Liste bearbeiten (Edit-Funktion)",
-    "Zeitraum-Umschalter in der Uebersicht: Tag, Monat, 3 Monate, 6 Monate, Jahr",
-    "Automatische Mehr-Monats- und Jahres-Tabellen direkt in der Uebersicht",
-    "100% Eigenstaendige und portable Haushaltsbuch.exe mit integrierter App",
-    "Hintergrund-Auto-Updater beim Start",
-    "AES-GCM 256-Bit Verschluesselung mit PBKDF2 (100.000 Runden)",
-    "DSGVO & EU-Datenschutz (100% Offline, Zero Cloud)",
+    "Sofortiger Live-Backup-Import (Importierte Daten werden sofort live im Fenster entschluesselt und angezeigt)",
+    "Aufgeraeumte Einstellungen: Nur noch Auto-Updater, Backup, Dauerauftraege, PIN und Loeschung",
+    "Jahres- und Mehr-Monatsansichten direkt in der Hauptuebersicht",
+    "Dauerhafter zentraler Datensafe im Systemprofil",
+    "Buchungen & Dauerauftraege direkt bearbeiten (Edit-Funktion)",
+    "100% Eigenstaendige und portable Haushaltsbuch.exe mit Hintergrund-Auto-Updater",
+    "AES-GCM 256-Bit Verschluesselung & DSGVO-Datenschutz",
     "Volle NVDA Screenreader Barrierefreiheit"
   ]
 }

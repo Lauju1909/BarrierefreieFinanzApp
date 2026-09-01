@@ -1092,7 +1092,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.4.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.5.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -1118,41 +1118,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
           </section>
 
-          <!-- ZUKUNFTS-VORSCHAU & PROGNOSE -->
-          <section class="settings-box future-forecast-box" aria-labelledby="future-forecast-heading">
-            <div class="year-header-bar">
-              <div>
-                <h3 id="future-forecast-heading" class="section-title">🔮 Zukunfts-Vorschau & Prognose (Monat & Jahr)</h3>
-                <p class="field-hint">Hier siehst du, wie sich deine Finanzen in den kommenden Monaten entwickeln werden:</p>
-              </div>
-              <div class="year-select-wrap">
-                <label for="forecast-range-select" class="sr-only">Zukunfts-Zeitraum wählen</label>
-                <select id="forecast-range-select" class="filter-select" onchange="renderFutureForecast(this.value)">
-                  <option value="6" selected>Nächste 6 Monate vorausschauen</option>
-                  <option value="12">Ganzes Jahr vorausschauen (12 Monate)</option>
-                  <option value="3">Nächste 3 Monate vorausschauen</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="table-responsive" tabindex="0" role="region" aria-label="Zukunfts-Prognose Tabelle">
-              <table class="annual-table" id="forecast-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Zukunfts-Monat</th>
-                    <th scope="col" class="text-right">Geplante Einnahmen</th>
-                    <th scope="col" class="text-right">Geplante Fixkosten</th>
-                    <th scope="col" class="text-right">Monatliches Plus</th>
-                    <th scope="col" class="text-right">Voraussichtlicher Kontostand</th>
-                  </tr>
-                </thead>
-                <tbody id="forecast-table-body">
-                  <!-- Befüllt per JS -->
-                </tbody>
-              </table>
-            </div>
-          </section>
-
           <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
           <section class="settings-box" aria-labelledby="manage-recurring-heading">
             <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
@@ -1160,36 +1125,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             <div id="settings-recurring-container">
               <!-- Wird per JS befüllt -->
             </div>
-          </section>
-
-          <!-- Startguthaben manuell anpassen -->
-          <section class="settings-box" aria-labelledby="set-balances-heading">
-            <h3 id="set-balances-heading">💰 Start-Kontostände manuell anpassen</h3>
-            <form id="form-init-balances" onsubmit="handleSetInitialBalances(event)">
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="init-bank" class="field-label">🏦 Startguthaben Bankkonto (€):</label>
-                  <input type="number" step="0.01" id="init-bank" class="large-input" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                  <label for="init-paypal" class="field-label">🅿️ Startguthaben PayPal (€):</label>
-                  <input type="number" step="0.01" id="init-paypal" class="large-input" placeholder="0.00">
-                </div>
-              </div>
-
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="init-savings" class="field-label">📈 Startguthaben Tagesgeld (€):</label>
-                  <input type="number" step="0.01" id="init-savings" class="large-input" placeholder="0.00">
-                </div>
-                <div class="form-group">
-                  <label for="init-cash" class="field-label">💵 Startguthaben Bargeld (€):</label>
-                  <input type="number" step="0.01" id="init-cash" class="large-input" placeholder="0.00">
-                </div>
-              </div>
-
-              <button type="submit" class="btn btn-secondary">💾 <strong>Startguthaben speichern</strong></button>
-            </form>
           </section>
 
           <!-- PIN ändern -->
@@ -1222,7 +1157,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v2.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.5.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
@@ -2129,7 +2064,7 @@ function updateOverview() {
   runPurchaseSimulation();
   renderSettingsRecurringList();
   // Jahresansicht jetzt nativ in Uebersicht
-  renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
+  // Zukunfts-Vorschau in Uebersicht integriert
 }
 
 function renderPeriodSummaryTable(breakdown) {
@@ -2450,40 +2385,7 @@ function saveSimulatedPurchase() {
 // --------------------------------------------------------------------------
 
 
-function renderFutureForecast(monthsAheadStr) {
-  const monthsAhead = parseInt(monthsAheadStr, 10);
-  const tbody = document.getElementById('forecast-table-body');
-  if (!tbody) return;
 
-  tbody.innerHTML = '';
-  const now = new Date();
-  let curY = now.getFullYear();
-  let curM = now.getMonth();
-
-  let runningTotal = calculateBalancesUpToDate(now.toISOString().split('T')[0]).total;
-
-  for (let i = 1; i <= monthsAhead; i++) {
-    curM++;
-    if (curM > 11) { curM = 0; curY++; }
-
-    const stats = calculateMonthStats(curY, curM);
-    runningTotal += stats.leftover;
-
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${MONTH_NAMES[curM]} ${curY}</strong></td>
-      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-      <td class="text-right" style="font-weight: bold; color: ${stats.leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-        ${stats.leftover >= 0 ? '+' : ''} ${formatCurrency(stats.leftover)}
-      </td>
-      <td class="text-right" style="font-weight: 900; color: var(--text-primary);">
-        ${formatCurrency(runningTotal)}
-      </td>
-    `;
-    tbody.appendChild(tr);
-  }
-}
 
 // --------------------------------------------------------------------------
 // 13. FORMULAR HANDLER (ADD EXPENSE, INCOME, TRANSFER)
@@ -2888,13 +2790,7 @@ function unlockApp() {
   if (lockScreen) lockScreen.style.display = 'none';
   if (appWrapper) appWrapper.style.display = 'block';
 
-  // Formulare vorbefüllen
-  if (appState.initialBalances) {
-    if (document.getElementById('init-bank')) document.getElementById('init-bank').value = appState.initialBalances.bank || '';
-    if (document.getElementById('init-paypal')) document.getElementById('init-paypal').value = appState.initialBalances.paypal || '';
-    if (document.getElementById('init-savings')) document.getElementById('init-savings').value = appState.initialBalances.savings || '';
-    if (document.getElementById('init-cash')) document.getElementById('init-cash').value = appState.initialBalances.cash || '';
-  }
+
 
   updateOverview();
   resetInactivityTimer();
@@ -2952,41 +2848,71 @@ function exportEncryptedBackup() {
   announceNVDA('Verschlüsseltes Backup erfolgreich heruntergeladen!');
 }
 
-function importEncryptedBackup(event) {
+async function importEncryptedBackup(event) {
   const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = async function(e) {
     try {
       const backup = JSON.parse(e.target.result);
+      
+      // Fall A: Verschlüsselter Datentresor (Standard-Backup)
       if (backup.vault && backup.salt) {
         localStorage.setItem(STORAGE_DATA_KEY, backup.vault);
         localStorage.setItem(STORAGE_SALT_KEY, backup.salt);
-        announceNVDA('Sicherung erfolgreich importiert! Bitte entsperre jetzt mit deiner PIN.');
-        setTimeout(() => location.reload(), 1500);
-      } else {
-        announceNVDA('Fehler: Ungültige Sicherungsdatei.', true);
+
+        // Versuche sofortige Live-Entschlüsselung im laufenden Betrieb
+        if (cryptoKey) {
+          try {
+            const decrypted = await decryptData(backup.vault, cryptoKey);
+            appState = decrypted;
+            if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+            if (!appState.transactions) appState.transactions = [];
+            if (!appState.recurring) appState.recurring = [];
+
+            updateOverview();
+            switchView('overview');
+            announceNVDA('Sicherung erfolgreich importiert und live geladen! Alle Buchungen sind sofort sichtbar.');
+            return;
+          } catch (err) {
+            // Falls das Backup mit einer anderen PIN erstellt wurde -> Lock Screen zum Entsperren mit jener PIN
+            lockApp();
+            announceNVDA('Sicherungsdatei importiert. Bitte gib die PIN ein, mit der die Sicherung erstellt wurde.');
+            return;
+          }
+        } else {
+          announceNVDA('Sicherungsdatei importiert. Bitte entsperre mit deiner PIN.');
+          lockApp();
+          return;
+        }
       }
+
+      // Fall B: Unverschlüsseltes JSON State Backup
+      if (backup.initialBalances || backup.transactions) {
+        appState = {
+          initialBalances: backup.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
+          transactions: backup.transactions || [],
+          recurring: backup.recurring || []
+        };
+        await saveStateToEncryptedStorage();
+        updateOverview();
+        switchView('overview');
+        announceNVDA('Finanzdaten erfolgreich importiert und verschlüsselt gespeichert!');
+        return;
+      }
+
+      announceNVDA('Fehler: Unbekanntes Dateiformat.', true);
     } catch (err) {
+      console.error('Import-Fehler:', err);
       announceNVDA('Fehler beim Lesen der Backup-Datei.', true);
     }
   };
   reader.readAsText(file);
 }
 
-function handleSetInitialBalances(e) {
-  e.preventDefault();
-  appState.initialBalances = {
-    bank: parseFloat(document.getElementById('init-bank').value) || 0,
-    paypal: parseFloat(document.getElementById('init-paypal').value) || 0,
-    savings: parseFloat(document.getElementById('init-savings').value) || 0,
-    cash: parseFloat(document.getElementById('init-cash').value) || 0
-  };
-  saveStateToEncryptedStorage();
-  updateOverview();
-  announceNVDA('Start-Kontostände gespeichert.');
-}
+
+
 
 async function handleChangePin(e) {
   e.preventDefault();
