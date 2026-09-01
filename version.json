@@ -1,13 +1,13 @@
 {
-  "version": "4.9.0",
+  "version": "5.0.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Neue Kategorien fuer Ausgaben: Spenden & Gemeinnuetzigkeit, Strom/Wasser/Gas & Heizung, Gaming & Games, Verein/Club & Mitgliedsbeitraege",
-    "Neue Kategorien fuer Einnahmen: Spenden & Zuwendungen erhalten, Blindengeld, Pflegegeld, Gehalt, Geschenke",
-    "Strikte Einzelordner-Speicherung im Ordner der EXE",
+    "Dauerhafte Speicherung bei Sperren & Entsperren: Kein Verschwinden von Daten beim Klick auf Sperren",
+    "Robuste Salt-Verwaltung im Speicher und auf der Festplatte",
+    "Neue Kategorien: Spenden, Strom/Wasser/Gas/Heizung, Gaming, Verein & Mitgliedschaften",
+    "Strikte Einzelordner-Speicherung direkt im Ordner der EXE",
     "Automatische Bereinigung aller externen Ordner und Duplikate",
-    "100% Portabel & Barrierefrei (NVDA & WCAG 2.2 AAA)",
-    "Vollstaendig gepufferter TCP-Server & 2-Stunden PIN-Sperre"
+    "Vollstaendig gepufferter TCP-Server & 2-Stunden PIN-Sperre (WCAG 2.2 AAA)"
   ]
 }

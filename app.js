@@ -1712,21 +1712,25 @@ async function idbLoadVault() {
 
 
 
-async function checkVaultStatus() {
-  let savedVault = null;
-  let savedSalt = null;
 
-  // 1. In-Memory Vault aus C# Injektion (aus der Datei im EXE-Ordner)
+let currentSaltBase64 = null;
+
+async function checkVaultStatus() {
+  let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
+  let savedSalt = localStorage.getItem(STORAGE_SALT_KEY) || currentSaltBase64;
+
+  // 1. In-Memory Vault aus C# Injektion
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     savedVault = window.__DISK_VAULT__.vault;
     savedSalt = window.__DISK_VAULT__.salt;
+    currentSaltBase64 = savedSalt;
     try {
       localStorage.setItem(STORAGE_DATA_KEY, savedVault);
       localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
     } catch(e) {}
   }
 
-  // 2. Abfrage an lokalen Server (liest Haushaltsbuch_Daten.vault im EXE-Ordner)
+  // 2. Abfrage an lokalen C# Server (liest Datei im EXE-Ordner)
   const port = window.__LOCAL_PORT__ || 48123;
   try {
     const r = await fetch(`http://127.0.0.1:${port}/api/get_vault`);
@@ -1734,20 +1738,27 @@ async function checkVaultStatus() {
     if (data && data.vault && data.salt) {
       savedVault = data.vault;
       savedSalt = data.salt;
+      currentSaltBase64 = savedSalt;
       localStorage.setItem(STORAGE_DATA_KEY, savedVault);
       localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
       window.__DISK_VAULT__ = data;
       await idbSaveVault(data);
-    } else {
-      // Wenn im EXE-Ordner keine Datei existiert -> Bereinige auch Browser-Cache!
-      localStorage.removeItem(STORAGE_DATA_KEY);
-      localStorage.removeItem(STORAGE_SALT_KEY);
-      savedVault = null;
-      savedSalt = null;
     }
   } catch(e) {}
 
-  // Wenn keine Datei im EXE-Ordner liegt -> Neuer PIN-Einrichtungsbildschirm
+  // 3. Fallback auf IndexedDB
+  if (!savedVault || !savedSalt) {
+    const idbData = await idbLoadVault();
+    if (idbData && idbData.vault && idbData.salt) {
+      savedVault = idbData.vault;
+      savedSalt = idbData.salt;
+      currentSaltBase64 = savedSalt;
+      localStorage.setItem(STORAGE_DATA_KEY, savedVault);
+      localStorage.setItem(STORAGE_SALT_KEY, savedSalt);
+      window.__DISK_VAULT__ = idbData;
+    }
+  }
+
   updateLockScreenUI(!savedVault || !savedSalt);
 }
 
@@ -1763,7 +1774,7 @@ function updateLockScreenUI(isFirstTime) {
     if (lockInstructions) lockInstructions.textContent = 'Gib eine neue PIN oder ein Passwort ein (z. B. 1234), um deinen sicheren Datentresor in diesem Ordner zu erstellen.';
   } else {
     if (lockHeading) lockHeading.textContent = 'Sicherer AES-256 Zugang';
-    if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind geschützt. Bitte gib deine PIN oder dein Passwort ein:';
+    if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:';
   }
 }
 
@@ -1782,9 +1793,8 @@ async function handlePinSubmit(e) {
   if (!enteredPin) return;
 
   let storedData = localStorage.getItem(STORAGE_DATA_KEY);
-  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY) || currentSaltBase64;
 
-  // Synchronisation mit Festplattendatei im EXE-Ordner
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     storedData = window.__DISK_VAULT__.vault;
     saltBase64 = window.__DISK_VAULT__.salt;
@@ -1792,9 +1802,10 @@ async function handlePinSubmit(e) {
 
   try {
     if (!storedData || !saltBase64) {
-      // Neuer Datensafe direkt im EXE-Ordner
+      // Neuer Datensafe
       const salt = crypto.getRandomValues(new Uint8Array(16));
       saltBase64 = arrayBufferToBase64(salt.buffer);
+      currentSaltBase64 = saltBase64;
       localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
 
       cryptoKey = await deriveKey(enteredPin, salt);
@@ -1809,9 +1820,10 @@ async function handlePinSubmit(e) {
       setLockoutEndTime(0);
 
       unlockApp();
-      announceNVDA('Neuer Datensafe im aktuellen Ordner erfolgreich eingerichtet.');
+      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
     } else {
-      // Vorhandener Datensafe im EXE-Ordner entsperren
+      // Vorhandenen Datensafe entsperren
+      currentSaltBase64 = saltBase64;
       const saltBuffer = base64ToArrayBuffer(saltBase64);
       const salt = new Uint8Array(saltBuffer);
       const key = await deriveKey(enteredPin, salt);
@@ -1852,16 +1864,19 @@ async function handlePinSubmit(e) {
   }
 }
 
-
 async function saveStateToEncryptedStorage() {
   if (!cryptoKey) return;
 
   try {
     const encryptedVaultBase64 = await encryptData(appState, cryptoKey);
-    const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+    const saltBase64 = currentSaltBase64 || localStorage.getItem(STORAGE_SALT_KEY) || (window.__DISK_VAULT__ && window.__DISK_VAULT__.salt);
+
+    if (!saltBase64) return;
+    currentSaltBase64 = saltBase64;
 
     // 1. LocalStorage
     localStorage.setItem(STORAGE_DATA_KEY, encryptedVaultBase64);
+    localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
 
     // 2. In-Memory Vault
     window.__DISK_VAULT__ = {
@@ -1872,7 +1887,7 @@ async function saveStateToEncryptedStorage() {
     // 3. IndexedDB
     await idbSaveVault({ salt: saltBase64, vault: encryptedVaultBase64 });
 
-    // 4. Festplatte (%LOCALAPPDATA%\HaushaltsbuchApp\Haushaltsbuch_Daten.vault)
+    // 4. Festplatte (Haushaltsbuch_Daten.vault im EXE-Ordner)
     const port = window.__LOCAL_PORT__ || 48123;
     const payload = JSON.stringify({ salt: saltBase64, vault: encryptedVaultBase64 });
 
@@ -1890,13 +1905,6 @@ async function saveStateToEncryptedStorage() {
     announceNVDA('Fehler beim Speichern der Daten!', true);
   }
 }
-
-// Sofortiges Speichern beim Verlassen des Fensters
-window.addEventListener('beforeunload', function() {
-  if (cryptoKey) {
-    saveStateToEncryptedStorage();
-  }
-});
 
 
 function unlockApp() {
@@ -1998,7 +2006,7 @@ function exportEncryptedBackup() {
   }
 
   const backupObj = {
-    version: '4.9.0',
+    version: '5.0.0',
     appName: 'BarrierefreieFinanzApp',
     exportedAt: new Date().toISOString(),
     salt: salt,
