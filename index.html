@@ -119,6 +119,7 @@
         <div class="form-group">
           <label for="edit-rec-interval" class="field-label"><strong>Intervall</strong></label>
           <select id="edit-rec-interval" class="large-select">
+            <option value="weekly">Wöchentlich (Jede Woche)</option>
             <option value="monthly">Monatlich</option>
             <option value="yearly">Jährlich</option>
             <option value="quarterly">Alle 3 Monate</option>
@@ -431,6 +432,7 @@
               <select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
                 <option value="once" selected>⚡ Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
                 <option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung nicht fest)</option>
+                <option value="weekly">📅 Dauerhaft Wöchentlich (Jede Woche, z. B. wöchentlicher Einkauf/Taschengeld)</option>
                 <option value="monthly">📅 Dauerhaft Monatlich (Fester Vertrag / Abo jeden Monat)</option>
                 <option value="yearly">🗓️ Dauerhaft Jährlich (Feste Jahreskosten, z. B. Versicherung)</option>
                 <option value="quarterly">🔄 Dauerhaft Alle 3 Monate (Quartalsweise)</option>
@@ -491,11 +493,25 @@
 
             <div id="exp-recurring-details" style="display: none;">
               <div class="form-row-2">
-                <div class="form-group">
+                <div class="form-group" id="exp-month-day-group">
                   <label for="exp-rec-day" class="field-label">
                     <strong>An welchem Tag des Monats? (1 - 31)</strong>
                   </label>
                   <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
+                </div>
+                <div class="form-group" id="exp-weekday-group" style="display: none;">
+                  <label for="exp-rec-weekday" class="field-label">
+                    <strong>An welchem Wochentag jede Woche?</strong>
+                  </label>
+                  <select id="exp-rec-weekday" class="large-select">
+                    <option value="1">Jeden Montag</option>
+                    <option value="2">Jeden Dienstag</option>
+                    <option value="3">Jeden Mittwoch</option>
+                    <option value="4">Jeden Donnerstag</option>
+                    <option value="5" selected>Jeden Freitag</option>
+                    <option value="6">Jeden Samstag</option>
+                    <option value="0">Jeden Sonntag</option>
+                  </select>
                 </div>
                 <div class="form-group" id="exp-yearly-month-group" style="display: none;">
                   <label for="exp-yearly-month" class="field-label">
@@ -561,6 +577,7 @@
               <select id="inc-frequency" class="large-select" onchange="toggleIncomeFrequencyFields()">
                 <option value="once" selected>⚡ Einmalig (bereits erhalten)</option>
                 <option value="planned">🎯 Geplante einmalige Zukunftseinnahme (z. B. geplanter Verkauf, Geschenk)</option>
+                <option value="weekly">📅 Dauerhaft Wöchentlich (Jede Woche, z. B. wöchentliche Auszahlung)</option>
                 <option value="monthly">📅 Dauerhaft Monatlich (z. B. monatliches Taschengeld, Gehalt)</option>
                 <option value="yearly">🗓️ Dauerhaft Jährlich (1x im Jahr)</option>
               </select>
@@ -583,6 +600,21 @@
                 <strong>Woher kommt das Geld? (Kategorie)</strong>
               </label>
               <select id="inc-category" class="large-select">
+                <optgroup label="Leistungen, Unterstützung & Zuschüsse">
+                  <option value="Blindengeld / Landesblindengeld" selected>🦯 Blindengeld / Landesblindengeld / Sehbehindertengeld</option>
+                  <option value="Pflegegeld (Pflegekasse)">🩺 Pflegegeld (Pflegekasse / Pflegegrad)</option>
+                  <option value="Kindergeld / BAföG / Zuschuss">🏛️ Kindergeld / BAföG / Amt & Grundsicherung</option>
+                  <option value="Taschengeld">👛 Taschengeld / Unterstützung Eltern</option>
+                </optgroup>
+                <optgroup label="Arbeit, Nebenjob & Verkäufe">
+                  <option value="Minijob & Nebenjob">⭐ Minijob, Aushilfe & Nebenjob</option>
+                  <option value="Ausbildungsvergütung / Lohn">💼 Ausbildungsvergütung / Gehalt / Lohn</option>
+                  <option value="Kleinanzeigen & Vinted">📦 Verkäufe (Vinted, Kleinanzeigen, Flohmarkt)</option>
+                  <option value="Rückzahlung von Freunden">🔄 Rückzahlung von Freunden (PayPal / Bar)</option>
+                  <option value="Geschenk / Geburtstag">🎁 Geschenk (Geburtstag, Oma, Feiertage)</option>
+                  <option value="Pfand & Kleingeld">🍾 Pfandgeld / Kleingeld eingezahlt</option>
+                  <option value="Sonstige Einnahme">💰 Sonstige Einnahme</option>
+                </optgroup>
                 <option value="Taschengeld">👛 Taschengeld / Unterstützung Eltern</option>
                 <option value="Minijob & Nebenjob">⭐ Minijob, Aushilfe & Nebenjob</option>
                 <option value="Ausbildungsvergütung / Lohn">💼 Ausbildungsvergütung / Gehalt / Lohn</option>
@@ -603,11 +635,25 @@
             </div>
 
             <div id="inc-recurring-details" style="display: none;">
-              <div class="form-group">
+              <div class="form-group" id="inc-month-day-group">
                 <label for="inc-rec-day" class="field-label">
                   <strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
                 </label>
                 <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
+              </div>
+              <div class="form-group" id="inc-weekday-group" style="display: none;">
+                <label for="inc-rec-weekday" class="field-label">
+                  <strong>An welchem Wochentag jede Woche?</strong>
+                </label>
+                <select id="inc-rec-weekday" class="large-select">
+                  <option value="1">Jeden Montag</option>
+                  <option value="2">Jeden Dienstag</option>
+                  <option value="3">Jeden Mittwoch</option>
+                  <option value="4">Jeden Donnerstag</option>
+                  <option value="5" selected>Jeden Freitag</option>
+                  <option value="6">Jeden Samstag</option>
+                  <option value="0">Jeden Sonntag</option>
+                </select>
               </div>
             </div>
 
@@ -652,6 +698,7 @@
               </label>
               <select id="trf-frequency" class="large-select" onchange="toggleTransferFrequencyFields()">
                 <option value="once" selected>⚡ Einmalig (Jetzt sofort oder an bestimmtem Tag verschieben)</option>
+                <option value="weekly">📅 Dauerhaft Wöchentlich (Automatischer wöchentlicher Sparplan)</option>
                 <option value="monthly">📅 Dauerhaft Monatlich (Automatischer monatlicher Sparplan)</option>
               </select>
             </div>
@@ -684,11 +731,25 @@
             </div>
 
             <div id="trf-recurring-details" style="display: none;">
-              <div class="form-group">
+              <div class="form-group" id="trf-month-day-group">
                 <label for="trf-rec-day" class="field-label">
                   <strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
                 </label>
                 <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
+              </div>
+              <div class="form-group" id="trf-weekday-group" style="display: none;">
+                <label for="trf-rec-weekday" class="field-label">
+                  <strong>An welchem Wochentag jede Woche sparen?</strong>
+                </label>
+                <select id="trf-rec-weekday" class="large-select">
+                  <option value="1">Jeden Montag</option>
+                  <option value="2">Jeden Dienstag</option>
+                  <option value="3">Jeden Mittwoch</option>
+                  <option value="4">Jeden Donnerstag</option>
+                  <option value="5" selected>Jeden Freitag</option>
+                  <option value="6">Jeden Samstag</option>
+                  <option value="0">Jeden Sonntag</option>
+                </select>
               </div>
             </div>
 
@@ -748,7 +809,7 @@
             <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v3.0.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v3.1.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -813,7 +874,7 @@
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v3.0.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v3.1.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
       <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 

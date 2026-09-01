@@ -1,12 +1,13 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Vollstaendig eigenstaendige Einzeldatei-Exe (null Abhaengigkeiten, keine festen Entwicklerpfade)",
-    "Automatische Selbst-Entpackung ueberall (auf jedem Windows-PC, USB-Stick oder Ordner)",
-    "Google Chrome als 1. Standard-Browser priorisiert, Mozilla Firefox als 2. Prioritaet",
+    "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag wie z. B. Freitag)",
+    "Neue Einnahme-Kategorien: Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
+    "Google Chrome als 1. Standard-Browser, Mozilla Firefox als 2. Prioritaet",
     "Microsoft Edge, Brave & Windows-Standard als Fallback",
+    "100% Eigenstaendige Einzeldatei-Exe (null feste Entwicklerpfade, laeuft ueberall)",
     "Dauerhafter zentraler Datensafe im Windows-Benutzerprofil",
     "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
     "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
