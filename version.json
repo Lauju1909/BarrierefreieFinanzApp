@@ -1,16 +1,16 @@
 {
-  "version": "2.9.0",
+  "version": "3.0.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Google Chrome als 1. Standard-Browser priorisiert",
-    "Mozilla Firefox als 2. Prioritaet konfiguriert",
-    "Microsoft Edge & Brave als 3./4. Prioritaet mit Windows-Systemfallback",
+    "Vollstaendig eigenstaendige Einzeldatei-Exe (null Abhaengigkeiten, keine festen Entwicklerpfade)",
+    "Automatische Selbst-Entpackung ueberall (auf jedem Windows-PC, USB-Stick oder Ordner)",
+    "Google Chrome als 1. Standard-Browser priorisiert, Mozilla Firefox als 2. Prioritaet",
+    "Microsoft Edge, Brave & Windows-Standard als Fallback",
     "Dauerhafter zentraler Datensafe im Windows-Benutzerprofil",
     "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
     "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
     "Universeller abwaertskompatibler Backup-Import mit Sofort-Live-Anzeige",
-    "100% Eigenstaendige und portable Haushaltsbuch.exe mit Hintergrund-Auto-Updater",
     "AES-GCM 256-Bit Verschluesselung & DSGVO-Datenschutz",
     "Volle NVDA Screenreader Barrierefreiheit"
   ]

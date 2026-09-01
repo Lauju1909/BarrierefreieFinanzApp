@@ -25,33 +25,63 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. ZENTRALER, FESTE SPEICHERORT IM WINDOWS APPDATA
+                // 1. DYNAMISCHE WINDOWS-SPEICHERPFADE (FUNKTIONIERT AUF JEDEM RECHNER!)
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
+
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (string.IsNullOrEmpty(localAppData))
+                {
+                    localAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                }
+                if (string.IsNullOrEmpty(localAppData))
+                {
+                    localAppData = baseDir;
+                }
+
                 string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
                 string centralProfileDir = Path.Combine(centralAppDir, "Profile");
                 string centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
                 string centralVersionPath = Path.Combine(centralAppDir, "version.json");
 
-                if (!Directory.Exists(centralAppDir)) Directory.CreateDirectory(centralAppDir);
-                if (!Directory.Exists(centralProfileDir)) Directory.CreateDirectory(centralProfileDir);
+                try
+                {
+                    if (!Directory.Exists(centralAppDir)) Directory.CreateDirectory(centralAppDir);
+                    if (!Directory.Exists(centralProfileDir)) Directory.CreateDirectory(centralProfileDir);
+                }
+                catch { }
 
-                // 2. Falls zentrales HTML noch nicht existiert, aus eingebetteter Ressource entpacken
+                // 2. IMMER ZUERST AUS EINGEBETTETER RESSOURCE ENTPACKEN WENN NICHT EXISTENT
                 if (!File.Exists(centralHtmlPath))
                 {
                     UnpackEmbeddedApp(centralHtmlPath);
                 }
 
-                // 3. Im Hintergrund auf GitHub nach Updates pruefen
+                // Falls es neben der Exe liegt, synchronisiere
+                if (File.Exists(localHtmlInBaseDir) && !File.Exists(centralHtmlPath))
+                {
+                    try { File.Copy(localHtmlInBaseDir, centralHtmlPath, true); } catch { }
+                }
+
+                // 3. Im Hintergrund auf GitHub nach Updates pruefen (ohne zu blockieren)
                 CheckAndApplyUpdate(centralHtmlPath, centralVersionPath);
 
-                if (!File.Exists(centralHtmlPath))
+                // Falls AppData blockiert ist, nutze lokale Datei im selben Ordner
+                string targetHtml = File.Exists(centralHtmlPath) ? centralHtmlPath : localHtmlInBaseDir;
+
+                if (!File.Exists(targetHtml))
                 {
-                    MessageBox.Show("Die App-Datei konnte nicht geladen werden!\nPfad: " + centralHtmlPath, "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    UnpackEmbeddedApp(targetHtml);
+                }
+
+                if (!File.Exists(targetHtml))
+                {
+                    MessageBox.Show("Die App konnte nicht initialisiert werden!", "Haushaltsbuch Fehler", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                // 4. BROWSER-PRIORISIERUNG: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
-                LaunchBestBrowser(centralHtmlPath, centralProfileDir);
+                // 4. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
+                LaunchBestBrowser(targetHtml, centralProfileDir);
             }
             catch (Exception ex)
             {
@@ -59,11 +89,11 @@ namespace HaushaltsbuchApp
             }
         }
 
-        private static void LaunchBestBrowser(string centralHtmlPath, string centralProfileDir)
+        private static void LaunchBestBrowser(string htmlPath, string profileDir)
         {
-            string fileUri = "file:///" + centralHtmlPath.Replace('\\', '/');
+            string fileUri = "file:///" + htmlPath.Replace('\\', '/');
 
-            // 1. PRIORITAET: GOOGLE CHROME
+            // 1. GOOGLE CHROME
             string chromePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Google\Chrome\Application\chrome.exe"),
@@ -73,7 +103,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(chromePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, centralProfileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = chromePath,
@@ -83,7 +113,7 @@ namespace HaushaltsbuchApp
                 return;
             }
 
-            // 2. PRIORITAET: MOZILLA FIREFOX
+            // 2. MOZILLA FIREFOX
             string firefoxPath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Mozilla Firefox\firefox.exe"),
@@ -102,7 +132,7 @@ namespace HaushaltsbuchApp
                 return;
             }
 
-            // 3. PRIORITAET: MICROSOFT EDGE
+            // 3. MICROSOFT EDGE
             string edgePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe"),
@@ -112,7 +142,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(edgePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, centralProfileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = edgePath,
@@ -122,7 +152,7 @@ namespace HaushaltsbuchApp
                 return;
             }
 
-            // 4. PRIORITAET: BRAVE BROWSER
+            // 4. BRAVE BROWSER
             string bravePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"BraveSoftware\Brave-Browser\Application\brave.exe"),
@@ -132,7 +162,7 @@ namespace HaushaltsbuchApp
 
             if (!string.IsNullOrEmpty(bravePath))
             {
-                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, centralProfileDir);
+                string args = string.Format("--app=\"{0}\" --user-data-dir=\"{1}\" --window-size=1280,880", fileUri, profileDir);
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = bravePath,
@@ -142,10 +172,10 @@ namespace HaushaltsbuchApp
                 return;
             }
 
-            // 5. FALLBACK: STANDARD WINDOWS BROWSER
+            // 5. STANDARD FALLBACK
             Process.Start(new ProcessStartInfo
             {
-                FileName = centralHtmlPath,
+                FileName = htmlPath,
                 UseShellExecute = true
             });
         }
@@ -167,24 +197,33 @@ namespace HaushaltsbuchApp
             try
             {
                 Assembly asm = Assembly.GetExecutingAssembly();
-                string resourceName = "embedded_app.html";
+                string resourceName = null;
                 
                 foreach (string name in asm.GetManifestResourceNames())
                 {
-                    if (name.EndsWith("embedded_app.html", StringComparison.OrdinalIgnoreCase))
+                    if (name.IndexOf("embedded_app.html", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
                         resourceName = name;
                         break;
                     }
                 }
 
-                using (Stream stream = asm.GetManifestResourceStream(resourceName))
+                if (!string.IsNullOrEmpty(resourceName))
                 {
-                    if (stream != null)
+                    using (Stream stream = asm.GetManifestResourceStream(resourceName))
                     {
-                        using (FileStream fs = new FileStream(targetHtml, FileMode.Create, FileAccess.Write))
+                        if (stream != null)
                         {
-                            stream.CopyTo(fs);
+                            string dir = Path.GetDirectoryName(targetHtml);
+                            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                            {
+                                Directory.CreateDirectory(dir);
+                            }
+
+                            using (FileStream fs = new FileStream(targetHtml, FileMode.Create, FileAccess.Write))
+                            {
+                                stream.CopyTo(fs);
+                            }
                         }
                     }
                 }
