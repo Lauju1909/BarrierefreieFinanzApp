@@ -1,10 +1,11 @@
 {
-  "version": "2.8.0",
+  "version": "2.9.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
-    "Universelle Windows-Kompatibilitaet (laeuft auf 100% aller Windows-PCs: Win 7, 8, 10, 11, 32/64-Bit)",
-    "Automatische Erkennung aller installierten Windows-Browser (Edge, Chrome, Brave & Standard-Browser)",
+    "Google Chrome als 1. Standard-Browser priorisiert",
+    "Mozilla Firefox als 2. Prioritaet konfiguriert",
+    "Microsoft Edge & Brave als 3./4. Prioritaet mit Windows-Systemfallback",
     "Dauerhafter zentraler Datensafe im Windows-Benutzerprofil",
     "Design- & Schriftgroesseneinstellung in Einstellungen (Standard: Hell wie jede Internetseite)",
     "Kompaktes Dropdown-Auswahlfeld fuer alle Zeitraeume (Tag, Monat, 3M, 6M, Jahr)",
