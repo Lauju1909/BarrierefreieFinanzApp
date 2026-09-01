@@ -48,6 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDatePickers();
   setupGlobalKeyboardShortcuts();
   checkVaultStatus();
+  startHeartbeat();
   updateTodayDisplay();
 
   // Datumseingaben mit Standardwert heute belegen
@@ -1572,11 +1573,19 @@ function base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
-function checkVaultStatus() {
-  let savedVault = localStorage.getItem(STORAGE_DATA_KEY);
-  let savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
 
-  // Festplatten-Tresor (Injektion aus Program.cs)
+function startHeartbeat() {
+  const port = window.__LOCAL_PORT__ || 48123;
+  setInterval(function() {
+    fetch('http://127.0.0.1:' + port + '/api/heartbeat').catch(function() {});
+  }, 3000);
+}
+
+function checkVaultStatus() {
+  var savedVault = localStorage.getItem(STORAGE_DATA_KEY);
+  var savedSalt = localStorage.getItem(STORAGE_SALT_KEY);
+
+  // 1. Festplatten-Tresor aus Injektion
   if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
     savedVault = window.__DISK_VAULT__.vault;
     savedSalt = window.__DISK_VAULT__.salt;
@@ -1586,10 +1595,29 @@ function checkVaultStatus() {
     } catch(e) {}
   }
 
-  const isFirstTime = !savedVault || !savedSalt;
-  const firstTimeHint = document.getElementById('first-time-hint');
-  const lockHeading = document.getElementById('lock-heading');
-  const lockInstructions = document.getElementById('lock-instructions');
+  // 2. Festplatten-Tresor per API abfragen
+  var port = window.__LOCAL_PORT__ || 48123;
+  try {
+    fetch('http://127.0.0.1:' + port + '/api/get_vault')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data && data.vault && data.salt) {
+          localStorage.setItem(STORAGE_DATA_KEY, data.vault);
+          localStorage.setItem(STORAGE_SALT_KEY, data.salt);
+          window.__DISK_VAULT__ = data;
+          updateLockScreenUI(false);
+        }
+      })
+      .catch(function() {});
+  } catch(e) {}
+
+  updateLockScreenUI(!savedVault || !savedSalt);
+}
+
+function updateLockScreenUI(isFirstTime) {
+  var firstTimeHint = document.getElementById('first-time-hint');
+  var lockHeading = document.getElementById('lock-heading');
+  var lockInstructions = document.getElementById('lock-instructions');
 
   if (firstTimeHint) firstTimeHint.style.display = isFirstTime ? 'block' : 'none';
 
@@ -1599,82 +1627,6 @@ function checkVaultStatus() {
   } else {
     if (lockHeading) lockHeading.textContent = 'Sicherer AES-256 Zugang';
     if (lockInstructions) lockInstructions.textContent = 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:';
-  }
-}
-
-async function handlePinSubmit(e) {
-  e.preventDefault();
-  const pinInput = document.getElementById('pin-input');
-  const errorMsg = document.getElementById('pin-error-msg');
-  const enteredPin = pinInput.value.trim();
-
-  if (!enteredPin) return;
-
-  const storedData = localStorage.getItem(STORAGE_DATA_KEY);
-  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
-
-  try {
-    if (!storedData) {
-      // Neuer Datensafe
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      saltBase64 = arrayBufferToBase64(salt.buffer);
-      localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
-
-      cryptoKey = await deriveKey(enteredPin, salt);
-      appState = {
-        initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
-        transactions: [],
-        recurring: []
-      };
-      await saveStateToEncryptedStorage();
-      unlockApp();
-      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
-    } else {
-      // Vorhandener Datensafe
-      const saltBuffer = base64ToArrayBuffer(saltBase64);
-      const salt = new Uint8Array(saltBuffer);
-      const key = await deriveKey(enteredPin, salt);
-
-      const decrypted = await decryptData(storedData, key);
-      cryptoKey = key;
-      appState = decrypted;
-
-      if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
-      if (!appState.transactions) appState.transactions = [];
-      if (!appState.recurring) appState.recurring = [];
-
-      unlockApp();
-      announceNVDA('Erfolgreich entsperrt.');
-    }
-  } catch (err) {
-    if (errorMsg) {
-      errorMsg.textContent = '❌ Falsche PIN oder Passwort! Zugriff verweigert.';
-      errorMsg.style.display = 'block';
-    }
-    pinInput.value = '';
-    pinInput.focus();
-    announceNVDA('Falsche PIN. Bitte erneut versuchen.', true);
-  }
-}
-
-async function saveStateToEncryptedStorage() {
-  if (!cryptoKey) return;
-
-  try {
-    const encryptedVaultBase64 = await encryptData(appState, cryptoKey);
-    const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
-
-    localStorage.setItem(STORAGE_DATA_KEY, encryptedVaultBase64);
-
-    // In-Memory Vault aktualisieren
-    window.__DISK_VAULT__ = {
-      salt: saltBase64,
-      vault: encryptedVaultBase64
-    };
-
-  } catch (err) {
-    console.error('Verschlüsselungsfehler:', err);
-    announceNVDA('Fehler beim Speichern der verschlüsselten Daten!', true);
   }
 }
 
@@ -1704,6 +1656,7 @@ function lockApp() {
   }
 
   checkVaultStatus();
+  startHeartbeat();
   announceNVDA('App gesperrt.');
 }
 
