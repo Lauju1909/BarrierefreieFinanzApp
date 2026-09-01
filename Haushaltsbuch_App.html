@@ -1,0 +1,2893 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
+  <title>Barrierefreie Finanzen - Mit Tages- & Monatsansicht (NVDA)</title>
+  <style>
+/* ==========================================================================
+   BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & TAGES-ANSICHT
+   ========================================================================== */
+
+:root {
+  --font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
+  --font-size-base: 18px;
+  --font-size-lg: 22px;
+  --font-size-xl: 26px;
+  --font-size-hero: 36px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+}
+
+.theme-high-contrast {
+  --bg-primary: #000000;
+  --bg-surface: #111111;
+  --bg-surface-elevated: #1F1F1F;
+  --bg-hover: #2D2D2D;
+  --text-primary: #FFFF00;
+  --text-secondary: #FFFFFF;
+  --text-muted: #D0D0D0;
+  --border-color: #FFFF00;
+  --border-subtle: #666666;
+  --accent-income: #00FF66;
+  --accent-expense: #FF4444;
+  --accent-action: #00FFFF;
+  --accent-future: #FFB300;
+  --focus-color: #FFFF00;
+}
+
+.theme-dark {
+  --bg-primary: #0B0F19;
+  --bg-surface: #151D2A;
+  --bg-surface-elevated: #222E42;
+  --bg-hover: #31425F;
+  --text-primary: #F8FAFC;
+  --text-secondary: #E2E8F0;
+  --text-muted: #94A3B8;
+  --border-color: #475569;
+  --border-subtle: #334155;
+  --accent-income: #4ADE80;
+  --accent-expense: #F87171;
+  --accent-action: #38BDF8;
+  --accent-future: #FBBF24;
+  --focus-color: #38BDF8;
+}
+
+.theme-light {
+  --bg-primary: #F4F7FB;
+  --bg-surface: #FFFFFF;
+  --bg-surface-elevated: #EAF0F8;
+  --bg-hover: #D8E4F2;
+  --text-primary: #0B2545;
+  --text-secondary: #133E6E;
+  --text-muted: #475569;
+  --border-color: #133E6E;
+  --border-subtle: #CBD5E1;
+  --accent-income: #15803D;
+  --accent-expense: #B91C1C;
+  --accent-action: #0284C7;
+  --accent-future: #B45309;
+  --focus-color: #0284C7;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-family); font-size: var(--font-size-base); line-height: 1.6; background-color: var(--bg-primary); color: var(--text-secondary); min-height: 100vh; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+*:focus-visible { outline: 4px solid var(--focus-color) !important; outline-offset: 3px !important; }
+
+.skip-links { position: fixed; top: 0; left: 0; z-index: 99999; }
+.skip-link { position: absolute; top: -100px; left: 10px; background: var(--text-primary); color: var(--bg-primary); padding: 12px 20px; font-weight: bold; font-size: 20px; text-decoration: none; border: 3px solid var(--border-color); border-radius: var(--radius-md); transition: top 0.2s; }
+.skip-link:focus { top: 10px; }
+
+.lock-screen-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--bg-primary); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
+.lock-card { background-color: var(--bg-surface); border: 4px solid var(--border-color); border-radius: var(--radius-lg); padding: 36px 32px; max-width: 540px; width: 100%; text-align: center; }
+.lock-icon { font-size: 52px; margin-bottom: 12px; }
+.lock-card h1 { font-size: var(--font-size-xl); color: var(--text-primary); margin-bottom: 10px; }
+.lock-desc { font-size: 17px; color: var(--text-muted); margin-bottom: 24px; }
+.pin-field { text-align: center; font-size: 28px !important; letter-spacing: 6px; }
+.error-box { background-color: var(--bg-surface-elevated); color: var(--accent-expense); border: 2px solid var(--accent-expense); padding: 12px; border-radius: var(--radius-md); margin: 16px 0; font-weight: bold; font-size: 17px; }
+.privacy-guarantee-box { margin-top: 20px; padding: 14px; background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 15px; color: var(--text-secondary); text-align: left; }
+.pin-hint-box { margin-top: 14px; padding: 12px; background-color: var(--bg-surface-elevated); border-radius: var(--radius-md); font-size: 15px; color: var(--text-muted); }
+
+.app-header { background-color: var(--bg-surface); border-bottom: 3px solid var(--border-color); padding: 16px 20px; }
+.header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand h1 { font-size: var(--font-size-xl); color: var(--text-primary); font-weight: 800; }
+.security-badge { display: inline-block; font-size: 13px; font-weight: bold; color: var(--accent-income); background-color: var(--bg-surface-elevated); border: 1px solid var(--accent-income); padding: 2px 8px; border-radius: 4px; margin-top: 2px; }
+.app-icon { font-size: 32px; }
+.header-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.today-badge { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); padding: 8px 14px; border-radius: var(--radius-md); font-size: 16px; color: var(--text-primary); }
+.btn-lock { background-color: var(--bg-surface-elevated); color: var(--text-secondary); border: 2px solid var(--border-color); padding: 10px 16px; font-size: 16px; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 48px; }
+.theme-select { background-color: var(--bg-surface-elevated); color: var(--text-primary); border: 2px solid var(--border-color); padding: 10px 14px; font-size: 16px; font-weight: bold; border-radius: var(--radius-md); cursor: pointer; min-height: 48px; }
+
+.nav-tabs-wrapper { background-color: var(--bg-surface); border-bottom: 3px solid var(--border-subtle); position: sticky; top: 0; z-index: 100; }
+.tab-list { max-width: 1200px; margin: 0 auto; display: flex; overflow-x: auto; gap: 8px; padding: 10px 16px; }
+.tab-btn { background-color: var(--bg-surface-elevated); color: var(--text-secondary); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 18px; font-size: 17px; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 52px; white-space: nowrap; transition: all 0.15s ease-in-out; }
+.tab-btn:hover { background-color: var(--bg-hover); }
+.tab-btn.active { background-color: var(--text-primary); color: var(--bg-primary); border-color: var(--text-primary); }
+.tab-key-hint { background-color: var(--border-subtle); color: var(--text-secondary); padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 900; }
+.tab-btn.active .tab-key-hint { background-color: var(--bg-primary); color: var(--text-primary); }
+
+/* UMSCHALTER: MONATS-ANSICHT VS. TAGES-ANSICHT */
+.mode-switch-container {
+  background-color: var(--bg-surface);
+  border-bottom: 2px solid var(--border-subtle);
+  padding: 10px 16px;
+}
+
+.mode-switch-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.mode-toggle-btn {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 20px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 48px;
+  transition: all 0.15s ease-in-out;
+}
+
+.mode-toggle-btn:hover { background-color: var(--bg-hover); }
+
+.mode-toggle-btn.active {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+/* MONATS- & TAGES-WÄHLER LEISTEN */
+.time-picker-container {
+  background-color: var(--bg-surface-elevated);
+  border-bottom: 2px solid var(--border-color);
+  padding: 12px 16px;
+}
+
+.time-picker-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.time-select-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.time-select-label {
+  font-size: 18px;
+  color: var(--text-primary);
+  font-weight: bold;
+}
+
+.time-dropdown, .time-date-input {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 19px;
+  font-weight: 900;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.btn-time-nav {
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.btn-time-today {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  min-height: 48px;
+}
+
+.main-container { max-width: 1200px; margin: 0 auto; padding: 24px 16px; flex: 1; }
+.view-panel { display: flex; flex-direction: column; gap: 28px; }
+.month-banner { background-color: var(--bg-surface); border-left: 8px solid var(--text-primary); padding: 14px 20px; border-radius: var(--radius-md); }
+.month-banner-title { font-size: var(--font-size-xl); color: var(--text-primary); }
+.month-banner-sub { font-size: 16px; color: var(--text-muted); }
+.overview-section { display: flex; flex-direction: column; gap: 12px; }
+.section-title { font-size: var(--font-size-lg); color: var(--text-primary); font-weight: 800; }
+.section-card { background-color: var(--bg-surface); border: 2px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px; }
+.card-income-wrap { border-left: 8px solid var(--accent-income); }
+.card-expense-wrap { border-left: 8px solid var(--accent-expense); }
+.simulator-card { border-left: 8px solid var(--accent-action); }
+.card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.stat-big-val { font-size: 28px; font-weight: 900; }
+.sub-counter { font-size: 16px; color: var(--text-muted); }
+
+.simulator-box { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 18px; margin-top: 10px; }
+.sim-result-box { background-color: var(--bg-surface); border: 2px solid var(--border-color); border-radius: var(--radius-md); padding: 16px; margin-top: 14px; font-size: 18px; font-weight: bold; }
+
+.accessible-accordion { border: 2px solid var(--border-subtle); border-radius: var(--radius-md); background-color: var(--bg-surface-elevated); margin-top: 10px; }
+.accordion-summary { padding: 14px 18px; font-size: 18px; cursor: pointer; color: var(--text-primary); font-weight: bold; }
+.accordion-summary:hover { background-color: var(--bg-hover); }
+.accordion-content { padding: 12px; border-top: 1px solid var(--border-subtle); background-color: var(--bg-surface); }
+
+.accounts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.account-card { background-color: var(--bg-surface); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.acc-header { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; }
+.acc-balance { font-size: 24px; font-weight: 800; color: var(--text-primary); margin: 4px 0; }
+.acc-hint { font-size: 14px; color: var(--text-muted); }
+
+.balance-hero-card { background-color: var(--bg-surface); border: 3px solid var(--border-color); border-radius: var(--radius-lg); padding: 24px; }
+.hero-label { font-size: 20px; font-weight: 800; color: var(--text-primary); margin-bottom: 6px; }
+.hero-amount { font-size: var(--font-size-hero); font-weight: 900; color: var(--text-primary); margin-bottom: 6px; }
+.hero-subtext { font-size: 16px; color: var(--text-muted); }
+.hero-divider { border: 0; height: 2px; background-color: var(--border-subtle); margin: 18px 0; }
+.hero-secondary-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.hero-sub-label { font-size: 18px; font-weight: bold; color: var(--text-secondary); }
+.hero-sub-value { font-size: 24px; font-weight: 900; margin-left: 8px; }
+
+.tx-list { list-style: none; }
+.tx-item { padding: 14px 18px; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+.tx-item:last-child { border-bottom: none; }
+.tx-item:hover, .tx-item:focus-within { background-color: var(--bg-hover); }
+.tx-info { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px; }
+.tx-icon { font-size: 26px; }
+.tx-details { display: flex; flex-direction: column; }
+.tx-cat-name { font-size: 18px; font-weight: bold; color: var(--text-secondary); }
+.tx-account-badge { display: inline-block; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: bold; margin-top: 3px; width: fit-content; }
+.status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 900; margin-top: 4px; width: fit-content; }
+.status-booked { background-color: #1a3320; color: var(--accent-income); border: 1px solid var(--accent-income); }
+.status-future { background-color: #332600; color: var(--accent-future); border: 1px solid var(--accent-future); }
+.status-planned { background-color: #112d4e; color: var(--accent-action); border: 1px solid var(--accent-action); }
+.tx-note { font-size: 15px; color: var(--text-muted); margin-top: 2px; }
+.tx-amount-col { display: flex; align-items: center; gap: 12px; }
+.tx-sum { font-size: 20px; font-weight: 900; }
+.tx-sum.expense { color: var(--accent-expense); }
+.tx-sum.income { color: var(--accent-income); }
+.tx-sum.transfer { color: var(--accent-action); }
+.btn-delete-tx { background-color: var(--bg-surface-elevated); color: var(--accent-expense); border: 2px solid var(--accent-expense); padding: 6px 12px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; min-height: 40px; }
+.btn-delete-tx:hover { background-color: var(--accent-expense); color: #000; }
+.empty-state { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 17px; }
+
+.form-container { background-color: var(--bg-surface); border: 3px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px; max-width: 800px; margin: 0 auto; width: 100%; }
+.accessible-form { display: flex; flex-direction: column; gap: 20px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { .form-row-2 { grid-template-columns: 1fr; } }
+.field-label { font-size: 18px; color: var(--text-primary); }
+.required-star { color: var(--accent-expense); }
+.large-input, .large-select { background-color: var(--bg-surface-elevated); color: var(--text-secondary); border: 2px solid var(--border-color); border-radius: var(--radius-md); padding: 14px 16px; font-size: 20px; font-family: inherit; width: 100%; min-height: 56px; }
+.large-input:focus, .large-select:focus { background-color: var(--bg-hover); }
+.field-hint { font-size: 14px; color: var(--text-muted); }
+.form-actions { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 10px; }
+.btn { border-radius: var(--radius-md); padding: 14px 24px; font-size: 18px; font-weight: 800; cursor: pointer; min-height: 56px; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid var(--border-color); }
+.btn-primary { background-color: var(--text-primary); color: var(--bg-primary); flex: 2; min-width: 200px; }
+.btn-secondary { background-color: var(--bg-surface-elevated); color: var(--text-secondary); flex: 1; min-width: 160px; }
+.btn-danger { background-color: var(--bg-surface-elevated); color: var(--accent-expense); border-color: var(--accent-expense); }
+.btn-danger:hover { background-color: var(--accent-expense); color: #000; }
+
+.year-overview-box, .future-forecast-box { padding: 24px !important; }
+.year-header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.table-responsive { overflow-x: auto; border: 2px solid var(--border-subtle); border-radius: var(--radius-md); }
+.annual-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 16px; }
+.annual-table th, .annual-table td { padding: 12px 14px; border-bottom: 1px solid var(--border-subtle); }
+.annual-table thead th { background-color: var(--bg-surface-elevated); color: var(--text-primary); font-weight: 900; }
+.annual-table tbody tr:hover { background-color: var(--bg-hover); }
+.annual-table tfoot th, .annual-table tfoot td { background-color: var(--bg-surface-elevated); font-weight: 900; border-top: 2px solid var(--border-color); font-size: 18px; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.btn-jump-month { background-color: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 4px; font-weight: bold; cursor: pointer; }
+.settings-box { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px; }
+.danger-box { border-color: var(--accent-expense); }
+.app-footer { background-color: var(--bg-surface); border-top: 2px solid var(--border-color); padding: 20px 16px; text-align: center; margin-top: 40px; font-size: 15px; color: var(--text-muted); }
+
+</style>
+</head>
+<body class="theme-high-contrast" id="app-body">
+
+  <!-- Live-Regionen für NVDA Screenreader Mitteilungen -->
+  <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- =========================================================================
+       1. AES-256 PIN / PASSWORT SPERRBILDSCHIRM
+       ========================================================================= -->
+  <div id="lock-screen" class="lock-screen-overlay" role="dialog" aria-modal="true" aria-labelledby="lock-heading">
+    <div class="lock-card">
+      <div class="lock-icon" aria-hidden="true">🛡️</div>
+      <h1 id="lock-heading" tabindex="-1">Sicherer AES-256 Zugang</h1>
+      <p id="lock-instructions" class="lock-desc">Deine Finanzdaten sind auf diesem Gerät mit 256-Bit AES verschlüsselt. Gib deine PIN oder dein Passwort ein.</p>
+      
+      <form id="lock-form" onsubmit="handlePinSubmit(event)">
+        <div class="form-group">
+          <label for="pin-input" class="field-label"><strong>PIN oder Passwort</strong></label>
+          <input type="password" id="pin-input" class="large-input pin-field" maxlength="30" placeholder="PIN eingeben" autocomplete="current-password" autofocus required>
+        </div>
+
+        <div id="pin-error-msg" class="error-box" role="alert" style="display: none;"></div>
+
+        <div class="lock-actions">
+          <button type="submit" class="btn btn-primary" id="btn-unlock">
+            <span>🔓 <strong>Entschlüsseln & Öffnen</strong> (Enter)</span>
+          </button>
+        </div>
+      </form>
+
+      <div class="privacy-guarantee-box">
+        <p>🔒 <strong>100% DSGVO & EU-Datenschutz:</strong> Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.</p>
+      </div>
+
+      <div class="pin-hint-box" id="first-time-hint" style="display: none;">
+        <p>💡 <em>Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).</em></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       2. HAUPTANWENDUNG
+       ========================================================================= -->
+  <div id="app-wrapper" style="display: none;">
+
+    <!-- Schnellsprunglinks für NVDA -->
+    <nav class="skip-links" aria-label="Schnellnavigation">
+      <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
+      <a href="#overview-mode-bar" class="skip-link">Zum Ansichtsmodus springen</a>
+      <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
+    </nav>
+
+    <!-- Header -->
+    <header class="app-header" role="banner">
+      <div class="header-content">
+        <div class="brand">
+          <span class="app-icon" aria-hidden="true">💶</span>
+          <div>
+            <h1>Meine Finanzen & Haushaltsbuch</h1>
+            <span class="security-badge" aria-label="Sicherheitsstatus: AES-256 Verschlüsselt">🔒 AES-256 Verschlüsselt & DSGVO-Konform</span>
+          </div>
+        </div>
+        <div class="header-controls">
+          <span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum">
+            📅 Heute: <strong id="today-date-text">Lade Datum...</strong>
+          </span>
+          <button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L)">
+            <span aria-hidden="true">🔒</span>
+            <span>Sperren (L)</span>
+          </button>
+          <div class="theme-selector">
+            <label for="theme-select" class="sr-only">Kontrastfarbe wählen</label>
+            <select id="theme-select" class="theme-select" onchange="changeTheme(this.value)">
+              <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
+              <option value="theme-dark">⚪ Weiß auf Schwarz (Dunkel)</option>
+              <option value="theme-light">🔵 Blau auf Weiß (Hell)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- =========================================================================
+         HAUPTNAVIGATION (5 TABS)
+         ========================================================================= -->
+    <nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
+      <div class="tab-list" role="tablist">
+        <button id="tab-overview" class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" onclick="switchView('overview')" tabindex="0">
+          <span class="tab-key-hint" aria-hidden="true">1</span>
+          <span>📊 <strong>Übersicht & Simulator</strong></span>
+        </button>
+        <button id="tab-expense" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-expense" onclick="switchView('expense')" tabindex="-1">
+          <span class="tab-key-hint" aria-hidden="true">2</span>
+          <span>🔴 <strong>Ausgabe eintragen / planen</strong></span>
+        </button>
+        <button id="tab-income" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-income" onclick="switchView('income')" tabindex="-1">
+          <span class="tab-key-hint" aria-hidden="true">3</span>
+          <span>🟢 <strong>Einnahme eintragen / planen</strong></span>
+        </button>
+        <button id="tab-transfer" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-transfer" onclick="switchView('transfer')" tabindex="-1">
+          <span class="tab-key-hint" aria-hidden="true">4</span>
+          <span>🔄 <strong>Umbuchen & Sparen</strong></span>
+        </button>
+        <button id="tab-settings" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
+          <span class="tab-key-hint" aria-hidden="true">5</span>
+          <span>⚙️ <strong>Backup & Einstellungen</strong></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- =========================================================================
+         ANSICHTS-MODUS UMSCHALTER (MONATS-ANSICHT VS. TAGES-ANSICHT)
+         ========================================================================= -->
+    <div class="mode-switch-container" id="overview-mode-bar" role="region" aria-label="Ansichtsmodus">
+      <div class="mode-switch-inner">
+        <span style="font-weight: bold; color: var(--text-primary);">Ansicht wählen:</span>
+        <button id="mode-btn-month" class="mode-toggle-btn active" onclick="setOverviewMode('month')" title="Ganzen Monat anzeigen">
+          📅 <strong>Monats-Ansicht</strong> (Gesamter Monat)
+        </button>
+        <button id="mode-btn-day" class="mode-toggle-btn" onclick="setOverviewMode('day')" title="Nur Buchungen an einem bestimmten Tag anzeigen">
+          📍 <strong>Tages-Ansicht</strong> (Nur dieser Tag)
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         1. MONATS-WÄHLER LEISTE (AKTIV BEI MONATS-ANSICHT)
+         ========================================================================= -->
+    <div class="time-picker-container" id="month-picker-bar" role="region" aria-label="Monatsauswahl">
+      <div class="time-picker-inner">
+        <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen (Taste P)" aria-label="Vorheriger Monat">
+          ◀ Vorheriger Monat (P)
+        </button>
+        
+        <div class="time-select-wrapper">
+          <label for="global-month-select" class="time-select-label">
+            📅 <strong>Aktiver Monat:</strong>
+          </label>
+          <select id="global-month-select" class="time-dropdown" onchange="handleMonthChange(this.value)">
+            <!-- Befüllt per JavaScript -->
+          </select>
+        </div>
+
+        <button class="btn btn-time-nav" onclick="changeMonthRelative(1)" title="Einen Monat vorwärtsgehen (Taste N)" aria-label="Nächster Monat">
+          Nächster Monat (N) ▶
+        </button>
+
+        <button class="btn btn-time-today" onclick="setMonthToCurrent()" title="Direkt zum aktuellen Monat springen">
+          📍 Heute / Aktueller Monat
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         2. TAGES-WÄHLER LEISTE (AKTIV BEI TAGES-ANSICHT)
+         ========================================================================= -->
+    <div class="time-picker-container" id="day-picker-bar" role="region" aria-label="Tagesauswahl" style="display: none;">
+      <div class="time-picker-inner">
+        <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
+          ◀ Gestern / Vorheriger Tag
+        </button>
+        
+        <div class="time-select-wrapper">
+          <label for="global-day-select" class="time-select-label">
+            📍 <strong>Ausgewählter Tag:</strong>
+          </label>
+          <input type="date" id="global-day-select" class="time-date-input" onchange="handleDayChange(this.value)">
+        </div>
+
+        <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
+          Nächster Tag / Morgen ▶
+        </button>
+
+        <button class="btn btn-time-today" onclick="setDayToToday()" title="Direkt zum heutigen Tag springen">
+          📍 Heute
+        </button>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         HAUPTINHALTSBEREICH
+         ========================================================================= -->
+    <main class="main-container" id="view-content-area" role="main">
+
+      <!-- =======================================================================
+           ANSICHT 1: ÜBERSICHT (MONAT ODER TAG)
+           ======================================================================= -->
+      <div id="view-overview" class="view-panel" role="tabpanel" aria-labelledby="tab-overview">
+        
+        <div class="month-banner">
+          <h2 id="overview-month-title" class="month-banner-title">Monatsübersicht für September 2026</h2>
+          <p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
+        </div>
+
+        <!-- 1. ZUERST: KONTOSTÄNDE -->
+        <section class="overview-section" aria-labelledby="section-accounts-heading">
+          <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
+          
+          <div class="accounts-grid">
+            <div class="account-card" tabindex="0" aria-label="Bankkonto Girokonto">
+              <div class="acc-header">
+                <span class="acc-icon" aria-hidden="true">🏦</span>
+                <span class="acc-name">Bankkonto (Girokonto)</span>
+              </div>
+              <div class="acc-balance" id="acc-balance-bank">0,00 €</div>
+              <span class="acc-hint">Miete, EC-Karte, Daueraufträge</span>
+            </div>
+
+            <div class="account-card" tabindex="0" aria-label="PayPal Guthaben">
+              <div class="acc-header">
+                <span class="acc-icon" aria-hidden="true">🅿️</span>
+                <span class="acc-name">PayPal Guthaben</span>
+              </div>
+              <div class="acc-balance" id="acc-balance-paypal">0,00 €</div>
+              <span class="acc-hint">Online-Shopping, Freunde, Spotify</span>
+            </div>
+
+            <div class="account-card" tabindex="0" aria-label="Tagesgeldkonto Erspartes">
+              <div class="acc-header">
+                <span class="acc-icon" aria-hidden="true">📈</span>
+                <span class="acc-name">Tagesgeldkonto (Sparen)</span>
+              </div>
+              <div class="acc-balance" id="acc-balance-savings">0,00 €</div>
+              <span class="acc-hint">Notgroschen, Führerschein, Urlaub</span>
+            </div>
+
+            <div class="account-card" tabindex="0" aria-label="Bargeld Portemonnaie">
+              <div class="acc-header">
+                <span class="acc-icon" aria-hidden="true">💵</span>
+                <span class="acc-name">Bargeld (Portemonnaie)</span>
+              </div>
+              <div class="acc-balance" id="acc-balance-cash">0,00 €</div>
+              <span class="acc-hint">Bäcker, Döner, Barbezahlung</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. DANN: EINNAHMEN -->
+        <section class="overview-section" aria-labelledby="section-income-heading">
+          <div class="section-card card-income-wrap">
+            <div class="card-header-flex">
+              <div>
+                <h3 id="section-income-heading" class="section-title" style="margin-bottom: 2px;">2. 📥 Einnahmen</h3>
+                <span class="sub-counter" id="income-summary-subtext">Lade Einnahmen...</span>
+              </div>
+              <div class="stat-big-val" id="card-month-income" style="color: var(--accent-income);">+ 0,00 €</div>
+            </div>
+
+            <details class="accessible-accordion" id="details-income-list" open>
+              <summary class="accordion-summary" aria-label="Alle Einnahmen mit Datum ausklappen oder einklappen">
+                <span>📋 <strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum & Status)</strong></span>
+              </summary>
+              <div class="accordion-content" id="overview-income-items-feed">
+                <!-- Wird per JS befüllt -->
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- 3. DANN: AUSGABEN -->
+        <section class="overview-section" aria-labelledby="section-expense-heading">
+          <div class="section-card card-expense-wrap">
+            <div class="card-header-flex">
+              <div>
+                <h3 id="section-expense-heading" class="section-title" style="margin-bottom: 2px;">3. 📤 Ausgaben</h3>
+                <span class="sub-counter" id="expense-summary-subtext">Lade Ausgaben...</span>
+              </div>
+              <div class="stat-big-val" id="card-month-expense" style="color: var(--accent-expense);">- 0,00 €</div>
+            </div>
+
+            <details class="accessible-accordion" id="details-expense-list" open>
+              <summary class="accordion-summary" aria-label="Alle Ausgaben mit Datum ausklappen oder einklappen">
+                <span>📋 <strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Kategorie & Status)</strong></span>
+              </summary>
+              <div class="accordion-content" id="overview-expense-items-feed">
+                <!-- Wird per JS befüllt -->
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
+        <section class="overview-section" aria-labelledby="section-total-heading">
+          <div class="balance-hero-card" tabindex="0">
+            <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & WAS NOCH ÜBRIG IST</h3>
+            <div class="hero-amount" id="card-alltime-total">0,00 €</div>
+            <div class="hero-subtext" id="total-balance-sub">Verfügbares Gesamtguthaben über alle Konten</div>
+            
+            <hr class="hero-divider" aria-hidden="true">
+
+            <div class="hero-secondary-row">
+              <div>
+                <span class="hero-sub-label" id="leftover-main-label">Monats-Saldo (In diesem Monat noch übrig):</span>
+                <strong class="hero-sub-value" id="month-leftover-display">0,00 €</strong>
+              </div>
+              <div id="month-leftover-sub" class="hero-subtext">Einnahmen minus Ausgaben</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. KAUF-PLANER & SIMULATOR -->
+        <section class="overview-section" aria-labelledby="section-simulator-heading">
+          <div class="section-card simulator-card">
+            <h3 id="section-simulator-heading" class="section-title">🛒 5. Kauf-Planer & Simulator (Was bleibt übrig, wenn ich etwas kaufe?)</h3>
+            <p class="field-hint">Hier kannst du sofort ausprobieren, wie viel Geld du nach einem Kauf noch übrig hättest:</p>
+
+            <div class="simulator-box">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="sim-item-name" class="field-label"><strong>Was möchtest du dir kaufen? (Wunsch / Anschaffung)</strong></label>
+                  <input type="text" id="sim-item-name" class="large-input" placeholder="z. B. Neue Schuhe, Gaming-Headset, Jacke...">
+                </div>
+                <div class="form-group">
+                  <label for="sim-item-price" class="field-label"><strong>Preis in Euro (€)</strong></label>
+                  <input type="number" step="0.01" min="0.01" id="sim-item-price" class="large-input" placeholder="z. B. 49.99" oninput="runPurchaseSimulation()">
+                </div>
+              </div>
+
+              <div id="sim-result-box" class="sim-result-box" role="status" aria-live="polite">
+                <p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>
+              </div>
+
+              <div class="sim-actions" id="sim-save-action" style="display: none; margin-top: 14px;">
+                <button type="button" class="btn btn-primary" onclick="saveSimulatedPurchase()">
+                  <span>🎯 <strong>Als geplante Zukunftsausgabe übernehmen</strong></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- =======================================================================
+           ANSICHT 2: AUSGABE EINTRAGEN
+           ======================================================================= -->
+      <div id="view-expense" class="view-panel" role="tabpanel" aria-labelledby="tab-expense" style="display: none;">
+        <div class="form-container">
+          <h2 class="view-heading" tabindex="-1" id="heading-expense-view">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
+          <p class="view-sub">Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.</p>
+
+          <form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
+            <div class="form-group">
+              <label for="exp-amount" class="field-label">
+                <strong>Betrag in Euro (€)</strong> <span class="required-star" aria-hidden="true">* (Pflichtfeld)</span>
+              </label>
+              <input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="exp-frequency" class="field-label">
+                <strong>Art & Häufigkeit der Ausgabe</strong>
+              </label>
+              <select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
+                <option value="once" selected>⚡ Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
+                <option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung nicht fest)</option>
+                <option value="monthly">📅 Dauerhaft Monatlich (Fester Vertrag / Abo jeden Monat)</option>
+                <option value="yearly">🗓️ Dauerhaft Jährlich (Feste Jahreskosten, z. B. Versicherung)</option>
+                <option value="quarterly">🔄 Dauerhaft Alle 3 Monate (Quartalsweise)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="exp-account" class="field-label">
+                <strong>Von welchem Konto bezahlen?</strong> <span class="required-star" aria-hidden="true">*</span>
+              </label>
+              <select id="exp-account" class="large-select" required>
+                <option value="bank">🏦 Bankkonto / Girokonto (EC-Karte / Lastschrift)</option>
+                <option value="paypal">🅿️ PayPal Guthaben</option>
+                <option value="cash">💵 Bargeld (Portemonnaie / Bar bezahlt)</option>
+                <option value="savings">📈 Tagesgeldkonto (Vom Ersparten bezahlt)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="exp-category" class="field-label">
+                <strong>Art der Ausgabe (Kategorie)</strong>
+              </label>
+              <select id="exp-category" class="large-select">
+                <optgroup label="Essen, Trinken & Supermarkt">
+                  <option value="Supermarkt & Lebensmittel">🛒 Supermarkt & Lebensmittel (REWE, Aldi, Lidl)</option>
+                  <option value="Döner, Pizza & Fast Food">🍕 Döner, Pizza, Fast Food & Bäcker</option>
+                  <option value="Snacks & Energy Drinks">🥤 Snacks, Süßigkeiten & Energy Drinks</option>
+                  <option value="Restaurant & Café">☕ Restaurant, Café & Bar</option>
+                </optgroup>
+                <optgroup label="Abos, Verträge & Streaming">
+                  <option value="Streaming & Abos">🎬 Streaming & Abos (Spotify, Netflix, YouTube, Discord)</option>
+                  <option value="Handyvertrag & Prepaid">📱 Handytarif, Guthaben & Internet</option>
+                  <option value="Fahrkarte & ÖPNV">🚌 Deutschlandticket / ÖPNV Abo</option>
+                  <option value="Hobby & Sport">⚽ Fitnessstudio / Sportverein</option>
+                  <option value="Versicherung & Gebühren">🛡️ Haftpflicht & Versicherungen</option>
+                  <option value="Miete & Wohnen">🏠 Miete & Nebenkosten</option>
+                </optgroup>
+                <optgroup label="Freizeit, Shopping & Geplante Wünsche">
+                  <option value="Gaming & Games">🎮 Gaming, Steam, PlayStation, Xbox, Ingame</option>
+                  <option value="Freizeit, Party & Feiern">🎉 Freizeit, Freunde treffen, Party & Kino</option>
+                  <option value="Shopping & Kleidung">👕 Kleidung, Schuhe & Online-Shopping</option>
+                  <option value="Tanken & Roller/Auto">⛽ Tanken, Roller & Auto</option>
+                  <option value="Führerschein">🚗 Führerschein & Fahrstunden</option>
+                  <option value="Technik & Elektronik">💻 Technik, PC, Zubehör</option>
+                  <option value="Drogerie & Friseur">💊 Drogerie (dm, Rossmann), Friseur & Pflege</option>
+                  <option value="Geschenke">🎁 Geschenke für Freunde / Familie</option>
+                  <option value="Sonstige Ausgabe">📦 Sonstige Ausgabe</option>
+                </optgroup>
+              </select>
+            </div>
+
+            <div class="form-group" id="exp-date-group">
+              <label for="exp-date" class="field-label">
+                <strong>An welchem Tag (Datum)?</strong>
+              </label>
+              <input type="date" id="exp-date" class="large-input" required>
+            </div>
+
+            <div id="exp-recurring-details" style="display: none;">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="exp-rec-day" class="field-label">
+                    <strong>An welchem Tag des Monats? (1 - 31)</strong>
+                  </label>
+                  <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
+                </div>
+                <div class="form-group" id="exp-yearly-month-group" style="display: none;">
+                  <label for="exp-yearly-month" class="field-label">
+                    <strong>In welchem Monat fällig?</strong>
+                  </label>
+                  <select id="exp-yearly-month" class="large-select">
+                    <option value="0">Januar</option>
+                    <option value="1">Februar</option>
+                    <option value="2">März</option>
+                    <option value="3">April</option>
+                    <option value="4">Mai</option>
+                    <option value="5">Juni</option>
+                    <option value="6">Juli</option>
+                    <option value="7">August</option>
+                    <option value="8">September</option>
+                    <option value="9">Oktober</option>
+                    <option value="10">November</option>
+                    <option value="11">Dezember</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="exp-desc" class="field-label">
+                <strong>Beschreibung / Wofür genau?</strong>
+              </label>
+              <input type="text" id="exp-desc" class="large-input" placeholder="z. B. Geplante neue Kopfhörer, Döner, Spotify...">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <span>🔴 <strong>Ausgabe / Geplanten Kauf speichern</strong> (Enter)</span>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+                <span>Zurück zur Übersicht</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- =======================================================================
+           ANSICHT 3: EINNAHME EINTRAGEN
+           ======================================================================= -->
+      <div id="view-income" class="view-panel" role="tabpanel" aria-labelledby="tab-income" style="display: none;">
+        <div class="form-container">
+          <h2 class="view-heading" tabindex="-1" id="heading-income-view">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
+          <p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
+
+          <form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
+            <div class="form-group">
+              <label for="inc-amount" class="field-label">
+                <strong>Betrag in Euro (€)</strong> <span class="required-star" aria-hidden="true">*</span>
+              </label>
+              <input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="inc-frequency" class="field-label">
+                <strong>Art & Häufigkeit der Einnahme</strong>
+              </label>
+              <select id="inc-frequency" class="large-select" onchange="toggleIncomeFrequencyFields()">
+                <option value="once" selected>⚡ Einmalig (bereits erhalten)</option>
+                <option value="planned">🎯 Geplante einmalige Zukunftseinnahme (z. B. geplanter Verkauf, Geschenk)</option>
+                <option value="monthly">📅 Dauerhaft Monatlich (z. B. monatliches Taschengeld, Gehalt)</option>
+                <option value="yearly">🗓️ Dauerhaft Jährlich (1x im Jahr)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inc-account" class="field-label">
+                <strong>Auf welches Konto?</strong> <span class="required-star" aria-hidden="true">*</span>
+              </label>
+              <select id="inc-account" class="large-select" required>
+                <option value="bank">🏦 Bankkonto / Girokonto</option>
+                <option value="paypal">🅿️ PayPal Guthaben</option>
+                <option value="cash">💵 Bargeld (ins Portemonnaie bekommen)</option>
+                <option value="savings">📈 Direkt aufs Tagesgeldkonto (Sparen)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inc-category" class="field-label">
+                <strong>Woher kommt das Geld? (Kategorie)</strong>
+              </label>
+              <select id="inc-category" class="large-select">
+                <option value="Taschengeld">👛 Taschengeld / Unterstützung Eltern</option>
+                <option value="Minijob & Nebenjob">⭐ Minijob, Aushilfe & Nebenjob</option>
+                <option value="Ausbildungsvergütung / Lohn">💼 Ausbildungsvergütung / Gehalt / Lohn</option>
+                <option value="Kindergeld / BAföG / Zuschuss">🏛️ Kindergeld / BAföG / Amt</option>
+                <option value="Geschenk / Geburtstag">🎁 Geschenk (Geburtstag, Oma, Feiertage)</option>
+                <option value="Kleinanzeigen & Vinted">📦 Verkäufe (Vinted, Kleinanzeigen, Flohmarkt)</option>
+                <option value="Rückzahlung von Freunden">🔄 Rückzahlung von Freunden (PayPal / Bar)</option>
+                <option value="Pfand & Kleingeld">🍾 Pfandgeld / Kleingeld eingezahlt</option>
+                <option value="Sonstige Einnahme">💰 Sonstige Einnahme</option>
+              </select>
+            </div>
+
+            <div class="form-group" id="inc-date-group">
+              <label for="inc-date" class="field-label">
+                <strong>Wann (Datum)?</strong>
+              </label>
+              <input type="date" id="inc-date" class="large-input" required>
+            </div>
+
+            <div id="inc-recurring-details" style="display: none;">
+              <div class="form-group">
+                <label for="inc-rec-day" class="field-label">
+                  <strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
+                </label>
+                <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="inc-desc" class="field-label">
+                <strong>Beschreibung / Von wem?</strong>
+              </label>
+              <input type="text" id="inc-desc" class="large-input" placeholder="z. B. Taschengeld, Vinted Jacke Verkauf im Oktober...">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <span>🟢 <strong>Einnahme speichern</strong> (Enter)</span>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+                <span>Zurück zur Übersicht</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- =======================================================================
+           ANSICHT 4: UMBUCHEN & SPAREN
+           ======================================================================= -->
+      <div id="view-transfer" class="view-panel" role="tabpanel" aria-labelledby="tab-transfer" style="display: none;">
+        <div class="form-container">
+          <h2 class="view-heading" tabindex="-1" id="heading-transfer-view">🔄 Geld umbuchen & auf anderes Konto sparen</h2>
+          <p class="view-sub">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
+
+          <form id="form-add-transfer" class="accessible-form" onsubmit="handleAddTransfer(event)">
+            <div class="form-group">
+              <label for="trf-amount" class="field-label">
+                <strong>Betrag zum Umbuchen in Euro (€)</strong> <span class="required-star" aria-hidden="true">*</span>
+              </label>
+              <input type="number" step="0.01" min="0.01" id="trf-amount" class="large-input" placeholder="z. B. 25 oder 50" required autofocus autocomplete="off">
+            </div>
+
+            <div class="form-group">
+              <label for="trf-frequency" class="field-label">
+                <strong>Häufigkeit der Umbuchung</strong>
+              </label>
+              <select id="trf-frequency" class="large-select" onchange="toggleTransferFrequencyFields()">
+                <option value="once" selected>⚡ Einmalig (Jetzt sofort oder an bestimmtem Tag verschieben)</option>
+                <option value="monthly">📅 Dauerhaft Monatlich (Automatischer monatlicher Sparplan)</option>
+              </select>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label for="trf-from" class="field-label"><strong>Von welchem Konto abbuchen (Quelle)?</strong></label>
+                <select id="trf-from" class="large-select" required>
+                  <option value="bank" selected>🏦 Bankkonto / Girokonto</option>
+                  <option value="paypal">🅿️ PayPal Guthaben</option>
+                  <option value="cash">💵 Bargeld</option>
+                  <option value="savings">📈 Tagesgeldkonto</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="trf-to" class="field-label"><strong>Auf welches Konto einzahlen (Ziel / Sparen)?</strong></label>
+                <select id="trf-to" class="large-select" required>
+                  <option value="savings" selected>📈 Tagesgeldkonto (Sparen / Notgroschen)</option>
+                  <option value="paypal">🅿️ PayPal Guthaben</option>
+                  <option value="bank">🏦 Bankkonto / Girokonto</option>
+                  <option value="cash">💵 Bargeld (Geldautomat abgehoben)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" id="trf-date-group">
+              <label for="trf-date" class="field-label"><strong>Datum der Umbuchung</strong></label>
+              <input type="date" id="trf-date" class="large-input" required>
+            </div>
+
+            <div id="trf-recurring-details" style="display: none;">
+              <div class="form-group">
+                <label for="trf-rec-day" class="field-label">
+                  <strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
+                </label>
+                <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="trf-desc" class="field-label"><strong>Zweck / Notiz</strong></label>
+              <input type="text" id="trf-desc" class="large-input" placeholder="z. B. Sparplan Notgroschen, Führerschein Sparen...">
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                <span>🔄 <strong>Umbuchung / Sparplan speichern</strong> (Enter)</span>
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+                <span>Zurück zur Übersicht</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- =======================================================================
+           ANSICHT 5: BACKUP, SICHERHEIT, DATENSCHUTZ & ZUKUNFTS-PROGNOSE
+           ======================================================================= -->
+      <div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
+        <div class="form-container">
+          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Datensicherung, Zukunfts-Prognose & Einstellungen</h2>
+
+          <!-- DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
+          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-action);">
+            <h3 id="backup-restore-heading">💾 Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
+            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen, um sie auf einen USB-Stick zu kopieren oder auf einen neuen Computer zu übertragen:</p>
+
+            <div class="form-actions" style="margin-top: 10px;">
+              <button type="button" class="btn btn-secondary" onclick="exportEncryptedBackup()" style="flex: 1;">
+                <span>📤 <strong>Verschlüsseltes Backup herunterladen</strong> (.json)</span>
+              </button>
+              <label class="btn btn-secondary" style="flex: 1; cursor: pointer; text-align: center;">
+                <span>📥 <strong>Backup-Datei importieren</strong></span>
+                <input type="file" id="import-backup-file" accept=".json" onchange="importEncryptedBackup(event)" style="display: none;">
+              </label>
+            </div>
+          </section>
+
+          <!-- ZUKUNFTS-VORSCHAU & PROGNOSE -->
+          <section class="settings-box future-forecast-box" aria-labelledby="future-forecast-heading">
+            <div class="year-header-bar">
+              <div>
+                <h3 id="future-forecast-heading" class="section-title">🔮 Zukunfts-Vorschau & Prognose (Monat & Jahr)</h3>
+                <p class="field-hint">Hier siehst du, wie sich deine Finanzen in den kommenden Monaten entwickeln werden:</p>
+              </div>
+              <div class="year-select-wrap">
+                <label for="forecast-range-select" class="sr-only">Zukunfts-Zeitraum wählen</label>
+                <select id="forecast-range-select" class="filter-select" onchange="renderFutureForecast(this.value)">
+                  <option value="6" selected>Nächste 6 Monate vorausschauen</option>
+                  <option value="12">Ganzes Jahr vorausschauen (12 Monate)</option>
+                  <option value="3">Nächste 3 Monate vorausschauen</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive" tabindex="0" role="region" aria-label="Zukunfts-Prognose Tabelle">
+              <table class="annual-table" id="forecast-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Zukunfts-Monat</th>
+                    <th scope="col" class="text-right">Geplante Einnahmen</th>
+                    <th scope="col" class="text-right">Geplante Fixkosten</th>
+                    <th scope="col" class="text-right">Monatliches Plus</th>
+                    <th scope="col" class="text-right">Voraussichtlicher Kontostand</th>
+                  </tr>
+                </thead>
+                <tbody id="forecast-table-body">
+                  <!-- Befüllt per JS -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- GROSSE 12-MONATS JAHRESÜBERSICHT -->
+          <section class="settings-box year-overview-box" aria-labelledby="year-overview-heading">
+            <div class="year-header-bar">
+              <div>
+                <h3 id="year-overview-heading" class="section-title">📅 Jahresübersicht (Januar bis Dezember)</h3>
+                <p class="field-hint">Historische und geplante Werte für alle 12 Monate des Jahres:</p>
+              </div>
+              <div class="year-select-wrap">
+                <label for="year-view-select" class="sr-only">Jahr wählen</label>
+                <select id="year-view-select" class="filter-select" onchange="renderAnnualTable(this.value)">
+                  <option value="2026" selected>Jahr 2026</option>
+                  <option value="2025">Jahr 2025</option>
+                  <option value="2027">Jahr 2027</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="table-responsive" tabindex="0" role="region" aria-label="Jahrestabelle">
+              <table class="annual-table" id="annual-summary-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Monat</th>
+                    <th scope="col" class="text-right">Einnahmen</th>
+                    <th scope="col" class="text-right">Ausgaben</th>
+                    <th scope="col" class="text-right">Noch übrig</th>
+                    <th scope="col" class="text-center">Status</th>
+                    <th scope="col" class="text-center">Aktion</th>
+                  </tr>
+                </thead>
+                <tbody id="annual-table-body">
+                  <!-- Befüllt per JS -->
+                </tbody>
+                <tfoot id="annual-table-foot">
+                  <!-- Summenzeile Gesamt Jahr -->
+                </tfoot>
+              </table>
+            </div>
+          </section>
+
+          <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
+          <section class="settings-box" aria-labelledby="manage-recurring-heading">
+            <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
+            <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen und löschen:</p>
+            <div id="settings-recurring-container">
+              <!-- Wird per JS befüllt -->
+            </div>
+          </section>
+
+          <!-- Startguthaben manuell anpassen -->
+          <section class="settings-box" aria-labelledby="set-balances-heading">
+            <h3 id="set-balances-heading">💰 Start-Kontostände manuell anpassen</h3>
+            <form id="form-init-balances" onsubmit="handleSetInitialBalances(event)">
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="init-bank" class="field-label">🏦 Startguthaben Bankkonto (€):</label>
+                  <input type="number" step="0.01" id="init-bank" class="large-input" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="init-paypal" class="field-label">🅿️ Startguthaben PayPal (€):</label>
+                  <input type="number" step="0.01" id="init-paypal" class="large-input" placeholder="0.00">
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="init-savings" class="field-label">📈 Startguthaben Tagesgeld (€):</label>
+                  <input type="number" step="0.01" id="init-savings" class="large-input" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                  <label for="init-cash" class="field-label">💵 Startguthaben Bargeld (€):</label>
+                  <input type="number" step="0.01" id="init-cash" class="large-input" placeholder="0.00">
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-secondary">💾 <strong>Startguthaben speichern</strong></button>
+            </form>
+          </section>
+
+          <!-- PIN ändern -->
+          <section class="settings-box" aria-labelledby="set-pin-heading">
+            <h3 id="set-pin-heading">🔒 Sicherheits-PIN / Passwort ändern</h3>
+            <form id="form-change-pin" onsubmit="handleChangePin(event)">
+              <div class="form-group">
+                <label for="change-old-pin" class="field-label">Aktuelle PIN:</label>
+                <input type="password" id="change-old-pin" class="large-input" required>
+              </div>
+              <div class="form-group">
+                <label for="change-new-pin" class="field-label">Neue PIN oder Passwort:</label>
+                <input type="password" id="change-new-pin" class="large-input" required>
+              </div>
+              <button type="submit" class="btn btn-secondary">🔑 <strong>Neue PIN speichern & Daten neu verschlüsseln</strong></button>
+            </form>
+          </section>
+
+          <!-- Daten löschen / Reset -->
+          <section class="settings-box danger-box" aria-labelledby="set-reset-heading">
+            <h3 id="set-reset-heading">⚠️ DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
+            <p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
+            <button class="btn btn-danger" onclick="resetAllAppData()">🗑️ Alle Daten & Schlüssel restlos löschen</button>
+          </section>
+
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Fußzeile -->
+    <footer class="app-footer" role="contentinfo">
+      <p>🛡️ <strong>Barrierefreie Finanzen</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute springen | <strong>L</strong> = Sofortsperre</p>
+    </footer>
+
+  </div>
+
+  <script>
+// ==========================================================================
+// BARRIEREFREIE FINANZEN - MIT TAGES- & MONATS-ANSICHT (NVDA)
+// ==========================================================================
+
+const STORAGE_ENCRYPTED_KEY = 'barrierefreie_finanz_app_aes_v6';
+const PIN_SALT_KEY = 'barrierefreie_finanz_app_salt';
+const PIN_VERIFIER_KEY = 'barrierefreie_finanz_app_verifier';
+
+const MONTH_NAMES = [
+  "Januar", "Februar", "März", "April", "Mai", "Juni",
+  "Juli", "August", "September", "Oktober", "November", "Dezember"
+];
+
+const currentDateObj = new Date();
+let selectedYear = currentDateObj.getFullYear();
+let selectedMonth = currentDateObj.getMonth();
+let selectedDateStr = currentDateObj.toISOString().split('T')[0]; // Standardmäßig HEUTE!
+let currentOverviewMode = 'month'; // 'month' oder 'day'
+
+let currentSessionKey = null;
+let autoLockTimer = null;
+
+let appState = {
+  theme: 'theme-high-contrast',
+  initialBalances: {
+    bank: 0.00,
+    paypal: 0.00,
+    savings: 0.00,
+    cash: 0.00
+  },
+  transactions: [],
+  recurring: []
+};
+
+// --------------------------------------------------------------------------
+// 1. NVDA LIVE ANNOUNCER
+// --------------------------------------------------------------------------
+function announceNVDA(message, isAssertive = false) {
+  const targetId = isAssertive ? 'sr-live-assertive' : 'sr-live';
+  const el = document.getElementById(targetId);
+  if (el) {
+    el.textContent = '';
+    setTimeout(() => {
+      el.textContent = message;
+    }, 50);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 2. KRYPTOGRAPHIE: AES-GCM 256-BIT (WEB CRYPTO API)
+// --------------------------------------------------------------------------
+function getOrCreateSalt() {
+  let saltHex = localStorage.getItem(PIN_SALT_KEY);
+  if (!saltHex) {
+    const saltBytes = new Uint8Array(16);
+    window.crypto.getRandomValues(saltBytes);
+    saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem(PIN_SALT_KEY, saltHex);
+  }
+  const match = saltHex.match(/.{1,2}/g) || [];
+  return new Uint8Array(match.map(byte => parseInt(byte, 16)));
+}
+
+async function deriveKeyFromPin(pin) {
+  const enc = new TextEncoder();
+  const salt = getOrCreateSalt();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    "raw",
+    enc.encode(pin),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits", "deriveKey"]
+  );
+
+  return await window.crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptData(plainText, key) {
+  const enc = new TextEncoder();
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv },
+    key,
+    enc.encode(plainText)
+  );
+
+  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+  const cipherHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return JSON.stringify({ iv: ivHex, data: cipherHex });
+}
+
+async function decryptData(cipherJsonStr, key) {
+  try {
+    const parsed = JSON.parse(cipherJsonStr);
+    const iv = new Uint8Array(parsed.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+    const cipherBytes = new Uint8Array(parsed.data.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+    const decrypted = await window.crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      cipherBytes
+    );
+
+    const dec = new TextDecoder();
+    return dec.decode(decrypted);
+  } catch (e) {
+    throw new Error("Entschlüsselung fehlgeschlagen.");
+  }
+}
+
+// --------------------------------------------------------------------------
+// 3. SPERRBILDSCHIRM & AUTHENTIFIZIERUNG
+// --------------------------------------------------------------------------
+function checkLockState() {
+  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
+  const lockScreen = document.getElementById('lock-screen');
+  const appWrapper = document.getElementById('app-wrapper');
+  const pinInput = document.getElementById('pin-input');
+  const firstTimeHint = document.getElementById('first-time-hint');
+
+  if (!verifier) {
+    firstTimeHint.style.display = 'block';
+    document.getElementById('lock-instructions').textContent = "Erster Start: Bitte wähle eine PIN oder ein Passwort.";
+    document.getElementById('btn-unlock').innerHTML = "<span>🛡️ <strong>PIN festlegen & Verschlüsseln</strong></span>";
+  } else {
+    firstTimeHint.style.display = 'none';
+    document.getElementById('lock-instructions').textContent = "Deine Finanzdaten sind auf diesem Gerät mit 256-Bit AES verschlüsselt. Gib deine PIN oder dein Passwort ein.";
+    document.getElementById('btn-unlock').innerHTML = "<span>🔓 <strong>Entschlüsseln & Öffnen</strong> (Enter)</span>";
+  }
+
+  lockScreen.style.display = 'flex';
+  appWrapper.style.display = 'none';
+  pinInput.value = '';
+  setTimeout(() => pinInput.focus(), 100);
+}
+
+async function handlePinSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('pin-input');
+  const pinVal = input.value.trim();
+  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
+
+  if (!pinVal) {
+    showPinError("Bitte gib eine PIN oder ein Passwort ein.");
+    return;
+  }
+
+  try {
+    const key = await deriveKeyFromPin(pinVal);
+
+    if (!verifier) {
+      const testEncrypted = await encryptData("VERIFIED_OK", key);
+      localStorage.setItem(PIN_VERIFIER_KEY, testEncrypted);
+      currentSessionKey = key;
+      await saveEncryptedData();
+      unlockApp("PIN eingerichtet. Deine Finanzdaten sind 256-Bit AES verschlüsselt.");
+    } else {
+      try {
+        const decryptedVerifier = await decryptData(verifier, key);
+        if (decryptedVerifier === "VERIFIED_OK") {
+          currentSessionKey = key;
+          await loadEncryptedData();
+          unlockApp("Erfolgreich entschlüsselt. Willkommen in deinem Haushaltsbuch!");
+        } else {
+          throw new Error("Invalid");
+        }
+      } catch (err) {
+        showPinError("Falsche PIN oder Passwort! Entschlüsselung verweigert.");
+        input.value = '';
+        input.focus();
+      }
+    }
+  } catch (cryptoErr) {
+    showPinError("Sicherheitsfehler bei der Schlüsselberechnung.");
+  }
+}
+
+function showPinError(msg) {
+  const errorBox = document.getElementById('pin-error-msg');
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  announceNVDA(msg, true);
+}
+
+function unlockApp(announcement = "") {
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('app-wrapper').style.display = 'block';
+  document.getElementById('pin-error-msg').style.display = 'none';
+
+  updateTodayDateDisplay();
+  initMonthPickerDropdown();
+  setDayToToday();
+  updateOverview();
+  resetInactivityTimer();
+
+  document.getElementById('tab-overview').focus();
+  if (announcement) announceNVDA(announcement);
+}
+
+function lockApp() {
+  currentSessionKey = null;
+  document.getElementById('lock-screen').style.display = 'flex';
+  document.getElementById('app-wrapper').style.display = 'none';
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-input').focus();
+  announceNVDA("App gesperrt. Alle Daten wurden sicher verschlüsselt.", true);
+}
+
+function resetInactivityTimer() {
+  if (autoLockTimer) clearTimeout(autoLockTimer);
+  autoLockTimer = setTimeout(() => {
+    if (currentSessionKey) {
+      lockApp();
+    }
+  }, 5 * 60 * 1000);
+}
+
+['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
+  window.addEventListener(evt, () => resetInactivityTimer(), { passive: true });
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && currentSessionKey) {
+    lockApp();
+  }
+});
+
+async function handleChangePin(e) {
+  e.preventDefault();
+  const oldPin = document.getElementById('change-old-pin').value.trim();
+  const newPin = document.getElementById('change-new-pin').value.trim();
+  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
+
+  if (!newPin || newPin.length < 2) {
+    alert("Die neue PIN muss mindestens 2 Zeichen lang sein.");
+    return;
+  }
+
+  try {
+    const oldKey = await deriveKeyFromPin(oldPin);
+    const decryptedVerifier = await decryptData(verifier, oldKey);
+    if (decryptedVerifier !== "VERIFIED_OK") {
+      alert("Die aktuelle PIN ist falsch!");
+      return;
+    }
+
+    const newKey = await deriveKeyFromPin(newPin);
+    const newVerifier = await encryptData("VERIFIED_OK", newKey);
+    localStorage.setItem(PIN_VERIFIER_KEY, newVerifier);
+
+    currentSessionKey = newKey;
+    await saveEncryptedData();
+
+    document.getElementById('form-change-pin').reset();
+    alert("PIN erfolgreich geändert!");
+    announceNVDA("Neue PIN gespeichert.");
+  } catch (err) {
+    alert("Fehler: Aktuelle PIN ist falsch!");
+  }
+}
+
+function updateTodayDateDisplay() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const str = now.toLocaleDateString('de-DE', options);
+  const el = document.getElementById('today-date-text');
+  if (el) el.textContent = str;
+}
+
+// --------------------------------------------------------------------------
+// 4. ANSICHTS-MODUS (MONATS-ANSICHT VS. TAGES-ANSICHT)
+// --------------------------------------------------------------------------
+function setOverviewMode(mode) {
+  currentOverviewMode = mode;
+  const btnMonth = document.getElementById('mode-btn-month');
+  const btnDay = document.getElementById('mode-btn-day');
+  const monthBar = document.getElementById('month-picker-bar');
+  const dayBar = document.getElementById('day-picker-bar');
+
+  if (mode === 'month') {
+    btnMonth.classList.add('active');
+    btnMonth.setAttribute('aria-checked', 'true');
+    btnDay.classList.remove('active');
+    btnDay.setAttribute('aria-checked', 'false');
+    monthBar.style.display = 'block';
+    dayBar.style.display = 'none';
+    announceNVDA(`Monats-Ansicht für ${MONTH_NAMES[selectedMonth]} ${selectedYear} aktiviert.`);
+  } else {
+    btnDay.classList.add('active');
+    btnDay.setAttribute('aria-checked', 'true');
+    btnMonth.classList.remove('active');
+    btnMonth.setAttribute('aria-checked', 'false');
+    dayBar.style.display = 'block';
+    monthBar.style.display = 'none';
+    announceNVDA(`Tages-Ansicht für ${formatDateDisplay(selectedDateStr)} aktiviert.`);
+  }
+
+  updateOverview();
+}
+
+function initMonthPickerDropdown() {
+  const select = document.getElementById('global-month-select');
+  if (!select) return;
+
+  select.innerHTML = '';
+  for (let year = 2025; year <= 2027; year++) {
+    MONTH_NAMES.forEach((mName, mIdx) => {
+      const val = `${year}-${mIdx}`;
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = `${mName} ${year}`;
+      if (year === selectedYear && mIdx === selectedMonth) {
+        opt.selected = true;
+      }
+      select.appendChild(opt);
+    });
+  }
+}
+
+function handleMonthChange(val) {
+  const parts = val.split('-');
+  selectedYear = parseInt(parts[0], 10);
+  selectedMonth = parseInt(parts[1], 10);
+  updateOverview();
+  announceNVDA(`Monat gewechselt zu ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+}
+
+function changeMonthRelative(offset) {
+  selectedMonth += offset;
+  if (selectedMonth > 11) {
+    selectedMonth = 0;
+    selectedYear++;
+  } else if (selectedMonth < 0) {
+    selectedMonth = 11;
+    selectedYear--;
+  }
+
+  const select = document.getElementById('global-month-select');
+  if (select) {
+    select.value = `${selectedYear}-${selectedMonth}`;
+  }
+
+  updateOverview();
+  announceNVDA(`Monat gewechselt zu ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+}
+
+function setMonthToCurrent() {
+  const now = new Date();
+  selectedYear = now.getFullYear();
+  selectedMonth = now.getMonth();
+
+  const select = document.getElementById('global-month-select');
+  if (select) {
+    select.value = `${selectedYear}-${selectedMonth}`;
+  }
+
+  updateOverview();
+  announceNVDA(`Zurück zum aktuellen Monat: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+}
+
+// TAGES-WÄHLER LOGIK
+function handleDayChange(val) {
+  if (!val) return;
+  selectedDateStr = val;
+  const d = new Date(val + 'T00:00:00');
+  selectedYear = d.getFullYear();
+  selectedMonth = d.getMonth();
+
+  const select = document.getElementById('global-month-select');
+  if (select) select.value = `${selectedYear}-${selectedMonth}`;
+
+  updateOverview();
+  announceNVDA(`Tag ausgewählt: ${formatDateDisplay(selectedDateStr)}.`);
+}
+
+function changeDayRelative(offset) {
+  const d = new Date(selectedDateStr + 'T00:00:00');
+  d.setDate(d.getDate() + offset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  selectedDateStr = `${y}-${m}-${day}`;
+  selectedYear = d.getFullYear();
+  selectedMonth = d.getMonth();
+
+  const dayInput = document.getElementById('global-day-select');
+  if (dayInput) dayInput.value = selectedDateStr;
+
+  const monthSelect = document.getElementById('global-month-select');
+  if (monthSelect) monthSelect.value = `${selectedYear}-${selectedMonth}`;
+
+  updateOverview();
+  announceNVDA(`Tag gewechselt zu ${formatDateDisplay(selectedDateStr)}.`);
+}
+
+function setDayToToday() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  selectedDateStr = `${y}-${m}-${d}`;
+  selectedYear = now.getFullYear();
+  selectedMonth = now.getMonth();
+
+  const dayInput = document.getElementById('global-day-select');
+  if (dayInput) dayInput.value = selectedDateStr;
+
+  const monthSelect = document.getElementById('global-month-select');
+  if (monthSelect) monthSelect.value = `${selectedYear}-${selectedMonth}`;
+
+  updateOverview();
+  announceNVDA(`Zum heutigen Tag gewechselt: ${formatDateDisplay(selectedDateStr)}.`);
+}
+
+// --------------------------------------------------------------------------
+// 5. DAUERAUFTRÄGE & DATUMSSTATUS
+// --------------------------------------------------------------------------
+function isRecurringDueInMonth(rec, year, month) {
+  if (!rec.active && rec.active !== undefined) return false;
+
+  const startY = rec.startYear !== undefined ? rec.startYear : (rec.created ? new Date(rec.created).getFullYear() : 2026);
+  const startM = rec.startMonth !== undefined ? rec.startMonth : (rec.created ? new Date(rec.created).getMonth() : 8);
+
+  if (year < startY || (year === startY && month < startM)) {
+    return false;
+  }
+
+  if (rec.interval === 'monthly') {
+    return true;
+  } else if (rec.interval === 'yearly') {
+    return parseInt(rec.yearlyMonth, 10) === month;
+  } else if (rec.interval === 'quarterly') {
+    const startMOffset = parseInt(rec.yearlyMonth || startM, 10) % 3;
+    return (month % 3) === startMOffset;
+  }
+  return true;
+}
+
+function getRecurringTransactionsForMonth(year, month) {
+  const list = [];
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  appState.recurring.forEach(rec => {
+    if (isRecurringDueInMonth(rec, year, month)) {
+      const day = Math.min(parseInt(rec.day || 1, 10), daysInMonth);
+      const dayFormatted = String(day).padStart(2, '0');
+      const mFormatted = String(month + 1).padStart(2, '0');
+      const dateStr = `${year}-${mFormatted}-${dayFormatted}`;
+
+      if (rec.type === 'transfer') {
+        list.push({
+          id: 'rec_trf_' + rec.id + '_' + year + '_' + month,
+          isRecurringInstance: true,
+          recurringId: rec.id,
+          name: rec.name || rec.description,
+          type: 'transfer',
+          fromAccount: rec.fromAccount,
+          toAccount: rec.toAccount,
+          amount: Number(rec.amount),
+          category: `🔁 Regelmäßiges Sparen (${formatAccountName(rec.fromAccount)} ➔ ${formatAccountName(rec.toAccount)})`,
+          description: `🔁 Sparplan: ${rec.name || rec.description || 'Sparen'}`,
+          date: dateStr,
+          costType: 'transfer',
+          timestamp: new Date(year, month, day).toISOString()
+        });
+      } else {
+        list.push({
+          id: 'rec_' + rec.id + '_' + year + '_' + month,
+          isRecurringInstance: true,
+          recurringId: rec.id,
+          name: rec.name || rec.description,
+          type: rec.type,
+          account: rec.account,
+          amount: Number(rec.amount),
+          category: rec.category,
+          description: `🔁 Dauerauftrag: ${rec.name || rec.description || rec.category} (${rec.interval === 'monthly' ? 'Monatlich' : 'Jährlich'})`,
+          date: dateStr,
+          costType: 'fixed',
+          timestamp: new Date(year, month, day).toISOString()
+        });
+      }
+    }
+  });
+
+  return list;
+}
+
+function getBookingDateStatus(item) {
+  if (item.isPlanned) {
+    return { isFuture: true, label: '🎯 Geplanter Kauf / Vorhaben (Nicht fest)', badgeClass: 'status-planned' };
+  }
+
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  if (item.date > todayStr) {
+    return { isFuture: true, label: '⏳ Steht noch aus (Zukunft)', badgeClass: 'status-future' };
+  } else {
+    return { isFuture: false, label: '✅ Bereits gebucht', badgeClass: 'status-booked' };
+  }
+}
+
+// --------------------------------------------------------------------------
+// 6. BERECHNUNGEN: MONAT & TAG
+// --------------------------------------------------------------------------
+function calculateMonthStats(year, month) {
+  let income = 0;
+  let expense = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+  let fixedExpense = 0;
+  let variableExpense = 0;
+  let plannedExpense = 0;
+  const incomeList = [];
+  const expenseList = [];
+
+  appState.transactions.forEach(tx => {
+    const d = new Date(tx.date);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      if (tx.type === 'income') {
+        income += tx.amount;
+        incomeCount++;
+        incomeList.push(tx);
+      } else if (tx.type === 'expense') {
+        expense += tx.amount;
+        expenseCount++;
+        if (tx.isPlanned) plannedExpense += tx.amount;
+        else if (tx.costType === 'fixed') fixedExpense += tx.amount;
+        else variableExpense += tx.amount;
+        expenseList.push(tx);
+      }
+    }
+  });
+
+  const recTxList = getRecurringTransactionsForMonth(year, month);
+  recTxList.forEach(rtx => {
+    if (rtx.type === 'income') {
+      income += rtx.amount;
+      incomeCount++;
+      incomeList.push(rtx);
+    } else if (rtx.type === 'expense') {
+      expense += rtx.amount;
+      expenseCount++;
+      fixedExpense += rtx.amount;
+      expenseList.push(rtx);
+    }
+  });
+
+  incomeList.sort((a, b) => new Date(b.date) - new Date(a.date));
+  expenseList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const leftover = income - expense;
+  return {
+    income,
+    expense,
+    leftover,
+    incomeCount,
+    expenseCount,
+    fixedExpense,
+    variableExpense,
+    plannedExpense,
+    incomeList,
+    expenseList
+  };
+}
+
+function calculateDayStats(dateStr) {
+  let income = 0;
+  let expense = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+  const incomeList = [];
+  const expenseList = [];
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const year = d.getFullYear();
+  const month = d.getMonth();
+
+  appState.transactions.forEach(tx => {
+    if (tx.date === dateStr) {
+      if (tx.type === 'income') {
+        income += tx.amount;
+        incomeCount++;
+        incomeList.push(tx);
+      } else if (tx.type === 'expense') {
+        expense += tx.amount;
+        expenseCount++;
+        expenseList.push(tx);
+      }
+    }
+  });
+
+  const recTxList = getRecurringTransactionsForMonth(year, month);
+  recTxList.forEach(rtx => {
+    if (rtx.date === dateStr) {
+      if (rtx.type === 'income') {
+        income += rtx.amount;
+        incomeCount++;
+        incomeList.push(rtx);
+      } else if (rtx.type === 'expense') {
+        expense += rtx.amount;
+        expenseCount++;
+        expenseList.push(rtx);
+      }
+    }
+  });
+
+  const leftover = income - expense;
+  return {
+    dateStr,
+    income,
+    expense,
+    leftover,
+    incomeCount,
+    expenseCount,
+    incomeList,
+    expenseList
+  };
+}
+
+
+// --------------------------------------------------------------------------
+// 6. BERECHNUNGEN: MONAT, TAG & TAGESGENAUE KONTOSTÄNDE
+// --------------------------------------------------------------------------
+function calculateBalancesUpToDate(targetDateStr) {
+  const balances = {
+    bank: Number(appState.initialBalances.bank || 0),
+    paypal: Number(appState.initialBalances.paypal || 0),
+    savings: Number(appState.initialBalances.savings || 0),
+    cash: Number(appState.initialBalances.cash || 0)
+  };
+
+  const targetDate = new Date(targetDateStr + 'T23:59:59');
+  const targetYear = targetDate.getFullYear();
+  const targetMonth = targetDate.getMonth();
+
+  // 1. Alle regulären Buchungen bis zu diesem Datum
+  appState.transactions.forEach(tx => {
+    if (tx.date <= targetDateStr) {
+      const amount = Number(tx.amount);
+      if (tx.type === 'income') {
+        if (balances[tx.account] !== undefined) balances[tx.account] += amount;
+      } else if (tx.type === 'expense') {
+        if (balances[tx.account] !== undefined) balances[tx.account] -= amount;
+      } else if (tx.type === 'transfer') {
+        if (balances[tx.fromAccount] !== undefined) balances[tx.fromAccount] -= amount;
+        if (balances[tx.toAccount] !== undefined) balances[tx.toAccount] += amount;
+      }
+    }
+  });
+
+  // 2. Alle wiederkehrenden Daueraufträge & Sparpläne bis zu diesem Tag
+  const startY = 2025;
+  for (let y = startY; y <= targetYear; y++) {
+    const endM = (y === targetYear) ? targetMonth : 11;
+    for (let m = 0; m <= endM; m++) {
+      const recTxList = getRecurringTransactionsForMonth(y, m);
+      recTxList.forEach(rtx => {
+        if (rtx.date <= targetDateStr) {
+          const amount = Number(rtx.amount);
+          if (rtx.type === 'income') {
+            if (balances[rtx.account] !== undefined) balances[rtx.account] += amount;
+          } else if (rtx.type === 'expense') {
+            if (balances[rtx.account] !== undefined) balances[rtx.account] -= amount;
+          } else if (rtx.type === 'transfer') {
+            if (balances[rtx.fromAccount] !== undefined) balances[rtx.fromAccount] -= amount;
+            if (balances[rtx.toAccount] !== undefined) balances[rtx.toAccount] += amount;
+          }
+        }
+      });
+    }
+  }
+
+  const total = balances.bank + balances.paypal + balances.savings + balances.cash;
+  return { ...balances, total };
+}
+
+function calculateAllTimeBalances() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+  return calculateBalancesUpToDate(todayStr);
+}
+
+function calculateDayAccountChanges(dateStr) {
+  const changes = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+  const d = new Date(dateStr + 'T00:00:00');
+  const year = d.getFullYear();
+  const month = d.getMonth();
+
+  appState.transactions.forEach(tx => {
+    if (tx.date === dateStr) {
+      const amount = Number(tx.amount);
+      if (tx.type === 'income') {
+        if (changes[tx.account] !== undefined) changes[tx.account] += amount;
+      } else if (tx.type === 'expense') {
+        if (changes[tx.account] !== undefined) changes[tx.account] -= amount;
+      } else if (tx.type === 'transfer') {
+        if (changes[tx.fromAccount] !== undefined) changes[tx.fromAccount] -= amount;
+        if (changes[tx.toAccount] !== undefined) changes[tx.toAccount] += amount;
+      }
+    }
+  });
+
+  const recTxList = getRecurringTransactionsForMonth(year, month);
+  recTxList.forEach(rtx => {
+    if (rtx.date === dateStr) {
+      const amount = Number(rtx.amount);
+      if (rtx.type === 'income') {
+        if (changes[rtx.account] !== undefined) changes[rtx.account] += amount;
+      } else if (rtx.type === 'expense') {
+        if (changes[rtx.account] !== undefined) changes[rtx.account] -= amount;
+      } else if (rtx.type === 'transfer') {
+        if (changes[rtx.fromAccount] !== undefined) changes[rtx.fromAccount] -= amount;
+        if (changes[rtx.toAccount] !== undefined) changes[rtx.toAccount] += amount;
+      }
+    }
+  });
+
+  return changes;
+}
+
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+}
+
+function formatAccountName(accKey) {
+  switch (accKey) {
+    case 'bank': return '🏦 Bankkonto';
+    case 'paypal': return '🅿️ PayPal';
+    case 'savings': return '📈 Tagesgeld';
+    case 'cash': return '💵 Bargeld';
+    default: return accKey;
+  }
+}
+
+// --------------------------------------------------------------------------
+// 7. UI AKTUALISIERUNG (ÜBERSICHT: MONAT ODER TAG)
+// --------------------------------------------------------------------------
+
+function updateOverview() {
+  const now = new Date();
+  const todayStr = now.toISOString().split('T')[0];
+
+  if (currentOverviewMode === 'day') {
+    // TAGES-ANSICHT
+    const dayStats = calculateDayStats(selectedDateStr);
+    const dayFormatted = formatDateDisplay(selectedDateStr);
+    const dayDateObj = new Date(selectedDateStr + 'T00:00:00');
+    const dayName = dayDateObj.toLocaleDateString('de-DE', { weekday: 'long' });
+
+    // TAGESGENAUE KONTOSTÄNDE AM ENDE DIESES TAGES!
+    const balances = calculateBalancesUpToDate(selectedDateStr);
+    const dayChanges = calculateDayAccountChanges(selectedDateStr);
+
+    document.getElementById('overview-month-title').textContent = `Tagesübersicht für ${dayName}, ${dayFormatted}`;
+    document.getElementById('overview-banner-subtitle').textContent = `Hier siehst du den genauen Kontostand am Ende des Tages (${dayFormatted}) und alle Buchungen an diesem Tag.`;
+    document.getElementById('section-accounts-heading').textContent = `1. 💳 Deine Kontostände am ${dayFormatted} (Tagesende)`;
+
+    // 1. Kontostände am Stichtag
+    document.getElementById('acc-balance-bank').textContent = formatCurrency(balances.bank);
+    document.getElementById('acc-balance-paypal').textContent = formatCurrency(balances.paypal);
+    document.getElementById('acc-balance-savings').textContent = formatCurrency(balances.savings);
+    document.getElementById('acc-balance-cash').textContent = formatCurrency(balances.cash);
+
+    // Tagesveränderung je Konto
+    const formatChange = (val) => {
+      if (val > 0) return `📈 An diesem Tag: +${formatCurrency(val)}`;
+      if (val < 0) return `📉 An diesem Tag: -${formatCurrency(Math.abs(val))}`;
+      return `Keine Buchung an diesem Tag`;
+    };
+    const hintBank = document.querySelector('#acc-balance-bank + .acc-hint');
+    const hintPaypal = document.querySelector('#acc-balance-paypal + .acc-hint');
+    const hintSavings = document.querySelector('#acc-balance-savings + .acc-hint');
+    const hintCash = document.querySelector('#acc-balance-cash + .acc-hint');
+    if (hintBank) hintBank.textContent = formatChange(dayChanges.bank);
+    if (hintPaypal) hintPaypal.textContent = formatChange(dayChanges.paypal);
+    if (hintSavings) hintSavings.textContent = formatChange(dayChanges.savings);
+    if (hintCash) hintCash.textContent = formatChange(dayChanges.cash);
+
+    // 2. Einnahmen Tag
+    document.getElementById('card-month-income').textContent = `+ ${formatCurrency(dayStats.income)}`;
+    document.getElementById('income-summary-subtext').textContent = `${dayStats.incomeCount} Einnahmen am ${dayFormatted}`;
+    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen vom ${dayFormatted} anzeigen`;
+    renderDetailedIncomeList(dayStats.incomeList);
+
+    // 3. Ausgaben Tag
+    document.getElementById('card-month-expense').textContent = `- ${formatCurrency(dayStats.expense)}`;
+    document.getElementById('expense-summary-subtext').textContent = `${dayStats.expenseCount} Ausgaben am ${dayFormatted}`;
+    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben vom ${dayFormatted} anzeigen`;
+    renderDetailedExpenseList(dayStats.expenseList);
+
+    // 4. Saldo für diesen Tag & Gesamtsaldo am Tag
+    document.getElementById('card-alltime-total').textContent = formatCurrency(balances.total);
+    document.getElementById('total-balance-sub').textContent = `Verfügbares Gesamtguthaben am Ende des Tages (${dayFormatted})`;
+
+    const leftEl = document.getElementById('month-leftover-display');
+    const leftSub = document.getElementById('month-leftover-sub');
+    const leftMainLabel = document.getElementById('leftover-main-label');
+    leftMainLabel.textContent = `Tages-Ergebnis (${dayFormatted}):`;
+    leftEl.textContent = formatCurrency(dayStats.leftover);
+
+    if (dayStats.leftover > 0) {
+      leftEl.style.color = 'var(--accent-income)';
+      leftSub.textContent = `🟢 Tages-Plus: Am ${dayFormatted} hast du ${formatCurrency(dayStats.leftover)} mehr eingenommen als ausgegeben.`;
+    } else if (dayStats.leftover < 0) {
+      leftEl.style.color = 'var(--accent-expense)';
+      leftSub.textContent = `🔴 Tages-Ausgabe: Am ${dayFormatted} hast du ${formatCurrency(Math.abs(dayStats.leftover))} ausgegeben.`;
+    } else {
+      leftEl.style.color = 'var(--text-primary)';
+      leftSub.textContent = `Ausgeglichen: Keine Einnahmen oder Ausgaben am ${dayFormatted}.`;
+    }
+  } else {
+    // MONATS-ANSICHT
+    const stats = calculateMonthStats(selectedYear, selectedMonth);
+    const currentMonthTitle = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
+    const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+    const endOfMonthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+    // KONTOSTÄNDE AM ENDE DIESES MONATS
+    const balances = calculateBalancesUpToDate(endOfMonthStr);
+
+    document.getElementById('overview-month-title').textContent = `Monatsübersicht für ${currentMonthTitle}`;
+    document.getElementById('overview-banner-subtitle').textContent = `Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis für den gesamten Monat.`;
+    document.getElementById('section-accounts-heading').textContent = `1. 💳 Deine Kontostände (Stand: Ende ${currentMonthTitle})`;
+
+    // 1. Kontostände
+    document.getElementById('acc-balance-bank').textContent = formatCurrency(balances.bank);
+    document.getElementById('acc-balance-paypal').textContent = formatCurrency(balances.paypal);
+    document.getElementById('acc-balance-savings').textContent = formatCurrency(balances.savings);
+    document.getElementById('acc-balance-cash').textContent = formatCurrency(balances.cash);
+
+    const hintBank = document.querySelector('#acc-balance-bank + .acc-hint');
+    const hintPaypal = document.querySelector('#acc-balance-paypal + .acc-hint');
+    const hintSavings = document.querySelector('#acc-balance-savings + .acc-hint');
+    const hintCash = document.querySelector('#acc-balance-cash + .acc-hint');
+    if (hintBank) hintBank.textContent = "Miete, EC-Karte, Daueraufträge";
+    if (hintPaypal) hintPaypal.textContent = "Online-Shopping, Freunde, Spotify";
+    if (hintSavings) hintSavings.textContent = "Notgroschen, Führerschein, Urlaub";
+    if (hintCash) hintCash.textContent = "Bäcker, Döner, Barbezahlung";
+
+    // 2. Einnahmen Monat
+    document.getElementById('card-month-income').textContent = `+ ${formatCurrency(stats.income)}`;
+    document.getElementById('income-summary-subtext').textContent = `${stats.incomeCount} Einnahmen im ${MONTH_NAMES[selectedMonth]}`;
+    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen dieses Monats anzeigen (mit Datum & Status)`;
+    renderDetailedIncomeList(stats.incomeList);
+
+    // 3. Ausgaben Monat
+    document.getElementById('card-month-expense').textContent = `- ${formatCurrency(stats.expense)}`;
+    let expNote = `Fixkosten: ${formatCurrency(stats.fixedExpense)}`;
+    if (stats.plannedExpense > 0) expNote += ` | 🎯 Geplant: ${formatCurrency(stats.plannedExpense)}`;
+    document.getElementById('expense-summary-subtext').textContent = `${stats.expenseCount} Ausgaben (${expNote})`;
+    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben dieses Monats anzeigen (mit Datum, Kategorie & Status)`;
+    renderDetailedExpenseList(stats.expenseList);
+
+    // 4. Gesamt über alle Konten & Monats-Saldo
+    document.getElementById('card-alltime-total').textContent = formatCurrency(balances.total);
+    document.getElementById('total-balance-sub').textContent = `Verfügbares Gesamtguthaben am Ende von ${currentMonthTitle}`;
+
+    const leftEl = document.getElementById('month-leftover-display');
+    const leftSub = document.getElementById('month-leftover-sub');
+    const leftMainLabel = document.getElementById('leftover-main-label');
+    leftMainLabel.textContent = `Monats-Saldo (In diesem Monat noch übrig):`;
+    leftEl.textContent = formatCurrency(stats.leftover);
+
+    if (stats.leftover > 0) {
+      leftEl.style.color = 'var(--accent-income)';
+      leftSub.textContent = `🟢 Monats-Plus: Du hast ${formatCurrency(stats.leftover)} mehr eingenommen als ausgegeben.`;
+    } else if (stats.leftover < 0) {
+      leftEl.style.color = 'var(--accent-expense)';
+      leftSub.textContent = `⚠️ Monats-Minus: Du hast ${formatCurrency(Math.abs(stats.leftover))} mehr ausgegeben als eingenommen.`;
+    } else {
+      leftEl.style.color = 'var(--text-primary)';
+      leftSub.textContent = `Ausgeglichen: Einnahmen und Ausgaben sind im ${MONTH_NAMES[selectedMonth]} gleich hoch.`;
+    }
+  }
+
+  // Simulator & Settings
+  runPurchaseSimulation();
+  renderSettingsRecurringList();
+  renderAnnualTable(document.getElementById('year-view-select') ? document.getElementById('year-view-select').value : selectedYear);
+  renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
+}
+
+
+// KAUF-SIMULATOR LOGIK
+function runPurchaseSimulation() {
+  const priceInput = document.getElementById('sim-item-price');
+  const nameInput = document.getElementById('sim-item-name');
+  const resultBox = document.getElementById('sim-result-box');
+  const saveAction = document.getElementById('sim-save-action');
+
+  if (!priceInput || !resultBox) return;
+
+  const price = parseFloat(priceInput.value);
+  const itemName = (nameInput && nameInput.value.trim()) || "Dein geplanter Kauf";
+
+  if (isNaN(price) || price <= 0) {
+    resultBox.innerHTML = `<p>💡 <em>Gib oben einen Betrag ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>`;
+    if (saveAction) saveAction.style.display = 'none';
+    return;
+  }
+
+  const stats = calculateMonthStats(selectedYear, selectedMonth);
+  const currentLeftover = stats.leftover;
+  const simulatedLeftover = currentLeftover - price;
+
+  let msg = '';
+  let color = 'var(--accent-income)';
+
+  if (simulatedLeftover >= 0) {
+    color = 'var(--accent-income)';
+    msg = `
+      <div style="color: ${color};">
+        <p>✅ <strong>Grünes Licht – Kauf ist sicher möglich!</strong></p>
+        <p>Wenn du <strong>${escapeHtml(itemName)}</strong> für <strong>${formatCurrency(price)}</strong> kaufst, hast du im ${MONTH_NAMES[selectedMonth]} immer noch <strong>${formatCurrency(simulatedLeftover)}</strong> übrig.</p>
+      </div>
+    `;
+  } else {
+    color = 'var(--accent-expense)';
+    msg = `
+      <div style="color: ${color};">
+        <p>⚠️ <strong>Achtung – Defizitgefahr!</strong></p>
+        <p>Wenn du <strong>${escapeHtml(itemName)}</strong> für <strong>${formatCurrency(price)}</strong> kaufst, wärst du in diesem Monat mit <strong>- ${formatCurrency(Math.abs(simulatedLeftover))}</strong> im Minus!</p>
+      </div>
+    `;
+  }
+
+  resultBox.innerHTML = msg;
+  if (saveAction) saveAction.style.display = 'block';
+}
+
+async function saveSimulatedPurchase() {
+  const price = parseFloat(document.getElementById('sim-item-price').value);
+  const itemName = document.getElementById('sim-item-name').value.trim() || "Geplante Anschaffung";
+
+  if (isNaN(price) || price <= 0) return;
+
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+
+  const tx = {
+    id: Date.now().toString(),
+    type: 'expense',
+    account: 'bank',
+    amount: price,
+    category: 'Shopping & Kleidung',
+    description: `🎯 Geplanter Kauf: ${itemName}`,
+    date: dateStr,
+    isPlanned: true,
+    timestamp: new Date().toISOString()
+  };
+
+  appState.transactions.unshift(tx);
+  await saveEncryptedData();
+
+  document.getElementById('sim-item-price').value = '';
+  document.getElementById('sim-item-name').value = '';
+  runPurchaseSimulation();
+
+  announceNVDA(`Geplanter Kauf "${itemName}" über ${formatCurrency(price)} gespeichert.`);
+}
+
+function renderDetailedIncomeList(incomeList) {
+  const container = document.getElementById('overview-income-items-feed');
+  if (!container) return;
+
+  if (incomeList.length === 0) {
+    container.innerHTML = `<p class="empty-state">Keine Einnahmen für diesen Zeitraum vorhanden.</p>`;
+    return;
+  }
+
+  let html = '<ul class="tx-list">';
+  incomeList.forEach(item => {
+    const status = getBookingDateStatus(item);
+    const dateFormatted = formatDateDisplay(item.date);
+    const icon = item.isRecurringInstance ? '🔁' : (item.isPlanned ? '🎯' : '📥');
+    const srText = `Einnahme am ${dateFormatted}: ${formatCurrency(item.amount)} von ${item.category} auf ${formatAccountName(item.account)}. Status: ${status.label}`;
+
+    html += `
+      <li class="tx-item" tabindex="0" aria-label="${srText}">
+        <div class="tx-info">
+          <span class="tx-icon" aria-hidden="true">${icon}</span>
+          <div class="tx-details">
+            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
+            <span class="tx-account-badge">📅 Datum: <strong>${dateFormatted}</strong> | Auf: ${formatAccountName(item.account)}</span>
+            <span class="status-badge ${status.badgeClass}">${status.label}</span>
+          </div>
+        </div>
+        <div class="tx-amount-col">
+          <span class="tx-sum income">+ ${formatCurrency(item.amount)}</span>
+          ${!item.isRecurringInstance ? `
+            <button class="btn-delete-tx" onclick="deleteTransaction('${item.id}')" aria-label="Einnahme löschen">🗑️</button>
+          ` : ''}
+        </div>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
+function renderDetailedExpenseList(expenseList) {
+  const container = document.getElementById('overview-expense-items-feed');
+  if (!container) return;
+
+  if (expenseList.length === 0) {
+    container.innerHTML = `<p class="empty-state">Keine Ausgaben für diesen Zeitraum vorhanden.</p>`;
+    return;
+  }
+
+  let html = '<ul class="tx-list">';
+  expenseList.forEach(item => {
+    const status = getBookingDateStatus(item);
+    const dateFormatted = formatDateDisplay(item.date);
+    const icon = item.isRecurringInstance ? '🔁' : (item.isPlanned ? '🎯' : '🔴');
+    const srText = `Ausgabe am ${dateFormatted}: ${formatCurrency(item.amount)} für ${item.category} über ${formatAccountName(item.account)}. Status: ${status.label}`;
+
+    html += `
+      <li class="tx-item" tabindex="0" aria-label="${srText}">
+        <div class="tx-info">
+          <span class="tx-icon" aria-hidden="true">${icon}</span>
+          <div class="tx-details">
+            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
+            <span class="tx-account-badge">📅 Datum: <strong>${dateFormatted}</strong> | Von: ${formatAccountName(item.account)}</span>
+            <span class="status-badge ${status.badgeClass}">${status.label}</span>
+          </div>
+        </div>
+        <div class="tx-amount-col">
+          <span class="tx-sum expense">- ${formatCurrency(item.amount)}</span>
+          ${!item.isRecurringInstance ? `
+            <button class="btn-delete-tx" onclick="deleteTransaction('${item.id}')" aria-label="Ausgabe löschen">🗑️</button>
+          ` : ''}
+        </div>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  container.innerHTML = html;
+}
+
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}.${parts[1]}.${parts[0]}`;
+  }
+  return dateStr;
+}
+
+// --------------------------------------------------------------------------
+// 8. ZUKUNFTS-VORSCHAU & PROGNOSE
+// --------------------------------------------------------------------------
+function renderFutureForecast(monthsAheadStr) {
+  const monthsAhead = parseInt(monthsAheadStr, 10) || 6;
+  const tbody = document.getElementById('forecast-table-body');
+  if (!tbody) return;
+
+  const now = new Date();
+  let simYear = now.getFullYear();
+  let simMonth = now.getMonth();
+
+  let runningBalance = calculateAllTimeBalances().total;
+  let html = '';
+
+  for (let i = 0; i < monthsAhead; i++) {
+    const stats = calculateMonthStats(simYear, simMonth);
+    const mName = MONTH_NAMES[simMonth];
+    const isCurrent = (i === 0);
+
+    runningBalance += stats.leftover;
+
+    html += `
+      <tr>
+        <td><strong>${mName} ${simYear}</strong> ${isCurrent ? '<em>(Aktueller Monat)</em>' : ''}</td>
+        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
+        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
+        <td class="text-right" style="font-weight: 800; color: ${stats.leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+          ${formatCurrency(stats.leftover)}
+        </td>
+        <td class="text-right" style="font-weight: 900; color: ${runningBalance >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+          ${formatCurrency(runningBalance)}
+        </td>
+      </tr>
+    `;
+
+    simMonth++;
+    if (simMonth > 11) {
+      simMonth = 0;
+      simYear++;
+    }
+  }
+
+  tbody.innerHTML = html;
+}
+
+// --------------------------------------------------------------------------
+// 9. FORMULAR-FELDER TOGGLEN
+// --------------------------------------------------------------------------
+function toggleExpenseFrequencyFields() {
+  const freq = document.getElementById('exp-frequency').value;
+  const dateGroup = document.getElementById('exp-date-group');
+  const recDetails = document.getElementById('exp-recurring-details');
+  const yearlyGroup = document.getElementById('exp-yearly-month-group');
+
+  if (freq === 'once' || freq === 'planned') {
+    dateGroup.style.display = 'block';
+    recDetails.style.display = 'none';
+  } else {
+    dateGroup.style.display = 'none';
+    recDetails.style.display = 'block';
+    yearlyGroup.style.display = freq === 'yearly' ? 'block' : 'none';
+  }
+}
+
+function toggleIncomeFrequencyFields() {
+  const freq = document.getElementById('inc-frequency').value;
+  const dateGroup = document.getElementById('inc-date-group');
+  const recDetails = document.getElementById('inc-recurring-details');
+
+  if (freq === 'once' || freq === 'planned') {
+    dateGroup.style.display = 'block';
+    recDetails.style.display = 'none';
+  } else {
+    dateGroup.style.display = 'none';
+    recDetails.style.display = 'block';
+  }
+}
+
+function toggleTransferFrequencyFields() {
+  const freq = document.getElementById('trf-frequency').value;
+  const dateGroup = document.getElementById('trf-date-group');
+  const recDetails = document.getElementById('trf-recurring-details');
+
+  if (freq === 'once') {
+    dateGroup.style.display = 'block';
+    recDetails.style.display = 'none';
+  } else {
+    dateGroup.style.display = 'none';
+    recDetails.style.display = 'block';
+  }
+}
+
+// --------------------------------------------------------------------------
+// 10. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
+// --------------------------------------------------------------------------
+async function handleAddExpense(e) {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('exp-amount').value);
+  const freq = document.getElementById('exp-frequency').value;
+  const account = document.getElementById('exp-account').value;
+  const category = document.getElementById('exp-category').value;
+  const desc = document.getElementById('exp-desc').value.trim();
+
+  if (isNaN(amount) || amount <= 0) {
+    alert("Bitte gib einen Betrag größer als 0 Euro ein.");
+    document.getElementById('exp-amount').focus();
+    return;
+  }
+
+  if (freq === 'once' || freq === 'planned') {
+    const date = document.getElementById('exp-date').value;
+    const isPlanned = (freq === 'planned');
+    const tx = {
+      id: Date.now().toString(),
+      type: 'expense',
+      account: account,
+      amount: amount,
+      category: category,
+      description: desc,
+      date: date,
+      isPlanned: isPlanned,
+      timestamp: new Date().toISOString()
+    };
+    appState.transactions.unshift(tx);
+    await saveEncryptedData();
+
+    selectedDateStr = date;
+    const txDate = new Date(date + 'T00:00:00');
+    selectedYear = txDate.getFullYear();
+    selectedMonth = txDate.getMonth();
+    const select = document.getElementById('global-month-select');
+    if (select) select.value = `${selectedYear}-${selectedMonth}`;
+    const dayInput = document.getElementById('global-day-select');
+    if (dayInput) dayInput.value = selectedDateStr;
+
+    const dateStatus = getBookingDateStatus(tx);
+    announceNVDA(`Ausgabe von ${formatCurrency(amount)} für ${category} am ${formatDateDisplay(date)} gespeichert (${dateStatus.label}).`);
+  } else {
+    const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
+    const yearlyMonth = parseInt(document.getElementById('exp-yearly-month').value, 10) || 0;
+
+    const recItem = {
+      id: Date.now().toString(),
+      type: 'expense',
+      name: desc || category,
+      amount: amount,
+      interval: freq,
+      day: day,
+      yearlyMonth: yearlyMonth,
+      startYear: selectedYear,
+      startMonth: selectedMonth,
+      account: account,
+      category: category,
+      active: true,
+      created: new Date().toISOString()
+    };
+    appState.recurring.push(recItem);
+    await saveEncryptedData();
+
+    announceNVDA(`Dauerhafte Ausgabe von ${formatCurrency(amount)} für ${category} gespeichert.`);
+  }
+
+  document.getElementById('form-add-expense').reset();
+  toggleExpenseFrequencyFields();
+  switchView('overview');
+}
+
+async function handleAddIncome(e) {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('inc-amount').value);
+  const freq = document.getElementById('inc-frequency').value;
+  const account = document.getElementById('inc-account').value;
+  const category = document.getElementById('inc-category').value;
+  const desc = document.getElementById('inc-desc').value.trim();
+
+  if (isNaN(amount) || amount <= 0) {
+    alert("Bitte gib einen Betrag größer als 0 Euro ein.");
+    document.getElementById('inc-amount').focus();
+    return;
+  }
+
+  if (freq === 'once' || freq === 'planned') {
+    const date = document.getElementById('inc-date').value;
+    const isPlanned = (freq === 'planned');
+    const tx = {
+      id: Date.now().toString(),
+      type: 'income',
+      account: account,
+      amount: amount,
+      category: category,
+      description: desc,
+      date: date,
+      isPlanned: isPlanned,
+      timestamp: new Date().toISOString()
+    };
+    appState.transactions.unshift(tx);
+    await saveEncryptedData();
+
+    selectedDateStr = date;
+    const txDate = new Date(date + 'T00:00:00');
+    selectedYear = txDate.getFullYear();
+    selectedMonth = txDate.getMonth();
+    const select = document.getElementById('global-month-select');
+    if (select) select.value = `${selectedYear}-${selectedMonth}`;
+    const dayInput = document.getElementById('global-day-select');
+    if (dayInput) dayInput.value = selectedDateStr;
+
+    const dateStatus = getBookingDateStatus(tx);
+    announceNVDA(`Einnahme von ${formatCurrency(amount)} am ${formatDateDisplay(date)} gespeichert (${dateStatus.label}).`);
+  } else {
+    const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
+
+    const recItem = {
+      id: Date.now().toString(),
+      type: 'income',
+      name: desc || category,
+      amount: amount,
+      interval: freq,
+      day: day,
+      startYear: selectedYear,
+      startMonth: selectedMonth,
+      account: account,
+      category: category,
+      active: true,
+      created: new Date().toISOString()
+    };
+    appState.recurring.push(recItem);
+    await saveEncryptedData();
+
+    announceNVDA(`Dauerhafte Einnahme von ${formatCurrency(amount)} gespeichert.`);
+  }
+
+  document.getElementById('form-add-income').reset();
+  toggleIncomeFrequencyFields();
+  switchView('overview');
+}
+
+async function handleAddTransfer(e) {
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('trf-amount').value);
+  const freq = document.getElementById('trf-frequency').value;
+  const fromAcc = document.getElementById('trf-from').value;
+  const toAcc = document.getElementById('trf-to').value;
+  const desc = document.getElementById('trf-desc').value.trim();
+
+  if (isNaN(amount) || amount <= 0) {
+    alert("Bitte Betrag größer als 0 Euro eingeben.");
+    return;
+  }
+
+  if (fromAcc === toAcc) {
+    alert("Startkonto und Zielkonto dürfen nicht identisch sein!");
+    return;
+  }
+
+  if (freq === 'once') {
+    const date = document.getElementById('trf-date').value;
+    const tx = {
+      id: Date.now().toString(),
+      type: 'transfer',
+      fromAccount: fromAcc,
+      toAccount: toAcc,
+      amount: amount,
+      category: `Umbuchung (${formatAccountName(fromAcc)} ➔ ${formatAccountName(toAcc)})`,
+      description: desc,
+      date: date,
+      timestamp: new Date().toISOString()
+    };
+    appState.transactions.unshift(tx);
+    await saveEncryptedData();
+
+    selectedDateStr = date;
+    const dayInput = document.getElementById('global-day-select');
+    if (dayInput) dayInput.value = selectedDateStr;
+
+    announceNVDA(`Umbuchung von ${formatCurrency(amount)} ausgeführt.`);
+  } else {
+    const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
+    const recItem = {
+      id: Date.now().toString(),
+      type: 'transfer',
+      name: desc || `Sparplan ${formatAccountName(toAcc)}`,
+      fromAccount: fromAcc,
+      toAccount: toAcc,
+      amount: amount,
+      interval: freq,
+      day: day,
+      startYear: selectedYear,
+      startMonth: selectedMonth,
+      category: `Sparen (${formatAccountName(fromAcc)} ➔ ${formatAccountName(toAcc)})`,
+      active: true,
+      created: new Date().toISOString()
+    };
+    appState.recurring.push(recItem);
+    await saveEncryptedData();
+    announceNVDA(`Sparplan über ${formatCurrency(amount)} gespeichert.`);
+  }
+
+  document.getElementById('form-add-transfer').reset();
+  toggleTransferFrequencyFields();
+  switchView('overview');
+}
+
+async function deleteTransaction(id) {
+  const tx = appState.transactions.find(t => t.id === id);
+  if (!tx) return;
+
+  const desc = tx.description || tx.category;
+  if (confirm(`Buchung wirklich löschen: ${formatCurrency(tx.amount)} (${desc})?`)) {
+    appState.transactions = appState.transactions.filter(t => t.id !== id);
+    await saveEncryptedData();
+    announceNVDA(`Buchung über ${formatCurrency(tx.amount)} gelöscht.`);
+  }
+}
+
+async function deleteRecurring(id) {
+  const item = appState.recurring.find(r => r.id === id);
+  if (!item) return;
+
+  if (confirm(`Dauerauftrag / Sparplan wirklich löschen: "${item.name || item.description}" über ${formatCurrency(item.amount)}?`)) {
+    appState.recurring = appState.recurring.filter(r => r.id !== id);
+    await saveEncryptedData();
+    renderSettingsRecurringList();
+    announceNVDA(`Dauerauftrag gelöscht.`);
+  }
+}
+
+function renderSettingsRecurringList() {
+  const container = document.getElementById('settings-recurring-container');
+  if (!container) return;
+
+  if (appState.recurring.length === 0) {
+    container.innerHTML = `<p class="field-hint">Aktuell sind keine dauerhaften Daueraufträge oder Sparpläne gespeichert.</p>`;
+    return;
+  }
+
+  let html = '<ul class="tx-list" style="border: 2px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden;">';
+  appState.recurring.forEach(item => {
+    let sign = '-';
+    let cssClass = 'expense';
+    let icon = '🔴';
+    let accText = '';
+
+    if (item.type === 'expense') {
+      sign = '-';
+      cssClass = 'expense';
+      icon = '🔴';
+      accText = `Konto: ${formatAccountName(item.account)}`;
+    } else if (item.type === 'income') {
+      sign = '+';
+      cssClass = 'income';
+      icon = '🟢';
+      accText = `Konto: ${formatAccountName(item.account)}`;
+    } else if (item.type === 'transfer') {
+      sign = '🔄';
+      cssClass = 'transfer';
+      icon = '🔄';
+      accText = `Sparplan: Von ${formatAccountName(item.fromAccount)} ➔ ${formatAccountName(item.toAccount)}`;
+    }
+    
+    let freqText = 'Monatlich';
+    if (item.interval === 'yearly') freqText = `Einmal im Jahr (im ${MONTH_NAMES[item.yearlyMonth]})`;
+    else if (item.interval === 'quarterly') freqText = 'Alle 3 Monate';
+
+    html += `
+      <li class="tx-item" tabindex="0" aria-label="${item.name || item.description}: ${freqText} ${formatCurrency(item.amount)}">
+        <div class="tx-info">
+          <span class="tx-icon" aria-hidden="true">${icon}</span>
+          <div class="tx-details">
+            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
+            <span class="tx-account-badge">${accText} | 📅 ${freqText} am ${item.day}.</span>
+          </div>
+        </div>
+        <div class="tx-amount-col">
+          <span class="tx-sum ${cssClass}">${sign} ${formatCurrency(item.amount)}</span>
+          <button class="btn-delete-tx" onclick="deleteRecurring('${item.id}')" aria-label="Dauerauftrag löschen">
+            🗑️ Löschen
+          </button>
+        </div>
+      </li>
+    `;
+  });
+  html += '</ul>';
+
+  container.innerHTML = html;
+}
+
+// --------------------------------------------------------------------------
+// 11. JAHRESÜBERSICHT
+// --------------------------------------------------------------------------
+function renderAnnualTable(yearStr) {
+  const year = parseInt(yearStr, 10) || selectedYear;
+  const tbody = document.getElementById('annual-table-body');
+  const tfoot = document.getElementById('annual-table-foot');
+  if (!tbody || !tfoot) return;
+
+  let totalYearIncome = 0;
+  let totalYearExpense = 0;
+  let tbodyHtml = '';
+
+  MONTH_NAMES.forEach((mName, mIdx) => {
+    const stats = calculateMonthStats(year, mIdx);
+    totalYearIncome += stats.income;
+    totalYearExpense += stats.expense;
+
+    const leftover = stats.leftover;
+    const isCurrent = (year === selectedYear && mIdx === selectedMonth);
+    const rowClass = isCurrent ? 'style="font-weight: bold; background-color: var(--bg-surface-elevated);"' : '';
+
+    let statusText = '—';
+    if (stats.income > 0 || stats.expense > 0) {
+      statusText = leftover >= 0 ? '✅ Im Plus' : '⚠️ Im Minus';
+    }
+
+    tbodyHtml += `
+      <tr ${rowClass}>
+        <td><strong>${mName} ${year}</strong> ${isCurrent ? '(Aktiver Monat)' : ''}</td>
+        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
+        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
+        <td class="text-right" style="font-weight: 800; color: ${leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+          ${formatCurrency(leftover)}
+        </td>
+        <td class="text-center">${statusText}</td>
+        <td class="text-center">
+          <button class="btn-jump-month" onclick="jumpToMonth(${year}, ${mIdx})" aria-label="Zu ${mName} ${year} wechseln">
+            👉 Anzeigen
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tbody.innerHTML = tbodyHtml;
+
+  const totalYearLeftover = totalYearIncome - totalYearExpense;
+  tfoot.innerHTML = `
+    <tr>
+      <th>GESAMT JAHR ${year}</th>
+      <th class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(totalYearIncome)}</th>
+      <th class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(totalYearExpense)}</th>
+      <th class="text-right" style="color: ${totalYearLeftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+        ${formatCurrency(totalYearLeftover)}
+      </th>
+      <th class="text-center">${totalYearLeftover >= 0 ? '🎉 Plus' : '⚠️ Defizit'}</th>
+      <th></th>
+    </tr>
+  `;
+}
+
+function jumpToMonth(year, monthIdx) {
+  selectedYear = year;
+  selectedMonth = monthIdx;
+  currentOverviewMode = 'month';
+  const select = document.getElementById('global-month-select');
+  if (select) select.value = `${year}-${monthIdx}`;
+  setOverviewMode('month');
+  switchView('overview');
+  updateOverview();
+  announceNVDA(`Zu ${MONTH_NAMES[monthIdx]} ${year} gewechselt.`);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function handleSetInitialBalances(e) {
+  e.preventDefault();
+  appState.initialBalances.bank = parseFloat(document.getElementById('init-bank').value) || 0;
+  appState.initialBalances.paypal = parseFloat(document.getElementById('init-paypal').value) || 0;
+  appState.initialBalances.savings = parseFloat(document.getElementById('init-savings').value) || 0;
+  appState.initialBalances.cash = parseFloat(document.getElementById('init-cash').value) || 0;
+
+  await saveEncryptedData();
+  alert("Startguthaben erfolgreich gespeichert!");
+  switchView('overview');
+  announceNVDA("Startguthaben dauerhaft gespeichert.");
+}
+
+function resetAllAppData() {
+  if (confirm("⚠️ DSGVO-LÖSCHUNG: Möchtest du wirklich ALLE Finanzdaten unwiderruflich vernichten?")) {
+    if (confirm("Letzte Bestätigung: Alle Daten werden unwiderruflich gelöscht!")) {
+      localStorage.clear();
+      currentSessionKey = null;
+      appState = {
+        theme: 'theme-high-contrast',
+        initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
+        transactions: [],
+        recurring: []
+      };
+      location.reload();
+    }
+  }
+}
+
+// --------------------------------------------------------------------------
+// 12. VIEW-NAVIGATION
+// --------------------------------------------------------------------------
+const views = ['overview', 'expense', 'income', 'transfer', 'settings'];
+
+function switchView(targetView) {
+  views.forEach(v => {
+    const tabBtn = document.getElementById(`tab-${v}`);
+    const viewPanel = document.getElementById(`view-${v}`);
+
+    if (v === targetView) {
+      tabBtn.classList.add('active');
+      tabBtn.setAttribute('aria-selected', 'true');
+      tabBtn.setAttribute('tabindex', '0');
+      viewPanel.style.display = 'flex';
+    } else {
+      tabBtn.classList.remove('active');
+      tabBtn.setAttribute('aria-selected', 'false');
+      tabBtn.setAttribute('tabindex', '-1');
+      viewPanel.style.display = 'none';
+    }
+  });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const modeBar = document.getElementById('overview-mode-bar');
+  const monthBar = document.getElementById('month-picker-bar');
+  const dayBar = document.getElementById('day-picker-bar');
+
+  if (targetView === 'overview') {
+    if (modeBar) modeBar.style.display = 'block';
+    if (currentOverviewMode === 'day') {
+      if (dayBar) dayBar.style.display = 'block';
+      if (monthBar) monthBar.style.display = 'none';
+    } else {
+      if (monthBar) monthBar.style.display = 'block';
+      if (dayBar) dayBar.style.display = 'none';
+    }
+    updateOverview();
+    announceNVDA(`Übersicht geöffnet.`);
+  } else {
+    if (modeBar) modeBar.style.display = 'none';
+    if (monthBar) monthBar.style.display = 'none';
+    if (dayBar) dayBar.style.display = 'none';
+  }
+
+  if (targetView === 'expense') {
+    document.getElementById('exp-date').value = todayStr;
+    toggleExpenseFrequencyFields();
+    setTimeout(() => document.getElementById('exp-amount').focus(), 100);
+    announceNVDA("Ausgabe eintragen geöffnet.");
+  } else if (targetView === 'income') {
+    document.getElementById('inc-date').value = todayStr;
+    toggleIncomeFrequencyFields();
+    setTimeout(() => document.getElementById('inc-amount').focus(), 100);
+    announceNVDA("Einnahme eintragen geöffnet.");
+  } else if (targetView === 'transfer') {
+    document.getElementById('trf-date').value = todayStr;
+    toggleTransferFrequencyFields();
+    setTimeout(() => document.getElementById('trf-amount').focus(), 100);
+    announceNVDA("Umbuchen & Sparen geöffnet.");
+  } else if (targetView === 'settings') {
+    document.getElementById('init-bank').value = appState.initialBalances.bank || '';
+    document.getElementById('init-paypal').value = appState.initialBalances.paypal || '';
+    document.getElementById('init-savings').value = appState.initialBalances.savings || '';
+    document.getElementById('init-cash').value = appState.initialBalances.cash || '';
+    renderSettingsRecurringList();
+    renderAnnualTable(document.getElementById('year-view-select').value);
+    renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
+    announceNVDA("Backup & Einstellungen geöffnet.");
+  }
+}
+
+// --------------------------------------------------------------------------
+// 13. PERSISTENZ (AES-256)
+// --------------------------------------------------------------------------
+async function loadEncryptedData() {
+  const cipherStr = localStorage.getItem(STORAGE_ENCRYPTED_KEY);
+  if (cipherStr && currentSessionKey) {
+    try {
+      const plainJson = await decryptData(cipherStr, currentSessionKey);
+      appState = JSON.parse(plainJson);
+      if (!appState.recurring) appState.recurring = [];
+    } catch (e) {
+      console.error("Entschlüsselungsfehler:", e);
+    }
+  } else {
+    appState = {
+      theme: 'theme-high-contrast',
+      initialBalances: { bank: 0.00, paypal: 0.00, savings: 0.00, cash: 0.00 },
+      transactions: [],
+      recurring: []
+    };
+  }
+}
+
+async function saveEncryptedData() {
+  if (!currentSessionKey) return;
+  const plainJson = JSON.stringify(appState);
+  const cipherJson = await encryptData(plainJson, currentSessionKey);
+  localStorage.setItem(STORAGE_ENCRYPTED_KEY, cipherJson);
+  updateOverview();
+}
+
+function changeTheme(themeName) {
+  document.body.className = themeName;
+  appState.theme = themeName;
+  saveEncryptedData();
+  announceNVDA("Farbkontrast geändert.");
+}
+
+// --------------------------------------------------------------------------
+// 14. BACKUP EXPORT & IMPORT (PC-WECHSEL & DATENSICHERUNG)
+// --------------------------------------------------------------------------
+function exportEncryptedBackup() {
+  const cipherStr = localStorage.getItem(STORAGE_ENCRYPTED_KEY);
+  const salt = localStorage.getItem(PIN_SALT_KEY);
+  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
+
+  if (!cipherStr || !verifier) {
+    alert("Keine Daten zum Sichern vorhanden.");
+    return;
+  }
+
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+
+  const backupPayload = {
+    version: "2.0",
+    appName: "BarrierefreieFinanzApp",
+    exportedAt: now.toISOString(),
+    salt: salt,
+    verifier: verifier,
+    encryptedData: cipherStr
+  };
+
+  const jsonStr = JSON.stringify(backupPayload, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Haushaltsbuch_Sicherung_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  announceNVDA("Verschlüsselte Sicherungsdatei für PC-Wechsel erfolgreich heruntergeladen.");
+}
+
+function importEncryptedBackup(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      if (!parsed.encryptedData || !parsed.verifier || !parsed.salt) {
+        alert("Ungültige Sicherungsdatei! Erforderliche Sicherheits-Schlüssel fehlen.");
+        return;
+      }
+
+      if (confirm("Möchtest du diese Sicherungsdatei wirklich importieren? Deine aktuellen Daten werden dadurch ersetzt.")) {
+        localStorage.setItem(PIN_SALT_KEY, parsed.salt);
+        localStorage.setItem(PIN_VERIFIER_KEY, parsed.verifier);
+        localStorage.setItem(STORAGE_ENCRYPTED_KEY, parsed.encryptedData);
+
+        alert("Sicherungsdatei erfolgreich importiert! Die App wird jetzt neu geladen – bitte gib deine gewohnte PIN ein.");
+        location.reload();
+      }
+    } catch (err) {
+      alert("Fehler beim Lesen der Sicherungsdatei: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// --------------------------------------------------------------------------
+// 15. TASTATURKÜRZEL FÜR NVDA
+// --------------------------------------------------------------------------
+window.addEventListener('keydown', (e) => {
+  const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+  const isInput = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+  if (document.getElementById('lock-screen').style.display !== 'none') return;
+
+  if (!isInput) {
+    if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      lockApp();
+    } else if (e.key === '1') {
+      e.preventDefault();
+      switchView('overview');
+    } else if (e.key === '2') {
+      e.preventDefault();
+      switchView('expense');
+    } else if (e.key === '3') {
+      e.preventDefault();
+      switchView('income');
+    } else if (e.key === '4') {
+      e.preventDefault();
+      switchView('transfer');
+    } else if (e.key === '5') {
+      e.preventDefault();
+      switchView('settings');
+    } else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      setDayToToday();
+      setOverviewMode('day');
+    }
+  }
+});
+
+// INITIALISIERUNG
+document.addEventListener('DOMContentLoaded', () => {
+  updateTodayDateDisplay();
+  checkLockState();
+});
+
+</script>
+</body>
+</html>

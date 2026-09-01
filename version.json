@@ -1,0 +1,15 @@
+{
+  "version": "2.1.0",
+  "name": "Barrierefreie Finanz-App & Haushaltsbuch",
+  "buildDate": "2026-09-01",
+  "features": [
+    "AES-GCM 256-Bit Verschluesselung mit PBKDF2 (100.000 Runden)",
+    "DSGVO & EU-Datenschutz (100% Offline, Zero Cloud)",
+    "Tages- und Monatsuebersicht mit stichtagsgenauen Kontostaenden",
+    "Live Kauf-Simulator & Budget-Planer",
+    "Flexible nicht-feste Zukunftsausgaben und Einnahmen",
+    "Dauerauftraege, Sparplaene & Zukunfts-Prognose (3/6/12 Monate)",
+    "1-Klick Backup & Wiederherstellen fuer PC-Wechsel",
+    "Volle NVDA Screenreader Barrierefreiheit"
+  ]
+}

@@ -1,0 +1,16 @@
+# STRICT PRIVACY & FINANCIAL DATA IGNORE
+# Ensure no financial data, backups or keys are ever committed to git
+*.json
+!version.json
+*.enc
+*.key
+*.bak
+*.tmp
+*.log
+*.csv
+*.xlsx
+.DS_Store
+Thumbs.db
+user_data/
+backups/
+private/
