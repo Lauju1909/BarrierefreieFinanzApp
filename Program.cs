@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -18,9 +19,12 @@ namespace HaushaltsbuchApp
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
         private const int BASE_PORT = 48123;
 
+        private static string _centralAppDir;
         private static string _centralVaultPath;
         private static string _centralBakPath;
         private static string _centralHtmlPath;
+        private static List<string> _allBackupVaultPaths = new List<string>();
+
         private static TcpListener _tcpListener;
         private static Thread _serverThread;
         private static int _activePort = BASE_PORT;
@@ -38,24 +42,23 @@ namespace HaushaltsbuchApp
                 }
                 catch { }
 
-                // 1. FESTE SPEICHERPFADE IM BENUTZERVERZEICHNIS (KEINE ADMIN-RECHTE ERFORDERLICH!)
+                // 1. BESTE SCHREIBGESCHÜTZTE / FREIE SPEICHERVERZEICHNISSE FINDEN (100% RECHTE-KOMPATIBEL!)
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
                 string localHtmlInBaseDir = Path.Combine(baseDir, "Haushaltsbuch_App.html");
 
-                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-                if (string.IsNullOrEmpty(localAppData)) localAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                if (string.IsNullOrEmpty(localAppData)) localAppData = baseDir;
+                _centralAppDir = FindBestWritableDirectory(baseDir);
+                string centralProfileDir = Path.Combine(_centralAppDir, "Profile");
+                _centralHtmlPath = Path.Combine(_centralAppDir, "Haushaltsbuch_App.html");
+                string centralVersionPath = Path.Combine(_centralAppDir, "version.json");
+                _centralVaultPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault");
+                _centralBakPath = Path.Combine(_centralAppDir, "Haushaltsbuch_Daten.vault.bak");
 
-                string centralAppDir = Path.Combine(localAppData, "HaushaltsbuchApp");
-                string centralProfileDir = Path.Combine(centralAppDir, "Profile");
-                _centralHtmlPath = Path.Combine(centralAppDir, "Haushaltsbuch_App.html");
-                string centralVersionPath = Path.Combine(centralAppDir, "version.json");
-                _centralVaultPath = Path.Combine(centralAppDir, "Haushaltsbuch_Daten.vault");
-                _centralBakPath = Path.Combine(centralAppDir, "Haushaltsbuch_Daten.vault.bak");
+                // Zusätzliche redundante Speicherorte für maximale Ausfallsicherheit
+                RegisterAllBackupLocations();
 
                 try
                 {
-                    if (!Directory.Exists(centralAppDir)) Directory.CreateDirectory(centralAppDir);
+                    if (!Directory.Exists(_centralAppDir)) Directory.CreateDirectory(_centralAppDir);
                     if (!Directory.Exists(centralProfileDir)) Directory.CreateDirectory(centralProfileDir);
                 }
                 catch { }
@@ -80,13 +83,13 @@ namespace HaushaltsbuchApp
                     UnpackEmbeddedApp(targetHtml);
                 }
 
-                // 4. SELBST-REPARATUR: DATEIEN PRÜFEN UND BEI BESCHÄDIGUNG AUTOMATISCH REPARIEREN
-                AutoRepairVaultFiles(_centralVaultPath, _centralBakPath, localAppData);
+                // 4. MULTI-DIRECTORY SELBST-REPARATUR & DATEN-RETTUNG
+                AutoRepairVaultAcrossAllLocations();
 
                 // 5. INJEKTION IN DIE HTML-DATEI ALS SOFORT-SICHERUNG
                 InjectDiskVaultIntoHtml(targetHtml, _centralVaultPath);
 
-                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN (TcpListener - Funktioniert ohne Admin-Rechte auf jedem PC!)
+                // 6. ZERO-PERMISSION LOKALEN SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
 
                 string launchUrl = serverStarted 
@@ -129,29 +132,127 @@ namespace HaushaltsbuchApp
             }
         }
 
-        private static void AutoRepairVaultFiles(string vaultPath, string bakPath, string localAppData)
+        private static string FindBestWritableDirectory(string baseDir)
+        {
+            string[] candidateRoots = new string[]
+            {
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                @"C:\Users\Public",
+                Path.GetTempPath(),
+                baseDir
+            };
+
+            foreach (string root in candidateRoots)
+            {
+                if (string.IsNullOrEmpty(root)) continue;
+
+                try
+                {
+                    string target = Path.Combine(root, "HaushaltsbuchApp");
+                    if (!Directory.Exists(target)) Directory.CreateDirectory(target);
+
+                    // Teste Schreibrechte
+                    string testFile = Path.Combine(target, ".perm_test_" + Guid.NewGuid().ToString("N"));
+                    File.WriteAllText(testFile, "OK", Encoding.UTF8);
+                    if (File.Exists(testFile))
+                    {
+                        File.Delete(testFile);
+                        return target; // Schreibrechte 100% verifiziert!
+                    }
+                }
+                catch { }
+            }
+
+            return baseDir;
+        }
+
+        private static void RegisterAllBackupLocations()
         {
             try
             {
-                bool isVaultValid = IsValidVaultJsonFile(vaultPath);
-                bool isBakValid = IsValidVaultJsonFile(bakPath);
-
-                // Fall 1: Hauptdatei beschädigt/leer, aber Backup vorhanden -> Aus Backup reparieren!
-                if (!isVaultValid && isBakValid)
+                string[] roots = new string[]
                 {
-                    File.Copy(bakPath, vaultPath, true);
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                    @"C:\Users\Public",
+                    AppDomain.CurrentDomain.BaseDirectory
+                };
+
+                foreach (string r in roots)
+                {
+                    if (!string.IsNullOrEmpty(r))
+                    {
+                        string p = Path.Combine(r, @"HaushaltsbuchApp\Haushaltsbuch_Daten.vault");
+                        if (!string.Equals(p, _centralVaultPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _allBackupVaultPaths.Add(p);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static void AutoRepairVaultAcrossAllLocations()
+        {
+            try
+            {
+                if (IsValidVaultJsonFile(_centralVaultPath))
+                {
+                    // Hauptdatei ist gültig -> Backup aktualisieren
+                    SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
                     return;
                 }
 
-                // Fall 2: Hauptdatei intakt -> Backup aktualisieren
-                if (isVaultValid)
+                if (IsValidVaultJsonFile(_centralBakPath))
                 {
-                    try { File.Copy(vaultPath, bakPath, true); } catch { }
+                    File.Copy(_centralBakPath, _centralVaultPath, true);
+                    SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
                     return;
                 }
 
-                // Fall 3: Weder Haupt- noch Backup-Datei intakt -> Automatische Tiefenrettung aus Browser-LevelDB
-                MigrateAllOldDataToDiskVault(vaultPath, localAppData);
+                // Suche in allen redundanten Speicherorten
+                foreach (string backupFile in _allBackupVaultPaths)
+                {
+                    if (IsValidVaultJsonFile(backupFile))
+                    {
+                        File.Copy(backupFile, _centralVaultPath, true);
+                        SaveVaultToAllRedundantLocations(File.ReadAllText(_centralVaultPath, Encoding.UTF8));
+                        return;
+                    }
+                }
+
+                // Suche in LevelDB
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                MigrateAllOldDataToDiskVault(_centralVaultPath, localAppData);
+            }
+            catch { }
+        }
+
+        private static void SaveVaultToAllRedundantLocations(string body)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(body) || !body.Contains("salt")) return;
+
+                // 1. In .bak der Hauptdatei speichern
+                try { File.WriteAllText(_centralBakPath, body, Encoding.UTF8); } catch { }
+
+                // 2. An allen alternativen Orten spiegeln (z. B. C:\Users\Public)
+                foreach (string path in _allBackupVaultPaths)
+                {
+                    try
+                    {
+                        string dir = Path.GetDirectoryName(path);
+                        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                        File.WriteAllText(path, body, Encoding.UTF8);
+                    }
+                    catch { }
+                }
             }
             catch { }
         }
@@ -226,14 +327,12 @@ namespace HaushaltsbuchApp
                         string method = reqLine[0].ToUpper();
                         string url = reqLine[1];
 
-                        // OPTIONS (CORS Pre-flight)
                         if (method == "OPTIONS")
                         {
                             SendHttpResponse(stream, 200, "text/plain", new byte[0]);
                             return;
                         }
 
-                        // API: HEARTBEAT
                         if (url.StartsWith("/api/heartbeat"))
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -242,7 +341,6 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // API: GET VAULT
                         if (url.StartsWith("/api/get_vault"))
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -258,7 +356,6 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // API: SAVE VAULT (POST)
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -277,14 +374,10 @@ namespace HaushaltsbuchApp
                                 string tmpPath = _centralVaultPath + ".tmp";
                                 File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
-                                if (File.Exists(_centralVaultPath))
-                                {
-                                    try { File.Copy(_centralVaultPath, _centralBakPath, true); } catch { }
-                                }
-
                                 File.Copy(tmpPath, _centralVaultPath, true);
                                 try { File.Delete(tmpPath); } catch { }
 
+                                SaveVaultToAllRedundantLocations(body);
                                 InjectDiskVaultIntoHtml(_centralHtmlPath, _centralVaultPath);
                             }
 
@@ -293,7 +386,6 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // HAUPTSEITE HTML
                         if (File.Exists(_centralHtmlPath))
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -458,7 +550,6 @@ namespace HaushaltsbuchApp
 
         private static Process LaunchBestBrowser(string url, string fallbackHtmlPath, string profileDir)
         {
-            // 1. GOOGLE CHROME (Standard-Browser)
             string chromePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Google\Chrome\Application\chrome.exe"),
@@ -477,7 +568,6 @@ namespace HaushaltsbuchApp
                 });
             }
 
-            // 2. MOZILLA FIREFOX
             string firefoxPath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Mozilla Firefox\firefox.exe"),
@@ -495,7 +585,6 @@ namespace HaushaltsbuchApp
                 });
             }
 
-            // 3. MICROSOFT EDGE
             string edgePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Microsoft\Edge\Application\msedge.exe"),
@@ -514,7 +603,6 @@ namespace HaushaltsbuchApp
                 });
             }
 
-            // 4. BRAVE BROWSER
             string bravePath = FindBrowserPath(new string[]
             {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"BraveSoftware\Brave-Browser\Application\brave.exe"),
@@ -533,7 +621,6 @@ namespace HaushaltsbuchApp
                 });
             }
 
-            // 5. STANDARD FALLBACK
             return Process.Start(new ProcessStartInfo
             {
                 FileName = url,

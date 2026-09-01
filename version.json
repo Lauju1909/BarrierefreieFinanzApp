@@ -1,14 +1,14 @@
 {
-  "version": "4.2.0",
+  "version": "4.3.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
+    "Multi-Directory Schreibrechte-Automatik: Findet auf jedem PC (Mama, Laptop, USB) automatisch den besten schreibbaren Ordner (AppData, Profile, Public, Documents)",
+    "Redundante Datenspiegelung: Speichert Backups automatisch an mehreren sicheren Orten auf dem PC",
     "Volle Uebersicht: Jede Buchung (einmalig & dauerhaft) direkt in der Uebersicht bearbeitbar und loeschbar",
-    "Multi-Layer Selbst-Reparatur: Automatische Reparatur beschaedigter Dateien aus .bak, IndexedDB und LocalStorage",
+    "Multi-Layer Selbst-Reparatur: Automatische Reparatur beschaedigter Dateien",
     "Sicherer Brute-Force-Schutz: Fehlermeldung bei falscher PIN & 2-Stunden-Sperre bei 5 Fehlversuchen",
-    "NVDA-Sprachoptimierung: Vollkommen ruhige und praezise Screenreader-Navigation",
-    "Wochen-Uebersicht (KW) & Woechentliche Dauerauftraege",
-    "Blindengeld & Pflegegeld Einnahmen",
+    "NVDA-Sprachoptimierung: Ruhige Screenreader-Bedienung",
     "Standard-Browser: 1. Google Chrome, 2. Mozilla Firefox, 3. Edge/Brave/System",
     "Volle Barrierefreiheit fuer NVDA Screenreader (WCAG 2.2 AAA)"
   ]
