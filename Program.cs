@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
@@ -72,7 +73,10 @@ namespace HaushaltsbuchApp
                     return;
                 }
 
-                // 4. CROSS-BROWSER RETTUNG: Falls database.vault existiert, in HTML injizieren
+                // 4. AUTOMATISCHE DATENRETTUNG: Suche nach vorhandenen Daten aus frueheren Versionen
+                RecoverOldVaultIfMissing(centralVaultPath, localAppData);
+
+                // 5. CROSS-BROWSER INJEKTION: Falls database.vault existiert, in HTML einbinden
                 if (File.Exists(centralVaultPath))
                 {
                     try
@@ -92,13 +96,105 @@ namespace HaushaltsbuchApp
                     catch { }
                 }
 
-                // 5. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
+                // 6. BROWSER STARTEN: 1. CHROME -> 2. FIREFOX -> 3. EDGE -> 4. BRAVE -> 5. FALLBACK
                 LaunchBestBrowser(targetHtml, centralProfileDir);
             }
             catch (Exception ex)
             {
                 MessageBox.Show("Fehler beim Starten des Haushaltsbuchs: " + ex.Message, "Haushaltsbuch", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+
+        private static void RecoverOldVaultIfMissing(string targetVaultPath, string localAppData)
+        {
+            try
+            {
+                if (File.Exists(targetVaultPath) && new FileInfo(targetVaultPath).Length > 20)
+                {
+                    return; // Bereits vorhanden
+                }
+
+                // Suche nach bisherigen LevelDB-Ordnern in Edge, Chrome, Brave und AppProfile
+                string[] searchDirs = new string[]
+                {
+                    Path.Combine(localAppData, @"Google\Chrome\User Data\Default\Local Storage\leveldb"),
+                    Path.Combine(localAppData, @"Microsoft\Edge\User Data\Default\Local Storage\leveldb"),
+                    Path.Combine(localAppData, @"HaushaltsbuchApp\Profile\Default\Local Storage\leveldb"),
+                    Path.Combine(localAppData, @"BraveSoftware\Brave-Browser\User Data\Default\Local Storage\leveldb")
+                };
+
+                foreach (string dir in searchDirs)
+                {
+                    if (Directory.Exists(dir))
+                    {
+                        string foundJson = ScanLevelDbFolder(dir);
+                        if (!string.IsNullOrEmpty(foundJson))
+                        {
+                            File.WriteAllText(targetVaultPath, foundJson);
+                            return;
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static string ScanLevelDbFolder(string dir)
+        {
+            try
+            {
+                string bestSalt = null;
+                string bestVault = null;
+
+                string[] files = Directory.GetFiles(dir, "*.*");
+                foreach (string file in files)
+                {
+                    if (file.EndsWith(".ldb", StringComparison.OrdinalIgnoreCase) || file.EndsWith(".log", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            byte[] bytes;
+                            using (var fs = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                            {
+                                using (var ms = new MemoryStream())
+                                {
+                                    fs.CopyTo(ms);
+                                    bytes = ms.ToArray();
+                                }
+                            }
+
+                            string ascii = Encoding.ASCII.GetString(bytes);
+
+                            if (ascii.Contains("barrierefreie_finanzen_salt_v1"))
+                            {
+                                Match mSalt = Regex.Match(ascii, @"barrierefreie_finanzen_salt_v1[^\w\d+/=]*([A-Za-z0-9+/=]{16,44})");
+                                if (mSalt.Success)
+                                {
+                                    bestSalt = mSalt.Groups[1].Value;
+                                }
+                            }
+
+                            if (ascii.Contains("barrierefreie_finanzen_enc_v1"))
+                            {
+                                Match mVault = Regex.Match(ascii, @"barrierefreie_finanzen_enc_v1[^\w\d+/=]*([A-Za-z0-9+/=]{50,})");
+                                if (mVault.Success)
+                                {
+                                    bestVault = mVault.Groups[1].Value;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(bestSalt) && !string.IsNullOrEmpty(bestVault))
+                {
+                    return string.Format("{{\"salt\":\"{0}\",\"vault\":\"{1}\"}}", bestSalt, bestVault);
+                }
+            }
+            catch { }
+
+            return null;
         }
 
         private static void LaunchBestBrowser(string htmlPath, string profileDir)

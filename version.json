@@ -1,10 +1,10 @@
 {
-  "version": "3.3.0",
+  "version": "3.4.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-01",
   "features": [
+    "Vollautomatische Datenrettung: Findet und stellt alte Daten aus allen Browsern (Edge, Chrome, Brave) automatisch wieder her",
     "Unzerstoerbare Datenrettung & Cross-Browser Synchronisation (database.vault)",
-    "Automatischer Schutz gegen Browser-Wechsel (Daten bleiben zwischen Chrome, Firefox & Edge erhalten)",
     "Wochen-Uebersicht (KW / Kalenderwoche Mo - So) im Dropdown-Zeitraum-Auswahlfeld",
     "Woechentliche Wiederholungen (Jede Woche an einem bestimmten Wochentag)",
     "Neue Einnahme-Kategorien: Blindengeld / Landesblindengeld & Pflegegeld (Pflegekasse)",
