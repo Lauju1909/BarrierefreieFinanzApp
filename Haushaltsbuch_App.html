@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
-  <title>Barrierefreie Finanzen - Mit Tages- & Monatsansicht (NVDA)</title>
+  <title>Barrierefreie Finanzen - Mit Tages-, Monats-, 3-Monats-, 6-Monats- & Jahresansicht (NVDA)</title>
   <style>
 /* ==========================================================================
-   BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & TAGES-ANSICHT
+   BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & v2.2.0 MASTER
    ========================================================================== */
 
 :root {
@@ -80,6 +80,32 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .skip-link { position: absolute; top: -100px; left: 10px; background: var(--text-primary); color: var(--bg-primary); padding: 12px 20px; font-weight: bold; font-size: 20px; text-decoration: none; border: 3px solid var(--border-color); border-radius: var(--radius-md); transition: top 0.2s; }
 .skip-link:focus { top: 10px; }
 
+/* MODALS / DIALOGS */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20000;
+  padding: 20px;
+}
+
+.modal-dialog-box {
+  background-color: var(--bg-surface);
+  border: 4px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  max-width: 650px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 .lock-screen-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--bg-primary); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px; }
 .lock-card { background-color: var(--bg-surface); border: 4px solid var(--border-color); border-radius: var(--radius-lg); padding: 36px 32px; max-width: 540px; width: 100%; text-align: center; }
 .lock-icon { font-size: 52px; margin-bottom: 12px; }
@@ -109,7 +135,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .tab-key-hint { background-color: var(--border-subtle); color: var(--text-secondary); padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 900; }
 .tab-btn.active .tab-key-hint { background-color: var(--bg-primary); color: var(--text-primary); }
 
-/* UMSCHALTER: MONATS-ANSICHT VS. TAGES-ANSICHT */
+/* UMSCHALTER: ZEITRÄUME (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR) */
 .mode-switch-container {
   background-color: var(--bg-surface);
   border-bottom: 2px solid var(--border-subtle);
@@ -121,7 +147,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
@@ -130,8 +156,8 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   color: var(--text-secondary);
   border: 2px solid var(--border-subtle);
   border-radius: var(--radius-md);
-  padding: 10px 20px;
-  font-size: 17px;
+  padding: 10px 14px;
+  font-size: 16px;
   font-weight: bold;
   cursor: pointer;
   min-height: 48px;
@@ -146,7 +172,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   border-color: var(--text-primary);
 }
 
-/* MONATS- & TAGES-WÄHLER LEISTEN */
+/* ZEIT-WÄHLER LEISTEN */
 .time-picker-container {
   background-color: var(--bg-surface-elevated);
   border-bottom: 2px solid var(--border-color);
@@ -263,13 +289,39 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .status-future { background-color: #332600; color: var(--accent-future); border: 1px solid var(--accent-future); }
 .status-planned { background-color: #112d4e; color: var(--accent-action); border: 1px solid var(--accent-action); }
 .tx-note { font-size: 15px; color: var(--text-muted); margin-top: 2px; }
-.tx-amount-col { display: flex; align-items: center; gap: 12px; }
-.tx-sum { font-size: 20px; font-weight: 900; }
+
+.tx-amount-col { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tx-sum { font-size: 20px; font-weight: 900; margin-right: 6px; }
 .tx-sum.expense { color: var(--accent-expense); }
 .tx-sum.income { color: var(--accent-income); }
 .tx-sum.transfer { color: var(--accent-action); }
-.btn-delete-tx { background-color: var(--bg-surface-elevated); color: var(--accent-expense); border: 2px solid var(--accent-expense); padding: 6px 12px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; min-height: 40px; }
+
+.btn-edit-tx {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 40px;
+}
+.btn-edit-tx:hover { background-color: var(--text-primary); color: #000; }
+
+.btn-delete-tx {
+  background-color: var(--bg-surface-elevated);
+  color: var(--accent-expense);
+  border: 2px solid var(--accent-expense);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 40px;
+}
 .btn-delete-tx:hover { background-color: var(--accent-expense); color: #000; }
+
 .empty-state { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 17px; }
 
 .form-container { background-color: var(--bg-surface); border: 3px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px; max-width: 800px; margin: 0 auto; width: 100%; }
@@ -347,7 +399,107 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
   </div>
 
   <!-- =========================================================================
-       2. HAUPTANWENDUNG
+       2. MODAL DIALOG: BUCHUNG BEARBEITEN
+       ========================================================================= -->
+  <div id="edit-tx-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" style="display: none;">
+    <div class="modal-dialog-box">
+      <h2 id="edit-modal-heading" tabindex="-1">✏️ Buchung bearbeiten</h2>
+      <p class="field-hint">Passe hier Betrag, Datum, Konto, Kategorie oder Notiz an:</p>
+      
+      <form id="form-edit-tx" onsubmit="saveEditedTransaction(event)" class="accessible-form" style="margin-top: 16px;">
+        <input type="hidden" id="edit-tx-id">
+        
+        <div class="form-group">
+          <label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
+          <input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-tx-date" class="field-label"><strong>Datum</strong></label>
+          <input type="date" id="edit-tx-date" class="large-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-tx-account" class="field-label"><strong>Konto</strong></label>
+          <select id="edit-tx-account" class="large-select">
+            <option value="bank">🏦 Bankkonto / Girokonto</option>
+            <option value="paypal">🅿️ PayPal Guthaben</option>
+            <option value="savings">📈 Tagesgeldkonto</option>
+            <option value="cash">💵 Bargeld</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-tx-category" class="field-label"><strong>Kategorie</strong></label>
+          <input type="text" id="edit-tx-category" class="large-input">
+        </div>
+
+        <div class="form-group">
+          <label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz</strong></label>
+          <input type="text" id="edit-tx-desc" class="large-input">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <span>💾 <strong>Änderungen speichern</strong></span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+            <span>Abbrechen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       3. MODAL DIALOG: DAUERAUFTRAG / SPARPLAN BEARBEITEN
+       ========================================================================= -->
+  <div id="edit-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-rec-heading" style="display: none;">
+    <div class="modal-dialog-box">
+      <h2 id="edit-rec-heading" tabindex="-1">✏️ Dauerauftrag / Sparplan bearbeiten</h2>
+      <p class="field-hint">Passe hier regelmäßige Kosten oder Sparpläne an:</p>
+      
+      <form id="form-edit-rec" onsubmit="saveEditedRecurring(event)" class="accessible-form" style="margin-top: 16px;">
+        <input type="hidden" id="edit-rec-id">
+        
+        <div class="form-group">
+          <label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
+          <input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-rec-interval" class="field-label"><strong>Intervall</strong></label>
+          <select id="edit-rec-interval" class="large-select">
+            <option value="monthly">Monatlich</option>
+            <option value="yearly">Jährlich</option>
+            <option value="quarterly">Alle 3 Monate</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31)</strong></label>
+          <input type="number" min="1" max="31" id="edit-rec-day" class="large-input" required>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-rec-name" class="field-label"><strong>Name / Beschreibung</strong></label>
+          <input type="text" id="edit-rec-name" class="large-input">
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <span>💾 <strong>Dauerauftrag speichern</strong></span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
+            <span>Abbrechen</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       4. HAUPTANWENDUNG
        ========================================================================= -->
   <div id="app-wrapper" style="display: none;">
 
@@ -395,7 +547,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
       <div class="tab-list" role="tablist">
         <button id="tab-overview" class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" onclick="switchView('overview')" tabindex="0">
           <span class="tab-key-hint" aria-hidden="true">1</span>
-          <span>📊 <strong>Übersicht & Simulator</strong></span>
+          <span>📊 <strong>Übersicht & Zeiträume</strong></span>
         </button>
         <button id="tab-expense" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-expense" onclick="switchView('expense')" tabindex="-1">
           <span class="tab-key-hint" aria-hidden="true">2</span>
@@ -417,71 +569,35 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
     </nav>
 
     <!-- =========================================================================
-         ANSICHTS-MODUS UMSCHALTER (MONATS-ANSICHT VS. TAGES-ANSICHT)
+         ANSICHTS-MODUS UMSCHALTER: TAG, MONAT, 3 MONATE, 6 MONATE, JAHR
          ========================================================================= -->
-    <div class="mode-switch-container" id="overview-mode-bar" role="region" aria-label="Ansichtsmodus">
+    <div class="mode-switch-container" id="overview-mode-bar" role="region" aria-label="Zeitraum auswählen">
       <div class="mode-switch-inner">
-        <span style="font-weight: bold; color: var(--text-primary);">Ansicht wählen:</span>
-        <button id="mode-btn-month" class="mode-toggle-btn active" onclick="setOverviewMode('month')" title="Ganzen Monat anzeigen">
-          📅 <strong>Monats-Ansicht</strong> (Gesamter Monat)
-        </button>
+        <span style="font-weight: bold; color: var(--text-primary);">Zeitraum:</span>
         <button id="mode-btn-day" class="mode-toggle-btn" onclick="setOverviewMode('day')" title="Nur Buchungen an einem bestimmten Tag anzeigen">
-          📍 <strong>Tages-Ansicht</strong> (Nur dieser Tag)
+          📍 <strong>Tag</strong>
+        </button>
+        <button id="mode-btn-month" class="mode-toggle-btn active" onclick="setOverviewMode('month')" title="Ganzen Monat anzeigen">
+          📅 <strong>Monat</strong>
+        </button>
+        <button id="mode-btn-quarter" class="mode-toggle-btn" onclick="setOverviewMode('quarter')" title="3 Monate / Quartal anzeigen">
+          📊 <strong>3 Monate</strong>
+        </button>
+        <button id="mode-btn-halfyear" class="mode-toggle-btn" onclick="setOverviewMode('halfyear')" title="6 Monate / Halbjahr anzeigen">
+          📈 <strong>6 Monate</strong>
+        </button>
+        <button id="mode-btn-year" class="mode-toggle-btn" onclick="setOverviewMode('year')" title="Ganzes Jahr anzeigen">
+          🗓️ <strong>Jahr</strong>
         </button>
       </div>
     </div>
 
     <!-- =========================================================================
-         1. MONATS-WÄHLER LEISTE (AKTIV BEI MONATS-ANSICHT)
+         ZEIT-NAVIGATION LEISTE (PASST SICH DEM AUSGEWÄHLTEN MODUS AN)
          ========================================================================= -->
-    <div class="time-picker-container" id="month-picker-bar" role="region" aria-label="Monatsauswahl">
-      <div class="time-picker-inner">
-        <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen (Taste P)" aria-label="Vorheriger Monat">
-          ◀ Vorheriger Monat (P)
-        </button>
-        
-        <div class="time-select-wrapper">
-          <label for="global-month-select" class="time-select-label">
-            📅 <strong>Aktiver Monat:</strong>
-          </label>
-          <select id="global-month-select" class="time-dropdown" onchange="handleMonthChange(this.value)">
-            <!-- Befüllt per JavaScript -->
-          </select>
-        </div>
-
-        <button class="btn btn-time-nav" onclick="changeMonthRelative(1)" title="Einen Monat vorwärtsgehen (Taste N)" aria-label="Nächster Monat">
-          Nächster Monat (N) ▶
-        </button>
-
-        <button class="btn btn-time-today" onclick="setMonthToCurrent()" title="Direkt zum aktuellen Monat springen">
-          📍 Heute / Aktueller Monat
-        </button>
-      </div>
-    </div>
-
-    <!-- =========================================================================
-         2. TAGES-WÄHLER LEISTE (AKTIV BEI TAGES-ANSICHT)
-         ========================================================================= -->
-    <div class="time-picker-container" id="day-picker-bar" role="region" aria-label="Tagesauswahl" style="display: none;">
-      <div class="time-picker-inner">
-        <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
-          ◀ Gestern / Vorheriger Tag
-        </button>
-        
-        <div class="time-select-wrapper">
-          <label for="global-day-select" class="time-select-label">
-            📍 <strong>Ausgewählter Tag:</strong>
-          </label>
-          <input type="date" id="global-day-select" class="time-date-input" onchange="handleDayChange(this.value)">
-        </div>
-
-        <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
-          Nächster Tag / Morgen ▶
-        </button>
-
-        <button class="btn btn-time-today" onclick="setDayToToday()" title="Direkt zum heutigen Tag springen">
-          📍 Heute
-        </button>
+    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitnavigation">
+      <div class="time-picker-inner" id="time-picker-content">
+        <!-- Befüllt per JavaScript für Tag, Monat, 3M, 6M oder Jahr -->
       </div>
     </div>
 
@@ -491,7 +607,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
     <main class="main-container" id="view-content-area" role="main">
 
       <!-- =======================================================================
-           ANSICHT 1: ÜBERSICHT (MONAT ODER TAG)
+           ANSICHT 1: ÜBERSICHT (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
            ======================================================================= -->
       <div id="view-overview" class="view-panel" role="tabpanel" aria-labelledby="tab-overview">
         
@@ -543,6 +659,29 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
           </div>
         </section>
 
+        <!-- MEHRMONATS- / JAHRES-TABELLE (WIRD BEI 3M, 6M, JAHR ANGEZEIGT) -->
+        <section class="overview-section" id="section-period-breakdown" style="display: none;" aria-labelledby="period-breakdown-heading">
+          <div class="section-card">
+            <h3 id="period-breakdown-heading" class="section-title">📊 Monatsübersicht im gewählten Zeitraum</h3>
+            <div class="table-responsive" tabindex="0">
+              <table class="annual-table" id="period-summary-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Monat</th>
+                    <th scope="col" class="text-right">Einnahmen</th>
+                    <th scope="col" class="text-right">Ausgaben</th>
+                    <th scope="col" class="text-right">Ergebnis (Plus / Minus)</th>
+                    <th scope="col" class="text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody id="period-table-body">
+                  <!-- Per JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <!-- 2. DANN: EINNAHMEN -->
         <section class="overview-section" aria-labelledby="section-income-heading">
           <div class="section-card card-income-wrap">
@@ -555,8 +694,8 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
 
             <details class="accessible-accordion" id="details-income-list" open>
-              <summary class="accordion-summary" aria-label="Alle Einnahmen mit Datum ausklappen oder einklappen">
-                <span>📋 <strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum & Status)</strong></span>
+              <summary class="accordion-summary" aria-label="Alle Einnahmen ausklappen oder einklappen">
+                <span>📋 <strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
               </summary>
               <div class="accordion-content" id="overview-income-items-feed">
                 <!-- Wird per JS befüllt -->
@@ -577,8 +716,8 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
             </div>
 
             <details class="accessible-accordion" id="details-expense-list" open>
-              <summary class="accordion-summary" aria-label="Alle Ausgaben mit Datum ausklappen oder einklappen">
-                <span>📋 <strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Kategorie & Status)</strong></span>
+              <summary class="accordion-summary" aria-label="Alle Ausgaben ausklappen oder einklappen">
+                <span>📋 <strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
               </summary>
               <div class="accordion-content" id="overview-expense-items-feed">
                 <!-- Wird per JS befüllt -->
@@ -590,7 +729,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
         <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
         <section class="overview-section" aria-labelledby="section-total-heading">
           <div class="balance-hero-card" tabindex="0">
-            <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & WAS NOCH ÜBRIG IST</h3>
+            <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
             <div class="hero-amount" id="card-alltime-total">0,00 €</div>
             <div class="hero-subtext" id="total-balance-sub">Verfügbares Gesamtguthaben über alle Konten</div>
             
@@ -598,7 +737,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
             <div class="hero-secondary-row">
               <div>
-                <span class="hero-sub-label" id="leftover-main-label">Monats-Saldo (In diesem Monat noch übrig):</span>
+                <span class="hero-sub-label" id="leftover-main-label">Ergebnis im Zeitraum:</span>
                 <strong class="hero-sub-value" id="month-leftover-display">0,00 €</strong>
               </div>
               <div id="month-leftover-sub" class="hero-subtext">Einnahmen minus Ausgaben</div>
@@ -668,7 +807,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
               </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" id="exp-account-group">
               <label for="exp-account" class="field-label">
                 <strong>Von welchem Konto bezahlen?</strong> <span class="required-star" aria-hidden="true">*</span>
               </label>
@@ -947,14 +1086,13 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
         <div class="form-container">
           <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Datensicherung, Zukunfts-Prognose & Einstellungen</h2>
 
-          
           <!-- GITHUB AUTO-UPDATER -->
           <section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
             <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App aktualisieren)</h3>
             <p class="field-hint">Hier kannst du deine App jederzeit auf den neuesten Stand bringen. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
             
             <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v2.1.0</strong> (Open Source auf GitHub)
+              Installierte Version: <strong>v2.2.0</strong> (Open Source auf GitHub)
             </div>
 
             <div class="form-actions" style="margin-top: 10px;">
@@ -962,7 +1100,6 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
                 <span>🌐 <strong>GitHub Repository & Releases öffnen</strong></span>
               </a>
             </div>
-            <p class="field-hint">💡 <em>Tipp: Auf deinem Desktop liegt die Datei <strong>Update_Haushaltsbuch.bat</strong> – ein Doppelklick darauf lädt automatisch alle Aktualisierungen von GitHub herunter!</em></p>
           </section>
 
           <!-- DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
@@ -1058,7 +1195,7 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
           <!-- LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
           <section class="settings-box" aria-labelledby="manage-recurring-heading">
             <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
-            <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen und löschen:</p>
+            <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen, bearbeiten und löschen:</p>
             <div id="settings-recurring-container">
               <!-- Wird per JS befüllt -->
             </div>
@@ -1124,366 +1261,317 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 
     <!-- Fußzeile -->
     <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-      <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute springen | <strong>L</strong> = Sofortsperre</p>
+      <p>🛡️ <strong>Barrierefreie Finanzen v2.2.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+      <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
     </footer>
 
   </div>
 
   <script>
-// ==========================================================================
-// BARRIEREFREIE FINANZEN - MIT TAGES- & MONATS-ANSICHT (NVDA)
-// ==========================================================================
+/**
+ * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH (v2.2.0)
+ * 100% DSGVO-konform, militärisch verschlüsselt mit AES-GCM 256-Bit
+ * Optimiert für NVDA Screenreader & barrierefreie Bedienung
+ */
 
-const STORAGE_ENCRYPTED_KEY = 'barrierefreie_finanz_app_aes_v6';
-const PIN_SALT_KEY = 'barrierefreie_finanz_app_salt';
-const PIN_VERIFIER_KEY = 'barrierefreie_finanz_app_verifier';
+// --------------------------------------------------------------------------
+// 1. GLOBALE KONSTANTEN & STATE
+// --------------------------------------------------------------------------
+const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
+const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
+const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
 
 const MONTH_NAMES = [
-  "Januar", "Februar", "März", "April", "Mai", "Juni",
-  "Juli", "August", "September", "Oktober", "November", "Dezember"
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
 ];
 
-const currentDateObj = new Date();
-let selectedYear = currentDateObj.getFullYear();
-let selectedMonth = currentDateObj.getMonth();
-let selectedDateStr = currentDateObj.toISOString().split('T')[0]; // Standardmäßig HEUTE!
-let currentOverviewMode = 'month'; // 'month' oder 'day'
-
-let currentSessionKey = null;
-let autoLockTimer = null;
-
 let appState = {
-  theme: 'theme-high-contrast',
-  initialBalances: {
-    bank: 0.00,
-    paypal: 0.00,
-    savings: 0.00,
-    cash: 0.00
-  },
+  initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
   transactions: [],
   recurring: []
 };
 
+let cryptoKey = null;
+let currentActiveView = 'overview'; // 'overview', 'expense', 'income', 'transfer', 'settings'
+let currentOverviewMode = 'month'; // 'day', 'month', 'quarter', 'halfyear', 'year'
+
+// Datumsauswahl
+const initialDate = new Date();
+let selectedYear = initialDate.getFullYear();
+let selectedMonth = initialDate.getMonth();
+let selectedDateStr = initialDate.toISOString().split('T')[0];
+
+let inactivityTimer = null;
+const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000; // 5 Minuten
+
 // --------------------------------------------------------------------------
-// 1. NVDA LIVE ANNOUNCER
+// 2. INITIALISIERUNG
 // --------------------------------------------------------------------------
-function announceNVDA(message, isAssertive = false) {
-  const targetId = isAssertive ? 'sr-live-assertive' : 'sr-live';
-  const el = document.getElementById(targetId);
-  if (el) {
-    el.textContent = '';
-    setTimeout(() => {
-      el.textContent = message;
-    }, 50);
-  }
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  initDatePickers();
+  setupGlobalKeyboardShortcuts();
+  checkVaultStatus();
+  updateTodayDisplay();
+
+  // Datumseingaben mit Standardwert heute belegen
+  const todayVal = new Date().toISOString().split('T')[0];
+  if (document.getElementById('exp-date')) document.getElementById('exp-date').value = todayVal;
+  if (document.getElementById('inc-date')) document.getElementById('inc-date').value = todayVal;
+  if (document.getElementById('trf-date')) document.getElementById('trf-date').value = todayVal;
+});
+
+function updateTodayDisplay() {
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const formatted = now.toLocaleDateString('de-DE', options);
+  const badge = document.getElementById('today-date-text');
+  if (badge) badge.textContent = formatted;
 }
 
 // --------------------------------------------------------------------------
-// 2. KRYPTOGRAPHIE: AES-GCM 256-BIT (WEB CRYPTO API)
+// 3. BARRIEREFREIE NVDA SCREENREADER ANKÜNDIGUNGEN
 // --------------------------------------------------------------------------
-function getOrCreateSalt() {
-  let saltHex = localStorage.getItem(PIN_SALT_KEY);
-  if (!saltHex) {
-    const saltBytes = new Uint8Array(16);
-    window.crypto.getRandomValues(saltBytes);
-    saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-    localStorage.setItem(PIN_SALT_KEY, saltHex);
-  }
-  const match = saltHex.match(/.{1,2}/g) || [];
-  return new Uint8Array(match.map(byte => parseInt(byte, 16)));
+function announceNVDA(message, assertive = false) {
+  const regionId = assertive ? 'sr-live-assertive' : 'sr-live';
+  const region = document.getElementById(regionId);
+  if (!region) return;
+
+  region.textContent = '';
+  setTimeout(() => {
+    region.textContent = message;
+  }, 60);
 }
 
-async function deriveKeyFromPin(pin) {
-  const enc = new TextEncoder();
-  const salt = getOrCreateSalt();
-  const keyMaterial = await window.crypto.subtle.importKey(
-    "raw",
-    enc.encode(pin),
-    { name: "PBKDF2" },
-    false,
-    ["deriveBits", "deriveKey"]
-  );
+// --------------------------------------------------------------------------
+// 4. TASTATURKÜRZEL (1-5, T, L)
+// --------------------------------------------------------------------------
+function setupGlobalKeyboardShortcuts() {
+  document.addEventListener('keydown', (e) => {
+    resetInactivityTimer();
 
-  return await window.crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt: salt,
-      iterations: 100000,
-      hash: "SHA-256"
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
+    // Tastaturkürzel nur im eingeloggten Zustand
+    if (!cryptoKey) return;
 
-async function encryptData(plainText, key) {
-  const enc = new TextEncoder();
-  const iv = window.crypto.getRandomValues(new Uint8Array(12));
-  const encrypted = await window.crypto.subtle.encrypt(
-    { name: "AES-GCM", iv: iv },
-    key,
-    enc.encode(plainText)
-  );
-
-  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-  const cipherHex = Array.from(new Uint8Array(encrypted)).map(b => b.toString(16).padStart(2, '0')).join('');
-  return JSON.stringify({ iv: ivHex, data: cipherHex });
-}
-
-async function decryptData(cipherJsonStr, key) {
-  try {
-    const parsed = JSON.parse(cipherJsonStr);
-    const iv = new Uint8Array(parsed.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-    const cipherBytes = new Uint8Array(parsed.data.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-
-    const decrypted = await window.crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: iv },
-      key,
-      cipherBytes
+    // Keine Tastaturkürzel in aktiven Formulareingaben
+    const activeEl = document.activeElement;
+    const isEditing = activeEl && (
+      activeEl.tagName === 'INPUT' ||
+      activeEl.tagName === 'SELECT' ||
+      activeEl.tagName === 'TEXTAREA' ||
+      activeEl.isContentEditable
     );
 
-    const dec = new TextDecoder();
-    return dec.decode(decrypted);
-  } catch (e) {
-    throw new Error("Entschlüsselung fehlgeschlagen.");
-  }
-}
-
-// --------------------------------------------------------------------------
-// 3. SPERRBILDSCHIRM & AUTHENTIFIZIERUNG
-// --------------------------------------------------------------------------
-function checkLockState() {
-  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
-  const lockScreen = document.getElementById('lock-screen');
-  const appWrapper = document.getElementById('app-wrapper');
-  const pinInput = document.getElementById('pin-input');
-  const firstTimeHint = document.getElementById('first-time-hint');
-
-  if (!verifier) {
-    firstTimeHint.style.display = 'block';
-    document.getElementById('lock-instructions').textContent = "Erster Start: Bitte wähle eine PIN oder ein Passwort.";
-    document.getElementById('btn-unlock').innerHTML = "<span>🛡️ <strong>PIN festlegen & Verschlüsseln</strong></span>";
-  } else {
-    firstTimeHint.style.display = 'none';
-    document.getElementById('lock-instructions').textContent = "Deine Finanzdaten sind auf diesem Gerät mit 256-Bit AES verschlüsselt. Gib deine PIN oder dein Passwort ein.";
-    document.getElementById('btn-unlock').innerHTML = "<span>🔓 <strong>Entschlüsseln & Öffnen</strong> (Enter)</span>";
-  }
-
-  lockScreen.style.display = 'flex';
-  appWrapper.style.display = 'none';
-  pinInput.value = '';
-  setTimeout(() => pinInput.focus(), 100);
-}
-
-async function handlePinSubmit(e) {
-  e.preventDefault();
-  const input = document.getElementById('pin-input');
-  const pinVal = input.value.trim();
-  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
-
-  if (!pinVal) {
-    showPinError("Bitte gib eine PIN oder ein Passwort ein.");
-    return;
-  }
-
-  try {
-    const key = await deriveKeyFromPin(pinVal);
-
-    if (!verifier) {
-      const testEncrypted = await encryptData("VERIFIED_OK", key);
-      localStorage.setItem(PIN_VERIFIER_KEY, testEncrypted);
-      currentSessionKey = key;
-      await saveEncryptedData();
-      unlockApp("PIN eingerichtet. Deine Finanzdaten sind 256-Bit AES verschlüsselt.");
-    } else {
-      try {
-        const decryptedVerifier = await decryptData(verifier, key);
-        if (decryptedVerifier === "VERIFIED_OK") {
-          currentSessionKey = key;
-          await loadEncryptedData();
-          unlockApp("Erfolgreich entschlüsselt. Willkommen in deinem Haushaltsbuch!");
-        } else {
-          throw new Error("Invalid");
-        }
-      } catch (err) {
-        showPinError("Falsche PIN oder Passwort! Entschlüsselung verweigert.");
-        input.value = '';
-        input.focus();
-      }
-    }
-  } catch (cryptoErr) {
-    showPinError("Sicherheitsfehler bei der Schlüsselberechnung.");
-  }
-}
-
-function showPinError(msg) {
-  const errorBox = document.getElementById('pin-error-msg');
-  errorBox.textContent = msg;
-  errorBox.style.display = 'block';
-  announceNVDA(msg, true);
-}
-
-function unlockApp(announcement = "") {
-  document.getElementById('lock-screen').style.display = 'none';
-  document.getElementById('app-wrapper').style.display = 'block';
-  document.getElementById('pin-error-msg').style.display = 'none';
-
-  updateTodayDateDisplay();
-  initMonthPickerDropdown();
-  setDayToToday();
-  updateOverview();
-  resetInactivityTimer();
-
-  document.getElementById('tab-overview').focus();
-  if (announcement) announceNVDA(announcement);
-}
-
-function lockApp() {
-  currentSessionKey = null;
-  document.getElementById('lock-screen').style.display = 'flex';
-  document.getElementById('app-wrapper').style.display = 'none';
-  document.getElementById('pin-input').value = '';
-  document.getElementById('pin-input').focus();
-  announceNVDA("App gesperrt. Alle Daten wurden sicher verschlüsselt.", true);
-}
-
-function resetInactivityTimer() {
-  if (autoLockTimer) clearTimeout(autoLockTimer);
-  autoLockTimer = setTimeout(() => {
-    if (currentSessionKey) {
-      lockApp();
-    }
-  }, 5 * 60 * 1000);
-}
-
-['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(evt => {
-  window.addEventListener(evt, () => resetInactivityTimer(), { passive: true });
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden && currentSessionKey) {
-    lockApp();
-  }
-});
-
-async function handleChangePin(e) {
-  e.preventDefault();
-  const oldPin = document.getElementById('change-old-pin').value.trim();
-  const newPin = document.getElementById('change-new-pin').value.trim();
-  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
-
-  if (!newPin || newPin.length < 2) {
-    alert("Die neue PIN muss mindestens 2 Zeichen lang sein.");
-    return;
-  }
-
-  try {
-    const oldKey = await deriveKeyFromPin(oldPin);
-    const decryptedVerifier = await decryptData(verifier, oldKey);
-    if (decryptedVerifier !== "VERIFIED_OK") {
-      alert("Die aktuelle PIN ist falsch!");
+    if (e.key === 'Escape') {
+      closeEditModal();
+      closeEditRecModal();
       return;
     }
 
-    const newKey = await deriveKeyFromPin(newPin);
-    const newVerifier = await encryptData("VERIFIED_OK", newKey);
-    localStorage.setItem(PIN_VERIFIER_KEY, newVerifier);
+    if (isEditing) return;
 
-    currentSessionKey = newKey;
-    await saveEncryptedData();
+    if (e.key === '1') { e.preventDefault(); switchView('overview'); }
+    else if (e.key === '2') { e.preventDefault(); switchView('expense'); }
+    else if (e.key === '3') { e.preventDefault(); switchView('income'); }
+    else if (e.key === '4') { e.preventDefault(); switchView('transfer'); }
+    else if (e.key === '5') { e.preventDefault(); switchView('settings'); }
+    else if (e.key === 't' || e.key === 'T') {
+      e.preventDefault();
+      setDayToToday();
+    } else if (e.key === 'l' || e.key === 'L') {
+      e.preventDefault();
+      lockApp();
+    }
+  });
 
-    document.getElementById('form-change-pin').reset();
-    alert("PIN erfolgreich geändert!");
-    announceNVDA("Neue PIN gespeichert.");
-  } catch (err) {
-    alert("Fehler: Aktuelle PIN ist falsch!");
+  ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+    window.addEventListener(evt, resetInactivityTimer, { passive: true });
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && cryptoKey) {
+      lockApp();
+    }
+  });
+}
+
+function resetInactivityTimer() {
+  if (inactivityTimer) clearTimeout(inactivityTimer);
+  if (cryptoKey) {
+    inactivityTimer = setTimeout(() => {
+      lockApp();
+      announceNVDA('Automatisch gesperrt wegen 5 Minuten Inaktivität.');
+    }, INACTIVITY_TIMEOUT_MS);
   }
 }
 
-function updateTodayDateDisplay() {
-  const now = new Date();
-  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const str = now.toLocaleDateString('de-DE', options);
-  const el = document.getElementById('today-date-text');
-  if (el) el.textContent = str;
-}
-
 // --------------------------------------------------------------------------
-// 4. ANSICHTS-MODUS (MONATS-ANSICHT VS. TAGES-ANSICHT)
+// 5. ZEITRAUM- & ANSICHTS-MODI (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
 // --------------------------------------------------------------------------
 function setOverviewMode(mode) {
   currentOverviewMode = mode;
-  const btnMonth = document.getElementById('mode-btn-month');
-  const btnDay = document.getElementById('mode-btn-day');
-  const monthBar = document.getElementById('month-picker-bar');
-  const dayBar = document.getElementById('day-picker-bar');
 
-  if (mode === 'month') {
-    btnMonth.classList.add('active');
-    btnMonth.setAttribute('aria-checked', 'true');
-    btnDay.classList.remove('active');
-    btnDay.setAttribute('aria-checked', 'false');
-    monthBar.style.display = 'block';
-    dayBar.style.display = 'none';
-    announceNVDA(`Monats-Ansicht für ${MONTH_NAMES[selectedMonth]} ${selectedYear} aktiviert.`);
-  } else {
-    btnDay.classList.add('active');
-    btnDay.setAttribute('aria-checked', 'true');
-    btnMonth.classList.remove('active');
-    btnMonth.setAttribute('aria-checked', 'false');
-    dayBar.style.display = 'block';
-    monthBar.style.display = 'none';
-    announceNVDA(`Tages-Ansicht für ${formatDateDisplay(selectedDateStr)} aktiviert.`);
-  }
+  ['day', 'month', 'quarter', 'halfyear', 'year'].forEach(m => {
+    const btn = document.getElementById(`mode-btn-${m}`);
+    if (btn) {
+      if (m === mode) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
 
+  renderTimePickerBar();
   updateOverview();
+
+  const names = {
+    day: 'Tages-Ansicht',
+    month: 'Monats-Ansicht',
+    quarter: '3-Monate-Ansicht (Quartal)',
+    halfyear: '6-Monate-Ansicht (Halbjahr)',
+    year: 'Jahres-Ansicht'
+  };
+  announceNVDA(`Modus gewechselt zu ${names[mode] || mode}.`);
 }
 
-function initMonthPickerDropdown() {
-  const select = document.getElementById('global-month-select');
-  if (!select) return;
+function renderTimePickerBar() {
+  const container = document.getElementById('time-picker-content');
+  if (!container) return;
 
-  select.innerHTML = '';
-  for (let year = 2025; year <= 2027; year++) {
-    MONTH_NAMES.forEach((mName, mIdx) => {
-      const val = `${year}-${mIdx}`;
-      const opt = document.createElement('option');
-      opt.value = val;
-      opt.textContent = `${mName} ${year}`;
-      if (year === selectedYear && mIdx === selectedMonth) {
-        opt.selected = true;
-      }
-      select.appendChild(opt);
-    });
+  if (currentOverviewMode === 'day') {
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
+        ◀ Gestern / Vorheriger Tag
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-day-select" class="time-select-label">📍 <strong>Tag:</strong></label>
+        <input type="date" id="global-day-select" class="time-date-input" value="${selectedDateStr}" onchange="handleDayChange(this.value)">
+      </div>
+      <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
+        Nächster Tag / Morgen ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setDayToToday()" title="Zum heutigen Tag springen (Taste T)">
+        📍 Heute (T)
+      </button>
+    `;
+  } else if (currentOverviewMode === 'month') {
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen" aria-label="Vorheriger Monat">
+        ◀ Vorheriger Monat
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-month-select" class="time-select-label">📅 <strong>Monat:</strong></label>
+        <select id="global-month-select" class="time-dropdown" onchange="handleMonthChange(this.value)">
+          ${generateMonthOptions(`${selectedYear}-${selectedMonth}`)}
+        </select>
+      </div>
+      <button class="btn btn-time-nav" onclick="changeMonthRelative(1)" title="Einen Monat vorwärtsgehen" aria-label="Nächster Monat">
+        Nächster Monat ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setMonthToCurrent()" title="Zum aktuellen Monat springen">
+        📍 Aktueller Monat
+      </button>
+    `;
+  } else if (currentOverviewMode === 'quarter') {
+    const currentQ = Math.floor(selectedMonth / 3) + 1;
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeQuarterRelative(-1)" title="Vorheriges Quartal">
+        ◀ Vorheriges Quartal
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-quarter-select" class="time-select-label">📊 <strong>3 Monate (Quartal):</strong></label>
+        <select id="global-quarter-select" class="time-dropdown" onchange="handleQuarterChange(this.value)">
+          <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>Q1 ${selectedYear} (Januar - März)</option>
+          <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>Q2 ${selectedYear} (April - Juni)</option>
+          <option value="${selectedYear}-3" ${currentQ === 3 ? 'selected' : ''}>Q3 ${selectedYear} (Juli - September)</option>
+          <option value="${selectedYear}-4" ${currentQ === 4 ? 'selected' : ''}>Q4 ${selectedYear} (Oktober - Dezember)</option>
+        </select>
+      </div>
+      <button class="btn btn-time-nav" onclick="changeQuarterRelative(1)" title="Nächstes Quartal">
+        Nächstes Quartal ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setQuarterToCurrent()">
+        📍 Aktuelles Quartal
+      </button>
+    `;
+  } else if (currentOverviewMode === 'halfyear') {
+    const currentH = selectedMonth < 6 ? 1 : 2;
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(-1)" title="Vorheriges Halbjahr">
+        ◀ Vorheriges Halbjahr
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-halfyear-select" class="time-select-label">📈 <strong>6 Monate (Halbjahr):</strong></label>
+        <select id="global-halfyear-select" class="time-dropdown" onchange="handleHalfyearChange(this.value)">
+          <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>1. Halbjahr ${selectedYear} (Januar - Juni)</option>
+          <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>2. Halbjahr ${selectedYear} (Juli - Dezember)</option>
+        </select>
+      </div>
+      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(1)" title="Nächstes Halbjahr">
+        Nächstes Halbjahr ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setHalfyearToCurrent()">
+        📍 Aktuelles Halbjahr
+      </button>
+    `;
+  } else if (currentOverviewMode === 'year') {
+    container.innerHTML = `
+      <button class="btn btn-time-nav" onclick="changeYearRelative(-1)" title="Vorheriges Jahr">
+        ◀ Vorheriges Jahr
+      </button>
+      <div class="time-select-wrapper">
+        <label for="global-year-select" class="time-select-label">🗓️ <strong>Ganzes Jahr:</strong></label>
+        <select id="global-year-select" class="time-dropdown" onchange="handleYearChange(this.value)">
+          <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>Jahr 2025</option>
+          <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>Jahr 2026</option>
+          <option value="2027" ${selectedYear === 2027 ? 'selected' : ''}>Jahr 2027</option>
+          <option value="2028" ${selectedYear === 2028 ? 'selected' : ''}>Jahr 2028</option>
+        </select>
+      </div>
+      <button class="btn btn-time-nav" onclick="changeYearRelative(1)" title="Nächstes Jahr">
+        Nächstes Jahr ▶
+      </button>
+      <button class="btn btn-time-today" onclick="setYearToCurrent()">
+        📍 Aktuelles Jahr
+      </button>
+    `;
   }
+}
+
+function generateMonthOptions(selectedVal) {
+  let html = '';
+  for (let y = 2025; y <= 2027; y++) {
+    for (let m = 0; m < 12; m++) {
+      const val = `${y}-${m}`;
+      const isSel = val === selectedVal ? 'selected' : '';
+      html += `<option value="${val}" ${isSel}>${MONTH_NAMES[m]} ${y}</option>`;
+    }
+  }
+  return html;
+}
+
+function initDatePickers() {
+  renderTimePickerBar();
 }
 
 function handleMonthChange(val) {
   const parts = val.split('-');
   selectedYear = parseInt(parts[0], 10);
   selectedMonth = parseInt(parts[1], 10);
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   updateOverview();
-  announceNVDA(`Monat gewechselt zu ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+  announceNVDA(`Monat ausgewählt: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
 }
 
 function changeMonthRelative(offset) {
-  selectedMonth += offset;
-  if (selectedMonth > 11) {
-    selectedMonth = 0;
-    selectedYear++;
-  } else if (selectedMonth < 0) {
-    selectedMonth = 11;
-    selectedYear--;
-  }
+  let newM = selectedMonth + offset;
+  let newY = selectedYear;
+  if (newM > 11) { newM = 0; newY++; }
+  else if (newM < 0) { newM = 11; newY--; }
 
-  const select = document.getElementById('global-month-select');
-  if (select) {
-    select.value = `${selectedYear}-${selectedMonth}`;
-  }
-
+  selectedYear = newY;
+  selectedMonth = newM;
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+  renderTimePickerBar();
   updateOverview();
   announceNVDA(`Monat gewechselt zu ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
 }
@@ -1492,27 +1580,18 @@ function setMonthToCurrent() {
   const now = new Date();
   selectedYear = now.getFullYear();
   selectedMonth = now.getMonth();
-
-  const select = document.getElementById('global-month-select');
-  if (select) {
-    select.value = `${selectedYear}-${selectedMonth}`;
-  }
-
+  selectedDateStr = now.toISOString().split('T')[0];
+  renderTimePickerBar();
   updateOverview();
-  announceNVDA(`Zurück zum aktuellen Monat: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+  announceNVDA(`Zum aktuellen Monat gewechselt: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
 }
 
-// TAGES-WÄHLER LOGIK
 function handleDayChange(val) {
   if (!val) return;
   selectedDateStr = val;
   const d = new Date(val + 'T00:00:00');
   selectedYear = d.getFullYear();
   selectedMonth = d.getMonth();
-
-  const select = document.getElementById('global-month-select');
-  if (select) select.value = `${selectedYear}-${selectedMonth}`;
-
   updateOverview();
   announceNVDA(`Tag ausgewählt: ${formatDateDisplay(selectedDateStr)}.`);
 }
@@ -1526,54 +1605,120 @@ function changeDayRelative(offset) {
   selectedDateStr = `${y}-${m}-${day}`;
   selectedYear = d.getFullYear();
   selectedMonth = d.getMonth();
-
-  const dayInput = document.getElementById('global-day-select');
-  if (dayInput) dayInput.value = selectedDateStr;
-
-  const monthSelect = document.getElementById('global-month-select');
-  if (monthSelect) monthSelect.value = `${selectedYear}-${selectedMonth}`;
-
+  renderTimePickerBar();
   updateOverview();
   announceNVDA(`Tag gewechselt zu ${formatDateDisplay(selectedDateStr)}.`);
 }
 
 function setDayToToday() {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  selectedDateStr = `${y}-${m}-${d}`;
+  selectedDateStr = now.toISOString().split('T')[0];
   selectedYear = now.getFullYear();
   selectedMonth = now.getMonth();
-
-  const dayInput = document.getElementById('global-day-select');
-  if (dayInput) dayInput.value = selectedDateStr;
-
-  const monthSelect = document.getElementById('global-month-select');
-  if (monthSelect) monthSelect.value = `${selectedYear}-${selectedMonth}`;
-
-  updateOverview();
+  currentOverviewMode = 'day';
+  setOverviewMode('day');
   announceNVDA(`Zum heutigen Tag gewechselt: ${formatDateDisplay(selectedDateStr)}.`);
 }
 
+function handleQuarterChange(val) {
+  const parts = val.split('-');
+  selectedYear = parseInt(parts[0], 10);
+  const q = parseInt(parts[1], 10);
+  selectedMonth = (q - 1) * 3;
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+  updateOverview();
+  announceNVDA(`Quartal ausgewählt: Q${q} ${selectedYear}.`);
+}
+
+function changeQuarterRelative(offset) {
+  let q = Math.floor(selectedMonth / 3) + 1 + offset;
+  let y = selectedYear;
+  if (q > 4) { q = 1; y++; }
+  else if (q < 1) { q = 4; y--; }
+  selectedYear = y;
+  selectedMonth = (q - 1) * 3;
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+  renderTimePickerBar();
+  updateOverview();
+  announceNVDA(`Gewechselt zu Q${q} ${selectedYear}.`);
+}
+
+function setQuarterToCurrent() {
+  const now = new Date();
+  selectedYear = now.getFullYear();
+  const currentQ = Math.floor(now.getMonth() / 3) + 1;
+  selectedMonth = (currentQ - 1) * 3;
+  renderTimePickerBar();
+  updateOverview();
+}
+
+function handleHalfyearChange(val) {
+  const parts = val.split('-');
+  selectedYear = parseInt(parts[0], 10);
+  const h = parseInt(parts[1], 10);
+  selectedMonth = (h - 1) * 6;
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+  updateOverview();
+  announceNVDA(`Halbjahr ausgewählt: ${h}. Halbjahr ${selectedYear}.`);
+}
+
+function changeHalfyearRelative(offset) {
+  let h = (selectedMonth < 6 ? 1 : 2) + offset;
+  let y = selectedYear;
+  if (h > 2) { h = 1; y++; }
+  else if (h < 1) { h = 2; y--; }
+  selectedYear = y;
+  selectedMonth = (h - 1) * 6;
+  selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
+  renderTimePickerBar();
+  updateOverview();
+}
+
+function setHalfyearToCurrent() {
+  const now = new Date();
+  selectedYear = now.getFullYear();
+  selectedMonth = now.getMonth() < 6 ? 0 : 6;
+  renderTimePickerBar();
+  updateOverview();
+}
+
+function handleYearChange(val) {
+  selectedYear = parseInt(val, 10);
+  selectedMonth = 0;
+  selectedDateStr = `${selectedYear}-01-01`;
+  updateOverview();
+  announceNVDA(`Jahr ausgewählt: ${selectedYear}.`);
+}
+
+function changeYearRelative(offset) {
+  selectedYear += offset;
+  selectedMonth = 0;
+  selectedDateStr = `${selectedYear}-01-01`;
+  renderTimePickerBar();
+  updateOverview();
+}
+
+function setYearToCurrent() {
+  const now = new Date();
+  selectedYear = now.getFullYear();
+  selectedMonth = 0;
+  renderTimePickerBar();
+  updateOverview();
+}
+
 // --------------------------------------------------------------------------
-// 5. DAUERAUFTRÄGE & DATUMSSTATUS
+// 6. DAUERAUFTRÄGE LOGIK
 // --------------------------------------------------------------------------
 function isRecurringDueInMonth(rec, year, month) {
   if (!rec.active && rec.active !== undefined) return false;
+  const startY = rec.startYear !== undefined ? rec.startYear : 2025;
+  const startM = rec.startMonth !== undefined ? rec.startMonth : 0;
 
-  const startY = rec.startYear !== undefined ? rec.startYear : (rec.created ? new Date(rec.created).getFullYear() : 2026);
-  const startM = rec.startMonth !== undefined ? rec.startMonth : (rec.created ? new Date(rec.created).getMonth() : 8);
+  if (year < startY || (year === startY && month < startM)) return false;
 
-  if (year < startY || (year === startY && month < startM)) {
-    return false;
-  }
-
-  if (rec.interval === 'monthly') {
-    return true;
-  } else if (rec.interval === 'yearly') {
-    return parseInt(rec.yearlyMonth, 10) === month;
-  } else if (rec.interval === 'quarterly') {
+  if (rec.interval === 'monthly') return true;
+  if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth, 10) === month;
+  if (rec.interval === 'quarterly') {
     const startMOffset = parseInt(rec.yearlyMonth || startM, 10) % 3;
     return (month % 3) === startMOffset;
   }
@@ -1591,62 +1736,82 @@ function getRecurringTransactionsForMonth(year, month) {
       const mFormatted = String(month + 1).padStart(2, '0');
       const dateStr = `${year}-${mFormatted}-${dayFormatted}`;
 
-      if (rec.type === 'transfer') {
-        list.push({
-          id: 'rec_trf_' + rec.id + '_' + year + '_' + month,
-          isRecurringInstance: true,
-          recurringId: rec.id,
-          name: rec.name || rec.description,
-          type: 'transfer',
-          fromAccount: rec.fromAccount,
-          toAccount: rec.toAccount,
-          amount: Number(rec.amount),
-          category: `🔁 Regelmäßiges Sparen (${formatAccountName(rec.fromAccount)} ➔ ${formatAccountName(rec.toAccount)})`,
-          description: `🔁 Sparplan: ${rec.name || rec.description || 'Sparen'}`,
-          date: dateStr,
-          costType: 'transfer',
-          timestamp: new Date(year, month, day).toISOString()
-        });
-      } else {
-        list.push({
-          id: 'rec_' + rec.id + '_' + year + '_' + month,
-          isRecurringInstance: true,
-          recurringId: rec.id,
-          name: rec.name || rec.description,
-          type: rec.type,
-          account: rec.account,
-          amount: Number(rec.amount),
-          category: rec.category,
-          description: `🔁 Dauerauftrag: ${rec.name || rec.description || rec.category} (${rec.interval === 'monthly' ? 'Monatlich' : 'Jährlich'})`,
-          date: dateStr,
-          costType: 'fixed',
-          timestamp: new Date(year, month, day).toISOString()
-        });
-      }
+      list.push({
+        id: `rec_instance_${rec.id}_${year}_${month}`,
+        recurringId: rec.id,
+        isRecurring: true,
+        type: rec.type,
+        account: rec.account,
+        fromAccount: rec.fromAccount,
+        toAccount: rec.toAccount,
+        amount: Number(rec.amount),
+        category: rec.category,
+        description: `${rec.name} (Dauerauftrag / Sparplan)`,
+        costType: 'fixed',
+        date: dateStr
+      });
     }
   });
 
   return list;
 }
 
-function getBookingDateStatus(item) {
-  if (item.isPlanned) {
-    return { isFuture: true, label: '🎯 Geplanter Kauf / Vorhaben (Nicht fest)', badgeClass: 'status-planned' };
+// --------------------------------------------------------------------------
+// 7. BERECHNUNGEN: TAGESGENAU, MONAT, 3M, 6M, JAHR
+// --------------------------------------------------------------------------
+function calculateBalancesUpToDate(targetDateStr) {
+  const balances = {
+    bank: Number(appState.initialBalances.bank || 0),
+    paypal: Number(appState.initialBalances.paypal || 0),
+    savings: Number(appState.initialBalances.savings || 0),
+    cash: Number(appState.initialBalances.cash || 0)
+  };
+
+  const targetDate = new Date(targetDateStr + 'T23:59:59');
+  const targetYear = targetDate.getFullYear();
+  const targetMonth = targetDate.getMonth();
+
+  // 1. Alle regulären Buchungen bis zu diesem Datum
+  appState.transactions.forEach(tx => {
+    if (tx.date <= targetDateStr) {
+      const amount = Number(tx.amount);
+      if (tx.type === 'income') {
+        if (balances[tx.account] !== undefined) balances[tx.account] += amount;
+      } else if (tx.type === 'expense') {
+        if (balances[tx.account] !== undefined) balances[tx.account] -= amount;
+      } else if (tx.type === 'transfer') {
+        if (balances[tx.fromAccount] !== undefined) balances[tx.fromAccount] -= amount;
+        if (balances[tx.toAccount] !== undefined) balances[tx.toAccount] += amount;
+      }
+    }
+  });
+
+  // 2. Alle wiederkehrenden Daueraufträge & Sparpläne bis zu diesem Tag
+  const startY = 2025;
+  for (let y = startY; y <= targetYear; y++) {
+    const endM = (y === targetYear) ? targetMonth : 11;
+    for (let m = 0; m <= endM; m++) {
+      const recTxList = getRecurringTransactionsForMonth(y, m);
+      recTxList.forEach(rtx => {
+        if (rtx.date <= targetDateStr) {
+          const amount = Number(rtx.amount);
+          if (rtx.type === 'income') {
+            if (balances[rtx.account] !== undefined) balances[rtx.account] += amount;
+          } else if (rtx.type === 'expense') {
+            if (balances[rtx.account] !== undefined) balances[rtx.account] -= amount;
+          } else if (rtx.type === 'transfer') {
+            if (balances[rtx.fromAccount] !== undefined) balances[rtx.fromAccount] -= amount;
+            if (balances[rtx.toAccount] !== undefined) balances[rtx.toAccount] += amount;
+          }
+        }
+      });
+    }
   }
 
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-
-  if (item.date > todayStr) {
-    return { isFuture: true, label: '⏳ Steht noch aus (Zukunft)', badgeClass: 'status-future' };
-  } else {
-    return { isFuture: false, label: '✅ Bereits gebucht', badgeClass: 'status-booked' };
-  }
+  const total = balances.bank + balances.paypal + balances.savings + balances.cash;
+  return { ...balances, total };
 }
 
-// --------------------------------------------------------------------------
-// 6. BERECHNUNGEN: MONAT & TAG
-// --------------------------------------------------------------------------
 function calculateMonthStats(year, month) {
   let income = 0;
   let expense = 0;
@@ -1762,110 +1927,57 @@ function calculateDayStats(dateStr) {
   };
 }
 
+function calculateMultiMonthStats(year, startMonth, countMonths) {
+  let totalIncome = 0;
+  let totalExpense = 0;
+  let incomeCount = 0;
+  let expenseCount = 0;
+  const allIncomeList = [];
+  const allExpenseList = [];
+  const monthsBreakdown = [];
 
-// --------------------------------------------------------------------------
-// 6. BERECHNUNGEN: MONAT, TAG & TAGESGENAUE KONTOSTÄNDE
-// --------------------------------------------------------------------------
-function calculateBalancesUpToDate(targetDateStr) {
-  const balances = {
-    bank: Number(appState.initialBalances.bank || 0),
-    paypal: Number(appState.initialBalances.paypal || 0),
-    savings: Number(appState.initialBalances.savings || 0),
-    cash: Number(appState.initialBalances.cash || 0)
-  };
+  for (let i = 0; i < countMonths; i++) {
+    const m = startMonth + i;
+    const stats = calculateMonthStats(year, m);
+    totalIncome += stats.income;
+    totalExpense += stats.expense;
+    incomeCount += stats.incomeCount;
+    expenseCount += stats.expenseCount;
+    allIncomeList.push(...stats.incomeList);
+    allExpenseList.push(...stats.expenseList);
 
-  const targetDate = new Date(targetDateStr + 'T23:59:59');
-  const targetYear = targetDate.getFullYear();
-  const targetMonth = targetDate.getMonth();
-
-  // 1. Alle regulären Buchungen bis zu diesem Datum
-  appState.transactions.forEach(tx => {
-    if (tx.date <= targetDateStr) {
-      const amount = Number(tx.amount);
-      if (tx.type === 'income') {
-        if (balances[tx.account] !== undefined) balances[tx.account] += amount;
-      } else if (tx.type === 'expense') {
-        if (balances[tx.account] !== undefined) balances[tx.account] -= amount;
-      } else if (tx.type === 'transfer') {
-        if (balances[tx.fromAccount] !== undefined) balances[tx.fromAccount] -= amount;
-        if (balances[tx.toAccount] !== undefined) balances[tx.toAccount] += amount;
-      }
-    }
-  });
-
-  // 2. Alle wiederkehrenden Daueraufträge & Sparpläne bis zu diesem Tag
-  const startY = 2025;
-  for (let y = startY; y <= targetYear; y++) {
-    const endM = (y === targetYear) ? targetMonth : 11;
-    for (let m = 0; m <= endM; m++) {
-      const recTxList = getRecurringTransactionsForMonth(y, m);
-      recTxList.forEach(rtx => {
-        if (rtx.date <= targetDateStr) {
-          const amount = Number(rtx.amount);
-          if (rtx.type === 'income') {
-            if (balances[rtx.account] !== undefined) balances[rtx.account] += amount;
-          } else if (rtx.type === 'expense') {
-            if (balances[rtx.account] !== undefined) balances[rtx.account] -= amount;
-          } else if (rtx.type === 'transfer') {
-            if (balances[rtx.fromAccount] !== undefined) balances[rtx.fromAccount] -= amount;
-            if (balances[rtx.toAccount] !== undefined) balances[rtx.toAccount] += amount;
-          }
-        }
-      });
-    }
+    monthsBreakdown.push({
+      monthIndex: m,
+      monthName: MONTH_NAMES[m],
+      income: stats.income,
+      expense: stats.expense,
+      leftover: stats.leftover
+    });
   }
 
-  const total = balances.bank + balances.paypal + balances.savings + balances.cash;
-  return { ...balances, total };
+  allIncomeList.sort((a, b) => new Date(b.date) - new Date(a.date));
+  allExpenseList.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  return {
+    totalIncome,
+    totalExpense,
+    totalLeftover: totalIncome - totalExpense,
+    incomeCount,
+    expenseCount,
+    incomeList: allIncomeList,
+    expenseList: allExpenseList,
+    monthsBreakdown
+  };
 }
-
-function calculateAllTimeBalances() {
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
-  return calculateBalancesUpToDate(todayStr);
-}
-
-function calculateDayAccountChanges(dateStr) {
-  const changes = { bank: 0, paypal: 0, savings: 0, cash: 0 };
-  const d = new Date(dateStr + 'T00:00:00');
-  const year = d.getFullYear();
-  const month = d.getMonth();
-
-  appState.transactions.forEach(tx => {
-    if (tx.date === dateStr) {
-      const amount = Number(tx.amount);
-      if (tx.type === 'income') {
-        if (changes[tx.account] !== undefined) changes[tx.account] += amount;
-      } else if (tx.type === 'expense') {
-        if (changes[tx.account] !== undefined) changes[tx.account] -= amount;
-      } else if (tx.type === 'transfer') {
-        if (changes[tx.fromAccount] !== undefined) changes[tx.fromAccount] -= amount;
-        if (changes[tx.toAccount] !== undefined) changes[tx.toAccount] += amount;
-      }
-    }
-  });
-
-  const recTxList = getRecurringTransactionsForMonth(year, month);
-  recTxList.forEach(rtx => {
-    if (rtx.date === dateStr) {
-      const amount = Number(rtx.amount);
-      if (rtx.type === 'income') {
-        if (changes[rtx.account] !== undefined) changes[rtx.account] += amount;
-      } else if (rtx.type === 'expense') {
-        if (changes[rtx.account] !== undefined) changes[rtx.account] -= amount;
-      } else if (rtx.type === 'transfer') {
-        if (changes[rtx.fromAccount] !== undefined) changes[rtx.fromAccount] -= amount;
-        if (changes[rtx.toAccount] !== undefined) changes[rtx.toAccount] += amount;
-      }
-    }
-  });
-
-  return changes;
-}
-
 
 function formatCurrency(amount) {
   return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+}
+
+function formatDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function formatAccountName(accKey) {
@@ -1874,67 +1986,48 @@ function formatAccountName(accKey) {
     case 'paypal': return '🅿️ PayPal';
     case 'savings': return '📈 Tagesgeld';
     case 'cash': return '💵 Bargeld';
-    default: return accKey;
+    default: return 'Konto';
   }
 }
 
 // --------------------------------------------------------------------------
-// 7. UI AKTUALISIERUNG (ÜBERSICHT: MONAT ODER TAG)
+// 8. HAUPTÜBERSICHT AKTUALISIEREN (UPDATE OVERVIEW)
 // --------------------------------------------------------------------------
-
 function updateOverview() {
-  const now = new Date();
-  const todayStr = now.toISOString().split('T')[0];
+  const periodSection = document.getElementById('section-period-breakdown');
 
   if (currentOverviewMode === 'day') {
-    // TAGES-ANSICHT
+    // 1. TAGES-ANSICHT
+    if (periodSection) periodSection.style.display = 'none';
+
     const dayStats = calculateDayStats(selectedDateStr);
     const dayFormatted = formatDateDisplay(selectedDateStr);
     const dayDateObj = new Date(selectedDateStr + 'T00:00:00');
     const dayName = dayDateObj.toLocaleDateString('de-DE', { weekday: 'long' });
-
-    // TAGESGENAUE KONTOSTÄNDE AM ENDE DIESES TAGES!
     const balances = calculateBalancesUpToDate(selectedDateStr);
-    const dayChanges = calculateDayAccountChanges(selectedDateStr);
 
     document.getElementById('overview-month-title').textContent = `Tagesübersicht für ${dayName}, ${dayFormatted}`;
     document.getElementById('overview-banner-subtitle').textContent = `Hier siehst du den genauen Kontostand am Ende des Tages (${dayFormatted}) und alle Buchungen an diesem Tag.`;
     document.getElementById('section-accounts-heading').textContent = `1. 💳 Deine Kontostände am ${dayFormatted} (Tagesende)`;
 
-    // 1. Kontostände am Stichtag
+    // Kontostände
     document.getElementById('acc-balance-bank').textContent = formatCurrency(balances.bank);
     document.getElementById('acc-balance-paypal').textContent = formatCurrency(balances.paypal);
     document.getElementById('acc-balance-savings').textContent = formatCurrency(balances.savings);
     document.getElementById('acc-balance-cash').textContent = formatCurrency(balances.cash);
 
-    // Tagesveränderung je Konto
-    const formatChange = (val) => {
-      if (val > 0) return `📈 An diesem Tag: +${formatCurrency(val)}`;
-      if (val < 0) return `📉 An diesem Tag: -${formatCurrency(Math.abs(val))}`;
-      return `Keine Buchung an diesem Tag`;
-    };
-    const hintBank = document.querySelector('#acc-balance-bank + .acc-hint');
-    const hintPaypal = document.querySelector('#acc-balance-paypal + .acc-hint');
-    const hintSavings = document.querySelector('#acc-balance-savings + .acc-hint');
-    const hintCash = document.querySelector('#acc-balance-cash + .acc-hint');
-    if (hintBank) hintBank.textContent = formatChange(dayChanges.bank);
-    if (hintPaypal) hintPaypal.textContent = formatChange(dayChanges.paypal);
-    if (hintSavings) hintSavings.textContent = formatChange(dayChanges.savings);
-    if (hintCash) hintCash.textContent = formatChange(dayChanges.cash);
-
-    // 2. Einnahmen Tag
+    // Einnahmen & Ausgaben
     document.getElementById('card-month-income').textContent = `+ ${formatCurrency(dayStats.income)}`;
     document.getElementById('income-summary-subtext').textContent = `${dayStats.incomeCount} Einnahmen am ${dayFormatted}`;
-    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen vom ${dayFormatted} anzeigen`;
+    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen vom ${dayFormatted} (mit Bearbeiten & Löschen)`;
     renderDetailedIncomeList(dayStats.incomeList);
 
-    // 3. Ausgaben Tag
     document.getElementById('card-month-expense').textContent = `- ${formatCurrency(dayStats.expense)}`;
     document.getElementById('expense-summary-subtext').textContent = `${dayStats.expenseCount} Ausgaben am ${dayFormatted}`;
-    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben vom ${dayFormatted} anzeigen`;
+    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben vom ${dayFormatted} (mit Bearbeiten & Löschen)`;
     renderDetailedExpenseList(dayStats.expenseList);
 
-    // 4. Saldo für diesen Tag & Gesamtsaldo am Tag
+    // Gesamt
     document.getElementById('card-alltime-total').textContent = formatCurrency(balances.total);
     document.getElementById('total-balance-sub').textContent = `Verfügbares Gesamtguthaben am Ende des Tages (${dayFormatted})`;
 
@@ -1952,52 +2045,38 @@ function updateOverview() {
       leftSub.textContent = `🔴 Tages-Ausgabe: Am ${dayFormatted} hast du ${formatCurrency(Math.abs(dayStats.leftover))} ausgegeben.`;
     } else {
       leftEl.style.color = 'var(--text-primary)';
-      leftSub.textContent = `Ausgeglichen: Keine Einnahmen oder Ausgaben am ${dayFormatted}.`;
+      leftSub.textContent = `Ausgeglichen: Keine Buchungen am ${dayFormatted}.`;
     }
-  } else {
-    // MONATS-ANSICHT
+
+  } else if (currentOverviewMode === 'month') {
+    // 2. MONATS-ANSICHT
+    if (periodSection) periodSection.style.display = 'none';
+
     const stats = calculateMonthStats(selectedYear, selectedMonth);
     const currentMonthTitle = `${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
     const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
     const endOfMonthStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
-
-    // KONTOSTÄNDE AM ENDE DIESES MONATS
     const balances = calculateBalancesUpToDate(endOfMonthStr);
 
     document.getElementById('overview-month-title').textContent = `Monatsübersicht für ${currentMonthTitle}`;
     document.getElementById('overview-banner-subtitle').textContent = `Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis für den gesamten Monat.`;
     document.getElementById('section-accounts-heading').textContent = `1. 💳 Deine Kontostände (Stand: Ende ${currentMonthTitle})`;
 
-    // 1. Kontostände
     document.getElementById('acc-balance-bank').textContent = formatCurrency(balances.bank);
     document.getElementById('acc-balance-paypal').textContent = formatCurrency(balances.paypal);
     document.getElementById('acc-balance-savings').textContent = formatCurrency(balances.savings);
     document.getElementById('acc-balance-cash').textContent = formatCurrency(balances.cash);
 
-    const hintBank = document.querySelector('#acc-balance-bank + .acc-hint');
-    const hintPaypal = document.querySelector('#acc-balance-paypal + .acc-hint');
-    const hintSavings = document.querySelector('#acc-balance-savings + .acc-hint');
-    const hintCash = document.querySelector('#acc-balance-cash + .acc-hint');
-    if (hintBank) hintBank.textContent = "Miete, EC-Karte, Daueraufträge";
-    if (hintPaypal) hintPaypal.textContent = "Online-Shopping, Freunde, Spotify";
-    if (hintSavings) hintSavings.textContent = "Notgroschen, Führerschein, Urlaub";
-    if (hintCash) hintCash.textContent = "Bäcker, Döner, Barbezahlung";
-
-    // 2. Einnahmen Monat
     document.getElementById('card-month-income').textContent = `+ ${formatCurrency(stats.income)}`;
     document.getElementById('income-summary-subtext').textContent = `${stats.incomeCount} Einnahmen im ${MONTH_NAMES[selectedMonth]}`;
-    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen dieses Monats anzeigen (mit Datum & Status)`;
+    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen dieses Monats (mit Bearbeiten & Löschen)`;
     renderDetailedIncomeList(stats.incomeList);
 
-    // 3. Ausgaben Monat
     document.getElementById('card-month-expense').textContent = `- ${formatCurrency(stats.expense)}`;
-    let expNote = `Fixkosten: ${formatCurrency(stats.fixedExpense)}`;
-    if (stats.plannedExpense > 0) expNote += ` | 🎯 Geplant: ${formatCurrency(stats.plannedExpense)}`;
-    document.getElementById('expense-summary-subtext').textContent = `${stats.expenseCount} Ausgaben (${expNote})`;
-    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben dieses Monats anzeigen (mit Datum, Kategorie & Status)`;
+    document.getElementById('expense-summary-subtext').textContent = `${stats.expenseCount} Ausgaben (Fixkosten: ${formatCurrency(stats.fixedExpense)})`;
+    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben dieses Monats (mit Bearbeiten & Löschen)`;
     renderDetailedExpenseList(stats.expenseList);
 
-    // 4. Gesamt über alle Konten & Monats-Saldo
     document.getElementById('card-alltime-total').textContent = formatCurrency(balances.total);
     document.getElementById('total-balance-sub').textContent = `Verfügbares Gesamtguthaben am Ende von ${currentMonthTitle}`;
 
@@ -2017,6 +2096,72 @@ function updateOverview() {
       leftEl.style.color = 'var(--text-primary)';
       leftSub.textContent = `Ausgeglichen: Einnahmen und Ausgaben sind im ${MONTH_NAMES[selectedMonth]} gleich hoch.`;
     }
+
+  } else {
+    // 3. MEHRMONATS- & JAHRES-ANSICHT (3 Monate, 6 Monate, Jahr)
+    if (periodSection) periodSection.style.display = 'block';
+
+    let countMonths = 3;
+    let startMonth = Math.floor(selectedMonth / 3) * 3;
+    let periodTitle = `3-Monats-Übersicht (Quartal: ${MONTH_NAMES[startMonth]} - ${MONTH_NAMES[startMonth + 2]} ${selectedYear})`;
+
+    if (currentOverviewMode === 'halfyear') {
+      countMonths = 6;
+      startMonth = selectedMonth < 6 ? 0 : 6;
+      periodTitle = `6-Monats-Übersicht (${startMonth === 0 ? '1. Halbjahr: Jan - Jun' : '2. Halbjahr: Jul - Dez'} ${selectedYear})`;
+    } else if (currentOverviewMode === 'year') {
+      countMonths = 12;
+      startMonth = 0;
+      periodTitle = `Jahresübersicht für das gesamte Jahr ${selectedYear} (Januar - Dezember)`;
+    }
+
+    const multiStats = calculateMultiMonthStats(selectedYear, startMonth, countMonths);
+    const endMIndex = startMonth + countMonths - 1;
+    const lastDayOfMonth = new Date(selectedYear, endMIndex + 1, 0).getDate();
+    const endOfPeriodStr = `${selectedYear}-${String(endMIndex + 1).padStart(2, '0')}-${String(lastDayOfMonth).padStart(2, '0')}`;
+    const balances = calculateBalancesUpToDate(endOfPeriodStr);
+
+    document.getElementById('overview-month-title').textContent = periodTitle;
+    document.getElementById('overview-banner-subtitle').textContent = `Zusammenfassung aller Einnahmen, Ausgaben und Kontostände über ${countMonths} Monate.`;
+    document.getElementById('section-accounts-heading').textContent = `1. 💳 Deine Kontostände (Stand: Ende ${MONTH_NAMES[endMIndex]} ${selectedYear})`;
+
+    document.getElementById('acc-balance-bank').textContent = formatCurrency(balances.bank);
+    document.getElementById('acc-balance-paypal').textContent = formatCurrency(balances.paypal);
+    document.getElementById('acc-balance-savings').textContent = formatCurrency(balances.savings);
+    document.getElementById('acc-balance-cash').textContent = formatCurrency(balances.cash);
+
+    // Tabelle für den Zeitraum
+    renderPeriodSummaryTable(multiStats.monthsBreakdown);
+
+    document.getElementById('card-month-income').textContent = `+ ${formatCurrency(multiStats.totalIncome)}`;
+    document.getElementById('income-summary-subtext').textContent = `${multiStats.incomeCount} Einnahmen in diesem Zeitraum`;
+    document.getElementById('details-income-summary-text').textContent = `Alle Einnahmen des Zeitraums (${countMonths} Monate, mit Bearbeiten & Löschen)`;
+    renderDetailedIncomeList(multiStats.incomeList);
+
+    document.getElementById('card-month-expense').textContent = `- ${formatCurrency(multiStats.totalExpense)}`;
+    document.getElementById('expense-summary-subtext').textContent = `${multiStats.expenseCount} Ausgaben in diesem Zeitraum`;
+    document.getElementById('details-expense-summary-text').textContent = `Alle Ausgaben des Zeitraums (${countMonths} Monate, mit Bearbeiten & Löschen)`;
+    renderDetailedExpenseList(multiStats.expenseList);
+
+    document.getElementById('card-alltime-total').textContent = formatCurrency(balances.total);
+    document.getElementById('total-balance-sub').textContent = `Voraussichtlicher Kontostand am Ende des Zeitraums (${MONTH_NAMES[endMIndex]} ${selectedYear})`;
+
+    const leftEl = document.getElementById('month-leftover-display');
+    const leftSub = document.getElementById('month-leftover-sub');
+    const leftMainLabel = document.getElementById('leftover-main-label');
+    leftMainLabel.textContent = `Ergebnis über ${countMonths} Monate:`;
+    leftEl.textContent = formatCurrency(multiStats.totalLeftover);
+
+    if (multiStats.totalLeftover > 0) {
+      leftEl.style.color = 'var(--accent-income)';
+      leftSub.textContent = `🟢 Gesamt-Plus: Du hast in diesem Zeitraum ${formatCurrency(multiStats.totalLeftover)} mehr eingenommen als ausgegeben.`;
+    } else if (multiStats.totalLeftover < 0) {
+      leftEl.style.color = 'var(--accent-expense)';
+      leftSub.textContent = `⚠️ Gesamt-Minus: Du hast in diesem Zeitraum ${formatCurrency(Math.abs(multiStats.totalLeftover))} mehr ausgegeben als eingenommen.`;
+    } else {
+      leftEl.style.color = 'var(--text-primary)';
+      leftSub.textContent = `Ausgeglichen im Zeitraum.`;
+    }
   }
 
   // Simulator & Settings
@@ -2026,46 +2171,277 @@ function updateOverview() {
   renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
 }
 
+function renderPeriodSummaryTable(breakdown) {
+  const tbody = document.getElementById('period-table-body');
+  if (!tbody) return;
 
-// KAUF-SIMULATOR LOGIK
+  tbody.innerHTML = '';
+  breakdown.forEach(row => {
+    const tr = document.createElement('tr');
+    const isPlus = row.leftover >= 0;
+    tr.innerHTML = `
+      <td><strong>${row.monthName}</strong></td>
+      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(row.income)}</td>
+      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(row.expense)}</td>
+      <td class="text-right" style="font-weight: bold; color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+        ${isPlus ? '+' : ''} ${formatCurrency(row.leftover)}
+      </td>
+      <td class="text-center">
+        <span class="status-badge ${isPlus ? 'status-booked' : 'status-future'}">
+          ${isPlus ? '🟢 Plus' : '🔴 Minus'}
+        </span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// --------------------------------------------------------------------------
+// 9. EINNAHMEN & AUSGABEN LISTEN MIT "BEARBEITEN" (EDIT) & "LÖSCHEN"
+// --------------------------------------------------------------------------
+function renderDetailedIncomeList(items) {
+  const feed = document.getElementById('overview-income-items-feed');
+  if (!feed) return;
+
+  if (items.length === 0) {
+    feed.innerHTML = '<div class="empty-state">Keine Einnahmen im ausgewählten Zeitraum eingetragen.</div>';
+    return;
+  }
+
+  let html = '<ul class="tx-list" role="list">';
+  items.forEach(tx => {
+    const isFuture = new Date(tx.date) > new Date();
+    const dateFormatted = formatDateDisplay(tx.date);
+
+    let badgeHtml = '';
+    if (tx.isPlanned) {
+      badgeHtml = `<span class="status-badge status-planned">🎯 Geplante Einnahme</span>`;
+    } else if (isFuture) {
+      badgeHtml = `<span class="status-badge status-future">⏳ Kommt noch (${dateFormatted})</span>`;
+    } else {
+      badgeHtml = `<span class="status-badge status-booked">✓ Erhalten (${dateFormatted})</span>`;
+    }
+
+    const editBtn = tx.isRecurring ? 
+      `<button type="button" class="btn-edit-tx" onclick="openEditRecModal('${tx.recurringId}')" title="Dauerauftrag bearbeiten">✏️ Bearbeiten</button>` :
+      `<button type="button" class="btn-edit-tx" onclick="openEditTxModal('${tx.id}')" title="Einnahme bearbeiten">✏️ Bearbeiten</button>`;
+
+    const deleteBtn = tx.isRecurring ?
+      `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag löschen">🗑️ Löschen</button>` :
+      `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Einnahme löschen">🗑️ Löschen</button>`;
+
+    html += `
+      <li class="tx-item" tabindex="0" aria-label="Einnahme: ${tx.category}, Betrag: + ${formatCurrency(tx.amount)}, Datum: ${dateFormatted}">
+        <div class="tx-info">
+          <span class="tx-icon" aria-hidden="true">🟢</span>
+          <div class="tx-details">
+            <span class="tx-cat-name">${tx.category || 'Einnahme'}</span>
+            <span class="tx-account-badge">${formatAccountName(tx.account)}</span>
+            ${badgeHtml}
+            ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+          </div>
+        </div>
+        <div class="tx-amount-col">
+          <span class="tx-sum income">+ ${formatCurrency(tx.amount)}</span>
+          ${editBtn}
+          ${deleteBtn}
+        </div>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  feed.innerHTML = html;
+}
+
+function renderDetailedExpenseList(items) {
+  const feed = document.getElementById('overview-expense-items-feed');
+  if (!feed) return;
+
+  if (items.length === 0) {
+    feed.innerHTML = '<div class="empty-state">Keine Ausgaben im ausgewählten Zeitraum eingetragen.</div>';
+    return;
+  }
+
+  let html = '<ul class="tx-list" role="list">';
+  items.forEach(tx => {
+    const isFuture = new Date(tx.date) > new Date();
+    const dateFormatted = formatDateDisplay(tx.date);
+
+    let badgeHtml = '';
+    if (tx.isPlanned) {
+      badgeHtml = `<span class="status-badge status-planned">🎯 Geplanter Kauf (Wunsch)</span>`;
+    } else if (tx.costType === 'fixed') {
+      badgeHtml = `<span class="status-badge status-future">🔁 Feste Fixkosten (${dateFormatted})</span>`;
+    } else if (isFuture) {
+      badgeHtml = `<span class="status-badge status-future">⏳ Geht noch ab (${dateFormatted})</span>`;
+    } else {
+      badgeHtml = `<span class="status-badge status-booked">✓ Abgebucht / Bezahlt (${dateFormatted})</span>`;
+    }
+
+    const editBtn = tx.isRecurring ? 
+      `<button type="button" class="btn-edit-tx" onclick="openEditRecModal('${tx.recurringId}')" title="Dauerauftrag bearbeiten">✏️ Bearbeiten</button>` :
+      `<button type="button" class="btn-edit-tx" onclick="openEditTxModal('${tx.id}')" title="Ausgabe bearbeiten">✏️ Bearbeiten</button>`;
+
+    const deleteBtn = tx.isRecurring ?
+      `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag löschen">🗑️ Löschen</button>` :
+      `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Ausgabe löschen">🗑️ Löschen</button>`;
+
+    html += `
+      <li class="tx-item" tabindex="0" aria-label="Ausgabe: ${tx.category}, Betrag: - ${formatCurrency(tx.amount)}, Datum: ${dateFormatted}">
+        <div class="tx-info">
+          <span class="tx-icon" aria-hidden="true">🔴</span>
+          <div class="tx-details">
+            <span class="tx-cat-name">${tx.category || 'Ausgabe'}</span>
+            <span class="tx-account-badge">${formatAccountName(tx.account)}</span>
+            ${badgeHtml}
+            ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+          </div>
+        </div>
+        <div class="tx-amount-col">
+          <span class="tx-sum expense">- ${formatCurrency(tx.amount)}</span>
+          ${editBtn}
+          ${deleteBtn}
+        </div>
+      </li>
+    `;
+  });
+  html += '</ul>';
+  feed.innerHTML = html;
+}
+
+// --------------------------------------------------------------------------
+// 10. BEARBEITEN-MODALS (EDIT TRANSACTION & EDIT RECURRING)
+// --------------------------------------------------------------------------
+function openEditTxModal(id) {
+  const tx = appState.transactions.find(t => t.id === id);
+  if (!tx) return;
+
+  document.getElementById('edit-tx-id').value = tx.id;
+  document.getElementById('edit-tx-amount').value = tx.amount;
+  document.getElementById('edit-tx-date').value = tx.date;
+  document.getElementById('edit-tx-account').value = tx.account || 'bank';
+  document.getElementById('edit-tx-category').value = tx.category || '';
+  document.getElementById('edit-tx-desc').value = tx.description || '';
+
+  const modal = document.getElementById('edit-tx-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.getElementById('edit-tx-amount').focus();
+    announceNVDA(`Bearbeiten-Dialog geöffnet für ${tx.category || 'Buchung'}.`);
+  }
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('edit-tx-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveEditedTransaction(event) {
+  event.preventDefault();
+  const id = document.getElementById('edit-tx-id').value;
+  const amount = parseFloat(document.getElementById('edit-tx-amount').value);
+  const date = document.getElementById('edit-tx-date').value;
+  const account = document.getElementById('edit-tx-account').value;
+  const category = document.getElementById('edit-tx-category').value.trim();
+  const description = document.getElementById('edit-tx-desc').value.trim();
+
+  const idx = appState.transactions.findIndex(t => t.id === id);
+  if (idx === -1) return;
+
+  appState.transactions[idx].amount = amount;
+  appState.transactions[idx].date = date;
+  appState.transactions[idx].account = account;
+  appState.transactions[idx].category = category;
+  appState.transactions[idx].description = description;
+
+  closeEditModal();
+  saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Änderungen für ${category} über ${formatCurrency(amount)} erfolgreich gespeichert.`);
+}
+
+function openEditRecModal(recId) {
+  const rec = appState.recurring.find(r => r.id === recId);
+  if (!rec) return;
+
+  document.getElementById('edit-rec-id').value = rec.id;
+  document.getElementById('edit-rec-amount').value = rec.amount;
+  document.getElementById('edit-rec-interval').value = rec.interval || 'monthly';
+  document.getElementById('edit-rec-day').value = rec.day || 1;
+  document.getElementById('edit-rec-name').value = rec.name || '';
+
+  const modal = document.getElementById('edit-rec-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    document.getElementById('edit-rec-amount').focus();
+    announceNVDA(`Bearbeiten-Dialog geöffnet für Dauerauftrag ${rec.name}.`);
+  }
+}
+
+function closeEditRecModal() {
+  const modal = document.getElementById('edit-rec-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function saveEditedRecurring(event) {
+  event.preventDefault();
+  const id = document.getElementById('edit-rec-id').value;
+  const amount = parseFloat(document.getElementById('edit-rec-amount').value);
+  const interval = document.getElementById('edit-rec-interval').value;
+  const day = parseInt(document.getElementById('edit-rec-day').value, 10);
+  const name = document.getElementById('edit-rec-name').value.trim();
+
+  const idx = appState.recurring.findIndex(r => r.id === id);
+  if (idx === -1) return;
+
+  appState.recurring[idx].amount = amount;
+  appState.recurring[idx].interval = interval;
+  appState.recurring[idx].day = day;
+  appState.recurring[idx].name = name;
+
+  closeEditRecModal();
+  saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Dauerauftrag ${name} über ${formatCurrency(amount)} erfolgreich gespeichert.`);
+}
+
+// --------------------------------------------------------------------------
+// 11. KAUF-SIMULATOR
+// --------------------------------------------------------------------------
 function runPurchaseSimulation() {
   const priceInput = document.getElementById('sim-item-price');
   const nameInput = document.getElementById('sim-item-name');
   const resultBox = document.getElementById('sim-result-box');
   const saveAction = document.getElementById('sim-save-action');
-
   if (!priceInput || !resultBox) return;
 
   const price = parseFloat(priceInput.value);
-  const itemName = (nameInput && nameInput.value.trim()) || "Dein geplanter Kauf";
+  const itemName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : 'Dieser Kauf';
 
   if (isNaN(price) || price <= 0) {
-    resultBox.innerHTML = `<p>💡 <em>Gib oben einen Betrag ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>`;
+    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Geld noch übrig bleibt.</em></p>';
     if (saveAction) saveAction.style.display = 'none';
     return;
   }
 
   const stats = calculateMonthStats(selectedYear, selectedMonth);
   const currentLeftover = stats.leftover;
-  const simulatedLeftover = currentLeftover - price;
+  const newLeftover = currentLeftover - price;
+  const isAffordable = newLeftover >= 0;
 
   let msg = '';
-  let color = 'var(--accent-income)';
-
-  if (simulatedLeftover >= 0) {
-    color = 'var(--accent-income)';
+  if (isAffordable) {
     msg = `
-      <div style="color: ${color};">
-        <p>✅ <strong>Grünes Licht – Kauf ist sicher möglich!</strong></p>
-        <p>Wenn du <strong>${escapeHtml(itemName)}</strong> für <strong>${formatCurrency(price)}</strong> kaufst, hast du im ${MONTH_NAMES[selectedMonth]} immer noch <strong>${formatCurrency(simulatedLeftover)}</strong> übrig.</p>
+      <div style="color: var(--accent-income);">
+        🟢 <strong>DAS PASST INS BUDGET!</strong><br>
+        Wenn du dir <em>${itemName}</em> für <strong>${formatCurrency(price)}</strong> kaufst, hast du im ${MONTH_NAMES[selectedMonth]} immer noch <strong>${formatCurrency(newLeftover)}</strong> übrig.
       </div>
     `;
   } else {
-    color = 'var(--accent-expense)';
     msg = `
-      <div style="color: ${color};">
-        <p>⚠️ <strong>Achtung – Defizitgefahr!</strong></p>
-        <p>Wenn du <strong>${escapeHtml(itemName)}</strong> für <strong>${formatCurrency(price)}</strong> kaufst, wärst du in diesem Monat mit <strong>- ${formatCurrency(Math.abs(simulatedLeftover))}</strong> im Minus!</p>
+      <div style="color: var(--accent-expense);">
+        ⚠️ <strong>ACHTUNG: KAUF ÜBERSTEIGT DEIN BUDGET!</strong><br>
+        Wenn du dir <em>${itemName}</em> für <strong>${formatCurrency(price)}</strong> kaufst, wärst du im ${MONTH_NAMES[selectedMonth]} um <strong>${formatCurrency(Math.abs(newLeftover))}</strong> im Minus!
       </div>
     `;
   }
@@ -2074,449 +2450,343 @@ function runPurchaseSimulation() {
   if (saveAction) saveAction.style.display = 'block';
 }
 
-async function saveSimulatedPurchase() {
-  const price = parseFloat(document.getElementById('sim-item-price').value);
-  const itemName = document.getElementById('sim-item-name').value.trim() || "Geplante Anschaffung";
+function saveSimulatedPurchase() {
+  const priceInput = document.getElementById('sim-item-price');
+  const nameInput = document.getElementById('sim-item-name');
+  if (!priceInput || !nameInput) return;
 
-  if (isNaN(price) || price <= 0) return;
+  const amount = parseFloat(priceInput.value);
+  const name = nameInput.value.trim() || 'Geplante Anschaffung';
+  if (isNaN(amount) || amount <= 0) return;
 
-  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-  const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
+  const plannedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-15`;
 
-  const tx = {
-    id: Date.now().toString(),
+  const newTx = {
+    id: `planned_${Date.now()}`,
     type: 'expense',
     account: 'bank',
-    amount: price,
+    amount: amount,
     category: 'Shopping & Kleidung',
-    description: `🎯 Geplanter Kauf: ${itemName}`,
-    date: dateStr,
+    description: name,
+    costType: 'variable',
     isPlanned: true,
-    timestamp: new Date().toISOString()
+    date: plannedDateStr
   };
 
-  appState.transactions.unshift(tx);
-  await saveEncryptedData();
+  appState.transactions.push(newTx);
+  saveStateToEncryptedStorage();
+  updateOverview();
 
-  document.getElementById('sim-item-price').value = '';
-  document.getElementById('sim-item-name').value = '';
+  priceInput.value = '';
+  nameInput.value = '';
   runPurchaseSimulation();
 
-  announceNVDA(`Geplanter Kauf "${itemName}" über ${formatCurrency(price)} gespeichert.`);
-}
-
-function renderDetailedIncomeList(incomeList) {
-  const container = document.getElementById('overview-income-items-feed');
-  if (!container) return;
-
-  if (incomeList.length === 0) {
-    container.innerHTML = `<p class="empty-state">Keine Einnahmen für diesen Zeitraum vorhanden.</p>`;
-    return;
-  }
-
-  let html = '<ul class="tx-list">';
-  incomeList.forEach(item => {
-    const status = getBookingDateStatus(item);
-    const dateFormatted = formatDateDisplay(item.date);
-    const icon = item.isRecurringInstance ? '🔁' : (item.isPlanned ? '🎯' : '📥');
-    const srText = `Einnahme am ${dateFormatted}: ${formatCurrency(item.amount)} von ${item.category} auf ${formatAccountName(item.account)}. Status: ${status.label}`;
-
-    html += `
-      <li class="tx-item" tabindex="0" aria-label="${srText}">
-        <div class="tx-info">
-          <span class="tx-icon" aria-hidden="true">${icon}</span>
-          <div class="tx-details">
-            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
-            <span class="tx-account-badge">📅 Datum: <strong>${dateFormatted}</strong> | Auf: ${formatAccountName(item.account)}</span>
-            <span class="status-badge ${status.badgeClass}">${status.label}</span>
-          </div>
-        </div>
-        <div class="tx-amount-col">
-          <span class="tx-sum income">+ ${formatCurrency(item.amount)}</span>
-          ${!item.isRecurringInstance ? `
-            <button class="btn-delete-tx" onclick="deleteTransaction('${item.id}')" aria-label="Einnahme löschen">🗑️</button>
-          ` : ''}
-        </div>
-      </li>
-    `;
-  });
-  html += '</ul>';
-  container.innerHTML = html;
-}
-
-function renderDetailedExpenseList(expenseList) {
-  const container = document.getElementById('overview-expense-items-feed');
-  if (!container) return;
-
-  if (expenseList.length === 0) {
-    container.innerHTML = `<p class="empty-state">Keine Ausgaben für diesen Zeitraum vorhanden.</p>`;
-    return;
-  }
-
-  let html = '<ul class="tx-list">';
-  expenseList.forEach(item => {
-    const status = getBookingDateStatus(item);
-    const dateFormatted = formatDateDisplay(item.date);
-    const icon = item.isRecurringInstance ? '🔁' : (item.isPlanned ? '🎯' : '🔴');
-    const srText = `Ausgabe am ${dateFormatted}: ${formatCurrency(item.amount)} für ${item.category} über ${formatAccountName(item.account)}. Status: ${status.label}`;
-
-    html += `
-      <li class="tx-item" tabindex="0" aria-label="${srText}">
-        <div class="tx-info">
-          <span class="tx-icon" aria-hidden="true">${icon}</span>
-          <div class="tx-details">
-            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
-            <span class="tx-account-badge">📅 Datum: <strong>${dateFormatted}</strong> | Von: ${formatAccountName(item.account)}</span>
-            <span class="status-badge ${status.badgeClass}">${status.label}</span>
-          </div>
-        </div>
-        <div class="tx-amount-col">
-          <span class="tx-sum expense">- ${formatCurrency(item.amount)}</span>
-          ${!item.isRecurringInstance ? `
-            <button class="btn-delete-tx" onclick="deleteTransaction('${item.id}')" aria-label="Ausgabe löschen">🗑️</button>
-          ` : ''}
-        </div>
-      </li>
-    `;
-  });
-  html += '</ul>';
-  container.innerHTML = html;
-}
-
-function formatDateDisplay(dateStr) {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length === 3) {
-    return `${parts[2]}.${parts[1]}.${parts[0]}`;
-  }
-  return dateStr;
+  announceNVDA(`Geplanter Kauf von ${name} über ${formatCurrency(amount)} für ${MONTH_NAMES[selectedMonth]} gespeichert!`);
 }
 
 // --------------------------------------------------------------------------
-// 8. ZUKUNFTS-VORSCHAU & PROGNOSE
+// 12. JAHRESTABELLE & PROGNOSE
 // --------------------------------------------------------------------------
+function renderAnnualTable(yearStr) {
+  const year = parseInt(yearStr, 10);
+  const tbody = document.getElementById('annual-table-body');
+  const tfoot = document.getElementById('annual-table-foot');
+  if (!tbody) return;
+
+  tbody.innerHTML = '';
+  let sumIncome = 0;
+  let sumExpense = 0;
+
+  for (let m = 0; m < 12; m++) {
+    const stats = calculateMonthStats(year, m);
+    sumIncome += stats.income;
+    sumExpense += stats.expense;
+
+    const tr = document.createElement('tr');
+    const isPlus = stats.leftover >= 0;
+    tr.innerHTML = `
+      <td><strong>${MONTH_NAMES[m]} ${year}</strong></td>
+      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
+      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
+      <td class="text-right" style="font-weight: bold; color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+        ${isPlus ? '+' : ''} ${formatCurrency(stats.leftover)}
+      </td>
+      <td class="text-center">
+        <span class="status-badge ${isPlus ? 'status-booked' : 'status-future'}">
+          ${isPlus ? '🟢 Plus' : '🔴 Minus'}
+        </span>
+      </td>
+      <td class="text-center">
+        <button class="btn-jump-month" onclick="jumpToSpecificMonth(${year}, ${m})" title="Diesen Monat öffnen">Öffnen</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (tfoot) {
+    const sumLeft = sumIncome - sumExpense;
+    const isPlus = sumLeft >= 0;
+    tfoot.innerHTML = `
+      <tr>
+        <th>GESAMT ${year}:</th>
+        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(sumIncome)}</td>
+        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(sumExpense)}</td>
+        <td class="text-right" style="color: ${isPlus ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+          ${isPlus ? '+' : ''} ${formatCurrency(sumLeft)}
+        </td>
+        <td class="text-center"><strong>${isPlus ? '🟢 Jahres-Plus' : '🔴 Jahres-Minus'}</strong></td>
+        <td></td>
+      </tr>
+    `;
+  }
+}
+
+function jumpToSpecificMonth(year, month) {
+  selectedYear = year;
+  selectedMonth = month;
+  selectedDateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  currentOverviewMode = 'month';
+  setOverviewMode('month');
+  switchView('overview');
+  announceNVDA(`Gewechselt zu ${MONTH_NAMES[month]} ${year}.`);
+}
+
 function renderFutureForecast(monthsAheadStr) {
-  const monthsAhead = parseInt(monthsAheadStr, 10) || 6;
+  const monthsAhead = parseInt(monthsAheadStr, 10);
   const tbody = document.getElementById('forecast-table-body');
   if (!tbody) return;
 
+  tbody.innerHTML = '';
   const now = new Date();
-  let simYear = now.getFullYear();
-  let simMonth = now.getMonth();
+  let curY = now.getFullYear();
+  let curM = now.getMonth();
 
-  let runningBalance = calculateAllTimeBalances().total;
-  let html = '';
+  let runningTotal = calculateBalancesUpToDate(now.toISOString().split('T')[0]).total;
 
-  for (let i = 0; i < monthsAhead; i++) {
-    const stats = calculateMonthStats(simYear, simMonth);
-    const mName = MONTH_NAMES[simMonth];
-    const isCurrent = (i === 0);
+  for (let i = 1; i <= monthsAhead; i++) {
+    curM++;
+    if (curM > 11) { curM = 0; curY++; }
 
-    runningBalance += stats.leftover;
+    const stats = calculateMonthStats(curY, curM);
+    runningTotal += stats.leftover;
 
-    html += `
-      <tr>
-        <td><strong>${mName} ${simYear}</strong> ${isCurrent ? '<em>(Aktueller Monat)</em>' : ''}</td>
-        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-        <td class="text-right" style="font-weight: 800; color: ${stats.leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-          ${formatCurrency(stats.leftover)}
-        </td>
-        <td class="text-right" style="font-weight: 900; color: ${runningBalance >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-          ${formatCurrency(runningBalance)}
-        </td>
-      </tr>
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${MONTH_NAMES[curM]} ${curY}</strong></td>
+      <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
+      <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
+      <td class="text-right" style="font-weight: bold; color: ${stats.leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
+        ${stats.leftover >= 0 ? '+' : ''} ${formatCurrency(stats.leftover)}
+      </td>
+      <td class="text-right" style="font-weight: 900; color: var(--text-primary);">
+        ${formatCurrency(runningTotal)}
+      </td>
     `;
-
-    simMonth++;
-    if (simMonth > 11) {
-      simMonth = 0;
-      simYear++;
-    }
+    tbody.appendChild(tr);
   }
-
-  tbody.innerHTML = html;
 }
 
 // --------------------------------------------------------------------------
-// 9. FORMULAR-FELDER TOGGLEN
+// 13. FORMULAR HANDLER (ADD EXPENSE, INCOME, TRANSFER)
 // --------------------------------------------------------------------------
 function toggleExpenseFrequencyFields() {
   const freq = document.getElementById('exp-frequency').value;
-  const dateGroup = document.getElementById('exp-date-group');
-  const recDetails = document.getElementById('exp-recurring-details');
-  const yearlyGroup = document.getElementById('exp-yearly-month-group');
-
-  if (freq === 'once' || freq === 'planned') {
-    dateGroup.style.display = 'block';
-    recDetails.style.display = 'none';
-  } else {
-    dateGroup.style.display = 'none';
-    recDetails.style.display = 'block';
-    yearlyGroup.style.display = freq === 'yearly' ? 'block' : 'none';
-  }
+  const isRec = ['monthly', 'yearly', 'quarterly'].includes(freq);
+  document.getElementById('exp-recurring-details').style.display = isRec ? 'block' : 'none';
+  document.getElementById('exp-date-group').style.display = isRec ? 'none' : 'block';
+  document.getElementById('exp-yearly-month-group').style.display = freq === 'yearly' ? 'block' : 'none';
 }
 
 function toggleIncomeFrequencyFields() {
   const freq = document.getElementById('inc-frequency').value;
-  const dateGroup = document.getElementById('inc-date-group');
-  const recDetails = document.getElementById('inc-recurring-details');
-
-  if (freq === 'once' || freq === 'planned') {
-    dateGroup.style.display = 'block';
-    recDetails.style.display = 'none';
-  } else {
-    dateGroup.style.display = 'none';
-    recDetails.style.display = 'block';
-  }
+  const isRec = ['monthly', 'yearly'].includes(freq);
+  document.getElementById('inc-recurring-details').style.display = isRec ? 'block' : 'none';
+  document.getElementById('inc-date-group').style.display = isRec ? 'none' : 'block';
 }
 
 function toggleTransferFrequencyFields() {
   const freq = document.getElementById('trf-frequency').value;
-  const dateGroup = document.getElementById('trf-date-group');
-  const recDetails = document.getElementById('trf-recurring-details');
-
-  if (freq === 'once') {
-    dateGroup.style.display = 'block';
-    recDetails.style.display = 'none';
-  } else {
-    dateGroup.style.display = 'none';
-    recDetails.style.display = 'block';
-  }
+  const isRec = freq === 'monthly';
+  document.getElementById('trf-recurring-details').style.display = isRec ? 'block' : 'none';
+  document.getElementById('trf-date-group').style.display = isRec ? 'none' : 'block';
 }
 
-// --------------------------------------------------------------------------
-// 10. FORMULAR-HANDLER: AUSGABEN, EINNAHMEN, UMBUCHUNGEN
-// --------------------------------------------------------------------------
-async function handleAddExpense(e) {
+function handleAddExpense(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const freq = document.getElementById('exp-frequency').value;
   const account = document.getElementById('exp-account').value;
   const category = document.getElementById('exp-category').value;
+  const date = document.getElementById('exp-date').value;
   const desc = document.getElementById('exp-desc').value.trim();
 
-  if (isNaN(amount) || amount <= 0) {
-    alert("Bitte gib einen Betrag größer als 0 Euro ein.");
-    document.getElementById('exp-amount').focus();
-    return;
-  }
+  if (isNaN(amount) || amount <= 0) return;
 
-  if (freq === 'once' || freq === 'planned') {
-    const date = document.getElementById('exp-date').value;
-    const isPlanned = (freq === 'planned');
-    const tx = {
-      id: Date.now().toString(),
+  if (['monthly', 'yearly', 'quarterly'].includes(freq)) {
+    const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
+    const yearlyMonth = freq === 'yearly' ? document.getElementById('exp-yearly-month').value : null;
+
+    appState.recurring.push({
+      id: `rec_${Date.now()}`,
       type: 'expense',
       account: account,
       amount: amount,
       category: category,
-      description: desc,
-      date: date,
-      isPlanned: isPlanned,
-      timestamp: new Date().toISOString()
-    };
-    appState.transactions.unshift(tx);
-    await saveEncryptedData();
-
-    selectedDateStr = date;
-    const txDate = new Date(date + 'T00:00:00');
-    selectedYear = txDate.getFullYear();
-    selectedMonth = txDate.getMonth();
-    const select = document.getElementById('global-month-select');
-    if (select) select.value = `${selectedYear}-${selectedMonth}`;
-    const dayInput = document.getElementById('global-day-select');
-    if (dayInput) dayInput.value = selectedDateStr;
-
-    const dateStatus = getBookingDateStatus(tx);
-    announceNVDA(`Ausgabe von ${formatCurrency(amount)} für ${category} am ${formatDateDisplay(date)} gespeichert (${dateStatus.label}).`);
-  } else {
-    const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
-    const yearlyMonth = parseInt(document.getElementById('exp-yearly-month').value, 10) || 0;
-
-    const recItem = {
-      id: Date.now().toString(),
-      type: 'expense',
       name: desc || category,
-      amount: amount,
       interval: freq,
       day: day,
       yearlyMonth: yearlyMonth,
       startYear: selectedYear,
       startMonth: selectedMonth,
+      active: true
+    });
+    announceNVDA(`Fester Dauerauftrag ${category} über ${formatCurrency(amount)} gespeichert!`);
+  } else {
+    appState.transactions.push({
+      id: `tx_${Date.now()}`,
+      type: 'expense',
       account: account,
+      amount: amount,
       category: category,
-      active: true,
-      created: new Date().toISOString()
-    };
-    appState.recurring.push(recItem);
-    await saveEncryptedData();
-
-    announceNVDA(`Dauerhafte Ausgabe von ${formatCurrency(amount)} für ${category} gespeichert.`);
+      description: desc,
+      costType: freq === 'planned' ? 'variable' : 'variable',
+      isPlanned: freq === 'planned',
+      date: date
+    });
+    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
   }
 
+  saveStateToEncryptedStorage();
   document.getElementById('form-add-expense').reset();
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
   toggleExpenseFrequencyFields();
+  updateOverview();
   switchView('overview');
 }
 
-async function handleAddIncome(e) {
+function handleAddIncome(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('inc-amount').value);
   const freq = document.getElementById('inc-frequency').value;
   const account = document.getElementById('inc-account').value;
   const category = document.getElementById('inc-category').value;
+  const date = document.getElementById('inc-date').value;
   const desc = document.getElementById('inc-desc').value.trim();
 
-  if (isNaN(amount) || amount <= 0) {
-    alert("Bitte gib einen Betrag größer als 0 Euro ein.");
-    document.getElementById('inc-amount').focus();
-    return;
-  }
+  if (isNaN(amount) || amount <= 0) return;
 
-  if (freq === 'once' || freq === 'planned') {
-    const date = document.getElementById('inc-date').value;
-    const isPlanned = (freq === 'planned');
-    const tx = {
-      id: Date.now().toString(),
+  if (['monthly', 'yearly'].includes(freq)) {
+    const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
+    appState.recurring.push({
+      id: `rec_${Date.now()}`,
+      type: 'income',
+      account: account,
+      amount: amount,
+      category: category,
+      name: desc || category,
+      interval: freq,
+      day: day,
+      startYear: selectedYear,
+      startMonth: selectedMonth,
+      active: true
+    });
+    announceNVDA(`Feste Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
+  } else {
+    appState.transactions.push({
+      id: `tx_${Date.now()}`,
       type: 'income',
       account: account,
       amount: amount,
       category: category,
       description: desc,
-      date: date,
-      isPlanned: isPlanned,
-      timestamp: new Date().toISOString()
-    };
-    appState.transactions.unshift(tx);
-    await saveEncryptedData();
-
-    selectedDateStr = date;
-    const txDate = new Date(date + 'T00:00:00');
-    selectedYear = txDate.getFullYear();
-    selectedMonth = txDate.getMonth();
-    const select = document.getElementById('global-month-select');
-    if (select) select.value = `${selectedYear}-${selectedMonth}`;
-    const dayInput = document.getElementById('global-day-select');
-    if (dayInput) dayInput.value = selectedDateStr;
-
-    const dateStatus = getBookingDateStatus(tx);
-    announceNVDA(`Einnahme von ${formatCurrency(amount)} am ${formatDateDisplay(date)} gespeichert (${dateStatus.label}).`);
-  } else {
-    const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
-
-    const recItem = {
-      id: Date.now().toString(),
-      type: 'income',
-      name: desc || category,
-      amount: amount,
-      interval: freq,
-      day: day,
-      startYear: selectedYear,
-      startMonth: selectedMonth,
-      account: account,
-      category: category,
-      active: true,
-      created: new Date().toISOString()
-    };
-    appState.recurring.push(recItem);
-    await saveEncryptedData();
-
-    announceNVDA(`Dauerhafte Einnahme von ${formatCurrency(amount)} gespeichert.`);
+      isPlanned: freq === 'planned',
+      date: date
+    });
+    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
   }
 
+  saveStateToEncryptedStorage();
   document.getElementById('form-add-income').reset();
+  document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
   toggleIncomeFrequencyFields();
+  updateOverview();
   switchView('overview');
 }
 
-async function handleAddTransfer(e) {
+function handleAddTransfer(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('trf-amount').value);
   const freq = document.getElementById('trf-frequency').value;
-  const fromAcc = document.getElementById('trf-from').value;
-  const toAcc = document.getElementById('trf-to').value;
+  const fromAccount = document.getElementById('trf-from').value;
+  const toAccount = document.getElementById('trf-to').value;
+  const date = document.getElementById('trf-date').value;
   const desc = document.getElementById('trf-desc').value.trim();
 
-  if (isNaN(amount) || amount <= 0) {
-    alert("Bitte Betrag größer als 0 Euro eingeben.");
+  if (isNaN(amount) || amount <= 0 || fromAccount === toAccount) {
+    announceNVDA('Fehler: Quelle und Zielkonto müssen unterschiedlich sein.');
     return;
   }
 
-  if (fromAcc === toAcc) {
-    alert("Startkonto und Zielkonto dürfen nicht identisch sein!");
-    return;
-  }
-
-  if (freq === 'once') {
-    const date = document.getElementById('trf-date').value;
-    const tx = {
-      id: Date.now().toString(),
-      type: 'transfer',
-      fromAccount: fromAcc,
-      toAccount: toAcc,
-      amount: amount,
-      category: `Umbuchung (${formatAccountName(fromAcc)} ➔ ${formatAccountName(toAcc)})`,
-      description: desc,
-      date: date,
-      timestamp: new Date().toISOString()
-    };
-    appState.transactions.unshift(tx);
-    await saveEncryptedData();
-
-    selectedDateStr = date;
-    const dayInput = document.getElementById('global-day-select');
-    if (dayInput) dayInput.value = selectedDateStr;
-
-    announceNVDA(`Umbuchung von ${formatCurrency(amount)} ausgeführt.`);
-  } else {
+  if (freq === 'monthly') {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
-    const recItem = {
-      id: Date.now().toString(),
+    appState.recurring.push({
+      id: `rec_${Date.now()}`,
       type: 'transfer',
-      name: desc || `Sparplan ${formatAccountName(toAcc)}`,
-      fromAccount: fromAcc,
-      toAccount: toAcc,
+      fromAccount: fromAccount,
+      toAccount: toAccount,
       amount: amount,
-      interval: freq,
+      category: 'Umbuchung & Sparplan',
+      name: desc || `Sparplan ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}`,
+      interval: 'monthly',
       day: day,
       startYear: selectedYear,
       startMonth: selectedMonth,
-      category: `Sparen (${formatAccountName(fromAcc)} ➔ ${formatAccountName(toAcc)})`,
-      active: true,
-      created: new Date().toISOString()
-    };
-    appState.recurring.push(recItem);
-    await saveEncryptedData();
-    announceNVDA(`Sparplan über ${formatCurrency(amount)} gespeichert.`);
+      active: true
+    });
+    announceNVDA(`Monatlicher Sparplan über ${formatCurrency(amount)} gespeichert!`);
+  } else {
+    appState.transactions.push({
+      id: `tx_${Date.now()}`,
+      type: 'transfer',
+      fromAccount: fromAccount,
+      toAccount: toAccount,
+      amount: amount,
+      category: 'Umbuchung',
+      description: desc,
+      date: date
+    });
+    announceNVDA(`Umbuchung über ${formatCurrency(amount)} gespeichert!`);
   }
 
+  saveStateToEncryptedStorage();
   document.getElementById('form-add-transfer').reset();
+  document.getElementById('trf-date').value = new Date().toISOString().split('T')[0];
   toggleTransferFrequencyFields();
+  updateOverview();
   switchView('overview');
 }
 
-async function deleteTransaction(id) {
+function deleteTransaction(id) {
   const tx = appState.transactions.find(t => t.id === id);
   if (!tx) return;
 
-  const desc = tx.description || tx.category;
-  if (confirm(`Buchung wirklich löschen: ${formatCurrency(tx.amount)} (${desc})?`)) {
+  if (confirm(`Möchtest du diese Buchung (${tx.category || 'Buchung'}, ${formatCurrency(tx.amount)}) wirklich löschen?`)) {
     appState.transactions = appState.transactions.filter(t => t.id !== id);
-    await saveEncryptedData();
-    announceNVDA(`Buchung über ${formatCurrency(tx.amount)} gelöscht.`);
+    saveStateToEncryptedStorage();
+    updateOverview();
+    announceNVDA('Buchung gelöscht.');
   }
 }
 
-async function deleteRecurring(id) {
-  const item = appState.recurring.find(r => r.id === id);
-  if (!item) return;
+function deleteRecurring(recId) {
+  const rec = appState.recurring.find(r => r.id === recId);
+  if (!rec) return;
 
-  if (confirm(`Dauerauftrag / Sparplan wirklich löschen: "${item.name || item.description}" über ${formatCurrency(item.amount)}?`)) {
-    appState.recurring = appState.recurring.filter(r => r.id !== id);
-    await saveEncryptedData();
-    renderSettingsRecurringList();
-    announceNVDA(`Dauerauftrag gelöscht.`);
+  if (confirm(`Möchtest du den Dauerauftrag / Sparplan "${rec.name}" wirklich löschen?`)) {
+    appState.recurring = appState.recurring.filter(r => r.id !== recId);
+    saveStateToEncryptedStorage();
+    updateOverview();
+    announceNVDA(`Dauerauftrag ${rec.name} gelöscht.`);
   }
 }
 
@@ -2525,386 +2795,376 @@ function renderSettingsRecurringList() {
   if (!container) return;
 
   if (appState.recurring.length === 0) {
-    container.innerHTML = `<p class="field-hint">Aktuell sind keine dauerhaften Daueraufträge oder Sparpläne gespeichert.</p>`;
+    container.innerHTML = '<div class="empty-state">Keine aktiven Daueraufträge oder Sparpläne eingerichtet.</div>';
     return;
   }
 
-  let html = '<ul class="tx-list" style="border: 2px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden;">';
-  appState.recurring.forEach(item => {
-    let sign = '-';
-    let cssClass = 'expense';
-    let icon = '🔴';
-    let accText = '';
-
-    if (item.type === 'expense') {
-      sign = '-';
-      cssClass = 'expense';
-      icon = '🔴';
-      accText = `Konto: ${formatAccountName(item.account)}`;
-    } else if (item.type === 'income') {
-      sign = '+';
-      cssClass = 'income';
-      icon = '🟢';
-      accText = `Konto: ${formatAccountName(item.account)}`;
-    } else if (item.type === 'transfer') {
-      sign = '🔄';
-      cssClass = 'transfer';
-      icon = '🔄';
-      accText = `Sparplan: Von ${formatAccountName(item.fromAccount)} ➔ ${formatAccountName(item.toAccount)}`;
-    }
-    
-    let freqText = 'Monatlich';
-    if (item.interval === 'yearly') freqText = `Einmal im Jahr (im ${MONTH_NAMES[item.yearlyMonth]})`;
-    else if (item.interval === 'quarterly') freqText = 'Alle 3 Monate';
+  let html = '<ul class="tx-list" role="list">';
+  appState.recurring.forEach(rec => {
+    let freqLabel = 'Monatlich';
+    if (rec.interval === 'yearly') freqLabel = `Jährlich im ${MONTH_NAMES[parseInt(rec.yearlyMonth, 10)]}`;
+    else if (rec.interval === 'quarterly') freqLabel = 'Alle 3 Monate';
 
     html += `
-      <li class="tx-item" tabindex="0" aria-label="${item.name || item.description}: ${freqText} ${formatCurrency(item.amount)}">
+      <li class="tx-item" tabindex="0">
         <div class="tx-info">
-          <span class="tx-icon" aria-hidden="true">${icon}</span>
+          <span class="tx-icon" aria-hidden="true">🔁</span>
           <div class="tx-details">
-            <span class="tx-cat-name">${escapeHtml(item.name || item.description || item.category)}</span>
-            <span class="tx-account-badge">${accText} | 📅 ${freqText} am ${item.day}.</span>
+            <span class="tx-cat-name">${rec.name || rec.category}</span>
+            <span class="tx-account-badge">${freqLabel} | Am ${rec.day}. des Monats | ${formatAccountName(rec.account || rec.fromAccount)}</span>
           </div>
         </div>
         <div class="tx-amount-col">
-          <span class="tx-sum ${cssClass}">${sign} ${formatCurrency(item.amount)}</span>
-          <button class="btn-delete-tx" onclick="deleteRecurring('${item.id}')" aria-label="Dauerauftrag löschen">
-            🗑️ Löschen
-          </button>
+          <span class="tx-sum ${rec.type}">${rec.type === 'income' ? '+' : '-'} ${formatCurrency(rec.amount)}</span>
+          <button type="button" class="btn-edit-tx" onclick="openEditRecModal('${rec.id}')">✏️ Bearbeiten</button>
+          <button type="button" class="btn-delete-tx" onclick="deleteRecurring('${rec.id}')">🗑️ Löschen</button>
         </div>
       </li>
     `;
   });
   html += '</ul>';
-
   container.innerHTML = html;
 }
 
 // --------------------------------------------------------------------------
-// 11. JAHRESÜBERSICHT
+// 14. AES-256 WEB CRYPTO ENGINE (PBKDF2 100.000 Runden + GCM)
 // --------------------------------------------------------------------------
-function renderAnnualTable(yearStr) {
-  const year = parseInt(yearStr, 10) || selectedYear;
-  const tbody = document.getElementById('annual-table-body');
-  const tfoot = document.getElementById('annual-table-foot');
-  if (!tbody || !tfoot) return;
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(password),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
 
-  let totalYearIncome = 0;
-  let totalYearExpense = 0;
-  let tbodyHtml = '';
-
-  MONTH_NAMES.forEach((mName, mIdx) => {
-    const stats = calculateMonthStats(year, mIdx);
-    totalYearIncome += stats.income;
-    totalYearExpense += stats.expense;
-
-    const leftover = stats.leftover;
-    const isCurrent = (year === selectedYear && mIdx === selectedMonth);
-    const rowClass = isCurrent ? 'style="font-weight: bold; background-color: var(--bg-surface-elevated);"' : '';
-
-    let statusText = '—';
-    if (stats.income > 0 || stats.expense > 0) {
-      statusText = leftover >= 0 ? '✅ Im Plus' : '⚠️ Im Minus';
-    }
-
-    tbodyHtml += `
-      <tr ${rowClass}>
-        <td><strong>${mName} ${year}</strong> ${isCurrent ? '(Aktiver Monat)' : ''}</td>
-        <td class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(stats.income)}</td>
-        <td class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(stats.expense)}</td>
-        <td class="text-right" style="font-weight: 800; color: ${leftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-          ${formatCurrency(leftover)}
-        </td>
-        <td class="text-center">${statusText}</td>
-        <td class="text-center">
-          <button class="btn-jump-month" onclick="jumpToMonth(${year}, ${mIdx})" aria-label="Zu ${mName} ${year} wechseln">
-            👉 Anzeigen
-          </button>
-        </td>
-      </tr>
-    `;
-  });
-
-  tbody.innerHTML = tbodyHtml;
-
-  const totalYearLeftover = totalYearIncome - totalYearExpense;
-  tfoot.innerHTML = `
-    <tr>
-      <th>GESAMT JAHR ${year}</th>
-      <th class="text-right" style="color: var(--accent-income);">+ ${formatCurrency(totalYearIncome)}</th>
-      <th class="text-right" style="color: var(--accent-expense);">- ${formatCurrency(totalYearExpense)}</th>
-      <th class="text-right" style="color: ${totalYearLeftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-        ${formatCurrency(totalYearLeftover)}
-      </th>
-      <th class="text-center">${totalYearLeftover >= 0 ? '🎉 Plus' : '⚠️ Defizit'}</th>
-      <th></th>
-    </tr>
-  `;
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
 }
 
-function jumpToMonth(year, monthIdx) {
-  selectedYear = year;
-  selectedMonth = monthIdx;
-  currentOverviewMode = 'month';
-  const select = document.getElementById('global-month-select');
-  if (select) select.value = `${year}-${monthIdx}`;
-  setOverviewMode('month');
-  switchView('overview');
-  updateOverview();
-  announceNVDA(`Zu ${MONTH_NAMES[monthIdx]} ${year} gewechselt.`);
+async function encryptData(dataObj, key) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encodedData = new TextEncoder().encode(JSON.stringify(dataObj));
+
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv: iv },
+    key,
+    encodedData
+  );
+
+  const combined = new Uint8Array(iv.length + ciphertext.byteLength);
+  combined.set(iv, 0);
+  combined.set(new Uint8Array(ciphertext), iv.length);
+
+  return arrayBufferToBase64(combined.buffer);
 }
 
-function escapeHtml(text) {
-  if (!text) return '';
-  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+async function decryptData(base64Ciphertext, key) {
+  const combinedBuffer = base64ToArrayBuffer(base64Ciphertext);
+  const combined = new Uint8Array(combinedBuffer);
+
+  const iv = combined.slice(0, 12);
+  const ciphertext = combined.slice(12);
+
+  const decryptedBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv: iv },
+    key,
+    ciphertext
+  );
+
+  const decodedStr = new TextDecoder().decode(decryptedBuffer);
+  return JSON.parse(decodedStr);
 }
 
-async function handleSetInitialBalances(e) {
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+  const binary_string = atob(base64);
+  const bytes = new Uint8Array(binary_string.length);
+  for (let i = 0; i < binary_string.length; i++) {
+    bytes[i] = binary_string.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+function checkVaultStatus() {
+  const hasVault = localStorage.getItem(STORAGE_DATA_KEY);
+  const firstTimeHint = document.getElementById('first-time-hint');
+  const lockInstructions = document.getElementById('lock-instructions');
+
+  if (!hasVault) {
+    if (firstTimeHint) firstTimeHint.style.display = 'block';
+    if (lockInstructions) lockInstructions.textContent = 'Willkommen! Lege jetzt deine persönliche PIN oder dein Passwort fest, um deinen Datensafe einzurichten.';
+    const btnUnlock = document.getElementById('btn-unlock');
+    if (btnUnlock) btnUnlock.innerHTML = '<span>🔒 <strong>PIN festlegen & Datensafe erstellen</strong> (Enter)</span>';
+  }
+}
+
+async function handlePinSubmit(e) {
   e.preventDefault();
-  appState.initialBalances.bank = parseFloat(document.getElementById('init-bank').value) || 0;
-  appState.initialBalances.paypal = parseFloat(document.getElementById('init-paypal').value) || 0;
-  appState.initialBalances.savings = parseFloat(document.getElementById('init-savings').value) || 0;
-  appState.initialBalances.cash = parseFloat(document.getElementById('init-cash').value) || 0;
+  const pinInput = document.getElementById('pin-input');
+  const errorMsg = document.getElementById('pin-error-msg');
+  const enteredPin = pinInput.value.trim();
 
-  await saveEncryptedData();
-  alert("Startguthaben erfolgreich gespeichert!");
-  switchView('overview');
-  announceNVDA("Startguthaben dauerhaft gespeichert.");
-}
+  if (!enteredPin) return;
 
-function resetAllAppData() {
-  if (confirm("⚠️ DSGVO-LÖSCHUNG: Möchtest du wirklich ALLE Finanzdaten unwiderruflich vernichten?")) {
-    if (confirm("Letzte Bestätigung: Alle Daten werden unwiderruflich gelöscht!")) {
-      localStorage.clear();
-      currentSessionKey = null;
+  const storedData = localStorage.getItem(STORAGE_DATA_KEY);
+  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+
+  try {
+    if (!storedData) {
+      // Neuer Datensafe
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      saltBase64 = arrayBufferToBase64(salt.buffer);
+      localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
+
+      cryptoKey = await deriveKey(enteredPin, salt);
       appState = {
-        theme: 'theme-high-contrast',
         initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
         transactions: [],
         recurring: []
       };
-      location.reload();
-    }
-  }
-}
-
-// --------------------------------------------------------------------------
-// 12. VIEW-NAVIGATION
-// --------------------------------------------------------------------------
-const views = ['overview', 'expense', 'income', 'transfer', 'settings'];
-
-function switchView(targetView) {
-  views.forEach(v => {
-    const tabBtn = document.getElementById(`tab-${v}`);
-    const viewPanel = document.getElementById(`view-${v}`);
-
-    if (v === targetView) {
-      tabBtn.classList.add('active');
-      tabBtn.setAttribute('aria-selected', 'true');
-      tabBtn.setAttribute('tabindex', '0');
-      viewPanel.style.display = 'flex';
+      await saveStateToEncryptedStorage();
+      unlockApp();
+      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
     } else {
-      tabBtn.classList.remove('active');
-      tabBtn.setAttribute('aria-selected', 'false');
-      tabBtn.setAttribute('tabindex', '-1');
-      viewPanel.style.display = 'none';
-    }
-  });
+      // Vorhandener Datensafe
+      const saltBuffer = base64ToArrayBuffer(saltBase64);
+      const salt = new Uint8Array(saltBuffer);
+      const key = await deriveKey(enteredPin, salt);
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  const modeBar = document.getElementById('overview-mode-bar');
-  const monthBar = document.getElementById('month-picker-bar');
-  const dayBar = document.getElementById('day-picker-bar');
+      const decrypted = await decryptData(storedData, key);
+      cryptoKey = key;
+      appState = decrypted;
 
-  if (targetView === 'overview') {
-    if (modeBar) modeBar.style.display = 'block';
-    if (currentOverviewMode === 'day') {
-      if (dayBar) dayBar.style.display = 'block';
-      if (monthBar) monthBar.style.display = 'none';
-    } else {
-      if (monthBar) monthBar.style.display = 'block';
-      if (dayBar) dayBar.style.display = 'none';
-    }
-    updateOverview();
-    announceNVDA(`Übersicht geöffnet.`);
-  } else {
-    if (modeBar) modeBar.style.display = 'none';
-    if (monthBar) monthBar.style.display = 'none';
-    if (dayBar) dayBar.style.display = 'none';
-  }
-
-  if (targetView === 'expense') {
-    document.getElementById('exp-date').value = todayStr;
-    toggleExpenseFrequencyFields();
-    setTimeout(() => document.getElementById('exp-amount').focus(), 100);
-    announceNVDA("Ausgabe eintragen geöffnet.");
-  } else if (targetView === 'income') {
-    document.getElementById('inc-date').value = todayStr;
-    toggleIncomeFrequencyFields();
-    setTimeout(() => document.getElementById('inc-amount').focus(), 100);
-    announceNVDA("Einnahme eintragen geöffnet.");
-  } else if (targetView === 'transfer') {
-    document.getElementById('trf-date').value = todayStr;
-    toggleTransferFrequencyFields();
-    setTimeout(() => document.getElementById('trf-amount').focus(), 100);
-    announceNVDA("Umbuchen & Sparen geöffnet.");
-  } else if (targetView === 'settings') {
-    document.getElementById('init-bank').value = appState.initialBalances.bank || '';
-    document.getElementById('init-paypal').value = appState.initialBalances.paypal || '';
-    document.getElementById('init-savings').value = appState.initialBalances.savings || '';
-    document.getElementById('init-cash').value = appState.initialBalances.cash || '';
-    renderSettingsRecurringList();
-    renderAnnualTable(document.getElementById('year-view-select').value);
-    renderFutureForecast(document.getElementById('forecast-range-select') ? document.getElementById('forecast-range-select').value : 6);
-    announceNVDA("Backup & Einstellungen geöffnet.");
-  }
-}
-
-// --------------------------------------------------------------------------
-// 13. PERSISTENZ (AES-256)
-// --------------------------------------------------------------------------
-async function loadEncryptedData() {
-  const cipherStr = localStorage.getItem(STORAGE_ENCRYPTED_KEY);
-  if (cipherStr && currentSessionKey) {
-    try {
-      const plainJson = await decryptData(cipherStr, currentSessionKey);
-      appState = JSON.parse(plainJson);
+      if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+      if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
-    } catch (e) {
-      console.error("Entschlüsselungsfehler:", e);
+
+      unlockApp();
+      announceNVDA('Erfolgreich entsperrt.');
     }
-  } else {
-    appState = {
-      theme: 'theme-high-contrast',
-      initialBalances: { bank: 0.00, paypal: 0.00, savings: 0.00, cash: 0.00 },
-      transactions: [],
-      recurring: []
-    };
+  } catch (err) {
+    if (errorMsg) {
+      errorMsg.textContent = '❌ Falsche PIN oder Passwort! Zugriff verweigert.';
+      errorMsg.style.display = 'block';
+    }
+    pinInput.value = '';
+    pinInput.focus();
+    announceNVDA('Falsche PIN. Bitte erneut versuchen.', true);
   }
 }
 
-async function saveEncryptedData() {
-  if (!currentSessionKey) return;
-  const plainJson = JSON.stringify(appState);
-  const cipherJson = await encryptData(plainJson, currentSessionKey);
-  localStorage.setItem(STORAGE_ENCRYPTED_KEY, cipherJson);
-  updateOverview();
+async function saveStateToEncryptedStorage() {
+  if (!cryptoKey) return;
+  try {
+    const encStr = await encryptData(appState, cryptoKey);
+    localStorage.setItem(STORAGE_DATA_KEY, encStr);
+  } catch (e) {
+    console.error('Verschlüsselungsfehler:', e);
+  }
 }
 
-function changeTheme(themeName) {
-  document.body.className = themeName;
-  appState.theme = themeName;
-  saveEncryptedData();
-  announceNVDA("Farbkontrast geändert.");
+function unlockApp() {
+  const lockScreen = document.getElementById('lock-screen');
+  const appWrapper = document.getElementById('app-wrapper');
+  if (lockScreen) lockScreen.style.display = 'none';
+  if (appWrapper) appWrapper.style.display = 'block';
+
+  // Formulare vorbefüllen
+  if (appState.initialBalances) {
+    if (document.getElementById('init-bank')) document.getElementById('init-bank').value = appState.initialBalances.bank || '';
+    if (document.getElementById('init-paypal')) document.getElementById('init-paypal').value = appState.initialBalances.paypal || '';
+    if (document.getElementById('init-savings')) document.getElementById('init-savings').value = appState.initialBalances.savings || '';
+    if (document.getElementById('init-cash')) document.getElementById('init-cash').value = appState.initialBalances.cash || '';
+  }
+
+  updateOverview();
+  resetInactivityTimer();
+}
+
+function lockApp() {
+  cryptoKey = null;
+  const lockScreen = document.getElementById('lock-screen');
+  const appWrapper = document.getElementById('app-wrapper');
+  const pinInput = document.getElementById('pin-input');
+  const errorMsg = document.getElementById('pin-error-msg');
+
+  if (appWrapper) appWrapper.style.display = 'none';
+  if (lockScreen) lockScreen.style.display = 'flex';
+  if (errorMsg) errorMsg.style.display = 'none';
+  if (pinInput) {
+    pinInput.value = '';
+    pinInput.focus();
+  }
+  announceNVDA('Haushaltsbuch gesperrt.');
 }
 
 // --------------------------------------------------------------------------
-// 14. BACKUP EXPORT & IMPORT (PC-WECHSEL & DATENSICHERUNG)
+// 15. BACKUP & IMPORT FÜR PC-WECHSEL
 // --------------------------------------------------------------------------
 function exportEncryptedBackup() {
-  const cipherStr = localStorage.getItem(STORAGE_ENCRYPTED_KEY);
-  const salt = localStorage.getItem(PIN_SALT_KEY);
-  const verifier = localStorage.getItem(PIN_VERIFIER_KEY);
+  const storedData = localStorage.getItem(STORAGE_DATA_KEY);
+  const salt = localStorage.getItem(STORAGE_SALT_KEY);
 
-  if (!cipherStr || !verifier) {
-    alert("Keine Daten zum Sichern vorhanden.");
+  if (!storedData || !salt) {
+    announceNVDA('Keine Daten zum Sichern vorhanden.');
     return;
   }
 
-  const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
-
-  const backupPayload = {
-    version: "2.0",
-    appName: "BarrierefreieFinanzApp",
-    exportedAt: now.toISOString(),
+  const backupObj = {
+    app: 'BarrierefreieFinanzApp',
+    version: '2.2.0',
+    timestamp: new Date().toISOString(),
     salt: salt,
-    verifier: verifier,
-    encryptedData: cipherStr
+    vault: storedData
   };
 
-  const jsonStr = JSON.stringify(backupPayload, null, 2);
-  const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+  const jsonStr = JSON.stringify(backupObj, null, 2);
+  const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
+
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Haushaltsbuch_Sicherung_${dateStr}.json`;
+  a.download = `Haushaltsbuch_Sicherung_${new Date().toISOString().split('T')[0]}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 
-  announceNVDA("Verschlüsselte Sicherungsdatei für PC-Wechsel erfolgreich heruntergeladen.");
+  announceNVDA('Verschlüsseltes Backup erfolgreich heruntergeladen!');
 }
 
 function importEncryptedBackup(event) {
-  const file = event.target.files && event.target.files[0];
+  const file = event.target.files[0];
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = function(e) {
     try {
-      const parsed = JSON.parse(e.target.result);
-      if (!parsed.encryptedData || !parsed.verifier || !parsed.salt) {
-        alert("Ungültige Sicherungsdatei! Erforderliche Sicherheits-Schlüssel fehlen.");
-        return;
-      }
-
-      if (confirm("Möchtest du diese Sicherungsdatei wirklich importieren? Deine aktuellen Daten werden dadurch ersetzt.")) {
-        localStorage.setItem(PIN_SALT_KEY, parsed.salt);
-        localStorage.setItem(PIN_VERIFIER_KEY, parsed.verifier);
-        localStorage.setItem(STORAGE_ENCRYPTED_KEY, parsed.encryptedData);
-
-        alert("Sicherungsdatei erfolgreich importiert! Die App wird jetzt neu geladen – bitte gib deine gewohnte PIN ein.");
-        location.reload();
+      const backup = JSON.parse(e.target.result);
+      if (backup.vault && backup.salt) {
+        localStorage.setItem(STORAGE_DATA_KEY, backup.vault);
+        localStorage.setItem(STORAGE_SALT_KEY, backup.salt);
+        announceNVDA('Sicherung erfolgreich importiert! Bitte entsperre jetzt mit deiner PIN.');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        announceNVDA('Fehler: Ungültige Sicherungsdatei.', true);
       }
     } catch (err) {
-      alert("Fehler beim Lesen der Sicherungsdatei: " + err.message);
+      announceNVDA('Fehler beim Lesen der Backup-Datei.', true);
     }
   };
   reader.readAsText(file);
 }
 
-// --------------------------------------------------------------------------
-// 15. TASTATURKÜRZEL FÜR NVDA
-// --------------------------------------------------------------------------
-window.addEventListener('keydown', (e) => {
-  const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
-  const isInput = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+function handleSetInitialBalances(e) {
+  e.preventDefault();
+  appState.initialBalances = {
+    bank: parseFloat(document.getElementById('init-bank').value) || 0,
+    paypal: parseFloat(document.getElementById('init-paypal').value) || 0,
+    savings: parseFloat(document.getElementById('init-savings').value) || 0,
+    cash: parseFloat(document.getElementById('init-cash').value) || 0
+  };
+  saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA('Start-Kontostände gespeichert.');
+}
 
-  if (document.getElementById('lock-screen').style.display !== 'none') return;
+async function handleChangePin(e) {
+  e.preventDefault();
+  const oldPin = document.getElementById('change-old-pin').value;
+  const newPin = document.getElementById('change-new-pin').value;
 
-  if (!isInput) {
-    if (e.key === 'l' || e.key === 'L') {
-      e.preventDefault();
-      lockApp();
-    } else if (e.key === '1') {
-      e.preventDefault();
-      switchView('overview');
-    } else if (e.key === '2') {
-      e.preventDefault();
-      switchView('expense');
-    } else if (e.key === '3') {
-      e.preventDefault();
-      switchView('income');
-    } else if (e.key === '4') {
-      e.preventDefault();
-      switchView('transfer');
-    } else if (e.key === '5') {
-      e.preventDefault();
-      switchView('settings');
-    } else if (e.key === 't' || e.key === 'T') {
-      e.preventDefault();
-      setDayToToday();
-      setOverviewMode('day');
-    }
+  try {
+    const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+    const salt = new Uint8Array(base64ToArrayBuffer(saltBase64));
+    const testKey = await deriveKey(oldPin, salt);
+    await decryptData(localStorage.getItem(STORAGE_DATA_KEY), testKey);
+
+    const newSalt = crypto.getRandomValues(new Uint8Array(16));
+    localStorage.setItem(STORAGE_SALT_KEY, arrayBufferToBase64(newSalt.buffer));
+    cryptoKey = await deriveKey(newPin, newSalt);
+    await saveStateToEncryptedStorage();
+
+    document.getElementById('form-change-pin').reset();
+    announceNVDA('PIN erfolgreich geändert und Daten neu verschlüsselt.');
+  } catch (err) {
+    announceNVDA('Fehler: Alte PIN war nicht korrekt.', true);
   }
-});
+}
 
-// INITIALISIERUNG
-document.addEventListener('DOMContentLoaded', () => {
-  updateTodayDateDisplay();
-  checkLockState();
-});
+function resetAllAppData() {
+  if (confirm('WARNUNG: Möchtest du wirklich alle Buchungen, Kontostände und Schlüssel unwiderruflich löschen?')) {
+    localStorage.removeItem(STORAGE_DATA_KEY);
+    localStorage.removeItem(STORAGE_SALT_KEY);
+    location.reload();
+  }
+}
+
+// --------------------------------------------------------------------------
+// 16. ANSICHT- & DESIGN-WECHSEL
+// --------------------------------------------------------------------------
+function switchView(viewName) {
+  currentActiveView = viewName;
+  ['overview', 'expense', 'income', 'transfer', 'settings'].forEach(v => {
+    const el = document.getElementById(`view-${v}`);
+    const tab = document.getElementById(`tab-${v}`);
+    if (el) el.style.display = v === viewName ? 'flex' : 'none';
+    if (tab) {
+      tab.classList.toggle('active', v === viewName);
+      tab.setAttribute('aria-selected', v === viewName ? 'true' : 'false');
+      tab.tabIndex = v === viewName ? 0 : -1;
+    }
+  });
+
+  const modeBar = document.getElementById('overview-mode-bar');
+  const timeBar = document.getElementById('time-picker-bar');
+  if (modeBar) modeBar.style.display = viewName === 'overview' ? 'block' : 'none';
+  if (timeBar) timeBar.style.display = viewName === 'overview' ? 'block' : 'none';
+
+  if (viewName === 'overview') updateOverview();
+
+  const labels = {
+    overview: 'Übersicht & Zeiträume',
+    expense: 'Ausgabe eintragen',
+    income: 'Einnahme eintragen',
+    transfer: 'Umbuchen & Sparen',
+    settings: 'Backup & Einstellungen'
+  };
+  announceNVDA(`Bereich geöffnet: ${labels[viewName] || viewName}.`);
+}
+
+function changeTheme(themeClass) {
+  document.body.className = themeClass;
+  localStorage.setItem(STORAGE_THEME_KEY, themeClass);
+  announceNVDA(`Kontrast gewechselt zu ${themeClass}.`);
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(STORAGE_THEME_KEY) || 'theme-high-contrast';
+  document.body.className = saved;
+  const sel = document.getElementById('theme-select');
+  if (sel) sel.value = saved;
+}
 
 </script>
 </body>
