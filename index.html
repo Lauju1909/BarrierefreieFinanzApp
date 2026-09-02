@@ -21,12 +21,52 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.5)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 20px;">⭐ Neu in Version 5.3.5 (Umfassende Finanz-Intelligenz Suite)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>💳 Neuer Haupt-Reiter 6: Konto-Optionen &amp; Konten-Verwaltung (Taste 6):</strong><br>
+Verwalte beliebig viele eigene Konten mit allen 9 Kontotypen (Girokonto, Kreditkarte, PayPal, Tagesgeld/Sparkonto, Bargeld, Wertpapier-Depots/ETFs, Krypto, Darlehen, Gutscheine).
+</li>
+<li>
+<strong>🎯 Monats-Budgets &amp; Ausgaben-Limits in Reiter 5 (Einstellungen):</strong><br>
+Setze Ausgaben-Limits für deine Kategorien mit Ampelsystem und automatischer NVDA-Sprachwarnung bei 80% und 100%.
+</li>
+<li>
+<strong>📥 Bank-Kontoauszug / CSV-Import in Reiter 5:</strong><br>
+Kontoauszüge (.csv) aller Banken mit interaktiver Vorschau-Liste einlesen und automatisch kategorisieren lassen.
+</li>
+<li>
+<strong>📄 Druckbarer Monatsbericht &amp; Steuer-Nachweis (PDF-Export in Reiter 5):</strong><br>
+Druckfertige Finanz- und Steuerberichte mit 1 Klick erstellen und ausdrucken.
+</li>
+<li>
+<strong>🔍 Globale Live-Suche &amp; Buchungs-Filter in der Übersicht:</strong><br>
+Blitzschnell nach Läden, Texten, Konten oder Status (Gebucht / Geplant) filtern.
+</li>
+<li>
+<strong>⚠️ Smarte Liquiditäts- &amp; Kontodeckungs-Warnung:</strong><br>
+Rechnet voraus, ob das Girokonto für anstehende Daueraufträge bis Monatsende ausreicht.
+</li>
+<li>
+<strong>🛒 Barrierefreier Einkaufs- &amp; Kassenrechner (ein- und zuklappbar):</strong><br>
+Ganz unten in der Übersicht Artikel &amp; Preise im Supermarkt live zusammenrechnen und direkt als Ausgabe buchen.
+</li>
+<li>
+<strong>🏆 Ausgaben-Rangliste als klappbares Akkordeon:</strong><br>
+Die Top-5-Geldfresser des Monats mit Rangliste und Prozentanteilen.
+</li>
+<li>
+<strong>🔒 100% reiner Textmodus für NVDA-Bildschirmleser (0 Emojis).</strong>
+</li>
+</ul>
+</div>
 <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 20px;">⭐ Neu in Version 5.3.0 (Großes Meilenstein-Update)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -508,6 +548,63 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <!-- =========================================================================
+ MODAL DIALOG: BANK-KONTOAUSZUG CSV VORSCHAU & IMPORT
+ ========================================================================= -->
+<div id="csv-preview-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="csv-modal-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 900px;">
+<h2 id="csv-modal-heading" tabindex="-1">Bank-Kontoauszug Vorschau &amp; Import</h2>
+<p class="field-hint">Überprüfe hier die erkannten Buchungen vor dem endgültigen Speichern. Du kannst Zeilen abwählen oder Kategorien anpassen:</p>
+ 
+<div id="csv-preview-table-container" style="max-height: 50vh; overflow-y: auto; margin-top: 14px; border: 1px solid var(--border-color); border-radius: 6px;">
+  <!-- Dynamisch befüllt -->
+</div>
+
+<div class="form-actions" style="margin-top: 16px;">
+  <button type="button" class="btn btn-primary" onclick="confirmCsvImport()" style="background-color: #4CAF50; border-color: #388E3C; flex: 2;">
+    <span>📥 <strong>Ausgewählte Buchungen importieren</strong></span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="closeCsvPreviewModal()" style="flex: 1;">
+    <span>Abbrechen</span>
+  </button>
+</div>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: DRUCKBARER MONATS- & JAHRESBERICHT (PDF)
+ ========================================================================= -->
+<div id="print-report-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="print-report-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 860px;">
+<div class="no-print" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+  <h2 id="print-report-heading" tabindex="-1" style="margin: 0;">Finanzbericht &amp; Nachweis</h2>
+  <div style="display: flex; gap: 8px;">
+    <button type="button" class="btn btn-primary" onclick="triggerPrintReport()" style="background-color: #2196F3;">
+      <span>🖨️ <strong>Jetzt Drucken / Als PDF speichern</strong></span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="closePrintReportModal()">
+      <span>Schließen</span>
+    </button>
+  </div>
+</div>
+
+<div class="no-print" style="margin-bottom: 14px; display: flex; gap: 10px;">
+  <label style="font-weight: bold; align-self: center;">Berichts-Format:</label>
+  <button type="button" class="btn btn-secondary" id="btn-report-mode-standard" onclick="switchPrintReportMode('standard')" style="font-weight: bold;">
+    📊 Standard Finanzbericht
+  </button>
+  <button type="button" class="btn btn-secondary" id="btn-report-mode-tax" onclick="switchPrintReportMode('tax_official')">
+    🏛️ Behörden- &amp; Steuer-Format
+  </button>
+</div>
+
+<div id="print-report-content" style="background: #ffffff; color: #000000; padding: 20px; border-radius: 6px; font-family: sans-serif; line-height: 1.5;">
+  <!-- Dynamisch generiert -->
+</div>
+</div>
+</div>
+
+
+<!-- =========================================================================
  4. HAUPTANWENDUNG
  ========================================================================= -->
 <div id="app-wrapper" style="display: none;">
@@ -616,6 +713,9 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
 </div>
 
+<!-- LIQUIDITÄTS- & KONTODECKUNGS-WARNUNG -->
+<div id="overview-liquidity-alert" style="display: none;"></div>
+
 <!-- 1. ZUERST: KONTOSTÄNDE -->
 <section class="overview-section" aria-labelledby="section-accounts-heading">
 <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
@@ -645,6 +745,47 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </tbody>
 </table>
 </div>
+</div>
+</section>
+
+<!-- AUSGABEN-RANGLISTE (TOP-GELDFRESSER DES MONATS) -->
+<section class="overview-section" aria-labelledby="expense-ranking-heading">
+<div class="section-card">
+<details class="accessible-accordion" id="details-expense-rankings" open>
+  <summary class="accordion-summary" aria-label="Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen">
+    <span>🏆 <strong id="expense-ranking-heading">Größte Geldfresser des Monats (Ausgaben-Rangliste)</strong></span>
+  </summary>
+  <div class="accordion-content" style="padding-top: 10px;">
+    <div id="overview-expense-rankings">
+      <!-- Dynamisch befüllt -->
+    </div>
+  </div>
+</details>
+</div>
+</section>
+
+<!-- GLOBALE LIVE-SUCHE & BUCHUNGS-FILTER -->
+<section class="overview-section" aria-labelledby="tx-search-heading">
+<div class="tx-filter-bar" role="search" aria-label="Buchungen durchsuchen und filtern">
+  <div class="filter-item">
+    <label for="tx-search-query" class="field-label" style="font-size: 13px;">🔍 <strong>Suche nach Text / Laden:</strong></label>
+    <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, Miete, Amazon..." oninput="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
+  </div>
+  <div class="filter-item">
+    <label for="tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
+    <select id="tx-filter-status" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
+      <option value="all" selected>Alle Buchungen</option>
+      <option value="booked">✅ Nur Gebucht / Erledigt</option>
+      <option value="planned">🎯 Nur Geplant für die Zukunft</option>
+      <option value="recurring">🔁 Nur Daueraufträge</option>
+    </select>
+  </div>
+  <div class="filter-item">
+    <label for="tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
+    <select id="tx-filter-account" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
+      <option value="all" selected>Alle Konten</option>
+    </select>
+  </div>
 </div>
 </section>
 
@@ -741,6 +882,48 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 </section>
+<!-- 6. BARRIEREFREIER EINKAUFS- & KASSENRECHNER (GANZ UNTEN IN DER ÜBERSICHT) -->
+<section class="overview-section" aria-labelledby="shopping-calc-heading" style="margin-top: 24px;">
+<div class="section-card" style="border: 2px solid #4CAF50;">
+<details class="accessible-accordion" id="details-shopping-calc">
+  <summary class="accordion-summary" aria-label="Einkaufs- und Kassenrechner ausklappen oder einklappen">
+    <span>🛒 <strong id="shopping-calc-heading">Einkaufs- &amp; Kassenrechner (Sofort beim Einkaufen zusammenrechnen)</strong></span>
+  </summary>
+  <div class="accordion-content" style="padding-top: 14px;">
+    <p class="field-hint">Tippe während des Einkaufs im Supermarkt Beträge ein – die App rechnet live zusammen und bucht am Ende mit 1 Klick den fertigen Kassenzettel ab:</p>
+    <form id="form-shopping-add-item" onsubmit="handleAddShoppingItem(event)" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
+      <input type="text" id="shopping-item-name" class="large-input" placeholder="Artikel (z. B. Brot, Käse, Obst)" style="flex: 2; min-width: 160px;">
+      <input type="number" step="0.01" min="0.01" id="shopping-item-price" class="large-input" placeholder="Preis in € (z. B. 2,49)" required style="flex: 1; min-width: 120px;">
+      <button type="submit" class="btn btn-primary" style="background-color: #2E7D32; border-color: #1B5E20; white-space: nowrap;">
+        <span>➕ Artikel hinzufügen</span>
+      </button>
+    </form>
+
+    <div id="shopping-cart-table-wrapper" style="margin-top: 12px;">
+      <!-- Dynamisch befüllt -->
+    </div>
+
+    <div style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <select id="shopping-book-account" class="large-select" style="max-width: 180px;">
+          <!-- Konten -->
+        </select>
+        <select id="shopping-book-subcat" class="large-select" style="max-width: 180px;">
+          <!-- Läden -->
+        </select>
+        <button type="button" class="btn btn-primary" onclick="bookShoppingCartAsExpense()" style="background-color: #4CAF50;">
+          <span>💾 <strong>Gesamtsumme als Ausgabe buchen</strong></span>
+        </button>
+      </div>
+      <button type="button" class="btn btn-secondary" onclick="clearShoppingCart()" style="color: #f44336;">
+        <span>Warenkorb leeren</span>
+      </button>
+    </div>
+  </div>
+</details>
+</div>
+</section>
+
 
 </div>
 
@@ -1143,7 +1326,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version:<strong>v5.3.0</strong>(Open Source auf GitHub)
+ Installierte Version:<strong>v5.3.5</strong>(Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -1172,6 +1355,66 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
  
+<!-- MONATS-BUDGETS & AUSGABEN-LIMITS -->
+<section class="settings-box" aria-labelledby="heading-budgets-view" style="border-left: 8px solid #FF9800; margin-top: 18px;">
+<h3 id="heading-budgets-view" data-emoji="🎯">Monats-Budgets &amp; Ausgaben-Limits</h3>
+<p class="field-hint">Setze monatliche Budgetgrenzen für deine Ausgabenkategorien. Die App warnt dich rechtzeitig, wenn ein Budget zu 80% oder 100% aufgebraucht ist:</p>
+
+<form id="form-set-budget" onsubmit="handleSaveBudget(event)" class="accessible-form" style="margin-top: 14px; background: var(--card-bg, #fff); border: 2px solid var(--border-color); border-radius: 8px; padding: 16px;">
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="budget-category-select" class="field-label"><strong>Ausgaben-Kategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <select id="budget-category-select" class="large-select" required>
+        <!-- Kategorien -->
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="budget-amount-input" class="field-label"><strong>Monats-Limit in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="number" step="1" min="1" id="budget-amount-input" class="large-input" placeholder="z. B. 350" required>
+    </div>
+  </div>
+  <div class="form-actions" style="margin-top: 12px;">
+    <button type="submit" class="btn btn-primary" style="background-color: #FF9800; border-color: #F57C00; width: 100%;">
+      <span><strong>Budget festlegen / aktualisieren</strong></span>
+    </button>
+  </div>
+</form>
+
+<div id="budgets-overview-container" style="margin-top: 20px;">
+  <!-- Dynamisch befüllt mit Budget-Balken -->
+</div>
+</section>
+
+
+<!-- BANK-KONTOAUSZUG & CSV-IMPORT -->
+<section class="settings-box" aria-labelledby="csv-import-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
+<h3 id="csv-import-heading" data-emoji="📥">Bank-Kontoauszug / CSV-Datei importieren</h3>
+<p class="field-hint">Lade hier deinen monatlichen Kontoauszug als .csv-Datei (z. B. von Sparkasse, ING, DKB, Volksbank, PayPal) hoch. Die App erkennt die Buchungen automatisch und zeigt dir vor dem Speichern eine praktische Vorschau:</p>
+
+<div class="form-actions" style="margin-top: 12px;">
+  <label class="btn btn-primary" style="background-color: #4CAF50; border-color: #388E3C; flex: 1; cursor: pointer; text-align: center;">
+    <span><strong>Kontoauszug (.csv) auswählen &amp; einlesen</strong></span>
+    <input type="file" id="bank-csv-file-input" accept=".csv,.txt" onchange="handleBankCsvUpload(event)" style="display: none;">
+  </label>
+</div>
+</section>
+
+<!-- DRUCKBARER MONATSBERICHT & PDF-EXPORT -->
+<section class="settings-box" aria-labelledby="print-report-settings-heading" style="border-left: 8px solid #2196F3; margin-top: 18px;">
+<h3 id="print-report-settings-heading" data-emoji="📄">Druckbarer Monatsbericht &amp; Steuer-Nachweis (PDF)</h3>
+<p class="field-hint">Erstelle mit einem Klick einen druckfertigen, sauberen Finanzbericht für deine Unterlagen, den Steuerberater oder Behörden:</p>
+
+<div class="form-actions" style="margin-top: 12px; display: flex; gap: 10px; flex-wrap: wrap;">
+  <button type="button" class="btn btn-primary" onclick="openPrintReportModal()" style="background-color: #2196F3; border-color: #1976D2; flex: 1;">
+    <span><strong>Monatsbericht für aktuellen Monat erstellen</strong></span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="openPrintReportModal(null, null, 'tax_official')" style="flex: 1;">
+    <span><strong>Behörden- &amp; Steuer-Nachweis erstellen</strong></span>
+  </button>
+</div>
+</section>
+
+
 <!-- 3b. EIGENE KATEGORIE ODER GESCHÄFT HINZUFÜGEN & VORSCHLAGEN -->
 <section class="settings-box" aria-labelledby="custom-cat-heading" style="border-left: 8px solid #FF9800; margin-top: 18px;">
 <h3 id="custom-cat-heading" data-emoji="">Eigene Kategorie oder Geschäft hinzufügen</h3>
@@ -1358,7 +1601,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.3.0</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v5.3.5</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

@@ -3,7 +3,49 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 5.3.0 (Aktuelle Version - Grosses Meilenstein-Update)
+VERSION 5.3.5 (Aktuelle Version - Grosse Finanz-Intelligenz Suite)
+--------------------------------------------------------------------------------
+
+* DEDIZIERTER HAUPT-REITER 6: KONTO-OPTIONEN & KONTEN-VERWALTUNG:
+  Ausserhalb der Einstellungen gibt es nun den eigenstaendigen Hauptreiter 6
+  '💳 Konto-Optionen & Konten' (direkt erreichbar ueber das Tastaturkuerzel '6').
+  Lege unbegrenzt viele eigene Konten an und waehle aus allen 9 Kontotypen
+  (Giro, Kreditkarte, PayPal, Tagesgeld, Bar, Depot, Krypto, Darlehen, Sonstiges).
+  Namen und Startguthaben koennen jederzeit geaendert oder Konten geloescht werden.
+
+* MONATS-BUDGETS & AUSGABEN-LIMITS IN REITER 5 (EINSTELLUNGEN):
+  Setze monatliche Budgetgrenzen fuer beliebige Kategorien. Die App warnt
+  dich rechtzeitig per Ampelfarbe und NVDA-Sprachansage bei 80% und 100% Auslastung.
+
+* BANK-KONTOAUSZUG / CSV-IMPORT MIT INTERAKTIVER VORSCHAU:
+  Lade .csv-Kontoauszuege aller gaengigen Banken (Sparkasse, ING, DKB, Volksbank,
+  PayPal u.v.m.) hoch. Die App erkennt Umsaetze automatisch und bietet eine
+  praktische Vorschautabelle vor dem endgueltigen Speichern.
+
+* DRUCKBARER MONATSBERICHT & BEHOERDEN-/STEUER-NACHWEIS (PDF-EXPORT):
+  Erstelle mit einem Klick einen druckfertigen Finanzbericht fuer den aktuellen
+  Monat oder speziell gegliedert fuer Behoerden und das Finanzamt.
+
+* GLOBALE LIVE-SUCHE & BUCHUNGS-FILTER IN DER UEBERSICHT:
+  Durchsuche Buchungen blitzschnell nach Geschaeften, Notizen, Betraegen,
+  Konten oder Status (Nur Gebucht / Nur Geplant).
+
+* SMARTE LIQUIDITAETS- & KONTODECKUNGS-WARNUNG:
+  Rechnet voraus, ob dein Girokonto fuer die naechsten geplanten Dauerauftraege
+  bis zum Monatsende ausreicht.
+
+* BARRIEREFREIER EINKAUFS- & KASSENRECHNER GANZ UNTEN IN DER UEBERSICHT:
+  Als ein- und zuklappbares Akkordeon direkt beim Einkaufen im Supermarkt
+  Preise zusammenrechnen und mit 1 Klick als fertigen Kassenzettel abbuchen.
+
+* AUSGABEN-RANGLISTE (TOP GELDFRESSER) ALS KLAPPBARES AKKORDEON:
+  Zeigt dir die groessten Ausgabenkategorien des Monats mit Rangliste und Prozent.
+
+* 100% REINER TEXTMODUS FUER NVDA (0 EMOJIS).
+
+
+--------------------------------------------------------------------------------
+VERSION 5.3.0
 --------------------------------------------------------------------------------
 
 * DEDIZIERTER HAUPT-REITER 6: KONTO-OPTIONEN & KONTEN-VERWALTUNG:

@@ -1,5 +1,5 @@
 {
-  "version": "5.3.0",
+  "version": "5.3.5",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-02",
   "features": [
@@ -7,9 +7,15 @@
     "Unbegrenzt viele eigene Konten mit 9 Kontotypen (Giro, Kreditkarte, PayPal, Tagesgeld, Bar, Depot, Krypto, Darlehen, Sonstiges)",
     "Konten jederzeit bearbeiten, umbenennen, Startguthaben anpassen oder loeschen",
     "Dynamische Kontostandskarten in der Uebersicht fuer jedes angelegte Konto",
-    "Intelligente Datumserkennung: Zukuenftige Buchungen automatisch als Geplant, heute/vergangen als Gebucht",
+    "Monats-Budgets & Ausgaben-Limits in Reiter 5 (Einstellungen) mit Ampelsystem & NVDA-Sprachwarnung bei 80% und 100%",
+    "Bank-Kontoauszug / CSV-Import mit interaktiver Vorschau-Tabelle und automatischer Kategorie-Erkennung",
+    "Druckbarer Monats- & Jahresbericht (PDF-Export) mit Standard- und Behoerden-/Steuer-Format",
+    "Globale Live-Suche & Buchungs-Filter in der Uebersicht (nach Text, Status, Konto)",
+    "Smarte Liquiditaets- & Kontodeckungs-Warnung vor anstehenden Dauerauftraegen",
+    "Barrierefreier Einkaufs- & Kassenrechner ganz unten in der Uebersicht (ein- und zuklappbar)",
+    "Ausgaben-Rangliste (Groesste Geldfresser des Monats) als klappbares Akkordeon",
+    "Intelligente Datumserkennung: Zukunft = Geplant, Heute/Vergangenheit = Gebucht",
     "Vollstaendige Bearbeitbarkeit ALLER Details in Buchungen und Dauerauftraegen",
-    "Aenderungsprotokoll-Autostart bei Updates vollstaendig abgesichert",
-    "100% reine NVDA-Sprachausgabe im Textmodus (0 Emojis)"
+    "100% reiner Textmodus fuer NVDA-Bildschirmleser (0 Emojis)"
   ]
 }
