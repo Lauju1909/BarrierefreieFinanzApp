@@ -1,10 +1,10 @@
 {
-  "version": "5.3.5.1",
+  "version": "5.3.5.2",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-02",
   "features": [
-    "Hotfix: Kategorien-Dropdowns beim Eintragen von Ausgaben und Einnahmen repariert und garantiert",
-    "Feste HTML-Fallbacks fuer alle 23 Ausgaben- und 9 Einnahmen-Kategorien",
+    "Vollstaendige Kategorien- & Unterkategorien-Garantie fuer Einnahmen und Ausgaben",
+    "Automatische Synchronisation aller Dropdowns bei jedem Reiterwechsel (Reiter 1 bis 6)",
     "Dedizierter Reiter 6: Konto-Optionen & Konten-Verwaltung (Tastaturkuerzel: 6)",
     "Unbegrenzt viele eigene Konten mit 9 Kontotypen",
     "Monats-Budgets & Ausgaben-Limits in Reiter 5 mit Ampelsystem & NVDA-Sprachwarnung",
