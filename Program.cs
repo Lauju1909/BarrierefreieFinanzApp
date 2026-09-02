@@ -63,7 +63,7 @@ namespace HaushaltsbuchApp
                 // 2. ENTPACKEN ODER SYNCHRONISIEREN DER HTML-DATEI
                 if (!File.Exists(_htmlPath))
                 {
-                    UnpackEmbeddedApp(_htmlPath);
+                    SyncEmbeddedApp(_htmlPath, _versionPath);
                 }
 
                 // 3. BACKGROUND UPDATE CHECK VON GITHUB
@@ -71,7 +71,7 @@ namespace HaushaltsbuchApp
 
                 if (!File.Exists(_htmlPath))
                 {
-                    UnpackEmbeddedApp(_htmlPath);
+                    SyncEmbeddedApp(_htmlPath, _versionPath);
                 }
 
                 // 4. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
@@ -589,7 +589,7 @@ namespace HaushaltsbuchApp
             return null;
         }
 
-        private static void UnpackEmbeddedApp(string targetHtml)
+                private static void SyncEmbeddedApp(string targetHtml, string localVersionFile)
         {
             try
             {
@@ -611,21 +611,55 @@ namespace HaushaltsbuchApp
                     {
                         if (stream != null)
                         {
-                            string dir = Path.GetDirectoryName(targetHtml);
-                            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+                            string embeddedContent = null;
+                            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                             {
-                                Directory.CreateDirectory(dir);
+                                embeddedContent = reader.ReadToEnd();
                             }
 
-                            using (FileStream fs = new FileStream(targetHtml, FileMode.Create, FileAccess.Write))
+                            bool shouldWrite = false;
+                            if (!File.Exists(targetHtml))
                             {
-                                stream.CopyTo(fs);
+                                shouldWrite = true;
+                            }
+                            else
+                            {
+                                string localContent = File.ReadAllText(targetHtml, Encoding.UTF8);
+                                string embeddedVer = GetVersionFromContent(embeddedContent);
+                                string localVer = GetVersionFromContent(localContent);
+
+                                if (IsNewerVersion(embeddedVer, localVer) || !string.Equals(embeddedVer, localVer, StringComparison.OrdinalIgnoreCase))
+                                {
+                                    shouldWrite = true;
+                                }
+                            }
+
+                            if (shouldWrite)
+                            {
+                                string dir = Path.GetDirectoryName(targetHtml);
+                                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                                File.WriteAllText(targetHtml, embeddedContent, Encoding.UTF8);
+                                
+                                string ver = GetVersionFromContent(embeddedContent);
+                                File.WriteAllText(localVersionFile, string.Format("{{\"version\": \"{0}\"}}", ver), Encoding.UTF8);
                             }
                         }
                     }
                 }
             }
             catch { }
+        }
+
+                private static string GetVersionFromContent(string content)
+        {
+            if (string.IsNullOrEmpty(content)) return "1.0.0";
+            Match m = Regex.Match(content, "CURRENT_APP_VERSION\\s*=\\s*['\"]v?([^'\"]+)['\"]");
+            if (m.Success) return m.Groups[1].Value;
+            Match m2 = Regex.Match(content, "\"version\"\\s*:\\s*\"v?([^\"]+)\"");
+            if (m2.Success) return m2.Groups[1].Value;
+            Match m3 = Regex.Match(content, "Installierte Version:<strong>v?([^<]+)</strong>");
+            if (m3.Success) return m3.Groups[1].Value;
+            return "1.0.0";
         }
 
         private static void CheckAndApplyUpdate(string targetHtml, string localVersionFile)
@@ -636,28 +670,37 @@ namespace HaushaltsbuchApp
                 if (File.Exists(localVersionFile))
                 {
                     string localContent = File.ReadAllText(localVersionFile);
-                    Match m = Regex.Match(localContent, "\"version\"\\s*:\\s*\"([^\"]+)\"");
-                    if (m.Success) localVer = m.Groups[1].Value;
+                    localVer = GetVersionFromContent(localContent);
+                }
+                else if (File.Exists(targetHtml))
+                {
+                    string localHtml = File.ReadAllText(targetHtml);
+                    localVer = GetVersionFromContent(localHtml);
                 }
 
-                using (var client = new TimeoutWebClient(2500))
+                long ticks = DateTime.UtcNow.Ticks;
+                string verUrlWithBuster = VERSION_URL + "?t=" + ticks;
+                string appUrlWithBuster = APP_HTML_URL + "?t=" + ticks;
+
+                using (var client = new TimeoutWebClient(8000))
                 {
                     client.Headers.Add("User-Agent", "Haushaltsbuch-AutoUpdater");
-                    string remoteVerJson = client.DownloadString(VERSION_URL);
-                    Match rm = Regex.Match(remoteVerJson, "\"version\"\\s*:\\s*\"([^\"]+)\"");
+                    client.Headers.Add("Cache-Control", "no-cache");
+                    client.Headers.Add("Pragma", "no-cache");
+                    string remoteVerJson = client.DownloadString(verUrlWithBuster);
+                    string remoteVer = GetVersionFromContent(remoteVerJson);
                     
-                    if (rm.Success)
+                    if (!string.IsNullOrEmpty(remoteVer) && remoteVer != "1.0.0")
                     {
-                        string remoteVer = rm.Groups[1].Value;
                         if (IsNewerVersion(remoteVer, localVer) || !File.Exists(targetHtml))
                         {
                             string tmpHtml = targetHtml + ".tmp";
-                            client.DownloadFile(APP_HTML_URL, tmpHtml);
+                            client.DownloadFile(appUrlWithBuster, tmpHtml);
                             if (File.Exists(tmpHtml) && new FileInfo(tmpHtml).Length > 1000)
                             {
                                 File.Copy(tmpHtml, targetHtml, true);
                                 File.Delete(tmpHtml);
-                                File.WriteAllText(localVersionFile, remoteVerJson);
+                                File.WriteAllText(localVersionFile, remoteVerJson, Encoding.UTF8);
                             }
                         }
                     }
@@ -666,7 +709,7 @@ namespace HaushaltsbuchApp
             catch { }
         }
 
-        private static bool IsNewerVersion(string remote, string local)
+private static bool IsNewerVersion(string remote, string local)
         {
             try
             {
