@@ -1,3 +1,46 @@
+
+function autoUpdateFrequencyByDate(type) {
+  const dateInput = document.getElementById(type + '-date');
+  const freqSelect = document.getElementById(type + '-frequency');
+  if (!dateInput || !freqSelect) return;
+
+  const selectedDate = dateInput.value;
+  const todayStr = new Date().toISOString().split('T')[0];
+  
+  if (selectedDate > todayStr) {
+    if (freqSelect.value === 'once') {
+      freqSelect.value = 'planned';
+      if (type === 'exp') toggleExpenseFrequencyFields();
+      if (type === 'inc') toggleIncomeFrequencyFields();
+      if (type === 'trf') toggleTransferFrequencyFields();
+      announceNVDA('Zukünftiges Datum gewählt: Automatisch als Geplant markiert.');
+    }
+  } else {
+    if (freqSelect.value === 'planned') {
+      freqSelect.value = 'once';
+      if (type === 'exp') toggleExpenseFrequencyFields();
+      if (type === 'inc') toggleIncomeFrequencyFields();
+      if (type === 'trf') toggleTransferFrequencyFields();
+      announceNVDA('Heutiges oder vergangenes Datum gewählt: Automatisch als Gebucht markiert.');
+    }
+  }
+}
+
+function onEditTxDateChange() {
+  const dateVal = document.getElementById('edit-tx-date').value;
+  const plannedSel = document.getElementById('edit-tx-planned');
+  if (!dateVal || !plannedSel) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (dateVal > todayStr) {
+    plannedSel.value = 'true';
+    announceNVDA('Zukünftiges Datum: Status auf Geplant gesetzt.');
+  } else {
+    plannedSel.value = 'false';
+    announceNVDA('Heutiges oder vergangenes Datum: Status auf Gebucht gesetzt.');
+  }
+}
+
 /**
  * ============================================================================
  * BARRIEREFREIE FINANZ-APP & HAUSHALTSBUCH - SELF-HEALING v4.2.0
@@ -1606,11 +1649,17 @@ function renderTransactionList(list, containerId, emptyText) {
     const icon = isIncome ? '📥' : '📤';
     const dateFormatted = formatDateGerman(tx.date);
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isFuture = tx.date > todayStr;
+    const isEffectivelyPlanned = (tx.isPlanned === true) || isFuture;
+
     let statusBadge = '';
-    if (tx.isPlanned) {
+    if (isEffectivelyPlanned) {
       statusBadge = '<span class="status-badge status-planned">🎯 Geplant</span>';
     } else if (tx.isRecurring) {
-      statusBadge = '<span class="status-badge status-booked">🔁 Dauerhaft</span>';
+      statusBadge = '<span class="status-badge status-booked">🔁 Dauerhaft (Gebucht)</span>';
+    } else {
+      statusBadge = '<span class="status-badge status-booked">✅ Gebucht</span>';
     }
 
     // JEDER EINTRAG HAT BEARBEITEN & LÖSCHEN BUTTONS (AUCH DAUERHAFTE!)
@@ -1702,11 +1751,14 @@ async function handleAddExpense(e) {
 
   if (isNaN(amount) || amount <= 0) return;
 
-  if (['weekly', 'monthly', 'yearly', 'quarterly'].includes(freq)) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isFuture = date > todayStr;
+  const isPlanned = (freq === 'planned') || isFuture;
+
+  if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
     const weekday = document.getElementById('exp-rec-weekday') ? parseInt(document.getElementById('exp-rec-weekday').value, 10) : 5;
-    const yearlyMonth = freq === 'yearly' ? document.getElementById('exp-yearly-month').value : null;
-
+    
     appState.recurring.push({
       id: `rec_${Date.now()}`,
       type: 'expense',
@@ -1718,12 +1770,11 @@ async function handleAddExpense(e) {
       interval: freq,
       day: day,
       weekday: weekday,
-      yearlyMonth: yearlyMonth,
       startYear: selectedYear,
       startMonth: selectedMonth,
       active: true
     });
-    announceNVDA(`Dauerhafter Eintrag ${category} über ${formatCurrency(amount)} gespeichert!`);
+    announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
   } else {
     appState.transactions.push({
       id: `tx_${Date.now()}`,
@@ -1733,11 +1784,10 @@ async function handleAddExpense(e) {
       category: category,
       subcategory: subcategory,
       description: desc,
-      costType: 'variable',
-      isPlanned: freq === 'planned',
+      isPlanned: isPlanned,
       date: date
     });
-    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
+    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -1760,7 +1810,11 @@ async function handleAddIncome(e) {
 
   if (isNaN(amount) || amount <= 0) return;
 
-  if (['weekly', 'monthly', 'yearly'].includes(freq)) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isFuture = date > todayStr;
+  const isPlanned = (freq === 'planned') || isFuture;
+
+  if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
     const weekday = document.getElementById('inc-rec-weekday') ? parseInt(document.getElementById('inc-rec-weekday').value, 10) : 5;
     
@@ -1789,10 +1843,10 @@ async function handleAddIncome(e) {
       category: category,
       subcategory: subcategory,
       description: desc,
-      isPlanned: freq === 'planned',
+      isPlanned: isPlanned,
       date: date
     });
-    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
+    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -1816,6 +1870,10 @@ async function handleAddTransfer(e) {
     announceNVDA('Fehler: Quelle und Zielkonto müssen unterschiedlich sein.', true);
     return;
   }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isFuture = date > todayStr;
+  const isPlanned = (freq === 'planned') || isFuture;
 
   if (['weekly', 'monthly'].includes(freq)) {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
@@ -1846,9 +1904,10 @@ async function handleAddTransfer(e) {
       amount: amount,
       category: 'Umbuchung',
       description: desc,
+      isPlanned: isPlanned,
       date: date
     });
-    announceNVDA(`Umbuchung über ${formatCurrency(amount)} gespeichert!`);
+    announceNVDA(`Umbuchung über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -2009,10 +2068,16 @@ async function saveEditedTransaction(e) {
   if (!tx) return;
 
   const type = document.getElementById('edit-tx-type').value;
+  const date = document.getElementById('edit-tx-date').value;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isFuture = date > todayStr;
+
   tx.type = type;
   tx.amount = parseFloat(document.getElementById('edit-tx-amount').value);
-  tx.date = document.getElementById('edit-tx-date').value;
-  tx.isPlanned = document.getElementById('edit-tx-planned').value === 'true';
+  tx.date = date;
+  
+  const plannedVal = document.getElementById('edit-tx-planned').value;
+  tx.isPlanned = (plannedVal === 'true') || isFuture;
 
   if (type === 'transfer') {
     tx.fromAccount = document.getElementById('edit-tx-from').value;
