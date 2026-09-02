@@ -567,12 +567,47 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.5.2)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.5.3)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 5.3.5.3 (Sparpläne &amp; Eigene Kategorien Perfektionierung)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🔄 Perfektionierte Umbuchungen &amp; Sparpläne (Reiter 4):</strong><br>
+Alle Sparplan-Intervalle (Wöchentlich, Monatlich, Quartalsweise, Halbjährlich, Jährlich) werden nun fehlerfrei berechnet und übertragen. Gleiche Quell- und Zielkonten werden verlässlich abgefangen.
+</li>
+<li>
+<strong>✨ Eigene Kategorien für alle Bereiche:</strong><br>
+Füge eigene Geschäfte oder Hauptkategorien für Ausgaben, Einnahmen und Umbuchungen hinzu – sie sind sofort in der App verfügbar und werden an den Entwickler übertragen.
+</li>
+<li>
+<strong>🟢 Einnahmen &amp; 🔴 Ausgaben vollständig garantiert:</strong><br>
+Alle Kategorien laden zuverlässig und synchronisieren sich bei jedem Reiterwechsel.
+</li>
+<li>
+<strong>💳 Dedizierter Haupt-Reiter 6: Konto-Optionen &amp; Konten-Verwaltung (Taste 6).</strong>
+</li>
+<li>
+<strong>🎯 Monats-Budgets &amp; Ausgaben-Limits in Reiter 5 (Einstellungen).</strong>
+</li>
+<li>
+<strong>📥 Bank-Kontoauszug / CSV-Import &amp; 📄 PDF-Druckberichte in Reiter 5.</strong>
+</li>
+<li>
+<strong>🛒 Einkaufs- &amp; Kassenrechner ganz unten in der Übersicht (ein- und zuklappbar).</strong>
+</li>
+<li>
+<strong>🏆 Ausgaben-Rangliste als ein- und zuklappbares Akkordeon.</strong>
+</li>
+<li>
+<strong>🔒 100% reiner Textmodus für NVDA-Bildschirmleser (0 Emojis).</strong>
+</li>
+</ul>
+</div>
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 5.3.5.2 (Einnahmen &amp; Ausgaben Perfektionierung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -1977,7 +2012,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version:<strong>v5.3.5.2</strong>(Open Source auf GitHub)
+ Installierte Version:<strong>v5.3.5.3</strong>(Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -2252,7 +2287,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.3.5.2</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v5.3.5.3</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -2263,7 +2298,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v5.3.5.2';
+const CURRENT_APP_VERSION = 'v5.3.5.3';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -2520,6 +2555,13 @@ const CATEGORIES_DB = {
     "Sonstige Einnahmen": [
       "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
       "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
+    ]
+  }
+,
+  trf: {
+    "Umbuchung & Sparplan": [
+      "Sparplan Notgroschen", "Sparplan Urlaub", "Sparplan Investieren / Depot", 
+      "Sparplan Führerschein / Auto", "Umbuchung Allgemein"
     ]
   }
 };
@@ -3835,7 +3877,12 @@ function mergeCustomCategoriesIntoDB() {
     return;
   }
 
-  ['exp', 'inc'].forEach(type => {
+  if (!CATEGORIES_DB.trf) {
+    CATEGORIES_DB.trf = { "Umbuchung & Sparplan": ["Sparplan Notgroschen", "Sparplan Urlaub", "Umbuchung Allgemein"] };
+  }
+
+  ['exp', 'inc', 'trf'].forEach(type => {
+    if (!CATEGORIES_DB[type]) CATEGORIES_DB[type] = {};
     const customTypeObj = appState.customCategories[type] || {};
     for (const [mainCat, subList] of Object.entries(customTypeObj)) {
       if (!CATEGORIES_DB[type][mainCat]) {
@@ -3947,7 +3994,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.3.5.2'
+    AppVersion: 'v5.3.5.3'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -4651,10 +4698,14 @@ function isRecurringDueInMonth(rec, year, month) {
   if (year < startY || (year === startY && month < startM)) return false;
 
   if (rec.interval === 'weekly' || rec.interval === 'monthly') return true;
-  if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth, 10) === month;
+  if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) === month;
   if (rec.interval === 'quarterly') {
-    const startMOffset = parseInt(rec.yearlyMonth || startM, 10) % 3;
+    const startMOffset = parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) % 3;
     return (month % 3) === startMOffset;
+  }
+  if (rec.interval === 'halfyear') {
+    const startMOffset = parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) % 6;
+    return (month % 6) === startMOffset;
   }
   return true;
 }
@@ -5206,7 +5257,7 @@ function toggleIncomeFrequencyFields() {
 
 function toggleTransferFrequencyFields() {
   const freq = document.getElementById('trf-frequency').value;
-  const isRec = ['weekly', 'monthly'].includes(freq);
+  const isRec = ['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq);
   document.getElementById('trf-recurring-details').style.display = isRec ? 'block' : 'none';
   document.getElementById('trf-date-group').style.display = isRec ? 'none' : 'block';
 
@@ -5344,6 +5395,7 @@ async function handleAddTransfer(e) {
 
   if (isNaN(amount) || amount <= 0 || fromAccount === toAccount) {
     announceNVDA('Fehler: Quelle und Zielkonto müssen unterschiedlich sein.', true);
+    alert('⚠️ Bitte wähle zwei unterschiedliche Konten für die Umbuchung aus (Quelle und Ziel dürfen nicht identisch sein).');
     return;
   }
 
@@ -5351,7 +5403,7 @@ async function handleAddTransfer(e) {
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
 
-  if (['weekly', 'monthly'].includes(freq)) {
+  if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
     const weekday = document.getElementById('trf-rec-weekday') ? parseInt(document.getElementById('trf-rec-weekday').value, 10) : 5;
     
@@ -6718,7 +6770,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.3.5.2'
+    AppVersion: 'v5.3.5.3'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

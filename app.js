@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v5.3.5.2';
+const CURRENT_APP_VERSION = 'v5.3.5.3';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -258,6 +258,13 @@ const CATEGORIES_DB = {
     "Sonstige Einnahmen": [
       "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
       "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
+    ]
+  }
+,
+  trf: {
+    "Umbuchung & Sparplan": [
+      "Sparplan Notgroschen", "Sparplan Urlaub", "Sparplan Investieren / Depot", 
+      "Sparplan Führerschein / Auto", "Umbuchung Allgemein"
     ]
   }
 };
@@ -1573,7 +1580,12 @@ function mergeCustomCategoriesIntoDB() {
     return;
   }
 
-  ['exp', 'inc'].forEach(type => {
+  if (!CATEGORIES_DB.trf) {
+    CATEGORIES_DB.trf = { "Umbuchung & Sparplan": ["Sparplan Notgroschen", "Sparplan Urlaub", "Umbuchung Allgemein"] };
+  }
+
+  ['exp', 'inc', 'trf'].forEach(type => {
+    if (!CATEGORIES_DB[type]) CATEGORIES_DB[type] = {};
     const customTypeObj = appState.customCategories[type] || {};
     for (const [mainCat, subList] of Object.entries(customTypeObj)) {
       if (!CATEGORIES_DB[type][mainCat]) {
@@ -1685,7 +1697,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.3.5.2'
+    AppVersion: 'v5.3.5.3'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -2389,10 +2401,14 @@ function isRecurringDueInMonth(rec, year, month) {
   if (year < startY || (year === startY && month < startM)) return false;
 
   if (rec.interval === 'weekly' || rec.interval === 'monthly') return true;
-  if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth, 10) === month;
+  if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) === month;
   if (rec.interval === 'quarterly') {
-    const startMOffset = parseInt(rec.yearlyMonth || startM, 10) % 3;
+    const startMOffset = parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) % 3;
     return (month % 3) === startMOffset;
+  }
+  if (rec.interval === 'halfyear') {
+    const startMOffset = parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) % 6;
+    return (month % 6) === startMOffset;
   }
   return true;
 }
@@ -2944,7 +2960,7 @@ function toggleIncomeFrequencyFields() {
 
 function toggleTransferFrequencyFields() {
   const freq = document.getElementById('trf-frequency').value;
-  const isRec = ['weekly', 'monthly'].includes(freq);
+  const isRec = ['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq);
   document.getElementById('trf-recurring-details').style.display = isRec ? 'block' : 'none';
   document.getElementById('trf-date-group').style.display = isRec ? 'none' : 'block';
 
@@ -3082,6 +3098,7 @@ async function handleAddTransfer(e) {
 
   if (isNaN(amount) || amount <= 0 || fromAccount === toAccount) {
     announceNVDA('Fehler: Quelle und Zielkonto müssen unterschiedlich sein.', true);
+    alert('⚠️ Bitte wähle zwei unterschiedliche Konten für die Umbuchung aus (Quelle und Ziel dürfen nicht identisch sein).');
     return;
   }
 
@@ -3089,7 +3106,7 @@ async function handleAddTransfer(e) {
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
 
-  if (['weekly', 'monthly'].includes(freq)) {
+  if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
     const weekday = document.getElementById('trf-rec-weekday') ? parseInt(document.getElementById('trf-rec-weekday').value, 10) : 5;
     
@@ -4456,7 +4473,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.3.5.2'
+    AppVersion: 'v5.3.5.3'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

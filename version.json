@@ -1,9 +1,10 @@
 {
-  "version": "5.3.5.2",
+  "version": "5.3.5.3",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-02",
   "features": [
-    "Vollstaendige Kategorien- & Unterkategorien-Garantie fuer Einnahmen und Ausgaben",
+    "Vollstaendige Unterstuetzung aller Sparplan-Intervalle bei Umbuchungen (Woechentlich, Monatlich, Quartal, Halbjahr, Jaehrlich)",
+    "Perfektionierte Eigene-Kategorien-Engine fuer Ausgaben, Einnahmen und Umbuchungen",
     "Automatische Synchronisation aller Dropdowns bei jedem Reiterwechsel (Reiter 1 bis 6)",
     "Dedizierter Reiter 6: Konto-Optionen & Konten-Verwaltung (Tastaturkuerzel: 6)",
     "Unbegrenzt viele eigene Konten mit 9 Kontotypen",

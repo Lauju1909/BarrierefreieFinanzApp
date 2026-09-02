@@ -3,7 +3,34 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 5.3.5.2 (Aktuelle Version - Einnahmen & Ausgaben Perfektionierung)
+VERSION 5.3.5.3 (Aktuelle Version - Sparplaene & Eigene Kategorien)
+--------------------------------------------------------------------------------
+
+* PERFEKTIONIERTE UMBUCHUNGEN & SPARPLAENE (REITER 4):
+  Alle Sparplan-Intervalle (Woechentlich, Monatlich, Quartalsweise, Halbjaehrlich,
+  Jaehrlich) werden nun vollstaendig unterstuetzt und in den Monats- und
+  Jahresbilanzen der Konten korrekt verrechnet.
+
+* EIGENE KATEGORIEN & GESCHAEFTE FUER ALLE BEREICHE:
+  Fuer Ausgaben, Einnahmen und Umbuchungen koennen in den Einstellungen
+  beliebige neue Geschaefte oder neue Hauptkategorien angelegt werden.
+  Sie stehen sofort in allen Formularen und Dropdowns zur Verfuegung.
+
+* BEIBEHALTUNG ALLER PROFI-FUNKTIONEN:
+  - Dedizierter Hauptreiter 6: Konto-Optionen & Konten-Verwaltung (Taste 6)
+  - 9 unterstuetzte Kontotypen mit beliebigen Namen und Startguthaben
+  - Monats-Budgets in Reiter 5 (Einstellungen) mit Ampelsystem & NVDA-Warnung
+  - Bank-Kontoauszug / CSV-Import mit interaktiver Vorschautabelle
+  - Druckbarer Monatsbericht & Behoerden-/Steuernachweis (PDF-Export)
+  - Globale Live-Suche & Buchungs-Filter in der Uebersicht
+  - Smarte Liquiditaets- & Kontodeckungswarnung
+  - Barrierefreier Einkaufs- & Kassenrechner (ein- und zuklappbar)
+  - Ausgaben-Rangliste als klappbares Akkordeon
+  - 100% reiner Textmodus fuer NVDA-Bildschirmleser (0 Emojis)
+
+
+--------------------------------------------------------------------------------
+VERSION 5.3.5.2
 --------------------------------------------------------------------------------
 
 * VOLLSTAENDIGE KATEGORIEN- & UNTERKATEGORIEN-GARANTIE FUER EINNAHMEN & AUSGABEN:
