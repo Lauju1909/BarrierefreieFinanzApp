@@ -3,6 +3,32 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 5.1.1 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* UNTERKATEGORIEN & GESCHAEFTE IN DER UEBERSICHT ANZEIGEN:
+  In der Einnahmen- und Ausgabenliste der Uebersicht wird nun neben der
+  Hauptkategorie auch direkt das konkrete Geschaeft / die Unterkategorie
+  angezeigt (z. B. 'Lebensmittel, Supermarkt & Discounter › Rewe').
+
+* UNIVERSELLES FEEDBACK-SYSTEM FUER ALLE COMPUTER & BROWSER:
+  Das Feedback- und Kategorie-Uebermittlungssystem wurde so optimiert, dass es
+  auf jedem beliebigen Computer und Browser zuverlaessig und sofort live an die
+  Feedback-Zentrale uebertraegt.
+
+* BEARBEITEN-DIALOG MIT UNTERKATEGORIEN:
+  Beim nachtraeglichen Bearbeiten einer Buchung kann nun auch die Unterkategorie
+  bzw. das Geschaeft direkt eingesehen und angepasst werden.
+
+* UEBERPRUEFUNG ALLER 393 KATEGORIEN:
+  Alle 23 Ausgaben- und 9 Einnahmen-Hauptkategorien mit insgesamt 393
+  Unterkategorien und Geschaeften wurden auf volle Funktionalitaet geprueft.
+
+* 100% REINER TEXTMODUS FUER NVDA (0 EMOJIS):
+  Vollstaendige Barrierefreiheit ohne Stoergeraeusche fuer Bildschirmleser.
+
+
+--------------------------------------------------------------------------------
 VERSION 5.1.0 (Aktuelle Version)
 --------------------------------------------------------------------------------
 

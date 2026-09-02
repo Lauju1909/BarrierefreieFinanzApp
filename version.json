@@ -1,13 +1,12 @@
 {
-  "version": "5.1.0",
+  "version": "5.1.1",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-01",
+  "buildDate": "2026-09-02",
   "features": [
-    "Neue Intervalle: Alle 3 Monate (Quartal) & Alle 6 Monate (Halbjährlich) für Ausgaben, Einnahmen und Sparpläne",
-    "Live-Kategorie-Schnellsuche (Tippe z. B. 'sp', 'st', 'ga', 've')",
-    "Direktes Feedback-System ohne GitHub-Login (per E-Mail oder Text kopieren)",
-    "PIN-Klartextanzeige umschaltbar (Auge-Symbol)",
-    "Aufgeräumte Einstellungen ohne doppelte Menüs",
-    "Dauerhafte AES-256 Speicherung im EXE-Ordner & kein Datenverlust beim Sperren"
+    "Unterkategorien-Anzeige in der Uebersicht (z. B. Lebensmittel › Rewe)",
+    "Universelles Feedback-System fuer alle Computer & Browser ohne Login",
+    "Bearbeiten-Dialog unterstuetzt jetzt auch die Anpassung der Unterkategorie",
+    "Komplette Pruefung aller 393 Kategorien und Geschaefte",
+    "100% reine NVDA-Sprachausgabe im Textmodus (0 Emojis)"
   ]
 }
