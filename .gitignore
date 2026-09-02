@@ -1,7 +1,9 @@
 # STRICT PRIVACY & FINANCIAL DATA IGNORE
-# Ensure no financial data, backups or keys are ever committed to git
+# Ensure no financial data, backups, profiles or keys are ever committed to git
 *.json
 !version.json
+*.vault
+*.vault.bak
 *.enc
 *.key
 *.bak
@@ -14,3 +16,7 @@ Thumbs.db
 user_data/
 backups/
 private/
+Profile/
+Profile_Feedback/
+Feedback_Archiv.txt
+tmp_*

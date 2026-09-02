@@ -1,0 +1,69 @@
+================================================================================
+                    HAUSHALTSBUCH - AENDERUNGSPROTOKOLL
+================================================================================
+
+--------------------------------------------------------------------------------
+VERSION 5.1.0 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* UEBER 200 KATEGORIEN & GESCHAEFTE (ZWEISTUFIGES SYSTEM):
+  Waehle jetzt erst die Hauptkategorie und dann direkt den passenden Laden oder
+  das Detail (z. B. Aldi Nord/Sued, Lidl, Rewe, Edeka, Kaufland, dm, Rossmann,
+  Streaming, Gaming, Wohnen, Gesundheit, Hilfsmittel, Taschengeld, Spenden u.v.m.).
+
+* BLITZSCHNELLE LIVE-SUCHE:
+  Tippe einfach ein paar Buchstaben eines Ladens oder Begriffs (z. B. 'Rewe',
+  'Netflix', 'Tanken', 'Taschengeld', 'IKEA'), und die App waehlt sofort
+  automatisch die passende Haupt- und Unterkategorie.
+
+* EIGENE KATEGORIEN & LAEDEN HINZUFUEGEN (REITER 5 EINSTELLUNGEN):
+  Fehlt dir ein Geschaeft oder eine Kategorie? Du kannst jetzt jederzeit eigene
+  Haupt- und Unterkategorien direkt in der App erstellen. Sie werden sofort lokal
+  gespeichert und automatisch an den Entwickler uebermittelt, damit sie ins
+  naechste Update aufgenommen werden.
+
+* SYMBOLE & EMOJIS KOMPLETT ABSCHALTBAR (REINER TEXTMODUS FUER NVDA):
+  In Reiter 5 (Einstellungen) kannst du mit einem Klick alle Symbole und Emojis
+  ausschalten. Die gesamte App schaltet dann in einen 100% reinen, emoji-freien
+  Klartextmodus um – perfekt fuer Bildschirmleser (NVDA) und maximale Sprachklarheit.
+
+* DEINE WUNSCHE & FEEDBACK DIREKT SENDEN:
+  In Reiter 5 (Einstellungen) kannst du jederzeit Ideen oder Vorschlaege
+  fuer das Haushaltsbuch eingeben und mit einem Klick direkt abschicken.
+
+* VERBESSERTE FEEDBACK-ZENTRALE:
+  Uebersichtliche Anzeige der eingegangenen Wuensche in 5 klaren Schritten:
+  1. Datum & Uhrzeit, 2. Absender, 3. Art der Nachricht, 4. Inhalt & Details,
+  5. Knoepfe zum Kopieren und Sofort-Loeschen ohne blockierende Popups.
+
+* NEUE ZEITRAEUME FUER DAUERAUFTRAEGE & RECHNUNGEN:
+  Regelmaessige Kosten kannst du jetzt auch bequem alle 3 Monate (vierteljaehrlich)
+  oder alle 6 Monate (halbjaehrlich) automatisch einplanen.
+
+* 100% ABWAERTSKOMPATIBEL MIT AELTEREN SICHERUNGEN & GITHUB-VERSIONEN:
+  Sicherungsdateien aus frueheren Versionen, hex-kodierte Tresore oder aeltere
+  Dateien werden beim Import automatisch erkannt, repariert und nahtlos geladen.
+
+* ZUVERLAESSIGER & DAUERHAFTER SPEICHER:
+  Deine eingetragenen Buchungen, Kontostaende und Sparplaene bleiben auf diesem
+  Computer dauerhaft und sicher gespeichert.
+
+* 100% DSGVO & EU-DATENSCHUTZ:
+  Alle Finanzdaten bleiben ausschliesslich mit 256-Bit AES verschluesselt auf
+  deinem eigenen Computer.
+
+
+--------------------------------------------------------------------------------
+VERSION 5.0.0
+--------------------------------------------------------------------------------
+
+* 5 UEBERSICHTLICHE HAUPTBEREICHE:
+  Uebersicht, Einnahmen, Ausgaben, Auswertungen & Einstellungen.
+
+* KAUF-PLANER & SIMULATOR:
+  Vor dem Kauf ausprobieren, was am Monatsende noch uebrig bleibt.
+
+* NOTGROSCHEN & SPARZIEL-RECHNER:
+  Automatischer Fortschrittsbalken fuer Ruecklagen und Sparziele.
+
+================================================================================

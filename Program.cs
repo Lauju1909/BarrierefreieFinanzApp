@@ -77,11 +77,21 @@ namespace HaushaltsbuchApp
                 // 4. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
                 PurgeAllExternalStorageLocations(_activeStorageDir);
 
-                // 5. INJEKTION DER DATEN IN DIE HTML
-                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
+                if (!File.Exists(_vaultPath))
+                {
+                    try
+                    {
+                        string lsDir = Path.Combine(_profileDir, @"Default\Local Storage");
+                        if (Directory.Exists(lsDir)) Directory.Delete(lsDir, true);
+                    }
+                    catch { }
+                }
 
-                // 6. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
+                // 5. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
+
+                // 6. INJEKTION DER DATEN UND DES AKTIVEN PORTS IN DIE HTML
+                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
 
                 string launchUrl = serverStarted 
                     ? string.Format("http://127.0.0.1:{0}/", _activePort) 
@@ -339,6 +349,51 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        if (url.StartsWith("/api/send_feedback") && method == "POST")
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            
+                            // 1. Lokales Archiv
+                            try
+                            {
+                                string logPath = Path.Combine(_activeStorageDir, "Feedback_Archiv.txt");
+                                string entry = "\r\n[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "]\r\n" + body + "\r\n----------------------------------\r\n";
+                                File.AppendAllText(logPath, entry, Encoding.UTF8);
+                            }
+                            catch { }
+
+                            // 2. Sofort-Benachrichtigung an ntfy.sh (100% ohne Konto, ohne Anmeldung)
+                            try
+                            {
+                                using (var wbNtfy = new System.Net.WebClient())
+                                {
+                                    wbNtfy.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+                                    wbNtfy.Encoding = Encoding.UTF8;
+                                    string cleanBody = body.Replace("\"", "'").Replace("\r", "").Replace("\n", " ");
+                                    string ntfyPayload = "{\"topic\":\"lauju_haushaltsbuch_feedback\",\"title\":\"💡 Neues Haushaltsbuch Feedback\",\"message\":\"" + cleanBody + "\",\"priority\":4,\"tags\":[\"bulb\",\"moneybag\"]}";
+                                    wbNtfy.UploadString("https://ntfy.sh", ntfyPayload);
+                                }
+                            }
+                            catch { }
+
+                            // 3. E-Mail Versand an lauju1909@gmail.com
+                            try
+                            {
+                                using (var wbMail = new System.Net.WebClient())
+                                {
+                                    wbMail.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+                                    wbMail.Headers[System.Net.HttpRequestHeader.Accept] = "application/json";
+                                    wbMail.Encoding = Encoding.UTF8;
+                                    wbMail.UploadString("https://formsubmit.co/ajax/lauju1909@gmail.com", body);
+                                }
+                            }
+                            catch { }
+
+                            byte[] okData = Encoding.UTF8.GetBytes("{\"status\":\"success\"}");
+                            SendHttpResponse(stream, 200, "application/json", okData);
+                            return;
+                        }
+
                         if (url.StartsWith("/api/save_vault") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -358,6 +413,12 @@ namespace HaushaltsbuchApp
                                 File.Copy(tmpPath, _vaultPath, true);
                                 try { File.Delete(tmpPath); } catch { }
 
+                                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
+                            }
+                            else if (!string.IsNullOrEmpty(body) && body.Trim() == "{}")
+                            {
+                                try { if (File.Exists(_vaultPath)) File.Delete(_vaultPath); } catch { }
+                                try { if (File.Exists(_bakPath)) File.Delete(_bakPath); } catch { }
                                 InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
                             }
 

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📬 Feedback &amp; Kategorie-Zentrale</title>
+  <style>
+    :root {
+      --bg: #F4F7FB;
+      --card: #FFFFFF;
+      --text: #0B2545;
+      --sub: #4A5568;
+      --primary: #9C27B0;
+      --primary-hover: #7B1FA2;
+      --danger: #D32F2F;
+      --danger-hover: #B71C1C;
+      --border: #CCD9E8;
+      --badge-feedback: #EDE7F6;
+      --badge-feedback-text: #5E35B1;
+      --badge-cat: #FFF3E0;
+      --badge-cat-text: #E65100;
+    }
+    body.theme-dark {
+      --bg: #121212;
+      --card: #1E1E1E;
+      --text: #F0F0F0;
+      --sub: #A0A0A0;
+      --primary: #BA68C8;
+      --primary-hover: #CE93D8;
+      --danger: #EF5350;
+      --danger-hover: #E53935;
+      --border: #383838;
+      --badge-feedback: #311B92;
+      --badge-feedback-text: #D1C4E9;
+      --badge-cat: #E65100;
+      --badge-cat-text: #FFE0B2;
+    }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      font-size: 18px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card);
+      padding: 18px 24px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      font-size: 16px;
+      font-weight: bold;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 2px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn:focus-visible {
+      outline: 4px solid #FF9800;
+      outline-offset: 2px;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #FFF;
+      border-color: var(--primary-hover);
+    }
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .btn-secondary:hover {
+      background: rgba(0,0,0,0.05);
+    }
+    .btn-danger {
+      background: var(--card);
+      color: var(--danger);
+      border-color: var(--danger);
+    }
+    .btn-danger:hover {
+      background: var(--danger);
+      color: #FFF;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      padding: 22px 26px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin-bottom: 20px;
+    }
+    .message-card {
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 22px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .message-card.type-feedback {
+      border-left: 10px solid var(--primary);
+    }
+    .message-card.type-category {
+      border-left: 10px solid #FF9800;
+    }
+    .field-row {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 4px;
+    }
+    .field-label {
+      font-weight: bold;
+      color: var(--sub);
+      min-width: 200px;
+      font-size: 16px;
+    }
+    .field-value {
+      font-size: 18px;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: bold;
+      font-size: 15px;
+    }
+    .badge-feedback {
+      background: var(--badge-feedback);
+      color: var(--badge-feedback-text);
+      border: 1px solid var(--primary);
+    }
+    .badge-category {
+      background: var(--badge-cat);
+      color: var(--badge-cat-text);
+      border: 1px solid #FF9800;
+    }
+    .content-box {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-top: 6px;
+    }
+    .content-box-title {
+      font-weight: bold;
+      font-size: 16px;
+      color: var(--sub);
+      margin-bottom: 8px;
+    }
+    .content-box-body {
+      font-size: 18px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+    }
+    .detail-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .detail-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .detail-table td:first-child {
+      width: 35%;
+      font-weight: bold;
+      color: var(--sub);
+    }
+    .detail-table td:last-child {
+      font-weight: bold;
+    }
+    .action-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      padding-top: 14px;
+      border-top: 2px dashed var(--border);
+      flex-wrap: wrap;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 45px 20px;
+      color: var(--sub);
+      font-size: 20px;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      color: var(--sub);
+      margin-top: 12px;
+      padding: 0 4px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sr-only" role="status" aria-live="polite" id="nvda-status"></div>
+
+  <div class="container">
+    <header>
+      <h1>📬 <span>Feedback &amp; Kategorie-Zentrale</span></h1>
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" onclick="loadMessages()" title="Nachrichten jetzt abrufen (Taste R)">
+          <span>🔄 <strong>Aktualisieren (R)</strong></span>
+        </button>
+        <button type="button" class="btn btn-danger" onclick="clearAllMessages()" title="Alle Nachrichten löschen">
+          <span>🗑️ <strong>Alle löschen</strong></span>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="toggleTheme()" title="Design wechseln (Hell / Dunkel)">
+          <span id="theme-btn-text">🌙 Dunkel</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="card" role="main">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 8px;">
+        <h2 style="margin: 0; font-size: 22px;">📥 Empfangene Nachrichten &amp; Vorschläge</h2>
+        <span id="msg-counter" style="font-weight: bold; color: var(--primary);">Lade Nachrichten...</span>
+      </div>
+
+      <div id="messages-list" role="feed" aria-busy="true">
+        <p class="empty-state">⏳ Verbinde mit dem Live-Server und lade Nachrichten...</p>
+      </div>
+
+      <div class="status-bar">
+        <span id="last-updated">Noch nicht aktualisiert</span>
+        <span>Automatische Live-Prüfung alle 15 Sekunden</span>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let isDark = false;
+    const STORAGE_DELETED_KEY = 'deleted_feedback_ids_v3';
+    const STORAGE_DELETED_SIGS_KEY = 'deleted_feedback_sigs_v3';
+
+    function getDeletedIds() {
+      try {
+        const raw = localStorage.getItem(STORAGE_DELETED_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function getDeletedSigs() {
+      try {
+        const raw = localStorage.getItem(STORAGE_DELETED_SIGS_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch(e) {
+        return [];
+      }
+    }
+
+    function saveDeleted(id, sig) {
+      const ids = getDeletedIds();
+      if (id && !ids.includes(id)) {
+        ids.push(id);
+        try { localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(ids)); } catch(e) {}
+      }
+      const sigs = getDeletedSigs();
+      if (sig && !sigs.includes(sig)) {
+        sigs.push(sig);
+        try { localStorage.setItem(STORAGE_DELETED_SIGS_KEY, JSON.stringify(sigs)); } catch(e) {}
+      }
+    }
+
+    function isItemDeleted(id, sig) {
+      const ids = getDeletedIds();
+      const sigs = getDeletedSigs();
+      if (id && ids.includes(id)) return true;
+      if (sig && sigs.includes(sig)) return true;
+      return false;
+    }
+
+    function announceNVDA(msg) {
+      const el = document.getElementById('nvda-status');
+      if (el) {
+        el.textContent = '';
+        setTimeout(() => el.textContent = msg, 50);
+      }
+    }
+
+    function toggleTheme() {
+      isDark = !isDark;
+      document.body.className = isDark ? 'theme-dark' : '';
+      document.getElementById('theme-btn-text').textContent = isDark ? '☀️ Hell' : '🌙 Dunkel';
+      announceNVDA(isDark ? 'Dunkles Design aktiviert.' : 'Helles Design aktiviert.');
+    }
+
+    function parseMessageContent(rawText, title, timeDate) {
+      const text = (rawText || '').trim();
+
+      let parsed = {
+        dateStr: timeDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' Uhr',
+        sender: 'App-Nutzer',
+        typeKind: '💡 Neues Feedback / Idee',
+        isCategory: false,
+        scope: '',
+        mainCat: '',
+        subCat: '',
+        bodyText: ''
+      };
+
+      // 1. JSON-Objekt-Erkennung
+      if (text.startsWith('{') && text.endsWith('}')) {
+        try {
+          const cleanJson = text.replace(/'/g, '"');
+          const data = JSON.parse(cleanJson);
+          if (data.Absender) parsed.sender = data.Absender;
+          if (data.Datum) parsed.dateStr = data.Datum;
+          if (data.Bereich || data.Hauptkategorie || data.Unterkategorie_Geschaeft || data.Unterkategorie) {
+            parsed.isCategory = true;
+            parsed.typeKind = '➕ Neuer Kategorie-Vorschlag';
+            parsed.scope = data.Bereich || 'Ausgabe';
+            parsed.mainCat = data.Hauptkategorie || '';
+            parsed.subCat = data.Unterkategorie_Geschaeft || data.Unterkategorie || '';
+          } else if (data.Nachricht) {
+            parsed.bodyText = data.Nachricht;
+          }
+          return parsed;
+        } catch(e) {}
+      }
+
+      // 2. Text / Multi-Line Parsing
+      if (title.includes('Kategorie') || text.includes('Kategorie-Vorschlag') || text.includes('Unterkategorie') || text.includes('Hauptkategorie')) {
+        parsed.typeKind = '➕ Neuer Kategorie-Vorschlag';
+        parsed.isCategory = true;
+      }
+
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      let remainingLines = [];
+
+      lines.forEach(line => {
+        if (line.startsWith('Absender:')) {
+          parsed.sender = line.replace('Absender:', '').trim() || parsed.sender;
+        } else if (line.startsWith('Datum:')) {
+          parsed.dateStr = line.replace('Datum:', '').trim();
+        } else if (line.startsWith('Bereich:')) {
+          parsed.scope = line.replace('Bereich:', '').trim();
+        } else if (line.startsWith('Hauptkategorie:')) {
+          parsed.mainCat = line.replace('Hauptkategorie:', '').trim();
+        } else if (line.startsWith('Unterkategorie') || line.startsWith('Unterkategorie / Laden:') || line.startsWith('Unterkategorie / Geschäft:')) {
+          parsed.subCat = line.substring(line.indexOf(':') + 1).trim();
+        } else if (line.startsWith('Art:')) {
+          parsed.typeKind = line.replace('Art:', '').trim();
+        } else if (line.startsWith('Nachricht:')) {
+          const msgRest = line.replace('Nachricht:', '').trim();
+          if (msgRest) remainingLines.push(msgRest);
+        } else {
+          remainingLines.push(line);
+        }
+      });
+
+      if (remainingLines.length > 0) {
+        parsed.bodyText = remainingLines.join('\n');
+      }
+
+      return parsed;
+    }
+
+    async function loadMessages() {
+      const listEl = document.getElementById('messages-list');
+      const countEl = document.getElementById('msg-counter');
+      const timeEl = document.getElementById('last-updated');
+      const deletedIds = getDeletedIds();
+
+      let messages = [];
+
+      try {
+        const res = await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback/json?poll=1');
+        if (res.ok) {
+          const text = await res.text();
+          const lines = text.trim().split('\n');
+          lines.forEach(l => {
+            try {
+              const data = JSON.parse(l);
+              if (data.event === 'message' && data.message) {
+                const msgId = data.id || ('msg_' + data.time);
+                if (!deletedIds.includes(msgId)) {
+                  messages.push({
+                    id: msgId,
+                    time: data.time ? new Date(data.time * 1000) : new Date(),
+                    title: data.title || 'Vorschlag / Feedback',
+                    message: data.message
+                  });
+                }
+              }
+            } catch(e) {}
+          });
+        }
+      } catch(err) {
+        console.error('Fehler beim Abrufen:', err);
+      }
+
+      // Neueste zuerst
+      messages.reverse();
+
+      // Deduplizieren & Gelöschte Einträge filtern
+      const uniqueMessages = [];
+      const seenSignatures = new Set();
+
+      messages.forEach(m => {
+        const info = parseMessageContent(m.message, m.title, m.time);
+        const sig = info.sender + '|' + (info.isCategory ? (info.mainCat + '|' + info.subCat) : info.bodyText) + '|' + info.dateStr.substring(0, 16);
+        if (!isItemDeleted(m.id, sig)) {
+          if (!seenSignatures.has(sig)) {
+            seenSignatures.add(sig);
+            uniqueMessages.push({ ...m, parsedInfo: info, sig: sig });
+          }
+        }
+      });
+
+      if (timeEl) {
+        timeEl.textContent = 'Zuletzt aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
+      }
+
+      if (uniqueMessages.length === 0) {
+        listEl.innerHTML = '<p class="empty-state">📭 Keine Nachrichten vorhanden.<br><span style="font-size: 16px; margin-top: 8px; display: inline-block;">Sobald jemand im Haushaltsbuch Feedback sendet oder eine neue Kategorie hinzufügt, erscheint es hier sofort live!</span></p>';
+        if (countEl) countEl.textContent = '0 Nachrichten';
+        return;
+      }
+
+      if (countEl) countEl.textContent = uniqueMessages.length + ' Nachricht' + (uniqueMessages.length === 1 ? '' : 'en');
+
+      let html = '';
+      uniqueMessages.forEach((m, idx) => {
+        const info = m.parsedInfo;
+        const cardClass = info.isCategory ? 'type-category' : 'type-feedback';
+        const badgeClass = info.isCategory ? 'badge-category' : 'badge-feedback';
+
+        let fullCopyText = '--- HAUSHALTSBUCH NACHRICHT ---\n' +
+                           '1. Datum & Uhrzeit: ' + info.dateStr + '\n' +
+                           '2. Name / Absender: ' + info.sender + '\n' +
+                           '3. Um was geht es: ' + info.typeKind + '\n';
+
+        if (info.isCategory) {
+          fullCopyText += '4. Details:\n' +
+                          '   - Bereich: ' + (info.scope || 'Ausgabe') + '\n' +
+                          '   - Hauptkategorie: ' + (info.mainCat || 'Nicht angegeben') + '\n' +
+                          '   - Unterkategorie / Geschäft: ' + (info.subCat || info.bodyText || 'Nicht angegeben') + '\n';
+        } else {
+          fullCopyText += '4. Nachricht / Was geschrieben wurde:\n' + (info.bodyText || m.message) + '\n';
+        }
+
+        html += `
+          <article class="message-card ${cardClass}" id="msg-card-${escapeForAttr(m.id)}" tabindex="0" aria-label="Eintrag ${idx+1} von ${uniqueMessages.length}: ${escapeHTML(info.typeKind)} von ${escapeHTML(info.sender)} am ${escapeHTML(info.dateStr)}">
+            
+            <!-- 1. DATUM & UHRZEIT -->
+            <div class="field-row">
+              <span class="field-label">📅 1. Datum &amp; Uhrzeit:</span>
+              <span class="field-value">${escapeHTML(info.dateStr)}</span>
+            </div>
+
+            <!-- 2. NAME / ABSENDER -->
+            <div class="field-row">
+              <span class="field-label">👤 2. Name / Absender:</span>
+              <span class="field-value">${escapeHTML(info.sender)}</span>
+            </div>
+
+            <!-- 3. UM WAS GEHT ES -->
+            <div class="field-row">
+              <span class="field-label">📌 3. Um was geht es:</span>
+              <span class="badge ${badgeClass}">${escapeHTML(info.typeKind)}</span>
+            </div>
+
+            <!-- 4. WAS ER GESCHRIEBEN HAT / WAS WO HINZUGEFÜGT WURDE -->
+            <div class="content-box">
+              <div class="content-box-title">
+                ${info.isCategory ? '🏢 4. Was wo hinzugefügt wurde (Kategorie-Details):' : '📝 4. Was geschrieben wurde (Feedback-Text):'}
+              </div>
+              <div class="content-box-body">
+                ${info.isCategory ? `
+                  <table class="detail-table">
+                    <tr>
+                      <td>Bereich / Art:</td>
+                      <td>${escapeHTML(info.scope || 'Ausgabe')}</td>
+                    </tr>
+                    <tr>
+                      <td>Hauptkategorie:</td>
+                      <td>${escapeHTML(info.mainCat || 'Allgemein')}</td>
+                    </tr>
+                    <tr>
+                      <td>Unterkategorie / Laden:</td>
+                      <td style="color: #E65100;">${escapeHTML(info.subCat || info.bodyText)}</td>
+                    </tr>
+                  </table>
+                ` : escapeHTML(info.bodyText || m.message)}
+              </div>
+            </div>
+
+            <!-- 5. LÖSCHEN & KOPIEREN -->
+            <div class="action-bar">
+              <button type="button" class="btn btn-secondary" onclick="copyFormattedMsg('${escapeForAttr(fullCopyText)}')" style="font-size: 15px; padding: 8px 16px;">
+                📋 <strong>Nachricht kopieren</strong>
+              </button>
+              <button type="button" class="btn btn-danger" onclick="deleteSingleMsg('${escapeForAttr(m.id)}', '${escapeForAttr(info.sender + '|' + (info.isCategory ? (info.mainCat + '|' + info.subCat) : info.bodyText) + '|' + info.dateStr.substring(0, 16))}')" style="font-size: 15px; padding: 8px 16px;">
+                🗑️ <strong>Nachricht löschen</strong>
+              </button>
+            </div>
+          </article>
+        `;
+      });
+
+      listEl.innerHTML = html;
+    }
+
+        function deleteSingleMsg(id, sig) {
+      saveDeleted(id, sig);
+      const card = document.getElementById('msg-card-' + id);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+          loadMessages();
+          announceNVDA('Eintrag wurde gelöscht.');
+        }, 150);
+      } else {
+        loadMessages();
+        announceNVDA('Eintrag wurde gelöscht.');
+      }
+    }
+
+    function clearAllMessages() {
+      const listEl = document.getElementById('messages-list');
+      const items = listEl.querySelectorAll('.message-card');
+      if (items.length === 0) {
+        alert('Der Posteingang ist bereits leer.');
+        return;
+      }
+
+      items.forEach(card => {
+        const id = card.id.replace('msg-card-', '');
+        if (id) saveDeleted(id, '');
+      });
+
+      // Clear all
+      try {
+        const allLoadedCards = Array.from(document.querySelectorAll('.message-card'));
+        allLoadedCards.forEach(c => {
+          const id = c.id.replace('msg-card-', '');
+          if (id) saveDeleted(id, '');
+        });
+      } catch(e) {}
+
+      loadMessages();
+      announceNVDA('Alle Einträge wurden gelöscht.');
+    }
+
+    function copyFormattedMsg(formattedText) {
+      navigator.clipboard.writeText(formattedText).then(() => {
+        announceNVDA('Nachricht sauber formatiert in die Zwischenablage kopiert!');
+        alert('✅ Der vollständige Eintrag wurde sauber formatiert in deine Zwischenablage kopiert!');
+      }).catch(() => {
+        announceNVDA('Text konnte nicht automatisch kopiert werden.');
+      });
+    }
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function escapeForAttr(str) {
+      return String(str || '').replace(/'/g, "\'").replace(/\n/g, '\\n');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        loadMessages();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadMessages();
+      setInterval(loadMessages, 15000);
+    });
+  </script>
+</body>
+</html>

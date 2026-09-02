@@ -331,3 +331,32 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .settings-box { background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 14px; }
 .danger-box { border-color: var(--accent-expense); }
 .app-footer { background-color: var(--bg-surface); border-top: 2px solid var(--border-color); padding: 20px 16px; text-align: center; margin-top: 40px; font-size: 15px; color: var(--text-muted); }
+
+/* ==========================================================================
+   SYMBOLE & EMOJIS SCHALTER (100% REINER TEXTMODUS / NVDA OPTIMIERT)
+   ========================================================================== */
+body.hide-symbols .emoji-icon,
+body.hide-symbols .tx-icon,
+body.hide-symbols .lock-icon,
+body.hide-symbols .stat-icon,
+body.hide-symbols .symbol-tag,
+body.hide-symbols .symbol-icon,
+body.hide-symbols [data-emoji="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
+  speak: never !important;
+}
+
+body.show-symbols .emoji-icon,
+body.show-symbols .tx-icon,
+body.show-symbols .lock-icon,
+body.show-symbols .stat-icon,
+body.show-symbols .symbol-tag,
+body.show-symbols .symbol-icon {
+  display: inline !important;
+  visibility: visible !important;
+}

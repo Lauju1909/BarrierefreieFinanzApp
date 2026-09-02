@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://127.0.0.1:* http://localhost:* http://127.0.0.1:48123 http://127.0.0.1:48124 http://127.0.0.1:48125 http://127.0.0.1:48126 http://127.0.0.1:48127 http://127.0.0.1:48128 http://127.0.0.1:48129 http://127.0.0.1:48130; img-src 'self' data:;">
-  <title>Barrierefreie Finanzen - Mit flexiblen Zeiträumen & anpassbarem Design (NVDA)</title>
-  <style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://formsubmit.co https://ntfy.sh http://127.0.0.1:* http://localhost:* http://127.0.0.1:48123 http://127.0.0.1:48124 http://127.0.0.1:48125 http://127.0.0.1:48126 http://127.0.0.1:48127 http://127.0.0.1:48128 http://127.0.0.1:48129 http://127.0.0.1:48130; img-src 'self' data:;">
+<title>Barrierefreie Finanzen - Mit flexiblen Zeiträumen & anpassbarem Design (NVDA)</title>
+<style>
 /* ==========================================================================
    BARRIEREFREIE STILE (WCAG 2.2 AAA) - NVDA OPTIMIERT & v2.7.0 MASTER
    ========================================================================== */
@@ -340,890 +340,1082 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .danger-box { border-color: var(--accent-expense); }
 .app-footer { background-color: var(--bg-surface); border-top: 2px solid var(--border-color); padding: 20px 16px; text-align: center; margin-top: 40px; font-size: 15px; color: var(--text-muted); }
 
+/* ==========================================================================
+   SYMBOLE & EMOJIS SCHALTER (100% REINER TEXTMODUS / NVDA OPTIMIERT)
+   ========================================================================== */
+body.hide-symbols .emoji-icon,
+body.hide-symbols .tx-icon,
+body.hide-symbols .lock-icon,
+body.hide-symbols .stat-icon,
+body.hide-symbols .symbol-tag,
+body.hide-symbols .symbol-icon,
+body.hide-symbols [data-emoji="true"] {
+  display: none !important;
+  visibility: hidden !important;
+  width: 0 !important;
+  height: 0 !important;
+  font-size: 0 !important;
+  overflow: hidden !important;
+  speak: never !important;
+}
+
+body.show-symbols .emoji-icon,
+body.show-symbols .tx-icon,
+body.show-symbols .lock-icon,
+body.show-symbols .stat-icon,
+body.show-symbols .symbol-tag,
+body.show-symbols .symbol-icon {
+  display: inline !important;
+  visibility: visible !important;
+}
+
 </style>
 </head>
 <body class="theme-light font-normal" id="app-body">
 
-  <!-- Live-Regionen für NVDA Screenreader Mitteilungen -->
-  <div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
-  <div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
-
-  <!-- =========================================================================
-       1. AES-256 PIN / PASSWORT SPERRBILDSCHIRM
-       ========================================================================= -->
-  <div id="lock-screen" class="lock-screen-overlay" role="dialog" aria-modal="true" aria-labelledby="lock-heading">
-    <div class="lock-card">
-      <div class="lock-icon" aria-hidden="true">🛡️</div>
-      <h1 id="lock-heading" tabindex="-1">Sicherer AES-256 Zugang</h1>
-      <p id="lock-instructions" class="lock-desc">Deine Finanzdaten sind auf diesem Gerät mit 256-Bit AES verschlüsselt. Gib deine PIN oder dein Passwort ein.</p>
-      
-      <form id="lock-form" onsubmit="handlePinSubmit(event)">
-        <div class="form-group">
-          <label for="pin-input" class="field-label"><strong>PIN oder Passwort</strong></label>
-          <input type="password" id="pin-input" class="large-input pin-field" maxlength="30" placeholder="PIN eingeben" autocomplete="current-password" autofocus required>
-        </div>
-
-        <div id="pin-error-msg" class="error-box" role="alert" style="display: none;"></div>
-
-        <div class="lock-actions">
-          <button type="submit" class="btn btn-primary" id="btn-unlock">
-            <span>🔓 <strong>Entschlüsseln & Öffnen</strong> (Enter)</span>
-          </button>
-        </div>
-      </form>
-
-      <div class="lock-restore-action" style="margin-top: 14px; text-align: center;">
-        <label class="btn btn-secondary" style="width: 100%; cursor: pointer; display: block; box-sizing: border-box;">
-          <span>📥 <strong>Alte Sicherung oder Daten-Datei importieren</strong> (.json / .vault)</span>
-          <input type="file" accept=".json,.vault,.bak" onchange="importEncryptedBackup(event)" style="display: none;">
-        </label>
-      </div>
-
-      <div class="privacy-guarantee-box">
-        <p>🔒 <strong>100% DSGVO & EU-Datenschutz:</strong> Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.</p>
-      </div>
-
-      <div class="pin-hint-box" id="first-time-hint" style="display: none;">
-        <p>💡 <em>Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).</em></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       2. MODAL DIALOG: BUCHUNG BEARBEITEN
-       ========================================================================= -->
-  <div id="edit-tx-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" style="display: none;">
-    <div class="modal-dialog-box">
-      <h2 id="edit-modal-heading" tabindex="-1">✏️ Buchung bearbeiten</h2>
-      <p class="field-hint">Passe hier Betrag, Datum, Konto, Kategorie oder Notiz an:</p>
-      
-      <form id="form-edit-tx" onsubmit="saveEditedTransaction(event)" class="accessible-form" style="margin-top: 16px;">
-        <input type="hidden" id="edit-tx-id">
-        
-        <div class="form-group">
-          <label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
-          <input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-tx-date" class="field-label"><strong>Datum</strong></label>
-          <input type="date" id="edit-tx-date" class="large-input" required>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-tx-account" class="field-label"><strong>Konto</strong></label>
-          <select id="edit-tx-account" class="large-select">
-            <option value="bank">🏦 Bankkonto / Girokonto</option>
-            <option value="paypal">🅿️ PayPal Guthaben</option>
-            <option value="savings">📈 Tagesgeldkonto</option>
-            <option value="cash">💵 Bargeld</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-tx-category" class="field-label"><strong>Kategorie</strong></label>
-          <input type="text" id="edit-tx-category" class="large-input">
-        </div>
-
-        <div class="form-group">
-          <label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz</strong></label>
-          <input type="text" id="edit-tx-desc" class="large-input">
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">
-            <span>💾 <strong>Änderungen speichern</strong></span>
-          </button>
-          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
-            <span>Abbrechen</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       3. MODAL DIALOG: DAUERAUFTRAG / SPARPLAN BEARBEITEN
-       ========================================================================= -->
-  <div id="edit-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-rec-heading" style="display: none;">
-    <div class="modal-dialog-box">
-      <h2 id="edit-rec-heading" tabindex="-1">✏️ Dauerauftrag / Sparplan bearbeiten</h2>
-      <p class="field-hint">Passe hier regelmäßige Kosten oder Sparpläne an:</p>
-      
-      <form id="form-edit-rec" onsubmit="saveEditedRecurring(event)" class="accessible-form" style="margin-top: 16px;">
-        <input type="hidden" id="edit-rec-id">
-        
-        <div class="form-group">
-          <label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
-          <input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-rec-interval" class="field-label"><strong>Intervall</strong></label>
-          <select id="edit-rec-interval" class="large-select">
-            <option value="weekly">Wöchentlich (Jede Woche)</option>
-            <option value="monthly">Monatlich</option>
-            <option value="yearly">Jährlich</option>
-            <option value="quarterly">Alle 3 Monate</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31)</strong></label>
-          <input type="number" min="1" max="31" id="edit-rec-day" class="large-input" required>
-        </div>
-
-        <div class="form-group">
-          <label for="edit-rec-name" class="field-label"><strong>Name / Beschreibung</strong></label>
-          <input type="text" id="edit-rec-name" class="large-input">
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">
-            <span>💾 <strong>Dauerauftrag speichern</strong></span>
-          </button>
-          <button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
-            <span>Abbrechen</span>
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- =========================================================================
-       4. HAUPTANWENDUNG
-       ========================================================================= -->
-  <div id="app-wrapper" style="display: none;">
-
-    <!-- Schnellsprunglinks für NVDA -->
-    <nav class="skip-links" aria-label="Schnellnavigation">
-      <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
-      <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
-      <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
-    </nav>
-
-    <!-- Header -->
-    <header class="app-header" role="banner">
-      <div class="header-content">
-        <div class="brand">
-          <span class="app-icon" aria-hidden="true">💶</span>
-          <div>
-            <h1>Meine Finanzen & Haushaltsbuch</h1>
-            <span class="security-badge" aria-label="Sicherheitsstatus: AES-256 Verschlüsselt">🔒 AES-256 Verschlüsselt & DSGVO-Konform</span>
-          </div>
-        </div>
-        <div class="header-controls">
-          <span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum">
-            📅 Heute: <strong id="today-date-text">Lade Datum...</strong>
-          </span>
-          <button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L)">
-            <span aria-hidden="true">🔒</span>
-            <span>Sperren (L)</span>
-          </button>
-        </div>
-      </div>
-    </header>
-
-    <!-- =========================================================================
-         HAUPTNAVIGATION (5 TABS)
-         ========================================================================= -->
-    <nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
-      <div class="tab-list" role="tablist">
-        <button id="tab-overview" class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" onclick="switchView('overview')" tabindex="0">
-          <span class="tab-key-hint" aria-hidden="true">1</span>
-          <span>📊 <strong>Übersicht & Zeiträume</strong></span>
-        </button>
-        <button id="tab-expense" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-expense" onclick="switchView('expense')" tabindex="-1">
-          <span class="tab-key-hint" aria-hidden="true">2</span>
-          <span>🔴 <strong>Ausgabe eintragen / planen</strong></span>
-        </button>
-        <button id="tab-income" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-income" onclick="switchView('income')" tabindex="-1">
-          <span class="tab-key-hint" aria-hidden="true">3</span>
-          <span>🟢 <strong>Einnahme eintragen / planen</strong></span>
-        </button>
-        <button id="tab-transfer" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-transfer" onclick="switchView('transfer')" tabindex="-1">
-          <span class="tab-key-hint" aria-hidden="true">4</span>
-          <span>🔄 <strong>Umbuchen & Sparen</strong></span>
-        </button>
-        <button id="tab-settings" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
-          <span class="tab-key-hint" aria-hidden="true">5</span>
-          <span>⚙️ <strong>Einstellungen & Backup</strong></span>
-        </button>
-      </div>
-    </nav>
-
-    <!-- =========================================================================
-         EINHEITLICHE ZEITRAUM- & NAVIGATION LEISTE (DROPDOWN CONTROL FIELD)
-         ========================================================================= -->
-    <div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitraum und Navigation">
-      <div class="time-picker-inner">
-        <div class="time-select-wrapper">
-          <label for="overview-period-select" class="time-select-label">📊 <strong>Zeitraum:</strong></label>
-          <select id="overview-period-select" class="time-dropdown" onchange="handlePeriodDropdownChange(this.value)">
-            <option value="day">📍 Tag (Tagesgenau)</option>
-            <option value="week">📆 Woche (Kalenderwoche: Mo - So)</option>
-            <option value="month" selected>📅 Monat (Gesamter Monat)</option>
-            <option value="quarter">📊 3 Monate (Quartal)</option>
-            <option value="halfyear">📈 6 Monate (Halbjahr)</option>
-            <option value="year">🗓️ Ganzes Jahr</option>
-          </select>
-        </div>
-
-        <div id="sub-time-navigation-wrapper" class="time-select-wrapper">
-          <!-- Befüllt per JavaScript mit den Pfeiltasten und Unterauswahlen -->
-        </div>
-      </div>
-    </div>
-
-    <!-- =========================================================================
-         HAUPTINHALTSBEREICH
-         ========================================================================= -->
-    <main class="main-container" id="view-content-area" role="main">
-
-      <!-- =======================================================================
-           ANSICHT 1: ÜBERSICHT (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
-           ======================================================================= -->
-      <div id="view-overview" class="view-panel" role="tabpanel" aria-labelledby="tab-overview">
-        
-        <div class="month-banner">
-          <h2 id="overview-month-title" class="month-banner-title">Monatsübersicht für September 2026</h2>
-          <p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
-        </div>
-
-        <!-- 1. ZUERST: KONTOSTÄNDE -->
-        <section class="overview-section" aria-labelledby="section-accounts-heading">
-          <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
-          
-          <div class="accounts-grid">
-            <div class="account-card" tabindex="0" aria-label="Bankkonto Girokonto">
-              <div class="acc-header">
-                <span class="acc-icon" aria-hidden="true">🏦</span>
-                <span class="acc-name">Bankkonto (Girokonto)</span>
-              </div>
-              <div class="acc-balance" id="acc-balance-bank">0,00 €</div>
-              <span class="acc-hint">Miete, EC-Karte, Daueraufträge</span>
-            </div>
-
-            <div class="account-card" tabindex="0" aria-label="PayPal Guthaben">
-              <div class="acc-header">
-                <span class="acc-icon" aria-hidden="true">🅿️</span>
-                <span class="acc-name">PayPal Guthaben</span>
-              </div>
-              <div class="acc-balance" id="acc-balance-paypal">0,00 €</div>
-              <span class="acc-hint">Online-Shopping, Freunde, Spotify</span>
-            </div>
-
-            <div class="account-card" tabindex="0" aria-label="Tagesgeldkonto Erspartes">
-              <div class="acc-header">
-                <span class="acc-icon" aria-hidden="true">📈</span>
-                <span class="acc-name">Tagesgeldkonto (Sparen)</span>
-              </div>
-              <div class="acc-balance" id="acc-balance-savings">0,00 €</div>
-              <span class="acc-hint">Notgroschen, Führerschein, Urlaub</span>
-            </div>
-
-            <div class="account-card" tabindex="0" aria-label="Bargeld Portemonnaie">
-              <div class="acc-header">
-                <span class="acc-icon" aria-hidden="true">💵</span>
-                <span class="acc-name">Bargeld (Portemonnaie)</span>
-              </div>
-              <div class="acc-balance" id="acc-balance-cash">0,00 €</div>
-              <span class="acc-hint">Bäcker, Döner, Barbezahlung</span>
-            </div>
-          </div>
-        </section>
-
-        <!-- MEHRMONATS- / JAHRES-TABELLE (WIRD BEI 3M, 6M, JAHR ANGEZEIGT) -->
-        <section class="overview-section" id="section-period-breakdown" style="display: none;" aria-labelledby="period-breakdown-heading">
-          <div class="section-card">
-            <h3 id="period-breakdown-heading" class="section-title">📊 Monatsübersicht im gewählten Zeitraum</h3>
-            <div class="table-responsive" tabindex="0">
-              <table class="annual-table" id="period-summary-table">
-                <thead>
-                  <tr>
-                    <th scope="col">Monat</th>
-                    <th scope="col" class="text-right">Einnahmen</th>
-                    <th scope="col" class="text-right">Ausgaben</th>
-                    <th scope="col" class="text-right">Ergebnis (Plus / Minus)</th>
-                    <th scope="col" class="text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody id="period-table-body">
-                  <!-- Per JS -->
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- 2. DANN: EINNAHMEN -->
-        <section class="overview-section" aria-labelledby="section-income-heading">
-          <div class="section-card card-income-wrap">
-            <div class="card-header-flex">
-              <div>
-                <h3 id="section-income-heading" class="section-title" style="margin-bottom: 2px;">2. 📥 Einnahmen</h3>
-                <span class="sub-counter" id="income-summary-subtext">Lade Einnahmen...</span>
-              </div>
-              <div class="stat-big-val" id="card-month-income" style="color: var(--accent-income);">+ 0,00 €</div>
-            </div>
-
-            <details class="accessible-accordion" id="details-income-list" open>
-              <summary class="accordion-summary" aria-label="Alle Einnahmen ausklappen oder einklappen">
-                <span>📋 <strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
-              </summary>
-              <div class="accordion-content" id="overview-income-items-feed">
-                <!-- Wird per JS befüllt -->
-              </div>
-            </details>
-          </div>
-        </section>
-
-        <!-- 3. DANN: AUSGABEN -->
-        <section class="overview-section" aria-labelledby="section-expense-heading">
-          <div class="section-card card-expense-wrap">
-            <div class="card-header-flex">
-              <div>
-                <h3 id="section-expense-heading" class="section-title" style="margin-bottom: 2px;">3. 📤 Ausgaben</h3>
-                <span class="sub-counter" id="expense-summary-subtext">Lade Ausgaben...</span>
-              </div>
-              <div class="stat-big-val" id="card-month-expense" style="color: var(--accent-expense);">- 0,00 €</div>
-            </div>
-
-            <details class="accessible-accordion" id="details-expense-list" open>
-              <summary class="accordion-summary" aria-label="Alle Ausgaben ausklappen oder einklappen">
-                <span>📋 <strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
-              </summary>
-              <div class="accordion-content" id="overview-expense-items-feed">
-                <!-- Wird per JS befüllt -->
-              </div>
-            </details>
-          </div>
-        </section>
-
-        <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
-        <section class="overview-section" aria-labelledby="section-total-heading">
-          <div class="balance-hero-card" tabindex="0">
-            <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
-            <div class="hero-amount" id="card-alltime-total">0,00 €</div>
-            <div class="hero-subtext" id="total-balance-sub">Verfügbares Gesamtguthaben über alle Konten</div>
-            
-            <hr class="hero-divider" aria-hidden="true">
-
-            <div class="hero-secondary-row">
-              <div>
-                <span class="hero-sub-label" id="leftover-main-label">Ergebnis im Zeitraum:</span>
-                <strong class="hero-sub-value" id="month-leftover-display">0,00 €</strong>
-              </div>
-              <div id="month-leftover-sub" class="hero-subtext">Einnahmen minus Ausgaben</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 5. KAUF-PLANER & SIMULATOR -->
-        <section class="overview-section" aria-labelledby="section-simulator-heading">
-          <div class="section-card simulator-card">
-            <h3 id="section-simulator-heading" class="section-title">🛒 5. Kauf-Planer & Simulator (Was bleibt übrig, wenn ich etwas kaufe?)</h3>
-            <p class="field-hint">Hier kannst du sofort ausprobieren, wie viel Geld du nach einem Kauf noch übrig hättest:</p>
-
-            <div class="simulator-box">
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="sim-item-name" class="field-label"><strong>Was möchtest du dir kaufen? (Wunsch / Anschaffung)</strong></label>
-                  <input type="text" id="sim-item-name" class="large-input" placeholder="z. B. Neue Schuhe, Gaming-Headset, Jacke...">
-                </div>
-                <div class="form-group">
-                  <label for="sim-item-price" class="field-label"><strong>Preis in Euro (€)</strong></label>
-                  <input type="number" step="0.01" min="0.01" id="sim-item-price" class="large-input" placeholder="z. B. 49.99" oninput="runPurchaseSimulation()">
-                </div>
-              </div>
-
-              <div id="sim-result-box" class="sim-result-box">
-                <p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>
-              </div>
-
-              <div class="sim-actions" id="sim-save-action" style="display: none; margin-top: 14px;">
-                <button type="button" class="btn btn-primary" onclick="saveSimulatedPurchase()">
-                  <span>🎯 <strong>Als geplante Zukunftsausgabe übernehmen</strong></span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-      </div>
-
-      <!-- =======================================================================
-           ANSICHT 2: AUSGABE EINTRAGEN
-           ======================================================================= -->
-      <div id="view-expense" class="view-panel" role="tabpanel" aria-labelledby="tab-expense" style="display: none;">
-        <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-expense-view">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
-          <p class="view-sub">Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.</p>
-
-          <form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
-            <div class="form-group">
-              <label for="exp-amount" class="field-label">
-                <strong>Betrag in Euro (€)</strong> <span class="required-star" aria-hidden="true">* (Pflichtfeld)</span>
-              </label>
-              <input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off">
-            </div>
-
-            <div class="form-group">
-              <label for="exp-frequency" class="field-label">
-                <strong>Art & Häufigkeit der Ausgabe</strong>
-              </label>
-              <select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
-                <option value="once" selected>⚡ Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
-                <option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung nicht fest)</option>
-                <option value="weekly">📅 Dauerhaft Wöchentlich (Jede Woche, z. B. wöchentlicher Einkauf/Taschengeld)</option>
-                <option value="monthly">📅 Dauerhaft Monatlich (Fester Vertrag / Abo jeden Monat)</option>
-                <option value="yearly">🗓️ Dauerhaft Jährlich (Feste Jahreskosten, z. B. Versicherung)</option>
-                <option value="quarterly">🔄 Dauerhaft Alle 3 Monate (Quartalsweise)</option>
-              </select>
-            </div>
-
-            <div class="form-group" id="exp-account-group">
-              <label for="exp-account" class="field-label">
-                <strong>Von welchem Konto bezahlen?</strong> <span class="required-star" aria-hidden="true">*</span>
-              </label>
-              <select id="exp-account" class="large-select" required>
-                <option value="bank">🏦 Bankkonto / Girokonto (EC-Karte / Lastschrift)</option>
-                <option value="paypal">🅿️ PayPal Guthaben</option>
-                <option value="cash">💵 Bargeld (Portemonnaie / Bar bezahlt)</option>
-                <option value="savings">📈 Tagesgeldkonto (Vom Ersparten bezahlt)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="exp-category" class="field-label">
-                <strong>Art der Ausgabe (Kategorie)</strong>
-              </label>
-              <select id="exp-category" class="large-select">
-                <optgroup label="Essen, Trinken & Supermarkt">
-                  <option value="Supermarkt & Lebensmittel">🛒 Supermarkt & Lebensmittel (REWE, Aldi, Lidl)</option>
-                  <option value="Döner, Pizza & Fast Food">🍕 Döner, Pizza, Fast Food & Bäcker</option>
-                  <option value="Snacks & Energy Drinks">🥤 Snacks, Süßigkeiten & Energy Drinks</option>
-                  <option value="Restaurant & Café">☕ Restaurant, Café & Bar</option>
-                </optgroup>
-                <optgroup label="Wohnen, Energie & Nebenkosten">
-                  <option value="Miete & Wohnen">🏠 Miete & Wohnkosten</option>
-                  <option value="Strom, Wasser, Gas & Heizung">⚡ Strom, Wasser, Gas & Heizung (Stadtwerke / Energie)</option>
-                  <option value="Internet & Rundfunkbeitrag">📡 Internet, Festnetz & Rundfunkbeitrag (GEZ)</option>
-                </optgroup>
-                <optgroup label="Abos, Verträge & Versicherungen">
-                  <option value="Streaming & Abos">🎬 Streaming & Abos (Spotify, Netflix, YouTube, Discord)</option>
-                  <option value="Handyvertrag & Prepaid">📱 Handytarif, Guthaben & Internet</option>
-                  <option value="Fahrkarte & ÖPNV">🚌 Deutschlandticket / ÖPNV Abo</option>
-                  <option value="Versicherung & Gebühren">🛡️ Haftpflicht & Versicherungen</option>
-                </optgroup>
-                <optgroup label="Freizeit, Vereine & Gaming">
-                  <option value="Gaming & Games">🎮 Gaming, Steam, PlayStation, Xbox & Ingame</option>
-                  <option value="Verein & Mitgliedschaft">🏆 Verein, Club & Mitgliedsbeitrag (Sportverein, Förderverein)</option>
-                  <option value="Hobby & Sport">⚽ Fitnessstudio, Sport & Fitness</option>
-                  <option value="Freizeit, Party & Feiern">🎉 Freizeit, Freunde treffen, Party & Kino</option>
-                </optgroup>
-                <optgroup label="Shopping, Wünsche, Gesundheit & Spenden">
-                  <option value="Shopping & Kleidung">👕 Kleidung, Schuhe & Online-Shopping</option>
-                  <option value="Technik & Elektronik">💻 Technik, PC, Zubehör</option>
-                  <option value="Drogerie & Friseur">💊 Drogerie (dm, Rossmann), Friseur & Pflege</option>
-                  <option value="Tanken & Roller/Auto">⛽ Tanken, Roller & Auto</option>
-                  <option value="Führerschein">🚗 Führerschein & Fahrstunden</option>
-                  <option value="Geschenke">🎁 Geschenke für Freunde / Familie</option>
-                  <option value="Spenden & Wohltätigkeit">❤️ Spenden & Gemeinnützigkeit</option>
-                  <option value="Sonstige Ausgabe">📦 Sonstige Ausgabe</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <div class="form-group" id="exp-date-group">
-              <label for="exp-date" class="field-label">
-                <strong>An welchem Tag (Datum)?</strong>
-              </label>
-              <input type="date" id="exp-date" class="large-input" required>
-            </div>
-
-            <div id="exp-recurring-details" style="display: none;">
-              <div class="form-row-2">
-                <div class="form-group" id="exp-month-day-group">
-                  <label for="exp-rec-day" class="field-label">
-                    <strong>An welchem Tag des Monats? (1 - 31)</strong>
-                  </label>
-                  <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
-                </div>
-                <div class="form-group" id="exp-weekday-group" style="display: none;">
-                  <label for="exp-rec-weekday" class="field-label">
-                    <strong>An welchem Wochentag jede Woche?</strong>
-                  </label>
-                  <select id="exp-rec-weekday" class="large-select">
-                    <option value="1">Jeden Montag</option>
-                    <option value="2">Jeden Dienstag</option>
-                    <option value="3">Jeden Mittwoch</option>
-                    <option value="4">Jeden Donnerstag</option>
-                    <option value="5" selected>Jeden Freitag</option>
-                    <option value="6">Jeden Samstag</option>
-                    <option value="0">Jeden Sonntag</option>
-                  </select>
-                </div>
-                <div class="form-group" id="exp-yearly-month-group" style="display: none;">
-                  <label for="exp-yearly-month" class="field-label">
-                    <strong>In welchem Monat fällig?</strong>
-                  </label>
-                  <select id="exp-yearly-month" class="large-select">
-                    <option value="0">Januar</option>
-                    <option value="1">Februar</option>
-                    <option value="2">März</option>
-                    <option value="3">April</option>
-                    <option value="4">Mai</option>
-                    <option value="5">Juni</option>
-                    <option value="6">Juli</option>
-                    <option value="7">August</option>
-                    <option value="8">September</option>
-                    <option value="9">Oktober</option>
-                    <option value="10">November</option>
-                    <option value="11">Dezember</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="exp-desc" class="field-label">
-                <strong>Beschreibung / Wofür genau?</strong>
-              </label>
-              <input type="text" id="exp-desc" class="large-input" placeholder="z. B. Geplante neue Kopfhörer, Döner, Spotify...">
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
-                <span>🔴 <strong>Ausgabe / Geplanten Kauf speichern</strong> (Enter)</span>
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
-                <span>Zurück zur Übersicht</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- =======================================================================
-           ANSICHT 3: EINNAHME EINTRAGEN
-           ======================================================================= -->
-      <div id="view-income" class="view-panel" role="tabpanel" aria-labelledby="tab-income" style="display: none;">
-        <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-income-view">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
-          <p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
-
-          <form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
-            <div class="form-group">
-              <label for="inc-amount" class="field-label">
-                <strong>Betrag in Euro (€)</strong> <span class="required-star" aria-hidden="true">*</span>
-              </label>
-              <input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off">
-            </div>
-
-            <div class="form-group">
-              <label for="inc-frequency" class="field-label">
-                <strong>Art & Häufigkeit der Einnahme</strong>
-              </label>
-              <select id="inc-frequency" class="large-select" onchange="toggleIncomeFrequencyFields()">
-                <option value="once" selected>⚡ Einmalig (bereits erhalten)</option>
-                <option value="planned">🎯 Geplante einmalige Zukunftseinnahme (z. B. geplanter Verkauf, Geschenk)</option>
-                <option value="weekly">📅 Dauerhaft Wöchentlich (Jede Woche, z. B. wöchentliche Auszahlung)</option>
-                <option value="monthly">📅 Dauerhaft Monatlich (z. B. monatliches Taschengeld, Gehalt)</option>
-                <option value="yearly">🗓️ Dauerhaft Jährlich (1x im Jahr)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="inc-account" class="field-label">
-                <strong>Auf welches Konto?</strong> <span class="required-star" aria-hidden="true">*</span>
-              </label>
-              <select id="inc-account" class="large-select" required>
-                <option value="bank">🏦 Bankkonto / Girokonto</option>
-                <option value="paypal">🅿️ PayPal Guthaben</option>
-                <option value="cash">💵 Bargeld (ins Portemonnaie bekommen)</option>
-                <option value="savings">📈 Direkt aufs Tagesgeldkonto (Sparen)</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="inc-category" class="field-label">
-                <strong>Woher kommt das Geld? (Kategorie)</strong>
-              </label>
-              <select id="inc-category" class="large-select">
-                <optgroup label="Leistungen, Unterstützung & Zuschüsse">
-                  <option value="Blindengeld / Landesblindengeld" selected>🦯 Blindengeld / Landesblindengeld / Sehbehindertengeld</option>
-                  <option value="Pflegegeld (Pflegekasse)">🩺 Pflegegeld (Pflegekasse / Pflegegrad)</option>
-                  <option value="Kindergeld / BAföG / Zuschuss">🏛️ Kindergeld / BAföG / Amt & Grundsicherung</option>
-                  <option value="Taschengeld">👛 Taschengeld / Unterstützung Eltern</option>
-                </optgroup>
-                <optgroup label="Arbeit, Nebenjob & Verkäufe">
-                  <option value="Ausbildungsvergütung / Lohn">💼 Ausbildungsvergütung / Gehalt / Lohn</option>
-                  <option value="Minijob & Nebenjob">⭐ Minijob, Aushilfe & Nebenjob</option>
-                  <option value="Kleinanzeigen & Vinted">📦 Verkäufe (Vinted, Kleinanzeigen, Flohmarkt)</option>
-                  <option value="Rückzahlung von Freunden">🔄 Rückzahlung von Freunden (PayPal / Bar)</option>
-                  <option value="Geschenk / Geburtstag">🎁 Geschenk (Geburtstag, Oma, Feiertage)</option>
-                  <option value="Spende / Zuwendung">❤️ Spende & Zuwendung erhalten</option>
-                  <option value="Pfand & Kleingeld">🍾 Pfandgeld / Kleingeld eingezahlt</option>
-                  <option value="Sonstige Einnahme">💰 Sonstige Einnahme</option>
-                </optgroup>
-              </select>
-            </div>
-
-            <div class="form-group" id="inc-date-group">
-              <label for="inc-date" class="field-label">
-                <strong>Wann (Datum)?</strong>
-              </label>
-              <input type="date" id="inc-date" class="large-input" required>
-            </div>
-
-            <div id="inc-recurring-details" style="display: none;">
-              <div class="form-group" id="inc-month-day-group">
-                <label for="inc-rec-day" class="field-label">
-                  <strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
-                </label>
-                <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
-              </div>
-              <div class="form-group" id="inc-weekday-group" style="display: none;">
-                <label for="inc-rec-weekday" class="field-label">
-                  <strong>An welchem Wochentag jede Woche?</strong>
-                </label>
-                <select id="inc-rec-weekday" class="large-select">
-                  <option value="1">Jeden Montag</option>
-                  <option value="2">Jeden Dienstag</option>
-                  <option value="3">Jeden Mittwoch</option>
-                  <option value="4">Jeden Donnerstag</option>
-                  <option value="5" selected>Jeden Freitag</option>
-                  <option value="6">Jeden Samstag</option>
-                  <option value="0">Jeden Sonntag</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="inc-desc" class="field-label">
-                <strong>Beschreibung / Von wem?</strong>
-              </label>
-              <input type="text" id="inc-desc" class="large-input" placeholder="z. B. Taschengeld, Vinted Jacke Verkauf im Oktober...">
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
-                <span>🟢 <strong>Einnahme speichern</strong> (Enter)</span>
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
-                <span>Zurück zur Übersicht</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- =======================================================================
-           ANSICHT 4: UMBUCHEN & SPAREN
-           ======================================================================= -->
-      <div id="view-transfer" class="view-panel" role="tabpanel" aria-labelledby="tab-transfer" style="display: none;">
-        <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-transfer-view">🔄 Geld umbuchen & auf anderes Konto sparen</h2>
-          <p class="view-sub">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
-
-          <form id="form-add-transfer" class="accessible-form" onsubmit="handleAddTransfer(event)">
-            <div class="form-group">
-              <label for="trf-amount" class="field-label">
-                <strong>Betrag zum Umbuchen in Euro (€)</strong> <span class="required-star" aria-hidden="true">*</span>
-              </label>
-              <input type="number" step="0.01" min="0.01" id="trf-amount" class="large-input" placeholder="z. B. 25 oder 50" required autofocus autocomplete="off">
-            </div>
-
-            <div class="form-group">
-              <label for="trf-frequency" class="field-label">
-                <strong>Häufigkeit der Umbuchung</strong>
-              </label>
-              <select id="trf-frequency" class="large-select" onchange="toggleTransferFrequencyFields()">
-                <option value="once" selected>⚡ Einmalig (Jetzt sofort oder an bestimmtem Tag verschieben)</option>
-                <option value="weekly">📅 Dauerhaft Wöchentlich (Automatischer wöchentlicher Sparplan)</option>
-                <option value="monthly">📅 Dauerhaft Monatlich (Automatischer monatlicher Sparplan)</option>
-              </select>
-            </div>
-
-            <div class="form-row-2">
-              <div class="form-group">
-                <label for="trf-from" class="field-label"><strong>Von welchem Konto abbuchen (Quelle)?</strong></label>
-                <select id="trf-from" class="large-select" required>
-                  <option value="bank" selected>🏦 Bankkonto / Girokonto</option>
-                  <option value="paypal">🅿️ PayPal Guthaben</option>
-                  <option value="cash">💵 Bargeld</option>
-                  <option value="savings">📈 Tagesgeldkonto</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="trf-to" class="field-label"><strong>Auf welches Konto einzahlen (Ziel / Sparen)?</strong></label>
-                <select id="trf-to" class="large-select" required>
-                  <option value="savings" selected>📈 Tagesgeldkonto (Sparen / Notgroschen)</option>
-                  <option value="paypal">🅿️ PayPal Guthaben</option>
-                  <option value="bank">🏦 Bankkonto / Girokonto</option>
-                  <option value="cash">💵 Bargeld (Geldautomat abgehoben)</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group" id="trf-date-group">
-              <label for="trf-date" class="field-label"><strong>Datum der Umbuchung</strong></label>
-              <input type="date" id="trf-date" class="large-input" required>
-            </div>
-
-            <div id="trf-recurring-details" style="display: none;">
-              <div class="form-group" id="trf-month-day-group">
-                <label for="trf-rec-day" class="field-label">
-                  <strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
-                </label>
-                <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
-              </div>
-              <div class="form-group" id="trf-weekday-group" style="display: none;">
-                <label for="trf-rec-weekday" class="field-label">
-                  <strong>An welchem Wochentag jede Woche sparen?</strong>
-                </label>
-                <select id="trf-rec-weekday" class="large-select">
-                  <option value="1">Jeden Montag</option>
-                  <option value="2">Jeden Dienstag</option>
-                  <option value="3">Jeden Mittwoch</option>
-                  <option value="4">Jeden Donnerstag</option>
-                  <option value="5" selected>Jeden Freitag</option>
-                  <option value="6">Jeden Samstag</option>
-                  <option value="0">Jeden Sonntag</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="trf-desc" class="field-label"><strong>Zweck / Notiz</strong></label>
-              <input type="text" id="trf-desc" class="large-input" placeholder="z. B. Sparplan Notgroschen, Führerschein Sparen...">
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">
-                <span>🔄 <strong>Umbuchung / Sparplan speichern</strong> (Enter)</span>
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="switchView('overview')">
-                <span>Zurück zur Übersicht</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- =======================================================================
-           ANSICHT 5: EINSTELLUNGEN, DESIGN & BACKUP
-           ======================================================================= -->
-      <div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
-        <div class="form-container">
-          <h2 class="view-heading" tabindex="-1" id="heading-settings-view">⚙️ Einstellungen, Design & Datensicherung</h2>
-
-          <!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
-          <section class="settings-box" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
-            <h3 id="theme-settings-heading">🎨 Darstellung, Design & Schriftgröße</h3>
-            <p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
-
-            <div class="form-row-2" style="margin-top: 10px;">
-              <div class="form-group">
-                <label for="settings-theme-select" class="field-label"><strong>Farbkontrast / Design:</strong></label>
-                <select id="settings-theme-select" class="large-select" onchange="changeTheme(this.value)">
-                  <option value="theme-light" selected>🌐 Standard Web-Design (Hell & Modern)</option>
-                  <option value="theme-dark">⚪ Dunkel-Modus (Weiß auf Dunkelgrau/Schwarz)</option>
-                  <option value="theme-high-contrast">🟡 Gelb auf Schwarz (Maximaler Kontrast)</option>
-                </select>
-              </div>
-
-              <div class="form-group">
-                <label for="settings-fontsize-select" class="field-label"><strong>Schriftgröße / Textgröße:</strong></label>
-                <select id="settings-fontsize-select" class="large-select" onchange="changeFontSize(this.value)">
-                  <option value="font-normal" selected>Normal (Standard 100%)</option>
-                  <option value="font-large">Groß (125% - Größere Schrift)</option>
-                  <option value="font-xlarge">Sehr groß (150% - Riesige Schrift)</option>
-                </select>
-              </div>
-            </div>
-          </section>
-
-          <!-- 2. GITHUB AUTO-UPDATER -->
-          <section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
-            <h3 id="github-updater-heading">🔄 GitHub Auto-Updater (App-Status)</h3>
-            <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
-            
-            <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
-              Installierte Version: <strong>v5.0.0</strong> (Open Source auf GitHub)
-            </div>
-
-            <div class="form-actions" style="margin-top: 10px;">
-              <a href="https://github.com/Lauju1909/BarrierefreieFinanzApp/releases/latest" target="_blank" class="btn btn-secondary" style="flex: 1; text-decoration: none;">
-                <span>🌐 <strong>GitHub Repository & Releases öffnen</strong></span>
-              </a>
-            </div>
-          </section>
-
-          <!-- 3. DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
-          <section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
-            <h3 id="backup-restore-heading">💾 Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
-            <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen oder auf einen neuen PC übertragen:</p>
-
-            <div class="form-actions" style="margin-top: 10px;">
-              <button type="button" class="btn btn-secondary" onclick="exportEncryptedBackup()" style="flex: 1;">
-                <span>📤 <strong>Verschlüsseltes Backup herunterladen</strong> (.json)</span>
-              </button>
-              <label class="btn btn-secondary" style="flex: 1; cursor: pointer; text-align: center;">
-                <span>📥 <strong>Backup-Datei importieren</strong></span>
-                <input type="file" id="import-backup-file" accept=".json" onchange="importEncryptedBackup(event)" style="display: none;">
-              </label>
-            </div>
-          </section>
-
-          <!-- 4. LISTE ALLER GESPEICHERTEN DAUERHAFTEN DAUERAUFTRÄGE & SPARPLÄNE -->
-          <section class="settings-box" aria-labelledby="manage-recurring-heading">
-            <h3 id="manage-recurring-heading" class="section-title">🔁 Feste Daueraufträge & Sparpläne verwalten</h3>
-            <p class="field-hint">Hier kannst du deine monatlichen/jährlichen Fixkosten und Sparpläne einsehen, bearbeiten und löschen:</p>
-            <div id="settings-recurring-container">
-              <!-- Wird per JS befüllt -->
-            </div>
-          </section>
-
-          <!-- 5. PIN ÄNDERN -->
-          <section class="settings-box" aria-labelledby="set-pin-heading">
-            <h3 id="set-pin-heading">🔒 Sicherheits-PIN / Passwort ändern</h3>
-            <form id="form-change-pin" onsubmit="handleChangePin(event)">
-              <div class="form-group">
-                <label for="change-old-pin" class="field-label">Aktuelle PIN:</label>
-                <input type="password" id="change-old-pin" class="large-input" required>
-              </div>
-              <div class="form-group">
-                <label for="change-new-pin" class="field-label">Neue PIN oder Passwort:</label>
-                <input type="password" id="change-new-pin" class="large-input" required>
-              </div>
-              <button type="submit" class="btn btn-secondary">🔑 <strong>Neue PIN speichern & Daten neu verschlüsseln</strong></button>
-            </form>
-          </section>
-
-          <!-- 6. DATEN LÖSCHEN / RESET -->
-          <section class="settings-box danger-box" aria-labelledby="set-reset-heading">
-            <h3 id="set-reset-heading">⚠️ DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
-            <p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
-            <button class="btn btn-danger" onclick="resetAllAppData()">🗑️ Alle Daten & Schlüssel restlos löschen</button>
-          </section>
-
-        </div>
-      </div>
-
-    </main>
-
-    <!-- Fußzeile -->
-    <footer class="app-footer" role="contentinfo">
-      <p>🛡️ <strong>Barrierefreie Finanzen v5.0.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-      <p>Tastaturkürzel: <strong>1</strong> = Übersicht | <strong>2</strong> = Ausgabe | <strong>3</strong> = Einnahme | <strong>4</strong> = Umbuchen | <strong>5</strong> = Einstellungen | <strong>T</strong> = Zu Heute | <strong>L</strong> = Sofortsperre</p>
-    </footer>
-
-  </div>
-
-  <script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>
+<!-- Live-Regionen für NVDA Screenreader Mitteilungen -->
+<div id="sr-live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<div id="sr-live-assertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- =========================================================================
+ 0. MODAL DIALOG: ÄNDERUNGSPROTOKOLL / WAS IST NEU (VOR PIN EINGABE)
+ ========================================================================= -->
+<div id="changelog-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="changelog-modal-heading" style="display: none; z-index: 100000;">
+<div class="modal-dialog-box" style="max-width: 680px;">
+<div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+<span style="font-size: 32px;" aria-hidden="true">📜</span>
+<div>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.1.0)</h2>
+<span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
+</div>
+</div>
+
+<div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(156, 39, 176, 0.08); border-left: 6px solid #9c27b0; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin-top: 0; margin-bottom: 10px; font-size: 19px; color: #9c27b0;">🌟 Das ist neu in Version 5.1.0</h3>
+ 
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px;">
+<li>
+<strong>🛒 Über 200 Kategorien & Geschäfte (Zweistufiges System):</strong><br>
+ Wähle jetzt erst die Hauptkategorie und dann direkt den passenden Laden oder das Detail (z. B. Aldi Nord/Süd, Lidl, Rewe, Edeka, Kaufland, dm, Rossmann, Streaming, Gaming, Wohnen, Gesundheit, Hilfsmittel, Taschengeld, Spenden u.v.m.).
+</li>
+<li>
+<strong>🔍 Blitzschnelle Live-Suche:</strong><br>
+ Tippe einfach ein paar Buchstaben eines Ladens oder Begriffs (z. B. „Rewe“, „Netflix“, „Tanken“, „Taschengeld“, „IKEA“), und die App wählt sofort automatisch die passende Haupt- und Unterkategorie.
+</li>
+<li>
+<strong>Eigene Kategorien & Läden hinzufügen (Reiter 5):</strong><br>
+ Fehlt dir ein Geschäft oder eine Kategorie? Du kannst jetzt jederzeit eigene Haupt- und Unterkategorien direkt in der App erstellen. Sie werden sofort lokal gespeichert und automatisch an den Entwickler übermittelt.
+</li>
+<li>
+<strong>Symbole & Emojis komplett abschaltbar (Reiner Textmodus für NVDA):</strong><br>
+ In Reiter 5 (Einstellungen) kannst du mit einem Klick alle Symbole und Emojis ausschalten. Die gesamte App schaltet dann in einen 100% reinen, emoji-freien Klartextmodus um – perfekt für Screenreader (NVDA).
+</li>
+<li>
+<strong>💡 Deine Wünsche & Feedback direkt senden:</strong><br>
+ In Reiter 5 kannst du jederzeit Ideen oder Vorschläge eingeben und mit einem Klick direkt abschicken.
+</li>
+<li>
+<strong>📅 Neue Zeiträume für Daueraufträge:</strong><br>
+ Regelmäßige Kosten kannst du jetzt auch bequem<strong>alle 3 Monate (vierteljährlich)</strong>oder<strong>alle 6 Monate (halbjährlich)</strong>automatisch einplanen.
+</li>
+<li>
+<strong>🔄 100% Abwärtskompatibilität mit älteren Sicherungen & GitHub-Versionen:</strong><br>
+ Sicherungsdateien aus früheren Versionen, hex-kodierte Tresore oder ältere Formate werden beim Import automatisch erkannt, repariert und nahtlos geladen.
+</li>
+<li>
+<strong>🛡 Zuverlässiger & dauerhafter Speicher:</strong><br>
+ Deine eingetragenen Buchungen, Kontostände und Sparpläne bleiben auf diesem Computer dauerhaft und sicher erhalten.
+</li>
+</ul>
+</div>
+</div>
+<div style="margin-top: 18px; border-top: 2px solid var(--border-color); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+<label style="display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer;">
+<input type="checkbox" id="chk-dont-show-changelog-again" onchange="toggleChangelogAutoShow(event)">
+<span>Bei Updates nicht mehr automatisch anzeigen</span>
+</label>
+
+<button type="button" class="btn btn-primary" id="btn-close-changelog" onclick="closeChangelogModal()" style="min-width: 180px;">
+<span><strong>Schließen & Weiter (Enter)</strong></span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- =========================================================================
+ 1. AES-256 PIN / PASSWORT SPERRBILDSCHIRM
+ ========================================================================= -->
+<div id="lock-screen" class="lock-screen-overlay" role="dialog" aria-modal="true" aria-labelledby="lock-heading">
+<div class="lock-card">
+<div class="lock-icon" aria-hidden="true">🛡</div>
+<h1 id="lock-heading" tabindex="-1">Sicherer AES-256 Zugang</h1>
+<p id="lock-instructions" class="lock-desc">Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:</p>
+ 
+<form id="lock-form" onsubmit="handlePinSubmit(event)">
+<div class="form-group">
+<label for="pin-input" class="field-label"><strong id="pin-input-label">PIN oder Passwort:</strong></label>
+<div style="display: flex; gap: 8px; align-items: stretch;">
+<input type="password" id="pin-input" class="large-input pin-field" maxlength="30" placeholder="z. B. 1234" autocomplete="off" autofocus required style="flex: 1;">
+<button type="button" class="btn btn-secondary" onclick="togglePinVisibility()" title="PIN im Klartext anzeigen / verbergen" aria-label="PIN im Klartext anzeigen oder verbergen" style="white-space: nowrap; padding: 0 16px;">
+<span id="pin-toggle-icon">👁 Anzeigen</span>
+</button>
+</div>
+</div>
+
+<div id="pin-error-msg" class="error-box" role="alert" style="display: none;"></div>
+
+<div class="lock-actions" style="margin-top: 14px;">
+<button type="submit" class="btn btn-primary" id="btn-unlock" style="width: 100%;">
+<span id="btn-unlock-text">🔓<strong>Entschlüsseln & Öffnen</strong>(Enter)</span>
+</button>
+</div>
+</form>
+
+<div class="lock-restore-action" style="margin-top: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px;">
+<label class="btn btn-secondary" style="width: 100%; cursor: pointer; display: block; box-sizing: border-box;">
+<span>📥<strong>Alte Sicherung oder Daten-Datei importieren</strong>(.json / .vault)</span>
+<input type="file" accept=".json,.vault,.bak" onchange="importEncryptedBackup(event)" style="display: none;">
+</label>
+<button type="button" class="btn btn-secondary" onclick="resetVaultSetup()" style="width: 100%; font-size: 14px; opacity: 0.85;">
+<span>🔄<strong>PIN vergessen / Neuen leeren Tresor einrichten</strong></span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="openChangelogModal(true)" style="width: 100%; font-size: 14px; opacity: 0.9;">
+<span>📜<strong>Was ist neu in diesem Update? (Änderungsprotokoll)</strong></span>
+</button>
+</div>
+
+<div class="privacy-guarantee-box">
+<p>🔒<strong>100% DSGVO & EU-Datenschutz:</strong>Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.</p>
+</div>
+
+<div class="pin-hint-box" id="first-time-hint" style="display: none;">
+<p>💡<em>Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).</em></p>
+</div>
+</div>
+</div>
+
+<!-- =========================================================================
+ 2. MODAL DIALOG: BUCHUNG BEARBEITEN
+ ========================================================================= -->
+<div id="edit-tx-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" style="display: none;">
+<div class="modal-dialog-box">
+<h2 id="edit-modal-heading" tabindex="-1">Buchung bearbeiten</h2>
+<p class="field-hint">Passe hier Betrag, Datum, Konto, Kategorie oder Notiz an:</p>
+ 
+<form id="form-edit-tx" onsubmit="saveEditedTransaction(event)" class="accessible-form" style="margin-top: 16px;">
+<input type="hidden" id="edit-tx-id">
+ 
+<div class="form-group">
+<label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
+<input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
+</div>
+
+<div class="form-group">
+<label for="edit-tx-date" class="field-label"><strong>Datum</strong></label>
+<input type="date" id="edit-tx-date" class="large-input" required>
+</div>
+
+<div class="form-group">
+<label for="edit-tx-account" class="field-label"><strong>Konto</strong></label>
+<select id="edit-tx-account" class="large-select">
+<option value="bank">🏦 Bankkonto / Girokonto</option>
+<option value="paypal">🅿PayPal Guthaben</option>
+<option value="savings">📈 Tagesgeldkonto</option>
+<option value="cash">💵 Bargeld</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="edit-tx-category" class="field-label"><strong>Kategorie</strong></label>
+<input type="text" id="edit-tx-category" class="large-input">
+</div>
+
+<div class="form-group">
+<label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz</strong></label>
+<input type="text" id="edit-tx-desc" class="large-input">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">
+<span>💾<strong>Änderungen speichern</strong></span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+<span>Abbrechen</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =========================================================================
+ 3. MODAL DIALOG: DAUERAUFTRAG / SPARPLAN BEARBEITEN
+ ========================================================================= -->
+<div id="edit-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-rec-heading" style="display: none;">
+<div class="modal-dialog-box">
+<h2 id="edit-rec-heading" tabindex="-1">Dauerauftrag / Sparplan bearbeiten</h2>
+<p class="field-hint">Passe hier regelmäßige Kosten oder Sparpläne an:</p>
+ 
+<form id="form-edit-rec" onsubmit="saveEditedRecurring(event)" class="accessible-form" style="margin-top: 16px;">
+<input type="hidden" id="edit-rec-id">
+ 
+<div class="form-group">
+<label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
+<input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
+</div>
+
+<div class="form-group">
+<label for="edit-rec-interval" class="field-label"><strong>Intervall</strong></label>
+<select id="edit-rec-interval" class="large-select">
+<option value="weekly">Wöchentlich (Jede Woche)</option>
+<option value="monthly">Monatlich</option>
+<option value="quarterly">Alle 3 Monate (Quartalsweise)</option>
+<option value="halfyear">Alle 6 Monate (Halbjährlich)</option>
+<option value="yearly">Jährlich (1x im Jahr)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31)</strong></label>
+<input type="number" min="1" max="31" id="edit-rec-day" class="large-input" required>
+</div>
+
+<div class="form-group">
+<label for="edit-rec-name" class="field-label"><strong>Name / Beschreibung</strong></label>
+<input type="text" id="edit-rec-name" class="large-input">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">
+<span>💾<strong>Dauerauftrag speichern</strong></span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
+<span>Abbrechen</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =========================================================================
+ 4. HAUPTANWENDUNG
+ ========================================================================= -->
+<div id="app-wrapper" style="display: none;">
+
+<!-- Schnellsprunglinks für NVDA -->
+<nav class="skip-links" aria-label="Schnellnavigation">
+<a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
+<a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
+<a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
+</nav>
+
+<!-- Header -->
+<header class="app-header" role="banner">
+<div class="header-content">
+<div class="brand">
+<span class="app-icon" aria-hidden="true">💶</span>
+<div>
+<h1>Meine Finanzen & Haushaltsbuch</h1>
+<span class="security-badge" aria-label="Sicherheitsstatus: AES-256 Verschlüsselt">🔒 AES-256 Verschlüsselt & DSGVO-Konform</span>
+</div>
+</div>
+<div class="header-controls">
+<span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum">
+ 📅 Heute:<strong id="today-date-text">Lade Datum...</strong></span>
+<button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L)">
+<span aria-hidden="true">🔒</span>
+<span>Sperren (L)</span>
+</button>
+</div>
+</div>
+</header>
+
+<!-- =========================================================================
+ HAUPTNAVIGATION (5 TABS)
+ ========================================================================= -->
+<nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
+<div class="tab-list" role="tablist">
+<button id="tab-overview" data-emoji="📊" class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" onclick="switchView('overview')" tabindex="0">
+<span class="tab-key-hint" aria-hidden="true">1</span>
+<span>📊<strong>Übersicht & Zeiträume</strong></span>
+</button>
+<button id="tab-expense" data-emoji="🔴" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-expense" onclick="switchView('expense')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">2</span>
+<span>🔴<strong>Ausgabe eintragen / planen</strong></span>
+</button>
+<button id="tab-income" data-emoji="🟢" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-income" onclick="switchView('income')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">3</span>
+<span>🟢<strong>Einnahme eintragen / planen</strong></span>
+</button>
+<button id="tab-transfer" data-emoji="🔄" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-transfer" onclick="switchView('transfer')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">4</span>
+<span>🔄<strong>Umbuchen & Sparen</strong></span>
+</button>
+<button id="tab-settings" data-emoji="" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">5</span>
+<span><strong>Einstellungen & Backup</strong></span>
+</button>
+</div>
+</nav>
+
+<!-- =========================================================================
+ EINHEITLICHE ZEITRAUM- & NAVIGATION LEISTE (DROPDOWN CONTROL FIELD)
+ ========================================================================= -->
+<div class="time-picker-container" id="time-picker-bar" role="region" aria-label="Zeitraum und Navigation">
+<div class="time-picker-inner">
+<div class="time-select-wrapper">
+<label for="overview-period-select" class="time-select-label">📊<strong>Zeitraum:</strong></label>
+<select id="overview-period-select" class="time-dropdown" onchange="handlePeriodDropdownChange(this.value)">
+<option value="day">📍 Tag (Tagesgenau)</option>
+<option value="week">📆 Woche (Kalenderwoche: Mo - So)</option>
+<option value="month" selected>📅 Monat (Gesamter Monat)</option>
+<option value="quarter">📊 3 Monate (Quartal)</option>
+<option value="halfyear">📈 6 Monate (Halbjahr)</option>
+<option value="year">🗓Ganzes Jahr</option>
+</select>
+</div>
+
+<div id="sub-time-navigation-wrapper" class="time-select-wrapper">
+<!-- Befüllt per JavaScript mit den Pfeiltasten und Unterauswahlen -->
+</div>
+</div>
+</div>
+
+<!-- =========================================================================
+ HAUPTINHALTSBEREICH
+ ========================================================================= -->
+<main class="main-container" id="view-content-area" role="main">
+
+<!-- =======================================================================
+ ANSICHT 1: ÜBERSICHT (TAG, MONAT, 3 MONATE, 6 MONATE, JAHR)
+ ======================================================================= -->
+<div id="view-overview" class="view-panel" role="tabpanel" aria-labelledby="tab-overview">
+ 
+<div class="month-banner">
+<h2 id="overview-month-title" class="month-banner-title">Monatsübersicht für September 2026</h2>
+<p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
+</div>
+
+<!-- 1. ZUERST: KONTOSTÄNDE -->
+<section class="overview-section" aria-labelledby="section-accounts-heading">
+<h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
+ 
+<div class="accounts-grid">
+<div class="account-card" tabindex="0" aria-label="Bankkonto Girokonto">
+<div class="acc-header">
+<span class="acc-icon" aria-hidden="true">🏦</span>
+<span class="acc-name">Bankkonto (Girokonto)</span>
+</div>
+<div class="acc-balance" id="acc-balance-bank">0,00 €</div>
+<span class="acc-hint">Miete, EC-Karte, Daueraufträge</span>
+</div>
+
+<div class="account-card" tabindex="0" aria-label="PayPal Guthaben">
+<div class="acc-header">
+<span class="acc-icon" aria-hidden="true">🅿</span>
+<span class="acc-name">PayPal Guthaben</span>
+</div>
+<div class="acc-balance" id="acc-balance-paypal">0,00 €</div>
+<span class="acc-hint">Online-Shopping, Freunde, Spotify</span>
+</div>
+
+<div class="account-card" tabindex="0" aria-label="Tagesgeldkonto Erspartes">
+<div class="acc-header">
+<span class="acc-icon" aria-hidden="true">📈</span>
+<span class="acc-name">Tagesgeldkonto (Sparen)</span>
+</div>
+<div class="acc-balance" id="acc-balance-savings">0,00 €</div>
+<span class="acc-hint">Notgroschen, Führerschein, Urlaub</span>
+</div>
+
+<div class="account-card" tabindex="0" aria-label="Bargeld Portemonnaie">
+<div class="acc-header">
+<span class="acc-icon" aria-hidden="true">💵</span>
+<span class="acc-name">Bargeld (Portemonnaie)</span>
+</div>
+<div class="acc-balance" id="acc-balance-cash">0,00 €</div>
+<span class="acc-hint">Bäcker, Döner, Barbezahlung</span>
+</div>
+</div>
+</section>
+
+<!-- MEHRMONATS- / JAHRES-TABELLE (WIRD BEI 3M, 6M, JAHR ANGEZEIGT) -->
+<section class="overview-section" id="section-period-breakdown" style="display: none;" aria-labelledby="period-breakdown-heading">
+<div class="section-card">
+<h3 id="period-breakdown-heading" class="section-title">📊 Monatsübersicht im gewählten Zeitraum</h3>
+<div class="table-responsive" tabindex="0">
+<table class="annual-table" id="period-summary-table">
+<thead>
+<tr>
+<th scope="col">Monat</th>
+<th scope="col" class="text-right">Einnahmen</th>
+<th scope="col" class="text-right">Ausgaben</th>
+<th scope="col" class="text-right">Ergebnis (Plus / Minus)</th>
+<th scope="col" class="text-center">Status</th>
+</tr>
+</thead>
+<tbody id="period-table-body">
+<!-- Per JS -->
+</tbody>
+</table>
+</div>
+</div>
+</section>
+
+<!-- 2. DANN: EINNAHMEN -->
+<section class="overview-section" aria-labelledby="section-income-heading">
+<div class="section-card card-income-wrap">
+<div class="card-header-flex">
+<div>
+<h3 id="section-income-heading" class="section-title" style="margin-bottom: 2px;">2. 📥 Einnahmen</h3>
+<span class="sub-counter" id="income-summary-subtext">Lade Einnahmen...</span>
+</div>
+<div class="stat-big-val" id="card-month-income" style="color: var(--accent-income);">+ 0,00 €</div>
+</div>
+
+<details class="accessible-accordion" id="details-income-list" open>
+<summary class="accordion-summary" aria-label="Alle Einnahmen ausklappen oder einklappen">
+<span>📋<strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
+</summary>
+<div class="accordion-content" id="overview-income-items-feed">
+<!-- Wird per JS befüllt -->
+</div>
+</details>
+</div>
+</section>
+
+<!-- 3. DANN: AUSGABEN -->
+<section class="overview-section" aria-labelledby="section-expense-heading">
+<div class="section-card card-expense-wrap">
+<div class="card-header-flex">
+<div>
+<h3 id="section-expense-heading" class="section-title" style="margin-bottom: 2px;">3. 📤 Ausgaben</h3>
+<span class="sub-counter" id="expense-summary-subtext">Lade Ausgaben...</span>
+</div>
+<div class="stat-big-val" id="card-month-expense" style="color: var(--accent-expense);">- 0,00 €</div>
+</div>
+
+<details class="accessible-accordion" id="details-expense-list" open>
+<summary class="accordion-summary" aria-label="Alle Ausgaben ausklappen oder einklappen">
+<span>📋<strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
+</summary>
+<div class="accordion-content" id="overview-expense-items-feed">
+<!-- Wird per JS befüllt -->
+</div>
+</details>
+</div>
+</section>
+
+<!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
+<section class="overview-section" aria-labelledby="section-total-heading">
+<div class="balance-hero-card" tabindex="0">
+<h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
+<div class="hero-amount" id="card-alltime-total">0,00 €</div>
+<div class="hero-subtext" id="total-balance-sub">Verfügbares Gesamtguthaben über alle Konten</div>
+ 
+<hr class="hero-divider" aria-hidden="true">
+
+<div class="hero-secondary-row">
+<div>
+<span class="hero-sub-label" id="leftover-main-label">Ergebnis im Zeitraum:</span>
+<strong class="hero-sub-value" id="month-leftover-display">0,00 €</strong>
+</div>
+<div id="month-leftover-sub" class="hero-subtext">Einnahmen minus Ausgaben</div>
+</div>
+</div>
+</section>
+
+<!-- 5. KAUF-PLANER & SIMULATOR -->
+<section class="overview-section" aria-labelledby="section-simulator-heading">
+<div class="section-card simulator-card">
+<h3 id="section-simulator-heading" class="section-title">🛒 5. Kauf-Planer & Simulator (Was bleibt übrig, wenn ich etwas kaufe?)</h3>
+<p class="field-hint">Hier kannst du sofort ausprobieren, wie viel Geld du nach einem Kauf noch übrig hättest:</p>
+
+<div class="simulator-box">
+<div class="form-row-2">
+<div class="form-group">
+<label for="sim-item-name" class="field-label"><strong>Was möchtest du dir kaufen? (Wunsch / Anschaffung)</strong></label>
+<input type="text" id="sim-item-name" class="large-input" placeholder="z. B. Neue Schuhe, Gaming-Headset, Jacke...">
+</div>
+<div class="form-group">
+<label for="sim-item-price" class="field-label"><strong>Preis in Euro (€)</strong></label>
+<input type="number" step="0.01" min="0.01" id="sim-item-price" class="large-input" placeholder="z. B. 49.99" oninput="runPurchaseSimulation()">
+</div>
+</div>
+
+<div id="sim-result-box" class="sim-result-box">
+<p>💡<em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>
+</div>
+
+<div class="sim-actions" id="sim-save-action" style="display: none; margin-top: 14px;">
+<button type="button" class="btn btn-primary" onclick="saveSimulatedPurchase()">
+<span>🎯<strong>Als geplante Zukunftsausgabe übernehmen</strong></span>
+</button>
+</div>
+</div>
+</div>
+</section>
+
+</div>
+
+<!-- =======================================================================
+ ANSICHT 2: AUSGABE EINTRAGEN
+ ======================================================================= -->
+<div id="view-expense" class="view-panel" role="tabpanel" aria-labelledby="tab-expense" style="display: none;">
+<div class="form-container">
+<h2 class="view-heading" tabindex="-1" id="heading-expense-view" data-emoji="🔴">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
+<p class="view-sub">Trage hier getätigte Ausgaben oder<strong>geplante Anschaffungen für die Zukunft</strong>ein.</p>
+
+<form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
+<div class="form-group">
+<label for="exp-amount" class="field-label">
+<strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">* (Pflichtfeld)</span>
+</label>
+<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off">
+</div>
+
+<div class="form-group">
+<label for="exp-frequency" class="field-label">
+<strong>Art & Häufigkeit der Ausgabe</strong>
+</label>
+<select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
+<option value="once" selected>Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
+<option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung)</option>
+<option value="weekly">📅 Wöchentlich (Jede Woche)</option>
+<option value="monthly">📅 Monatlich (Jeden Monat)</option>
+<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise)</option>
+<option value="halfyear">📈 Alle 6 Monate (Halbjährlich)</option>
+<option value="yearly">🗓Jährlich (1x im Jahr)</option>
+</select>
+</div>
+
+<div class="form-group" id="exp-account-group">
+<label for="exp-account" class="field-label">
+<strong>Von welchem Konto bezahlen?</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<select id="exp-account" class="large-select" required>
+<option value="bank">🏦 Bankkonto / Girokonto (EC-Karte / Lastschrift)</option>
+<option value="paypal">🅿PayPal Guthaben</option>
+<option value="cash">💵 Bargeld (Portemonnaie / Bar bezahlt)</option>
+<option value="savings">📈 Tagesgeldkonto (Vom Ersparten bezahlt)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="exp-cat-search" class="field-label">
+<span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>
+</label>
+<input type="text" id="exp-cat-search" class="large-input" placeholder="Tippe z. B. 'Rewe', 'Lidl', 'Aldi', 'Netflix', 'Tanken', 'Miete'..." oninput="handleCategorySearch('exp')" autocomplete="off">
+</div>
+
+<div class="form-row-2">
+<div class="form-group">
+<label for="exp-category" class="field-label">
+<strong>1. Hauptkategorie:</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<select id="exp-category" class="large-select" onchange="onMainCategoryChange('exp')" required>
+</select>
+</div>
+
+<div class="form-group">
+<label for="exp-subcategory" class="field-label">
+<strong>2. Unterkategorie / Geschäft:</strong>
+</label>
+<select id="exp-subcategory" class="large-select">
+</select>
+</div>
+</div>
+
+<div class="form-group" id="exp-date-group">
+<label for="exp-date" class="field-label">
+<strong>An welchem Tag (Datum)?</strong>
+</label>
+<input type="date" id="exp-date" class="large-input" required>
+</div>
+
+<div id="exp-recurring-details" style="display: none;">
+<div class="form-row-2">
+<div class="form-group" id="exp-month-day-group">
+<label for="exp-rec-day" class="field-label">
+<strong>An welchem Tag des Monats? (1 - 31)</strong>
+</label>
+<input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
+</div>
+<div class="form-group" id="exp-weekday-group" style="display: none;">
+<label for="exp-rec-weekday" class="field-label">
+<strong>An welchem Wochentag jede Woche?</strong>
+</label>
+<select id="exp-rec-weekday" class="large-select">
+<option value="1">Jeden Montag</option>
+<option value="2">Jeden Dienstag</option>
+<option value="3">Jeden Mittwoch</option>
+<option value="4">Jeden Donnerstag</option>
+<option value="5" selected>Jeden Freitag</option>
+<option value="6">Jeden Samstag</option>
+<option value="0">Jeden Sonntag</option>
+</select>
+</div>
+<div class="form-group" id="exp-yearly-month-group" style="display: none;">
+<label for="exp-yearly-month" class="field-label">
+<strong>In welchem Monat fällig?</strong>
+</label>
+<select id="exp-yearly-month" class="large-select">
+<option value="0">Januar</option>
+<option value="1">Februar</option>
+<option value="2">März</option>
+<option value="3">April</option>
+<option value="4">Mai</option>
+<option value="5">Juni</option>
+<option value="6">Juli</option>
+<option value="7">August</option>
+<option value="8">September</option>
+<option value="9">Oktober</option>
+<option value="10">November</option>
+<option value="11">Dezember</option>
+</select>
+</div>
+</div>
+</div>
+
+<div class="form-group">
+<label for="exp-desc" class="field-label">
+<strong>Beschreibung / Wofür genau?</strong>
+</label>
+<input type="text" id="exp-desc" class="large-input" placeholder="z. B. Geplante neue Kopfhörer, Döner, Spotify...">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">
+<span>🔴<strong>Ausgabe / Geplanten Kauf speichern</strong>(Enter)</span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+<span>Zurück zur Übersicht</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =======================================================================
+ ANSICHT 3: EINNAHME EINTRAGEN
+ ======================================================================= -->
+<div id="view-income" class="view-panel" role="tabpanel" aria-labelledby="tab-income" style="display: none;">
+<div class="form-container">
+<h2 class="view-heading" tabindex="-1" id="heading-income-view" data-emoji="🟢">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
+<p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
+
+<form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
+<div class="form-group">
+<label for="inc-amount" class="field-label">
+<strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off">
+</div>
+
+<div class="form-group">
+<label for="inc-frequency" class="field-label">
+<strong>Art & Häufigkeit der Einnahme</strong>
+</label>
+<select id="inc-frequency" class="large-select" onchange="toggleIncomeFrequencyFields()">
+<option value="once" selected>Einmalig (bereits erhalten)</option>
+<option value="planned">🎯 Geplante einmalige Zukunftseinnahme</option>
+<option value="weekly">📅 Wöchentlich (Jede Woche)</option>
+<option value="monthly">📅 Monatlich (Jeden Monat)</option>
+<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise)</option>
+<option value="halfyear">📈 Alle 6 Monate (Halbjährlich)</option>
+<option value="yearly">🗓Jährlich (1x im Jahr)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="inc-account" class="field-label">
+<strong>Auf welches Konto?</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<select id="inc-account" class="large-select" required>
+<option value="bank">🏦 Bankkonto / Girokonto</option>
+<option value="paypal">🅿PayPal Guthaben</option>
+<option value="cash">💵 Bargeld (ins Portemonnaie bekommen)</option>
+<option value="savings">📈 Direkt aufs Tagesgeldkonto (Sparen)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="inc-cat-search" class="field-label">
+<span>🔍<strong>Einnahme-Art schnell suchen (z. B. Gehalt, Blindengeld, Rente, Vinted):</strong></span>
+</label>
+<input type="text" id="inc-cat-search" class="large-input" placeholder="Tippe z. B. 'Gehalt', 'Blindengeld', 'Pflege', 'Rente', 'Vinted'..." oninput="handleCategorySearch('inc')" autocomplete="off">
+</div>
+
+<div class="form-row-2">
+<div class="form-group">
+<label for="inc-category" class="field-label">
+<strong>1. Hauptkategorie:</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<select id="inc-category" class="large-select" onchange="onMainCategoryChange('inc')" required>
+</select>
+</div>
+
+<div class="form-group">
+<label for="inc-subcategory" class="field-label">
+<strong>2. Unterkategorie / Detail:</strong>
+</label>
+<select id="inc-subcategory" class="large-select">
+</select>
+</div>
+</div>
+
+<div class="form-group" id="inc-date-group">
+<label for="inc-date" class="field-label">
+<strong>Wann (Datum)?</strong>
+</label>
+<input type="date" id="inc-date" class="large-input" required>
+</div>
+
+<div id="inc-recurring-details" style="display: none;">
+<div class="form-group" id="inc-month-day-group">
+<label for="inc-rec-day" class="field-label">
+<strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
+</label>
+<input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
+</div>
+<div class="form-group" id="inc-weekday-group" style="display: none;">
+<label for="inc-rec-weekday" class="field-label">
+<strong>An welchem Wochentag jede Woche?</strong>
+</label>
+<select id="inc-rec-weekday" class="large-select">
+<option value="1">Jeden Montag</option>
+<option value="2">Jeden Dienstag</option>
+<option value="3">Jeden Mittwoch</option>
+<option value="4">Jeden Donnerstag</option>
+<option value="5" selected>Jeden Freitag</option>
+<option value="6">Jeden Samstag</option>
+<option value="0">Jeden Sonntag</option>
+</select>
+</div>
+</div>
+
+<div class="form-group">
+<label for="inc-desc" class="field-label">
+<strong>Beschreibung / Von wem?</strong>
+</label>
+<input type="text" id="inc-desc" class="large-input" placeholder="z. B. Taschengeld, Vinted Jacke Verkauf im Oktober...">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">
+<span>🟢<strong>Einnahme speichern</strong>(Enter)</span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+<span>Zurück zur Übersicht</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =======================================================================
+ ANSICHT 4: UMBUCHEN & SPAREN
+ ======================================================================= -->
+<div id="view-transfer" class="view-panel" role="tabpanel" aria-labelledby="tab-transfer" style="display: none;">
+<div class="form-container">
+<h2 class="view-heading" tabindex="-1" id="heading-transfer-view" data-emoji="🔄">🔄 Geld umbuchen & auf anderes Konto sparen</h2>
+<p class="view-sub">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
+
+<form id="form-add-transfer" class="accessible-form" onsubmit="handleAddTransfer(event)">
+<div class="form-group">
+<label for="trf-amount" class="field-label">
+<strong>Betrag zum Umbuchen in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
+</label>
+<input type="number" step="0.01" min="0.01" id="trf-amount" class="large-input" placeholder="z. B. 25 oder 50" required autofocus autocomplete="off">
+</div>
+
+<div class="form-group">
+<label for="trf-frequency" class="field-label">
+<strong>Häufigkeit der Umbuchung</strong>
+</label>
+<select id="trf-frequency" class="large-select" onchange="toggleTransferFrequencyFields()">
+<option value="once" selected>Einmalig (Jetzt sofort oder an bestimmtem Tag verschieben)</option>
+<option value="weekly">📅 Wöchentlich (Automatischer wöchentlicher Sparplan)</option>
+<option value="monthly">📅 Monatlich (Automatischer monatlicher Sparplan)</option>
+<option value="quarterly">🔄 Alle 3 Monate (Quartalsweiser Sparplan)</option>
+<option value="halfyear">📈 Alle 6 Monate (Halbjährlicher Sparplan)</option>
+<option value="yearly">🗓Jährlich (Jährlicher Sparplan)</option>
+</select>
+</div>
+
+<div class="form-row-2">
+<div class="form-group">
+<label for="trf-from" class="field-label"><strong>Von welchem Konto abbuchen (Quelle)?</strong></label>
+<select id="trf-from" class="large-select" required>
+<option value="bank" selected>🏦 Bankkonto / Girokonto</option>
+<option value="paypal">🅿PayPal Guthaben</option>
+<option value="cash">💵 Bargeld</option>
+<option value="savings">📈 Tagesgeldkonto</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="trf-to" class="field-label"><strong>Auf welches Konto einzahlen (Ziel / Sparen)?</strong></label>
+<select id="trf-to" class="large-select" required>
+<option value="savings" selected>📈 Tagesgeldkonto (Sparen / Notgroschen)</option>
+<option value="paypal">🅿PayPal Guthaben</option>
+<option value="bank">🏦 Bankkonto / Girokonto</option>
+<option value="cash">💵 Bargeld (Geldautomat abgehoben)</option>
+</select>
+</div>
+</div>
+
+<div class="form-group" id="trf-date-group">
+<label for="trf-date" class="field-label"><strong>Datum der Umbuchung</strong></label>
+<input type="date" id="trf-date" class="large-input" required>
+</div>
+
+<div id="trf-recurring-details" style="display: none;">
+<div class="form-group" id="trf-month-day-group">
+<label for="trf-rec-day" class="field-label">
+<strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
+</label>
+<input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
+</div>
+<div class="form-group" id="trf-weekday-group" style="display: none;">
+<label for="trf-rec-weekday" class="field-label">
+<strong>An welchem Wochentag jede Woche sparen?</strong>
+</label>
+<select id="trf-rec-weekday" class="large-select">
+<option value="1">Jeden Montag</option>
+<option value="2">Jeden Dienstag</option>
+<option value="3">Jeden Mittwoch</option>
+<option value="4">Jeden Donnerstag</option>
+<option value="5" selected>Jeden Freitag</option>
+<option value="6">Jeden Samstag</option>
+<option value="0">Jeden Sonntag</option>
+</select>
+</div>
+</div>
+
+<div class="form-group">
+<label for="trf-desc" class="field-label"><strong>Zweck / Notiz</strong></label>
+<input type="text" id="trf-desc" class="large-input" placeholder="z. B. Sparplan Notgroschen, Führerschein Sparen...">
+</div>
+
+<div class="form-actions">
+<button type="submit" class="btn btn-primary">
+<span>🔄<strong>Umbuchung / Sparplan speichern</strong>(Enter)</span>
+</button>
+<button type="button" class="btn btn-secondary" onclick="switchView('overview')">
+<span>Zurück zur Übersicht</span>
+</button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =======================================================================
+ ANSICHT 5: EINSTELLUNGEN, DESIGN & BACKUP
+ ======================================================================= -->
+<div id="view-settings" class="view-panel" role="tabpanel" aria-labelledby="tab-settings" style="display: none;">
+<div class="form-container">
+<h2 class="view-heading" tabindex="-1" id="heading-settings-view" data-emoji="">Einstellungen, Design & Datensicherung</h2>
+
+<!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
+<section class="settings-box" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
+<h3 id="theme-settings-heading" data-emoji="🎨">Darstellung, Design & Schriftgröße</h3>
+<p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
+
+<div class="form-row-2" style="margin-top: 10px;">
+<div class="form-group">
+<label for="settings-theme-select" class="field-label"><strong>Farbkontrast / Design:</strong></label>
+<select id="settings-theme-select" class="large-select" onchange="changeTheme(this.value)">
+<option value="theme-light" selected>Standard Web-Design (Hell & Modern)</option>
+<option value="theme-dark">Dunkel-Modus (Weiß auf Dunkelgrau/Schwarz)</option>
+<option value="theme-high-contrast">Gelb auf Schwarz (Maximaler Kontrast)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="settings-fontsize-select" class="field-label"><strong>Schriftgröße / Textgröße:</strong></label>
+<select id="settings-fontsize-select" class="large-select" onchange="changeFontSize(this.value)">
+<option value="font-normal" selected>Normal (Standard 100%)</option>
+<option value="font-large">Groß (125% - Größere Schrift)</option>
+<option value="font-xlarge">Sehr groß (150% - Riesige Schrift)</option>
+</select>
+</div>
+</div>
+</section>
+
+<div class="form-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 17px; font-weight: bold;">
+<input type="checkbox" id="settings-show-symbols" onchange="toggleSymbolsDisplay(this.checked)" onclick="toggleSymbolsDisplay(this.checked)" checked style="width: 22px; height: 22px;">
+<span>Symbole & Emojis in der App anzeigen</span>
+</label>
+<p class="field-hint" style="margin-top: 4px;">Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.</p>
+</div>
+
+<!-- 2. GITHUB AUTO-UPDATER -->
+<section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
+<h3 id="github-updater-heading" data-emoji="🔄">GitHub Auto-Updater (App-Status)</h3>
+<p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
+ 
+<div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
+ Installierte Version:<strong>v5.1.0</strong>(Open Source auf GitHub)
+</div>
+
+<div class="form-actions" style="margin-top: 10px;">
+<a href="https://github.com/Lauju1909/BarrierefreieFinanzApp/releases/latest" target="_blank" class="btn btn-secondary" style="flex: 1; text-decoration: none;">
+<span><strong>GitHub Repository & Releases öffnen</strong></span>
+</a>
+</div>
+</section>
+
+<!-- 3. DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
+<section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
+<h3 id="backup-restore-heading" data-emoji="💾">Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
+<p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen oder auf einen neuen PC übertragen:</p>
+
+<div class="form-actions" style="margin-top: 10px;">
+<button type="button" class="btn btn-secondary" onclick="exportEncryptedBackup()" style="flex: 1;">
+<span><strong>Verschlüsseltes Backup herunterladen</strong> (.json)</span>
+</button>
+<label class="btn btn-secondary" style="flex: 1; cursor: pointer; text-align: center;">
+<span><strong>Backup-Datei importieren</strong></span>
+<input type="file" id="import-backup-file" accept=".json" onchange="importEncryptedBackup(event)" style="display: none;">
+</label>
+</div>
+</section>
+
+
+
+ 
+<!-- 3b. EIGENE KATEGORIE ODER GESCHÄFT HINZUFÜGEN & VORSCHLAGEN -->
+<section class="settings-box" aria-labelledby="custom-cat-heading" style="border-left: 8px solid #FF9800; margin-top: 18px;">
+<h3 id="custom-cat-heading" data-emoji="">Eigene Kategorie oder Geschäft hinzufügen</h3>
+<p class="field-hint">Fehlt dir ein Geschäft, Laden oder eine Kategorie? Füge sie hier hinzu – sie wird<strong>sofort in deiner App freigeschaltet</strong>und gleichzeitig<strong>automatisch an den Entwickler übermittelt</strong>, damit sie im nächsten Update fest eingebaut werden kann:</p>
+
+<form id="form-add-custom-category" onsubmit="handleAddCustomCategory(event)" style="margin-top: 12px;">
+<div class="form-row-2">
+<div class="form-group">
+<label for="custom-cat-type" class="field-label"><strong>1. Bereich / Art:</strong><span class="required-star" aria-hidden="true">*</span></label>
+<select id="custom-cat-type" class="large-select" onchange="onCustomCatTypeChange()" required>
+<option value="exp" selected>Ausgabe (z. B. Neuer Supermarkt, Laden, Abo)</option>
+<option value="inc">Einnahme (z. B. Neue Einnahmequelle, Nebenjob)</option>
+<option value="trf">Umbuchen / Sparen (z. B. Neues Sparziel)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="custom-cat-main-mode" class="field-label"><strong>2. Hauptkategorie-Auswahl:</strong></label>
+<select id="custom-cat-main-mode" class="large-select" onchange="onCustomCatMainModeChange()">
+<option value="existing" selected>Zu bestehender Hauptkategorie hinzufügen</option>
+<option value="new">Komplett neue Hauptkategorie erstellen</option>
+</select>
+</div>
+</div>
+
+<div class="form-group" id="custom-cat-existing-group">
+<label for="custom-cat-main-select" class="field-label"><strong>Hauptkategorie (Übergeordnet):</strong></label>
+<select id="custom-cat-main-select" class="large-select">
+<!-- Dynamisch befüllt -->
+</select>
+</div>
+
+<div class="form-group" id="custom-cat-new-group" style="display: none;">
+<label for="custom-cat-main-new-input" class="field-label"><strong>Name der neuen Hauptkategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+<input type="text" id="custom-cat-main-new-input" class="large-input" placeholder="z. B. Krypto & Web3 oder Gartenbau">
+</div>
+
+<div class="form-group">
+<label for="custom-cat-sub-input" class="field-label"><strong>Unterkategorie / Geschäft / Laden:</strong><span class="required-star" aria-hidden="true">*</span></label>
+<input type="text" id="custom-cat-sub-input" class="large-input" placeholder="z. B. Mein Dorfladen, Tante Emma Laden, Krypto-Staking..." required>
+</div>
+
+<div class="form-actions" style="margin-top: 14px;">
+<button type="submit" class="btn btn-primary" id="btn-save-custom-cat" data-emoji="" style="background-color: #FF9800; border-color: #F57C00; width: 100%;">
+<span><strong>Kategorie speichern &amp; an Entwickler übermitteln</strong></span>
+</button>
+</div>
+</form>
+</section>
+
+<!-- 4. FEEDBACK & NEUE FUNKTIONEN VORSCHLAGEN -->
+<section class="settings-box" aria-labelledby="feedback-settings-heading" style="border-left: 8px solid #9c27b0; margin-top: 18px;">
+<h3 id="feedback-settings-heading" data-emoji="💡">Vorschlag für neue Funktionen oder Feedback senden</h3>
+<p class="field-hint">Hast du einen Wunsch für eine neue Funktion oder möchtest Feedback geben? Schreibe es hier auf – es wird<strong>völlig ohne Anmeldung oder E-Mail-Programm</strong>sofort live an den Entwickler übertragen:</p>
+
+<form onsubmit="submitFeatureFeedback(event)" style="margin-top: 10px;">
+<div class="form-group">
+<label for="feedback-name" class="field-label"><strong>Dein Name / Absender (optional):</strong></label>
+<input type="text" id="feedback-name" class="large-input" placeholder="Name oder Pseudonym (optional)">
+</div>
+
+<div class="form-group">
+<label for="feedback-text" class="field-label"><strong>Deine Idee, dein Wunsch oder Feedback:</strong></label>
+<textarea id="feedback-text" class="large-input" rows="3" placeholder="z. B. Ich wünsche mir eine neue Funktion für..." required></textarea>
+</div>
+
+<div class="form-actions" style="margin-top: 10px;">
+<button type="submit" class="btn btn-primary" id="btn-send-feedback" data-emoji="🚀" style="background-color: #9c27b0; border-color: #7b1fa2; width: 100%;">
+<span><strong>Vorschlag / Feedback absenden</strong></span>
+</button>
+</div>
+</form>
+</section>
+
+<!-- 5. PIN ÄNDERN -->
+<section class="settings-box" aria-labelledby="set-pin-heading">
+<h3 id="set-pin-heading" data-emoji="🔒">Sicherheits-PIN / Passwort ändern</h3>
+<form id="form-change-pin" onsubmit="handleChangePin(event)">
+<div class="form-group">
+<label for="change-old-pin" class="field-label">Aktuelle PIN:</label>
+<input type="password" id="change-old-pin" class="large-input" required>
+</div>
+<div class="form-group">
+<label for="change-new-pin" class="field-label">Neue PIN oder Passwort:</label>
+<input type="password" id="change-new-pin" class="large-input" required>
+</div>
+<button type="submit" class="btn btn-secondary"><strong>Neue PIN speichern & Daten neu verschlüsseln</strong></button>
+</form>
+</section>
+
+<!-- 6. ÄNDERUNGSPROTOKOLL EINSTELLUNG -->
+<section class="settings-box" aria-labelledby="changelog-settings-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
+<h3 id="changelog-settings-heading" data-emoji="📜">Änderungsprotokoll & Update-Hinweise</h3>
+<p class="field-hint">Hier kannst du festlegen, ob bei neuen Updates vor der PIN-Eingabe automatisch das Änderungsprotokoll ("Was ist neu?") angezeigt werden soll:</p>
+
+<div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+<label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 17px; font-weight: bold;">
+<input type="checkbox" id="setting-auto-changelog" onchange="handleChangelogSettingChange(event)" style="width: 22px; height: 22px;">
+<span>Änderungsprotokoll bei neuen Versionen vor dem Start anzeigen</span>
+</label>
+
+<div>
+<button type="button" class="btn btn-secondary" onclick="openChangelogModal(true)">
+<span><strong>Änderungsprotokoll jetzt ansehen</strong></span>
+</button>
+</div>
+</div>
+</section>
+
+<!-- 6. DATEN LÖSCHEN / RESET -->
+<section class="settings-box danger-box" aria-labelledby="set-reset-heading">
+<h3 id="set-reset-heading" data-emoji="">DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
+<p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
+<button class="btn btn-danger" onclick="resetAllAppData()">Alle Daten & Schlüssel restlos löschen</button>
+</section>
+
+</div>
+</div>
+
+</main>
+
+<!-- Fußzeile -->
+<footer class="app-footer" role="contentinfo">
+<p><strong>Barrierefreie Finanzen v5.1.0</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+</footer>
+
+</div>
+
+<script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>
 <script>
 /**
  * ============================================================================
@@ -1257,6 +1449,552 @@ let appState = {
   transactions: [],
   recurring: []
 };
+
+
+// ============================================================================
+// 1b. SYMBOLE & EMOJIS CONTROLLER & KATEGORIE-ICONS
+// ============================================================================
+
+const STORAGE_SHOW_SYMBOLS_KEY = 'haushaltsbuch_show_symbols_enabled_v1';
+
+const CATEGORY_ICONS = {
+  // Ausgaben
+  "Lebensmittel, Supermarkt & Discounter": "🛒",
+  "Miete, Wohnen & Nebenkosten": "🏠",
+  "Haushalt, Möbel, Garten & Handwerker": "🛋️",
+  "Mobilität, Auto & Kraftfahrzeuge": "🚗",
+  "ÖPNV, Bahn, Bus, Flug & Reisen": "🚆",
+  "Restaurants, Cafés & Gastronomie": "🍽️",
+  "Lieferdienste & Essen bestellen": "🛵",
+  "Streaming, Musik, TV & Unterhaltung": "📺",
+  "Gaming, Computer & Konsolen": "🎮",
+  "Elektronik, Internet, Handy & Software": "💻",
+  "Shopping, Online-Kauf & Marktplätze": "🛍️",
+  "Kleidung, Schuhe & Mode": "👗",
+  "Drogerie, Kosmetik & Körperpflege": "🧴",
+  "Gesundheit, Apotheke & Arzt": "💊",
+  "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": "🦯",
+  "Versicherungen & Vorsorge": "🛡️",
+  "Bank, Finanzen, Kredite & Gebühren": "🏦",
+  "Haustiere & Tierhaltung": "🐾",
+  "Familie, Kinder & Babybedarf": "👶",
+  "Schule, Ausbildung & Studium": "🎓",
+  "Sport, Fitness, Verein & Hobbys": "🏆",
+  "Spenden, Gemeinnütziges & Zuwendungen": "❤️",
+  "Sonstige Ausgaben & Bargeld": "📦",
+
+  // Einnahmen
+  "Gehalt, Lohn & Beruf": "💼",
+  "Staatliche Leistungen, Hilfen & Zuschüsse": "🏛️",
+  "Taschengeld & Private Unterstützung": "👛",
+  "Spenden, Zuwendungen & Förderungen": "❤️",
+  "Geschenke, Boni & Gewinne": "🎁",
+  "Rente, Pension & Versorgung": "👴",
+  "Verkäufe, Gebrauchtwaren & Erstattungen": "🏷️",
+  "Zinsen, Dividenden, Miete & Kapital": "📈",
+  "Sonstige Einnahmen": "💰"
+};
+
+function isSymbolsEnabled() {
+  const val = localStorage.getItem(STORAGE_SHOW_SYMBOLS_KEY);
+  return val !== 'false';
+}
+
+function sym(emoji) {
+  if (!isSymbolsEnabled()) return '';
+  return '<span class="emoji-icon" aria-hidden="true">' + emoji + ' </span>';
+}
+
+function applySymbolsToOptions(selectEl) {
+  if (!selectEl) return;
+  const show = isSymbolsEnabled();
+  const options = selectEl.querySelectorAll('option');
+  options.forEach(opt => {
+    const rawVal = opt.value;
+    const cleanText = opt.dataset.cleanText || opt.textContent.replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\u2600-\u27BF\u2300-\u23FF\u2B50\u2B55\u203C\u2049\u2139\u2194-\u21AA\u2934\u2935\u3030\u303D\u3297\u3299\uFE0F\uFE0E\s]+/gu, '').trim();
+    opt.dataset.cleanText = cleanText;
+    const icon = CATEGORY_ICONS[cleanText] || opt.dataset.emoji || '';
+    if (show && icon) {
+      opt.textContent = icon + ' ' + cleanText;
+    } else {
+      opt.textContent = cleanText;
+    }
+  });
+}
+
+function applySymbolsDisplay(show) {
+  try { localStorage.setItem(STORAGE_SHOW_SYMBOLS_KEY, show ? 'true' : 'false'); } catch(e) {}
+
+  document.body.classList.toggle('hide-symbols', !show);
+  document.body.classList.toggle('show-symbols', show);
+
+  const chk = document.getElementById('settings-show-symbols');
+  if (chk) chk.checked = show;
+
+  // 1. Elemente mit data-emoji verwalten
+  const emojiTargets = document.querySelectorAll('[data-emoji]');
+  emojiTargets.forEach(el => {
+    const icon = el.getAttribute('data-emoji');
+    if (!icon) return;
+    
+    el.querySelectorAll('.emoji-icon').forEach(s => s.remove());
+    
+    if (show) {
+      const span = document.createElement('span');
+      span.className = 'emoji-icon';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = icon + ' ';
+      el.insertBefore(span, el.firstChild);
+    }
+  });
+
+  // 2. Alle .emoji-icon, .tx-icon, .lock-icon, .stat-icon, .symbol-tag Elemente im DOM
+  if (!show) {
+    document.querySelectorAll('.emoji-icon, .tx-icon, .lock-icon, .stat-icon, .symbol-tag').forEach(el => {
+      el.remove();
+    });
+  }
+
+  // 3. Dropdowns aktualisieren
+  const selects = document.querySelectorAll('select');
+  selects.forEach(sel => applySymbolsToOptions(sel));
+}
+
+function toggleSymbolsDisplay(show) {
+  applySymbolsDisplay(show);
+  announceNVDA(show ? 'Symbole und Emojis werden angezeigt.' : 'Symbole und Emojis wurden ausgeschaltet. Reiner Textmodus aktiv.');
+}
+
+// ============================================================================
+// 1c. ZWEISTUFIGE KATEGORIE-DATENBANK (REINE TEXT-SCHLÜSSEL)
+// ============================================================================
+
+const CATEGORIES_DB = {
+  exp: {
+    "Lebensmittel, Supermarkt & Discounter": [
+      "Gesamt / Allgemein", "Aldi Nord", "Aldi Süd", "Lidl", "Rewe", "Edeka", "Kaufland", "Penny", 
+      "Netto Marken-Discount", "Netto mit dem Hund", "Norma", "Globus", "Tegut", "HIT", "Famila", 
+      "Alnatura", "Denns Biomarkt", "Bio Company", "Unverpackt-Laden", 
+      "Asia-Markt / Türkischer Supermarkt", "Bäckerei / Dorfbäcker", "Konditorei", 
+      "Fleischerei / Metzger", "Fischgeschäft", "Wochenmarkt (Obst, Gemüse, Eier)", "Hofladen / Bauernhof", 
+      "Getränkemarkt / Trinkgut", "Sonstiger Supermarkt"
+    ],
+    "Miete, Wohnen & Nebenkosten": [
+      "Kaltmiete", "Warmmiete", "Mietkaution", "Nebenkosten Vorauszahlung / Nachzahlung", "Hausgeld (Eigentümer)", 
+      "Rundfunkbeitrag (GEZ / ARD ZDF)", "Strom (Stadtwerke / Energie)", "Gas & Fernwärme", 
+      "Heizöl / Pellets / Brennholz", "Wasser & Abwasser", "Müllgebühren / Entsorgung", 
+      "Schornsteinfeger & Wartung", "Hausratversicherung", "Glasversicherung", "Wohngebäudeversicherung", "Hausmeister & Treppenreinigung"
+    ],
+    "Haushalt, Möbel, Garten & Handwerker": [
+      "Möbel & Deko (IKEA, Poco, XXXLutz, Mömax)", "Betten, Matratzen & Bettwäsche", 
+      "Waschmaschine, Kühlschrank & Großgeräte", "Kaffeemaschine, Toaster & Küchengeräte", 
+      "Staubsauger & Reinigungsgeräte", "Putzmittel, Waschmittel & Haushaltsbedarf", "Geschirr, Töpfe & Besteck", 
+      "Baumarkt (Obi, Bauhaus, Hornbach, Toom)", "Garten, Balkon, Pflanzen & Blumen", 
+      "Handwerker & Reparaturen (Sanitär, Maler, Elektrik)", "Schlüsseldienst", "Umzugskosten & Transporter mieten"
+    ],
+    "Mobilität, Auto & Kraftfahrzeuge": [
+      "Tanken (Benzin / Super E10 E5)", "Tanken (Diesel)", "Tanken (Autogas / LPG)", "E-Auto Ladestation / Ladestrom", 
+      "KFZ-Haftpflichtversicherung", "KFZ-Teilkasko / Vollkasko", "KFZ-Steuer (Hauptzollamt)", 
+      "Hauptuntersuchung (TÜV / DEKRA / GTÜ)", "Auto-Werkstatt, Inspektion & Ölwechsel", "Autoreparatur & Ersatzteile", 
+      "Sommerreifen / Winterreifen & Reifenwechsel", "Autowäsche & Autopflege", "Auto-Kauf, Leasing & Autokredit", 
+      "Parkgebühren, Parkhaus & Parkschein", "Autobahn-Maut, Vignette & Umweltplakette", "ADAC / Pannenhilfe Mitgliedschaft", 
+      "Führerschein & Fahrstunden"
+    ],
+    "ÖPNV, Bahn, Bus, Flug & Reisen": [
+      "Deutschlandticket (49€ / Monatskarte)", "Bus, Straßenbahn & U-Bahn (Einzeltickets / Streifen)", 
+      "Deutsche Bahn (ICE / IC / Regio)", "BahnCard (25 / 50 / 100)", "Fernbus (Flixbus / Flixtrain)", 
+      "Taxi, Uber, Bolt & FreeNow", "E-Scooter & Leihrad (Tier, Bolt, Lime)", "Eigenes Fahrrad / E-Bike Reparatur & Zubehör", 
+      "Flugtickets & Airline-Gebühren", "Hotel, Ferienwohnung & Airbnb", "Pauschalreise / Urlaub", 
+      "Auslands-Krankenversicherung", "Kurtaxe & Reisekosten"
+    ],
+    "Restaurants, Cafés & Gastronomie": [
+      "Restaurant (Abendessen / Mittagessen)", "Gasthaus / Brauhaus / Biergarten", "Pizzeria / Italienisches Restaurant", 
+      "Asiatisches / Griechisches / Mexikanisches Restaurant", "Burger-Restaurant & Steakhouse", 
+      "Imbiss, Döner, Currywurst & Pommes", "Fast Food (McDonald's, Burger King, KFC, Subway)", 
+      "Café, Bäckerei-Frühstück & Kaffeepause", "Eisdiele & Eisbecher", "Mensa, Betriebskantine & Schulkantine", 
+      "Bar, Kneipe, Pub & Bierstube", "Club, Diskothek & Party", "Snacks, Süßigkeiten & Energy Drinks"
+    ],
+    "Lieferdienste & Essen bestellen": [
+      "Lieferando", "Uber Eats", "Wolt", "Pizza-Lieferdienst vor Ort", "Asia-Lieferdienst", 
+      "Burger & Döner Lieferservice", "Getränke-Lieferdienst (Flaschenpost)", "Kochboxen (HelloFresh, Marley Spoon)"
+    ],
+    "Streaming, Musik, TV & Unterhaltung": [
+      "Netflix", "Amazon Prime Video / Music", "Spotify", "Apple Music / Apple One", "Disney+", 
+      "YouTube Premium / Music", "Paramount+", "WOW / Sky Ticket", "DAZN", "RTL+ / Joyn PLUS+", "Crunchyroll", 
+      "Audible / Hörbücher", "Deezer / Tidal", "Kino, Tickets & Popcorn", "Theater, Oper, Ballett & Musical", 
+      "Konzerte, Festivals & Live-Events", "Comedy & Kabarett", "Freizeitpark (Phantasialand, Europa-Park, Heide Park)", 
+      "Zoo, Tierpark, Aquarium & Botanischer Garten", "Museum, Ausstellungen & Sehenswürdigkeiten"
+    ],
+    "Gaming, Computer & Konsolen": [
+      "Steam & PC-Spiele", "PlayStation Plus (PSN / PS Store)", "Xbox Game Pass & Microsoft Store", 
+      "Nintendo Switch Online & eShop", "In-Game-Käufe, Battle Pass & V-Bucks", "Epic Games / GOG / EA App", 
+      "Computer-Hardware (Grafikkarte, CPU, RAM)", "Gaming-Zubehör (Tastatur, Maus, Headset, Controller)", 
+      "Gaming-Monitor & Gaming-Stuhl", "Spielekonsole (PS5, Xbox Series X, Nintendo Switch, Steam Deck)", 
+      "Mobile Games & App-Käufe (Google Play / App Store)", "Discord Nitro & Twitch Subs"
+    ],
+    "Elektronik, Internet, Handy & Software": [
+      "Smartphone / iPhone Kauf", "Handyvertrag & Monatstarif", 
+      "Prepaid-Guthaben (Telekom, Vodafone, o2, Aldi Talk, Congstar, Blau)", "Tablet / iPad & Zubehör", 
+      "Laptop / Notebook & Zubehör", "Festnetz, Internet & DSL / Glasfaser (Telekom, Vodafone, 1&1, o2)", 
+      "WLAN-Router & Netzwerk (FRITZ!Box)", "Fernseher, Soundbar & Heimkino", "Smart Home (Alexa, Google Nest, Hue)", 
+      "Cloud-Speicher (iCloud, Google One, OneDrive, Dropbox)", "Microsoft 365 / Office Abo", 
+      "Antivirus & VPN Software", "Software-Lizenzen", "Druckertinte, Toner & Papier", "Elektronik-Reparatur"
+    ],
+    "Shopping, Online-Kauf & Marktplätze": [
+      "Amazon Bestellungen", "eBay & Kleinanzeigen Käufe", "Otto Versand", "Zalando, ASOS & Fashion-Shops", 
+      "Temu, AliExpress & Shein", "Kaufland.de / Galaxus / Alternate", "Second-Hand (Vinted, Momox, Rebuy)", 
+      "DHL, Hermes, DPD & Post-Porto / Paketmarken", "Schreibwaren, Bürobedarf & Bastelbedarf", 
+      "Geschenke für Familie & Freunde", "Blumen & Pflanzen"
+    ],
+    "Kleidung, Schuhe & Mode": [
+      "Alltagskleidung (H&M, C&A, Zara, Primark)", "Markenkleidung (Nike, Adidas, Levi's)", 
+      "Schuhe, Sneaker & Stiefel (Deichmann, Snipes)", "Sportkleidung & Funktionskleidung", 
+      "Winterjacke, Mantel & Regenkleidung", "Unterwäsche, Socken & Nachtwäsche", "Anzug, Kleid & Festkleidung", 
+      "Taschen, Rucksäcke & Koffer", "Schmuck, Uhren & Accessoires", "Schneiderei & Textilreinigung"
+    ],
+    "Drogerie, Kosmetik & Körperpflege": [
+      "dm-drogerie markt", "Rossmann", "Müller Drogerie", "Duschgel, Shampoo & Haarpflege", 
+      "Zahnpflege (Zahnbürste, Zahnpasta, Mundspülung)", "Deo, Parfüm & Düfte (Douglas, Sephora)", 
+      "Hautcreme, Sonnencreme & Lotion", "Rasierer, Klingen & Rasierschaum", "Damenhygiene & Pflegeprodukte", 
+      "Make-Up & Kosmetik", "Friseurbesuch (Schneiden, Färben)", "Barbershop / Bartpflege", 
+      "Kosmetikstudio, Fußpflege & Maniküre", "Tattoo & Piercing"
+    ],
+    "Gesundheit, Apotheke & Arzt": [
+      "Apotheke & rezeptfreie Medikamente", "Rezeptgebühren & Zuzahlungen (Krankenkasse)", "Arztbesuch & Praxisgebühren", 
+      "Zahnarzt & Zahnreinigung (PZR)", "Brille, Sehhilfen & Kontaktlinsen (Fielmann, Apollo)", "Hörgeräte, Batterien & Zubehör", 
+      "Physiotherapie, Krankengymnastik & Osteopathie", "Massage & Ergotherapie", "Psychotherapie & Beratung", 
+      "Orthopädische Einlagen & Bandagen", "Krankenhaus-Zuzahlung & Reha", "Nahrungsergänzung, Vitamine & Mineralien", "Erste Hilfe, Pflaster & Verband"
+    ],
+    "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": [
+      "Weißer Blindenlangstock, Rollspitzen & Taststöcke", "Blindenführhund (Futter, Tierarzt, Geschirr)", 
+      "Elektronische Sehhilfen & Kamerasysteme (Orcam)", "Braille-Zeile & Punktschrift-Zubehör", 
+      "Screenreader-Lizenzen (JAWS) & Sprachausgaben", "Sprechende Haushaltsgeräte (Waage, Uhr, Farberkenner)", 
+      "Vergrößerungssoftware (ZoomText)", "Daisy-Player & Hörbuchgeräte", "Tastbare Markierungen & Signalbänder", "Assistenz- & Begleitdienst"
+    ],
+    "Versicherungen & Vorsorge": [
+      "Gesetzliche Krankenversicherung (Freiwillig versichert)", "Private Krankenversicherung (PKV)", 
+      "Private Pflegezusatzversicherung", "Private Haftpflichtversicherung", "Berufsunfähigkeitsversicherung (BU)", 
+      "Unfallversicherung", "Rechtsschutzversicherung (Verkehr, Beruf, Wohnen)", "Zahnzusatzversicherung", 
+      "Risikolebensversicherung", "Sterbegeldversicherung", "Altersvorsorge (Riester, Rürup, Private Rente)"
+    ],
+    "Bank, Finanzen, Kredite & Gebühren": [
+      "Kontoführungsgebühren Girokonto", "Kreditkartengebühren (Mastercard, Visa)", "Dispozinsen & Überziehungszinsen", 
+      "Zinsen & Tilgung Ratenkredit", "Zinsen & Tilgung Baufinanzierung", "Schufa-Auskunft", 
+      "Depotgebühren & Wertpapierkosten", "Fremdautomat-Gebühren", "Notar- & Gerichtskosten", "Steuerberater & Lohnsteuerhilfe"
+    ],
+    "Haustiere & Tierhaltung": [
+      "Hundefutter / Katzenfutter (Fressnapf, Zooplus, Futterhaus)", "Spezialfutter & Diätnahrung", 
+      "Kleintierfutter (Vögel, Nager, Fische, Reptilien)", "Tierarzt, Impfungen & Behandlungen", 
+      "Tierklinik & OP-Kosten", "Tierkrankenversicherung & OP-Schutz", "Hundesteuer (Stadt / Gemeinde)", 
+      "Hundehalter-Haftpflicht", "Katzenstreu & Einstreu", "Leinen, Geschirre & Halsbänder", 
+      "Kratzbäume & Tierbetten", "Spielzeug für Tiere", "Hundeschule & Tiertraining", "Tierpension & Tiersitter", "Hundesalon & Fellpflege"
+    ],
+    "Familie, Kinder & Babybedarf": [
+      "Windeln, Feuchttücher & Babypflege", "Babynahrung & Gläschen", "Babykleidung & Kinderschuhe", 
+      "Kinderwagen, Buggy & Autokindersitz", "Babybett & Kindermöbel", "Spielzeug (Lego, Playmobil)", 
+      "Gesellschaftsspiele & Puzzles", "Kinderbücher & Hörspiele (Tonie-Figuren)", "Kita, Kindergarten & Hortbeiträge", 
+      "Babysitter & Tagesmutter", "Taschengeld an Kinder ausgezahlt"
+    ],
+    "Schule, Ausbildung & Studium": [
+      "Schulranzen, Rucksack & Mäppchen", "Schulbücher, Hefte & Arbeitshefte", "Stifte, Zirkel & Taschenrechner", 
+      "Klassenfahrten & Schulausflüge", "Nachhilfe (Studienkreis, Schülerhilfe)", "Musikschule & Instrumente", 
+      "Semesterbeitrag Universität / FH", "Fachbücher & Studienmaterial", "Prüfungsgebühren & Zertifikate", "Weiterbildung & VHS-Kurse"
+    ],
+    "Sport, Fitness, Verein & Hobbys": [
+      "Fitnessstudio (McFit, FitX, Clever Fit, John Reed)", "Sportverein (Fußball, Tennis, Turnen)", 
+      "Schwimmbad & Sauna", "Kletterhalle & Yoga-Studio", "Sportausrüstung (Bälle, Hanteln, Matte)", 
+      "Sportschuhe & Laufschuhe", "Sportnahrung & Protein", "Blinden- und Sehbehindertenverein (DBSV / PRO RETINA)", 
+      "Schützenverein, Karnevalsverein & Club", "Kleingartenverein / Schrebergarten Pacht", "Hobbys (Modellbau, Handarbeit, Malen, Foto)", "Angelschein & Angelzubehör"
+    ],
+    "Spenden, Gemeinnütziges & Zuwendungen": [
+      "Spende für Blinden- & Sehbehindertenhilfe", "Spende für Menschen in Not (Rotes Kreuz, Notfonds)", 
+      "Spende für Tierschutz / Tierheim", "Spende für Kinderhilfswerke (UNICEF, SOS-Kinderdorf)", 
+      "Spende für Umwelt & Natur (BUND, Greenpeace, NABU)", "Spende für Krebs- & Medizinforschung", 
+      "Spende für Kirche & Religionsgemeinschaften", "Wikipedia & Open-Source Spenden", "Trinkgeld gegeben"
+    ],
+    "Sonstige Ausgaben & Bargeld": [
+      "Bargeldabhebung am Geldautomaten", "Ausweisgebühren & Bürgeramt", "Passfotos", 
+      "Lotto, Rubbellose & Glücksspiel", "Strafzettel & Knöllchen", "Ersatzbeschaffung (Schlüssel, Karten)", "Sonstige ungeplante Ausgabe"
+    ]
+  },
+  inc: {
+    "Gehalt, Lohn & Beruf": [
+      "Hauptjob Monatsgehalt / Nettolohn", "Ausbildungsvergütung / Lehrlingsgehalt", "Beamtenbesoldung / Grundgehalt", 
+      "Minijob / Nebenjob (538 € steuerfrei)", "Zweitjob / Teilzeitgehalt", "Überstundenvergütung & Zulagen (Nacht, Feiertag)", 
+      "Urlaubsgeld", "Weihnachtsgeld / 13. Gehalt", "Jahresbonus / Leistungsprämie / Provision", 
+      "Trinkgeld (im Beruf erhalten)", "Honorar aus Selbstständigkeit / Freiberuflichkeit", "Werkstudenten-Gehalt", 
+      "Praktikumsvergütung", "Abfindung bei Kündigung", "Kurzarbeitergeld", "Insolvenzgeld"
+    ],
+    "Staatliche Leistungen, Hilfen & Zuschüsse": [
+      "Landesblindengeld / Blindengeld / Sehbehindertengeld", "Taubblindengeld", 
+      "Pflegegeld (Pflegegrad 1 bis 5 der Pflegekasse)", "Bürgergeld (Regelsatz & Wohnkosten Jobcenter)", 
+      "Arbeitslosengeld I (ALG 1 Agentur für Arbeit)", "Kindergeld (Familienkasse)", "Kinderzuschlag (KiZ)", 
+      "Wohngeld (Mietzuschuss von Wohngeldstelle)", "BAföG (Schüler / Studenten)", "Berufsausbildungsbeihilfe (BAB)", 
+      "Meister-BAföG (Aufstiegs-BAföG)", "Elterngeld / Elterngeld Plus", "Mutterschaftsgeld (Krankenkasse)", 
+      "Krankengeld (Krankenkasse nach 6 Wochen)", "Verletztengeld / Übergangsgeld (BG / DRV)", 
+      "Unterhaltsvorschuss (Jugendamt)", "Grundsicherung im Alter & Erwerbsminderung (Sozialamt)", 
+      "Hilfe zum Lebensunterhalt (Sozialhilfe)", "Heizkostenzuschuss / Einmalige Beihilfe", "Eingliederungshilfe / Persönliches Budget"
+    ],
+    "Taschengeld & Private Unterstützung": [
+      "Reguläres Taschengeld (Monatlich / Wöchentlich)", "Taschengeld-Erhöhung / Sonderzahlung", 
+      "Finanzielle Unterstützung von Eltern / Familie", "Barzuschuss für Miete / Lebensunterhalt", 
+      "Unterhalt vom Ex-Partner / Kindesunterhalt", "Fahrtkostenzuschuss von Verwandten", "Sonstiges Taschengeld"
+    ],
+    "Spenden, Zuwendungen & Förderungen": [
+      "Private Spende erhalten", "Spende über Spendenaufruf / Crowdfunding (GoFundMe)", "Zuwendung von Stiftungen / Hilfsfonds", 
+      "Stipendium / Studienförderung", "Sponsoring-Gelder", "Schenkung von Verwandten", "Erbschaft / Nachlass-Auszahlung", "Trinkgeld / Dankeschön privat erhalten"
+    ],
+    "Geschenke, Boni & Gewinne": [
+      "Geldgeschenk zum Geburtstag", "Geldgeschenk zu Weihnachten", "Geldgeschenk zu Ostern / Feiertagen", 
+      "Geldgeschenk zur Konfirmation / Jugendweihe", "Geldgeschenk zur Hochzeit / Jubiläum", 
+      "Lottogewinn / Spielbank / Tombola", "Gewinnspiel / Preisausschreiben Einnahme"
+    ],
+    "Rente, Pension & Versorgung": [
+      "Gesetzliche Altersrente (Deutsche Rentenversicherung)", "Erwerbsminderungsrente (Volle / Teilweise Erwerbsminderung)", 
+      "Witwenrente / Witwerrente (Hinterbliebenenrente)", "Waisenrente / Halbwaisenrente", 
+      "Betriebsrente (VBL, ZVK, Firmenrente)", "Private Rentenversicherung Auszahlung", 
+      "Beamtenpension / Ruhegehalt", "Berufsgenossenschafts-Rente (Unfallrente)", "Ausländische Rentenzahlung"
+    ],
+    "Verkäufe, Gebrauchtwaren & Erstattungen": [
+      "Vinted Kleiderverkauf", "eBay & Kleinanzeigen Verkäufe", "Flohmarkt / Trödelmarkt Einnahmen", 
+      "Momox / Rebuy / Zoxs Buch- & Medienverkauf", "Auto / Fahrrad / Roller privat verkauft", 
+      "Möbel & Elektronik privat verkauft", "Steuererstattung (Finanzamt Einkommensteuer)", 
+      "Nebenkosten-Rückzahlung / Guthaben vom Vermieter", "Strom- / Gas-Jahresabrechnung Guthaben", 
+      "Pfandflaschen & Dosen Einnahmen", "Geld von Freunden zurückerhalten (PayPal / Bar)", 
+      "Krankenkassen-Bonus / Erstattung", "Garantie- / Reklamations-Rückerstattung", "Kaution-Rückzahlung nach Umzug"
+    ],
+    "Zinsen, Dividenden, Miete & Kapital": [
+      "Zinsen auf Tagesgeldkonto", "Zinsen auf Festgeldkonto / Sparbuch", "Dividenden aus Aktien / ETFs", 
+      "Mieteinnahmen aus Vermietung / Verpachtung", "Untermieteinnahmen (Zimmer / WG)", 
+      "Krypto-Gewinne (Bitcoin, Ethereum)", "Gewinne aus Wertpapierverkäufen", "Genossenschaftsanteile Dividende", "Zinsen aus P2P-Krediten"
+    ],
+    "Sonstige Einnahmen": [
+      "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
+      "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
+    ]
+  }
+};
+
+function mergeCustomCategoriesIntoDB() {
+  if (!appState || !appState.customCategories) {
+    if (appState) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+    return;
+  }
+
+  ['exp', 'inc'].forEach(type => {
+    const customTypeObj = appState.customCategories[type] || {};
+    for (const [mainCat, subList] of Object.entries(customTypeObj)) {
+      if (!CATEGORIES_DB[type][mainCat]) {
+        CATEGORIES_DB[type][mainCat] = [];
+      }
+      subList.forEach(sub => {
+        if (!CATEGORIES_DB[type][mainCat].includes(sub)) {
+          CATEGORIES_DB[type][mainCat].push(sub);
+        }
+      });
+    }
+  });
+}
+
+function initCustomCatSettingsForm() {
+  const typeSel = document.getElementById('custom-cat-type');
+  const mainSel = document.getElementById('custom-cat-main-select');
+  if (!typeSel || !mainSel) return;
+
+  const currentType = typeSel.value === 'trf' ? 'exp' : typeSel.value;
+  const db = CATEGORIES_DB[currentType] || CATEGORIES_DB['exp'];
+  const mainCats = Object.keys(db);
+
+  mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+  applySymbolsToOptions(mainSel);
+}
+
+function onCustomCatTypeChange() {
+  initCustomCatSettingsForm();
+}
+
+function onCustomCatMainModeChange() {
+  const mode = document.getElementById('custom-cat-main-mode').value;
+  const existGroup = document.getElementById('custom-cat-existing-group');
+  const newGroup = document.getElementById('custom-cat-new-group');
+  const newInput = document.getElementById('custom-cat-main-new-input');
+
+  if (mode === 'new') {
+    if (existGroup) existGroup.style.display = 'none';
+    if (newGroup) newGroup.style.display = 'block';
+    if (newInput) newInput.required = true;
+  } else {
+    if (existGroup) existGroup.style.display = 'block';
+    if (newGroup) newGroup.style.display = 'none';
+    if (newInput) newInput.required = false;
+  }
+}
+
+async function handleAddCustomCategory(e) {
+  e.preventDefault();
+  const typeSel = document.getElementById('custom-cat-type');
+  const modeSel = document.getElementById('custom-cat-main-mode');
+  const mainSel = document.getElementById('custom-cat-main-select');
+  const mainNewInput = document.getElementById('custom-cat-main-new-input');
+  const subInput = document.getElementById('custom-cat-sub-input');
+
+  if (!typeSel || !subInput) return;
+
+  const type = typeSel.value;
+  const subCatName = subInput.value.trim();
+  if (!subCatName) return;
+
+  let mainCatName = '';
+  if (modeSel && modeSel.value === 'new') {
+    mainCatName = mainNewInput ? mainNewInput.value.trim() : '';
+  } else {
+    mainCatName = mainSel ? mainSel.value.trim() : '';
+  }
+
+  if (!mainCatName) {
+    announceNVDA('Bitte gib einen Namen für die Hauptkategorie an.', true);
+    return;
+  }
+
+  if (!appState.customCategories) {
+    appState.customCategories = { exp: {}, inc: {}, trf: {} };
+  }
+  if (!appState.customCategories[type]) {
+    appState.customCategories[type] = {};
+  }
+  if (!appState.customCategories[type][mainCatName]) {
+    appState.customCategories[type][mainCatName] = [];
+  }
+
+  if (!appState.customCategories[type][mainCatName].includes(subCatName)) {
+    appState.customCategories[type][mainCatName].push(subCatName);
+  }
+
+  mergeCustomCategoriesIntoDB();
+  populateCategoriesDropdowns();
+  initCustomCatSettingsForm();
+  await saveStateToEncryptedStorage();
+
+  const typeLabelMap = { exp: 'Ausgabe', inc: 'Einnahme', trf: 'Umbuchen / Sparen' };
+  const typeLabel = typeLabelMap[type] || type;
+  const nl = String.fromCharCode(10);
+
+  const payload = JSON.stringify({
+    _subject: 'Neuer Kategorie-Vorschlag (' + typeLabel + '): ' + subCatName,
+    _template: 'table',
+    _captcha: 'false',
+    Absender: 'Haushaltsbuch Nutzer',
+    Bereich: typeLabel,
+    Hauptkategorie: mainCatName,
+    Unterkategorie_Geschaeft: subCatName,
+    Datum: new Date().toLocaleString('de-DE'),
+    AppVersion: 'v5.1.0'
+  });
+
+  const port = window.__LOCAL_PORT__ || 48123;
+  try {
+    fetch('http://127.0.0.1:' + port + '/api/send_feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).catch(() => {});
+  } catch(e) {}
+
+  try {
+    fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+      method: 'POST',
+      headers: {
+        'Title': '➕ Neuer Kategorie-Vorschlag (' + typeLabel + ')',
+        'Priority': '4',
+        'Tags': 'sparkles,package'
+      },
+      body: 'Absender: App-Nutzer' + nl + 'Art: ➕ Neuer Kategorie-Vorschlag' + nl + 'Datum: ' + new Date().toLocaleString('de-DE') + nl + 'Bereich: ' + typeLabel + nl + 'Hauptkategorie: ' + mainCatName + nl + 'Unterkategorie / Geschäft: ' + subCatName
+    }).catch(() => {});
+  } catch(e) {}
+
+  subInput.value = '';
+  if (mainNewInput) mainNewInput.value = '';
+  if (modeSel) {
+    modeSel.value = 'existing';
+    onCustomCatMainModeChange();
+  }
+
+  announceNVDA('Kategorie ' + subCatName + ' wurde hinzugefügt und an den Entwickler übermittelt!');
+  alert('✅ Die Kategorie "' + subCatName + '" (' + mainCatName + ') wurde sofort in deiner App gespeichert und an den Entwickler übermittelt!');
+}
+
+function populateCategoriesDropdowns() {
+  mergeCustomCategoriesIntoDB();
+  initCustomCatSettingsForm();
+  ['exp', 'inc'].forEach(type => {
+    const mainSel = document.getElementById(type + '-category');
+    if (!mainSel) return;
+
+    const db = CATEGORIES_DB[type];
+    const mainCats = Object.keys(db);
+
+    mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+    onMainCategoryChange(type);
+    applySymbolsToOptions(mainSel);
+  });
+}
+
+function onMainCategoryChange(type) {
+  const mainSel = document.getElementById(type + '-category');
+  const subSel = document.getElementById(type + '-subcategory');
+  if (!mainSel || !subSel) return;
+
+  const selectedMain = mainSel.value;
+  const db = CATEGORIES_DB[type];
+  const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
+
+  subSel.innerHTML = subs.map(sub => '<option value="' + escapeHTML(sub) + '">' + escapeHTML(sub) + '</option>').join('');
+  applySymbolsToOptions(subSel);
+}
+
+function handleCategorySearch(type) {
+  const input = document.getElementById(type + '-cat-search');
+  if (!input) return;
+  const query = input.value.trim().toLowerCase();
+  if (!query) return;
+
+  const db = CATEGORIES_DB[type];
+  let matchedMain = null;
+  let matchedSub = null;
+
+  for (const [mainCat, subs] of Object.entries(db)) {
+    const subMatch = subs.find(s => s.toLowerCase().includes(query));
+    if (subMatch) {
+      matchedMain = mainCat;
+      matchedSub = subMatch;
+      break;
+    }
+  }
+
+  if (!matchedMain) {
+    for (const mainCat of Object.keys(db)) {
+      if (mainCat.toLowerCase().includes(query)) {
+        matchedMain = mainCat;
+        matchedSub = db[mainCat][0] || 'Gesamt / Allgemein';
+        break;
+      }
+    }
+  }
+
+  if (matchedMain) {
+    const mainSel = document.getElementById(type + '-category');
+    const subSel = document.getElementById(type + '-subcategory');
+    if (mainSel && subSel) {
+      mainSel.value = matchedMain;
+      onMainCategoryChange(type);
+      if (matchedSub) {
+        subSel.value = matchedSub;
+      }
+      announceNVDA('Kategorie gewählt: ' + matchedMain + ', Unterkategorie: ' + matchedSub);
+    }
+  }
+}
+
 
 let cryptoKey = null;
 let currentActiveView = 'overview';
@@ -2358,6 +3096,7 @@ async function handleAddExpense(e) {
   const freq = document.getElementById('exp-frequency').value;
   const account = document.getElementById('exp-account').value;
   const category = document.getElementById('exp-category').value;
+  const subcategory = document.getElementById('exp-subcategory') ? document.getElementById('exp-subcategory').value : '';
   const date = document.getElementById('exp-date').value;
   const desc = document.getElementById('exp-desc').value.trim();
 
@@ -2374,7 +3113,8 @@ async function handleAddExpense(e) {
       account: account,
       amount: amount,
       category: category,
-      name: desc || category,
+      subcategory: subcategory,
+      name: desc || (subcategory ? `${category} (${subcategory})` : category),
       interval: freq,
       day: day,
       weekday: weekday,
@@ -2391,6 +3131,7 @@ async function handleAddExpense(e) {
       account: account,
       amount: amount,
       category: category,
+      subcategory: subcategory,
       description: desc,
       costType: 'variable',
       isPlanned: freq === 'planned',
@@ -2413,6 +3154,7 @@ async function handleAddIncome(e) {
   const freq = document.getElementById('inc-frequency').value;
   const account = document.getElementById('inc-account').value;
   const category = document.getElementById('inc-category').value;
+  const subcategory = document.getElementById('inc-subcategory') ? document.getElementById('inc-subcategory').value : '';
   const date = document.getElementById('inc-date').value;
   const desc = document.getElementById('inc-desc').value.trim();
 
@@ -2428,7 +3170,8 @@ async function handleAddIncome(e) {
       account: account,
       amount: amount,
       category: category,
-      name: desc || category,
+      subcategory: subcategory,
+      name: desc || (subcategory ? `${category} (${subcategory})` : category),
       interval: freq,
       day: day,
       weekday: weekday,
@@ -2444,6 +3187,7 @@ async function handleAddIncome(e) {
       account: account,
       amount: amount,
       category: category,
+      subcategory: subcategory,
       description: desc,
       isPlanned: freq === 'planned',
       date: date
@@ -3060,6 +3804,9 @@ async function handlePinSubmit(e) {
       appState = decrypted;
 
       if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+            if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+            mergeCustomCategoriesIntoDB();
+            populateCategoriesDropdowns();
       if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
 
@@ -3135,6 +3882,8 @@ async function saveStateToEncryptedStorage() {
 
 
 function unlockApp() {
+  mergeCustomCategoriesIntoDB();
+  populateCategoriesDropdowns();
   const lockScreen = document.getElementById('lock-screen');
   const appWrapper = document.getElementById('app-wrapper');
   if (lockScreen) lockScreen.style.display = 'none';
@@ -3415,6 +4164,173 @@ function escapeHTML(str) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+
+// ============================================================================
+// 20. ÄNDERUNGSPROTOKOLL (CHANGELOG) BEI UPDATES
+// ============================================================================
+
+const CURRENT_APP_VERSION = 'v5.1.0';
+const STORAGE_CHANGELOG_ENABLED_KEY = 'haushaltsbuch_show_changelog_enabled_v1';
+const STORAGE_LAST_SEEN_VERSION_KEY = 'haushaltsbuch_last_seen_changelog_version_v1';
+
+function getAppCookie(name) {
+  try {
+    const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+    return v ? decodeURIComponent(v[2]) : null;
+  } catch(e) { return null; }
+}
+
+function setAppCookie(name, value) {
+  try {
+    document.cookie = name + '=' + encodeURIComponent(value) + '; max-age=315360000; path=/';
+  } catch(e) {}
+}
+
+function isChangelogEnabled() {
+  const val = localStorage.getItem(STORAGE_CHANGELOG_ENABLED_KEY) || getAppCookie(STORAGE_CHANGELOG_ENABLED_KEY);
+  return val !== 'false';
+}
+
+function getLastSeenChangelogVersion() {
+  return localStorage.getItem(STORAGE_LAST_SEEN_VERSION_KEY) || getAppCookie(STORAGE_LAST_SEEN_VERSION_KEY);
+}
+
+function setLastSeenChangelogVersion(ver) {
+  try { localStorage.setItem(STORAGE_LAST_SEEN_VERSION_KEY, ver); } catch(e) {}
+  setAppCookie(STORAGE_LAST_SEEN_VERSION_KEY, ver);
+}
+
+function checkChangelogOnStartup() {
+  const isEnabled = isChangelogEnabled();
+  const lastSeen = getLastSeenChangelogVersion();
+
+  const settingChk = document.getElementById('setting-auto-changelog');
+  if (settingChk) settingChk.checked = isEnabled;
+
+  if (isEnabled && lastSeen !== CURRENT_APP_VERSION) {
+    openChangelogModal(false);
+  }
+}
+
+function openChangelogModal(isManualOpen) {
+  const modal = document.getElementById('changelog-modal');
+  const heading = document.getElementById('changelog-modal-heading');
+  const chkDontShow = document.getElementById('chk-dont-show-changelog-again');
+
+  if (chkDontShow) {
+    chkDontShow.checked = !isChangelogEnabled();
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+    if (heading) heading.focus();
+    announceNVDA('Änderungsprotokoll geöffnet. Was ist neu in diesem Update? Drücke Enter oder klicke auf Schließen zum Fortfahren.');
+  }
+
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeChangelogModal();
+      document.removeEventListener('keydown', escHandler);
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
+function closeChangelogModal() {
+  const modal = document.getElementById('changelog-modal');
+  if (modal) modal.style.display = 'none';
+
+  setLastSeenChangelogVersion(CURRENT_APP_VERSION);
+
+  const pinInput = document.getElementById('pin-input');
+  if (pinInput && document.getElementById('lock-screen') && document.getElementById('lock-screen').style.display !== 'none') {
+    pinInput.focus();
+  }
+  announceNVDA('Änderungsprotokoll geschlossen. Bitte gib jetzt deine PIN ein.');
+}
+
+function toggleChangelogAutoShow(e) {
+  const dontShow = e.target.checked;
+  const isEnabled = !dontShow;
+  try { localStorage.setItem(STORAGE_CHANGELOG_ENABLED_KEY, isEnabled ? 'true' : 'false'); } catch(err) {}
+  setAppCookie(STORAGE_CHANGELOG_ENABLED_KEY, isEnabled ? 'true' : 'false');
+  const settingChk = document.getElementById('setting-auto-changelog');
+  if (settingChk) settingChk.checked = isEnabled;
+  announceNVDA(isEnabled ? 'Änderungsprotokoll wird bei zukünftigen Updates automatisch angezeigt.' : 'Änderungsprotokoll wird bei zukünftigen Updates nicht mehr automatisch angezeigt.');
+}
+
+function handleChangelogSettingChange(e) {
+  const isEnabled = e.target.checked;
+  try { localStorage.setItem(STORAGE_CHANGELOG_ENABLED_KEY, isEnabled ? 'true' : 'false'); } catch(err) {}
+  setAppCookie(STORAGE_CHANGELOG_ENABLED_KEY, isEnabled ? 'true' : 'false');
+  announceNVDA(isEnabled ? 'Automatische Update-Hinweise vor dem Start aktiviert.' : 'Automatische Update-Hinweise vor dem Start deaktiviert.');
+}
+
+// ============================================================================
+// 21. FEEDBACK & FEATURE-VORSCHLAG SENDEN
+// ============================================================================
+
+async function submitFeatureFeedback(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('feedback-author');
+  const msgInput = document.getElementById('feedback-message');
+  const btn = document.getElementById('btn-submit-feedback');
+
+  const author = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'App-Nutzer (Anonym)';
+  const message = msgInput ? msgInput.value.trim() : '';
+
+  if (!message) {
+    announceNVDA('Bitte gib eine Nachricht oder deinen Wunsch ein.', true);
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  announceNVDA('Feedback wird gesendet...');
+
+  const payload = JSON.stringify({
+    _subject: 'Haushaltsbuch-Feedback von ' + author,
+    _template: 'table',
+    _captcha: 'false',
+    Absender: author,
+    Nachricht: message,
+    Datum: new Date().toLocaleString('de-DE'),
+    AppVersion: 'v5.1.0'
+  });
+
+  const port = window.__LOCAL_PORT__ || 48123;
+  try {
+    fetch('http://127.0.0.1:' + port + '/api/send_feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload
+    }).catch(() => {});
+  } catch(e) {}
+
+  const nl = String.fromCharCode(10);
+  try {
+    fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+      method: 'POST',
+      headers: {
+        'Title': '💡 Neues Feedback / Idee von ' + author,
+        'Priority': '3',
+        'Tags': 'bulb,speech_balloon'
+      },
+      body: 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + new Date().toLocaleString('de-DE') + nl + 'Nachricht: ' + message
+    }).catch(() => {});
+  } catch(e) {}
+
+  if (msgInput) msgInput.value = '';
+  if (nameInput) nameInput.value = '';
+  if (btn) btn.disabled = false;
+
+  announceNVDA('Vielen Dank! Dein Vorschlag wurde erfolgreich an den Entwickler übermittelt.');
+  alert('✅ Vielen Dank! Dein Vorschlag wurde sofort live an den Entwickler übertragen.');
+}
+
+function downloadEncryptedBackup() {
+  exportEncryptedBackup();
 }
 
 </script>
