@@ -6,6 +6,17 @@
 VERSION 5.1.1 (Aktuelle Version)
 --------------------------------------------------------------------------------
 
+* VOLLSTAENDIGE BEARBEITUNG ALLER FELDER (BUCHUNGEN & DAUERAUFTRAEGE):
+  In den Bearbeiten-Dialogen koennen nun ausnahmslos ALLE Details nachtraeglich
+  geaendert werden:
+  - Art der Buchung (Ausgabe, Einnahme, Umbuchung)
+  - Betrag, Datum & Notiz
+  - Status (Bereits gebucht / erledigt vs. Geplant fuer die Zukunft)
+  - Konto-Auswahl (bei Umbuchungen: Von-Konto und Auf-Konto)
+  - Hauptkategorie & Unterkategorie per Dropdown und Live-Suche
+  - Bei Dauerauftraegen: Intervall (Monatlich, Quartal, Halbjaehrlich, Jaehrlich,
+    Woechentlich), Ausfuehrungstag, Wochentag, Monat und Status (Aktiv/Pausiert).
+
 * UNTERKATEGORIEN & GESCHAEFTE IN DER UEBERSICHT ANZEIGEN:
   In der Einnahmen- und Ausgabenliste der Uebersicht wird nun neben der
   Hauptkategorie auch direkt das konkrete Geschaeft / die Unterkategorie
@@ -15,10 +26,6 @@ VERSION 5.1.1 (Aktuelle Version)
   Das Feedback- und Kategorie-Uebermittlungssystem wurde so optimiert, dass es
   auf jedem beliebigen Computer und Browser zuverlaessig und sofort live an die
   Feedback-Zentrale uebertraegt.
-
-* BEARBEITEN-DIALOG MIT UNTERKATEGORIEN:
-  Beim nachtraeglichen Bearbeiten einer Buchung kann nun auch die Unterkategorie
-  bzw. das Geschaeft direkt eingesehen und angepasst werden.
 
 * UEBERPRUEFUNG ALLER 393 KATEGORIEN:
   Alle 23 Ausgaben- und 9 Einnahmen-Hauptkategorien mit insgesamt 393

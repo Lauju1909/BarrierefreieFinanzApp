@@ -1860,8 +1860,111 @@ async function handleAddTransfer(e) {
 }
 
 // ----------------------------------------------------------------------------
-// 12. MODAL DIALOGE & BEARBEITEN
+// 12. MODAL DIALOGE & VOLLSTÄNDIGE BEARBEITUNG
 // ----------------------------------------------------------------------------
+function populateEditModalCategories(type, selectedMain, selectedSub) {
+  const catSection = document.getElementById('edit-tx-category-section');
+  const mainSel = document.getElementById('edit-tx-category');
+  const subSel = document.getElementById('edit-tx-subcategory');
+  if (!mainSel || !subSel) return;
+
+  if (type === 'transfer') {
+    if (catSection) catSection.style.display = 'none';
+    return;
+  }
+  if (catSection) catSection.style.display = 'block';
+
+  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
+  const mainCats = Object.keys(db);
+
+  mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+  if (selectedMain && db[selectedMain]) {
+    mainSel.value = selectedMain;
+  }
+  applySymbolsToOptions(mainSel);
+
+  onEditMainCategoryChange(selectedSub);
+}
+
+function onEditMainCategoryChange(preferredSub) {
+  const type = document.getElementById('edit-tx-type').value;
+  const mainSel = document.getElementById('edit-tx-category');
+  const subSel = document.getElementById('edit-tx-subcategory');
+  if (!mainSel || !subSel) return;
+
+  const currentType = (type === 'income') ? 'inc' : 'exp';
+  const selectedMain = mainSel.value;
+  const db = CATEGORIES_DB[currentType];
+  const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
+
+  subSel.innerHTML = subs.map(sub => '<option value="' + escapeHTML(sub) + '">' + escapeHTML(sub) + '</option>').join('');
+  if (preferredSub && subs.includes(preferredSub)) {
+    subSel.value = preferredSub;
+  }
+  applySymbolsToOptions(subSel);
+}
+
+function onEditTxTypeChange() {
+  const type = document.getElementById('edit-tx-type').value;
+  const singleAcc = document.getElementById('edit-tx-single-account-group');
+  const trfAcc = document.getElementById('edit-tx-transfer-accounts-group');
+  const catSection = document.getElementById('edit-tx-category-section');
+
+  if (type === 'transfer') {
+    if (singleAcc) singleAcc.style.display = 'none';
+    if (trfAcc) trfAcc.style.display = 'grid';
+    if (catSection) catSection.style.display = 'none';
+  } else {
+    if (singleAcc) singleAcc.style.display = 'block';
+    if (trfAcc) trfAcc.style.display = 'none';
+    if (catSection) catSection.style.display = 'block';
+    const catType = (type === 'income') ? 'inc' : 'exp';
+    populateEditModalCategories(catType);
+  }
+}
+
+function handleEditCategorySearch() {
+  const type = document.getElementById('edit-tx-type').value;
+  if (type === 'transfer') return;
+  const catType = (type === 'income') ? 'inc' : 'exp';
+  const input = document.getElementById('edit-tx-cat-search');
+  if (!input) return;
+  const query = input.value.trim().toLowerCase();
+  if (!query) return;
+
+  const db = CATEGORIES_DB[catType];
+  let matchedMain = null;
+  let matchedSub = null;
+
+  for (const [mainCat, subs] of Object.entries(db)) {
+    const subMatch = subs.find(s => s.toLowerCase().includes(query));
+    if (subMatch) {
+      matchedMain = mainCat;
+      matchedSub = subMatch;
+      break;
+    }
+  }
+
+  if (!matchedMain) {
+    for (const mainCat of Object.keys(db)) {
+      if (mainCat.toLowerCase().includes(query)) {
+        matchedMain = mainCat;
+        matchedSub = db[mainCat][0] || 'Gesamt / Allgemein';
+        break;
+      }
+    }
+  }
+
+  if (matchedMain) {
+    const mainSel = document.getElementById('edit-tx-category');
+    if (mainSel) {
+      mainSel.value = matchedMain;
+      onEditMainCategoryChange(matchedSub);
+      announceNVDA('Kategorie gewählt: ' + matchedMain + ', Unterkategorie: ' + matchedSub);
+    }
+  }
+}
+
 function openEditModal(txId) {
   const tx = appState.transactions.find(t => t.id === txId);
   if (!tx) return;
@@ -1869,10 +1972,23 @@ function openEditModal(txId) {
   document.getElementById('edit-tx-id').value = tx.id;
   document.getElementById('edit-tx-amount').value = tx.amount;
   document.getElementById('edit-tx-date').value = tx.date;
-  document.getElementById('edit-tx-account').value = tx.account || 'bank';
-  document.getElementById('edit-tx-category').value = tx.category || '';
-  const subField = document.getElementById('edit-tx-subcategory');
-  if (subField) subField.value = tx.subcategory || '';
+  document.getElementById('edit-tx-type').value = tx.type || 'expense';
+  document.getElementById('edit-tx-planned').value = tx.isPlanned ? 'true' : 'false';
+
+  if (tx.type === 'transfer') {
+    document.getElementById('edit-tx-from').value = tx.fromAccount || 'bank';
+    document.getElementById('edit-tx-to').value = tx.toAccount || 'savings';
+  } else {
+    document.getElementById('edit-tx-account').value = tx.account || 'bank';
+  }
+
+  onEditTxTypeChange();
+
+  if (tx.type !== 'transfer') {
+    const catType = (tx.type === 'income') ? 'inc' : 'exp';
+    populateEditModalCategories(catType, tx.category, tx.subcategory);
+  }
+
   document.getElementById('edit-tx-desc').value = tx.description || '';
 
   const modal = document.getElementById('edit-tx-modal');
@@ -1892,12 +2008,26 @@ async function saveEditedTransaction(e) {
   const tx = appState.transactions.find(t => t.id === id);
   if (!tx) return;
 
+  const type = document.getElementById('edit-tx-type').value;
+  tx.type = type;
   tx.amount = parseFloat(document.getElementById('edit-tx-amount').value);
   tx.date = document.getElementById('edit-tx-date').value;
-  tx.account = document.getElementById('edit-tx-account').value;
-  tx.category = document.getElementById('edit-tx-category').value;
-  const subField = document.getElementById('edit-tx-subcategory');
-  if (subField) tx.subcategory = subField.value.trim();
+  tx.isPlanned = document.getElementById('edit-tx-planned').value === 'true';
+
+  if (type === 'transfer') {
+    tx.fromAccount = document.getElementById('edit-tx-from').value;
+    tx.toAccount = document.getElementById('edit-tx-to').value;
+    tx.account = undefined;
+    tx.category = 'Umbuchung';
+    tx.subcategory = '';
+  } else {
+    tx.account = document.getElementById('edit-tx-account').value;
+    tx.fromAccount = undefined;
+    tx.toAccount = undefined;
+    tx.category = document.getElementById('edit-tx-category').value;
+    tx.subcategory = document.getElementById('edit-tx-subcategory').value;
+  }
+
   tx.description = document.getElementById('edit-tx-desc').value.trim();
 
   await saveStateToEncryptedStorage();
@@ -1916,15 +2046,105 @@ async function deleteTransaction(txId) {
   }
 }
 
+function populateEditRecCategories(type, selectedMain, selectedSub) {
+  const catSection = document.getElementById('edit-rec-category-section');
+  const mainSel = document.getElementById('edit-rec-category');
+  const subSel = document.getElementById('edit-rec-subcategory');
+  if (!mainSel || !subSel) return;
+
+  if (type === 'transfer') {
+    if (catSection) catSection.style.display = 'none';
+    return;
+  }
+  if (catSection) catSection.style.display = 'block';
+
+  const catType = (type === 'income') ? 'inc' : 'exp';
+  const db = CATEGORIES_DB[catType] || CATEGORIES_DB['exp'];
+  const mainCats = Object.keys(db);
+
+  mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+  if (selectedMain && db[selectedMain]) {
+    mainSel.value = selectedMain;
+  }
+  applySymbolsToOptions(mainSel);
+
+  onEditRecMainCategoryChange(selectedSub);
+}
+
+function onEditRecMainCategoryChange(preferredSub) {
+  const type = document.getElementById('edit-rec-type').value;
+  const mainSel = document.getElementById('edit-rec-category');
+  const subSel = document.getElementById('edit-rec-subcategory');
+  if (!mainSel || !subSel) return;
+
+  const currentType = (type === 'income') ? 'inc' : 'exp';
+  const selectedMain = mainSel.value;
+  const db = CATEGORIES_DB[currentType];
+  const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
+
+  subSel.innerHTML = subs.map(sub => '<option value="' + escapeHTML(sub) + '">' + escapeHTML(sub) + '</option>').join('');
+  if (preferredSub && subs.includes(preferredSub)) {
+    subSel.value = preferredSub;
+  }
+  applySymbolsToOptions(subSel);
+}
+
+function onEditRecTypeChange() {
+  const type = document.getElementById('edit-rec-type').value;
+  const singleAcc = document.getElementById('edit-rec-single-account-group');
+  const trfAcc = document.getElementById('edit-rec-transfer-accounts-group');
+  const catSection = document.getElementById('edit-rec-category-section');
+
+  if (type === 'transfer') {
+    if (singleAcc) singleAcc.style.display = 'none';
+    if (trfAcc) trfAcc.style.display = 'grid';
+    if (catSection) catSection.style.display = 'none';
+  } else {
+    if (singleAcc) singleAcc.style.display = 'block';
+    if (trfAcc) trfAcc.style.display = 'none';
+    if (catSection) catSection.style.display = 'block';
+    populateEditRecCategories(type);
+  }
+}
+
+function onEditRecIntervalChange() {
+  const interval = document.getElementById('edit-rec-interval').value;
+  const dayGroup = document.getElementById('edit-rec-day-group');
+  const weekdayGroup = document.getElementById('edit-rec-weekday-group');
+  const yearlyMonthGroup = document.getElementById('edit-rec-yearly-month-group');
+
+  if (dayGroup) dayGroup.style.display = (interval === 'weekly') ? 'none' : 'block';
+  if (weekdayGroup) weekdayGroup.style.display = (interval === 'weekly') ? 'block' : 'none';
+  if (yearlyMonthGroup) yearlyMonthGroup.style.display = (interval === 'yearly') ? 'block' : 'none';
+}
+
 function openEditRecModal(recId) {
   const rec = appState.recurring.find(r => r.id === recId);
   if (!rec) return;
 
   document.getElementById('edit-rec-id').value = rec.id;
+  document.getElementById('edit-rec-type').value = rec.type || 'expense';
   document.getElementById('edit-rec-amount').value = rec.amount;
-  document.getElementById('edit-rec-interval').value = rec.interval || 'monthly';
-  document.getElementById('edit-rec-day').value = rec.day || 1;
   document.getElementById('edit-rec-name').value = rec.name || rec.category || '';
+  document.getElementById('edit-rec-interval').value = rec.interval || 'monthly';
+  document.getElementById('edit-rec-active').value = (rec.active !== false) ? 'true' : 'false';
+  document.getElementById('edit-rec-day').value = rec.day || 1;
+  if (document.getElementById('edit-rec-weekday')) document.getElementById('edit-rec-weekday').value = rec.weekday !== undefined ? rec.weekday : 5;
+  if (document.getElementById('edit-rec-yearly-month')) document.getElementById('edit-rec-yearly-month').value = rec.yearlyMonth !== undefined ? rec.yearlyMonth : 0;
+
+  if (rec.type === 'transfer') {
+    document.getElementById('edit-rec-from').value = rec.fromAccount || 'bank';
+    document.getElementById('edit-rec-to').value = rec.toAccount || 'savings';
+  } else {
+    document.getElementById('edit-rec-account').value = rec.account || 'bank';
+  }
+
+  onEditRecTypeChange();
+  onEditRecIntervalChange();
+
+  if (rec.type !== 'transfer') {
+    populateEditRecCategories(rec.type, rec.category, rec.subcategory);
+  }
 
   const modal = document.getElementById('edit-rec-modal');
   modal.style.display = 'flex';
@@ -1943,10 +2163,29 @@ async function saveEditedRecurring(e) {
   const rec = appState.recurring.find(r => r.id === id);
   if (!rec) return;
 
+  const type = document.getElementById('edit-rec-type').value;
+  rec.type = type;
   rec.amount = parseFloat(document.getElementById('edit-rec-amount').value);
-  rec.interval = document.getElementById('edit-rec-interval').value;
-  rec.day = parseInt(document.getElementById('edit-rec-day').value, 10) || 1;
   rec.name = document.getElementById('edit-rec-name').value.trim();
+  rec.interval = document.getElementById('edit-rec-interval').value;
+  rec.active = document.getElementById('edit-rec-active').value === 'true';
+  rec.day = parseInt(document.getElementById('edit-rec-day').value, 10) || 1;
+  rec.weekday = parseInt(document.getElementById('edit-rec-weekday').value, 10) || 5;
+  rec.yearlyMonth = parseInt(document.getElementById('edit-rec-yearly-month').value, 10) || 0;
+
+  if (type === 'transfer') {
+    rec.fromAccount = document.getElementById('edit-rec-from').value;
+    rec.toAccount = document.getElementById('edit-rec-to').value;
+    rec.account = undefined;
+    rec.category = 'Umbuchung & Sparplan';
+    rec.subcategory = '';
+  } else {
+    rec.account = document.getElementById('edit-rec-account').value;
+    rec.fromAccount = undefined;
+    rec.toAccount = undefined;
+    rec.category = document.getElementById('edit-rec-category').value;
+    rec.subcategory = document.getElementById('edit-rec-subcategory').value;
+  }
 
   await saveStateToEncryptedStorage();
   closeEditRecModal();

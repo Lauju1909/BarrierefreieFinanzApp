@@ -152,54 +152,104 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
  2. MODAL DIALOG: BUCHUNG BEARBEITEN
  ========================================================================= -->
 <div id="edit-tx-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" style="display: none;">
-<div class="modal-dialog-box">
+<div class="modal-dialog-box" style="max-width: 640px;">
 <h2 id="edit-modal-heading" tabindex="-1">Buchung bearbeiten</h2>
-<p class="field-hint">Passe hier Betrag, Datum, Konto, Kategorie oder Notiz an:</p>
+<p class="field-hint">Passe hier alle Details deiner Buchung vollständig an:</p>
  
 <form id="form-edit-tx" onsubmit="saveEditedTransaction(event)" class="accessible-form" style="margin-top: 16px;">
 <input type="hidden" id="edit-tx-id">
- 
-<div class="form-group">
-<label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
-<input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="edit-tx-type" class="field-label"><strong>Art der Buchung:</strong></label>
+    <select id="edit-tx-type" class="large-select" onchange="onEditTxTypeChange()">
+      <option value="expense">Ausgabe</option>
+      <option value="income">Einnahme</option>
+      <option value="transfer">Umbuchung</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€):</strong><span class="required-star">*</span></label>
+    <input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
+  </div>
+</div>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="edit-tx-date" class="field-label"><strong>Datum:</strong><span class="required-star">*</span></label>
+    <input type="date" id="edit-tx-date" class="large-input" required>
+  </div>
+  <div class="form-group">
+    <label for="edit-tx-planned" class="field-label"><strong>Status:</strong></label>
+    <select id="edit-tx-planned" class="large-select">
+      <option value="false">Bereits gebucht / erledigt</option>
+      <option value="true">Geplant für die Zukunft</option>
+    </select>
+  </div>
+</div>
+
+<div id="edit-tx-single-account-group" class="form-group">
+  <label for="edit-tx-account" class="field-label"><strong>Konto:</strong></label>
+  <select id="edit-tx-account" class="large-select">
+    <option value="bank">Bankkonto / Girokonto</option>
+    <option value="paypal">PayPal Guthaben</option>
+    <option value="savings">Tagesgeldkonto</option>
+    <option value="cash">Bargeld</option>
+  </select>
+</div>
+
+<div id="edit-tx-transfer-accounts-group" class="form-row-2" style="display: none;">
+  <div class="form-group">
+    <label for="edit-tx-from" class="field-label"><strong>Von Konto:</strong></label>
+    <select id="edit-tx-from" class="large-select">
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="paypal">PayPal Guthaben</option>
+      <option value="savings">Tagesgeldkonto</option>
+      <option value="cash">Bargeld</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="edit-tx-to" class="field-label"><strong>Auf Konto:</strong></label>
+    <select id="edit-tx-to" class="large-select">
+      <option value="savings">Tagesgeldkonto</option>
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="paypal">PayPal Guthaben</option>
+      <option value="cash">Bargeld</option>
+    </select>
+  </div>
+</div>
+
+<div id="edit-tx-category-section">
+  <div class="form-group">
+    <label for="edit-tx-cat-search" class="field-label"><strong>Kategorie-Schnellsuche:</strong></label>
+    <input type="text" id="edit-tx-cat-search" class="large-input" placeholder="Tippe z. B. Rewe, Miete, Gehalt..." oninput="handleEditCategorySearch()">
+  </div>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-tx-category" class="field-label"><strong>Hauptkategorie:</strong></label>
+      <select id="edit-tx-category" class="large-select" onchange="onEditMainCategoryChange()">
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="edit-tx-subcategory" class="field-label"><strong>Unterkategorie / Laden:</strong></label>
+      <select id="edit-tx-subcategory" class="large-select">
+      </select>
+    </div>
+  </div>
 </div>
 
 <div class="form-group">
-<label for="edit-tx-date" class="field-label"><strong>Datum</strong></label>
-<input type="date" id="edit-tx-date" class="large-input" required>
+  <label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz:</strong></label>
+  <input type="text" id="edit-tx-desc" class="large-input" placeholder="z. B. Wocheneinkauf, Geschenk...">
 </div>
 
-<div class="form-group">
-<label for="edit-tx-account" class="field-label"><strong>Konto</strong></label>
-<select id="edit-tx-account" class="large-select">
-<option value="bank">🏦 Bankkonto / Girokonto</option>
-<option value="paypal">🅿PayPal Guthaben</option>
-<option value="savings">📈 Tagesgeldkonto</option>
-<option value="cash">💵 Bargeld</option>
-</select>
-</div>
-
-<div class="form-group">
-<label for="edit-tx-category" class="field-label"><strong>Hauptkategorie</strong></label>
-<input type="text" id="edit-tx-category" class="large-input">
-</div>
-<div class="form-group">
-<label for="edit-tx-subcategory" class="field-label"><strong>Unterkategorie / Geschäft</strong></label>
-<input type="text" id="edit-tx-subcategory" class="large-input" placeholder="z. B. Rewe, Aldi, Netflix...">
-</div>
-
-<div class="form-group">
-<label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz</strong></label>
-<input type="text" id="edit-tx-desc" class="large-input">
-</div>
-
-<div class="form-actions">
-<button type="submit" class="btn btn-primary">
-<span>💾<strong>Änderungen speichern</strong></span>
-</button>
-<button type="button" class="btn btn-secondary" onclick="closeEditModal()">
-<span>Abbrechen</span>
-</button>
+<div class="form-actions" style="margin-top: 14px;">
+  <button type="submit" class="btn btn-primary">
+    <span><strong>Änderungen speichern</strong> (Enter)</span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+    <span>Abbrechen</span>
+  </button>
 </div>
 </form>
 </div>
@@ -209,46 +259,142 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
  3. MODAL DIALOG: DAUERAUFTRAG / SPARPLAN BEARBEITEN
  ========================================================================= -->
 <div id="edit-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="edit-rec-heading" style="display: none;">
-<div class="modal-dialog-box">
+<div class="modal-dialog-box" style="max-width: 640px;">
 <h2 id="edit-rec-heading" tabindex="-1">Dauerauftrag / Sparplan bearbeiten</h2>
-<p class="field-hint">Passe hier regelmäßige Kosten oder Sparpläne an:</p>
+<p class="field-hint">Passe hier alle Details deiner regelmäßigen Buchung vollständig an:</p>
  
 <form id="form-edit-rec" onsubmit="saveEditedRecurring(event)" class="accessible-form" style="margin-top: 16px;">
 <input type="hidden" id="edit-rec-id">
- 
-<div class="form-group">
-<label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€)</strong></label>
-<input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="edit-rec-type" class="field-label"><strong>Art des Dauerauftrags:</strong></label>
+    <select id="edit-rec-type" class="large-select" onchange="onEditRecTypeChange()">
+      <option value="expense">Regelmäßige Ausgabe</option>
+      <option value="income">Regelmäßige Einnahme</option>
+      <option value="transfer">Dauerhafter Sparplan (Umbuchung)</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€):</strong><span class="required-star">*</span></label>
+    <input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
+  </div>
 </div>
 
 <div class="form-group">
-<label for="edit-rec-interval" class="field-label"><strong>Intervall</strong></label>
-<select id="edit-rec-interval" class="large-select">
-<option value="weekly">Wöchentlich (Jede Woche)</option>
-<option value="monthly">Monatlich</option>
-<option value="quarterly">Alle 3 Monate (Quartalsweise)</option>
-<option value="halfyear">Alle 6 Monate (Halbjährlich)</option>
-<option value="yearly">Jährlich (1x im Jahr)</option>
-</select>
+  <label for="edit-rec-name" class="field-label"><strong>Name / Bezeichnung:</strong><span class="required-star">*</span></label>
+  <input type="text" id="edit-rec-name" class="large-input" placeholder="z. B. Miete, Netflix, Notgroschen Sparplan..." required>
 </div>
 
-<div class="form-group">
-<label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31)</strong></label>
-<input type="number" min="1" max="31" id="edit-rec-day" class="large-input" required>
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="edit-rec-interval" class="field-label"><strong>Intervall / Häufigkeit:</strong></label>
+    <select id="edit-rec-interval" class="large-select" onchange="onEditRecIntervalChange()">
+      <option value="monthly">Monatlich</option>
+      <option value="quarterly">Alle 3 Monate (Quartalsweise)</option>
+      <option value="halfyear">Alle 6 Monate (Halbjährlich)</option>
+      <option value="yearly">Jährlich (1x im Jahr)</option>
+      <option value="weekly">Wöchentlich (Jede Woche)</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="edit-rec-active" class="field-label"><strong>Status:</strong></label>
+    <select id="edit-rec-active" class="large-select">
+      <option value="true">Aktiv (wird berechnet)</option>
+      <option value="false">Pausiert (vorübergehend ausgesetzt)</option>
+    </select>
+  </div>
 </div>
 
-<div class="form-group">
-<label for="edit-rec-name" class="field-label"><strong>Name / Beschreibung</strong></label>
-<input type="text" id="edit-rec-name" class="large-input">
+<div id="edit-rec-day-group" class="form-group">
+  <label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31):</strong></label>
+  <input type="number" min="1" max="31" id="edit-rec-day" class="large-input" value="1">
 </div>
 
-<div class="form-actions">
-<button type="submit" class="btn btn-primary">
-<span>💾<strong>Dauerauftrag speichern</strong></span>
-</button>
-<button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
-<span>Abbrechen</span>
-</button>
+<div id="edit-rec-weekday-group" class="form-group" style="display: none;">
+  <label for="edit-rec-weekday" class="field-label"><strong>Wochentag:</strong></label>
+  <select id="edit-rec-weekday" class="large-select">
+    <option value="1">Jeden Montag</option>
+    <option value="2">Jeden Dienstag</option>
+    <option value="3">Jeden Mittwoch</option>
+    <option value="4">Jeden Donnerstag</option>
+    <option value="5" selected>Jeden Freitag</option>
+    <option value="6">Jeden Samstag</option>
+    <option value="0">Jeden Sonntag</option>
+  </select>
+</div>
+
+<div id="edit-rec-yearly-month-group" class="form-group" style="display: none;">
+  <label for="edit-rec-yearly-month" class="field-label"><strong>In welchem Monat jedes Jahr?</strong></label>
+  <select id="edit-rec-yearly-month" class="large-select">
+    <option value="0">Januar</option>
+    <option value="1">Februar</option>
+    <option value="2">März</option>
+    <option value="3">April</option>
+    <option value="4">Mai</option>
+    <option value="5">Juni</option>
+    <option value="6">Juli</option>
+    <option value="7">August</option>
+    <option value="8">September</option>
+    <option value="9">Oktober</option>
+    <option value="10">November</option>
+    <option value="11">Dezember</option>
+  </select>
+</div>
+
+<div id="edit-rec-single-account-group" class="form-group">
+  <label for="edit-rec-account" class="field-label"><strong>Konto:</strong></label>
+  <select id="edit-rec-account" class="large-select">
+    <option value="bank">Bankkonto / Girokonto</option>
+    <option value="paypal">PayPal Guthaben</option>
+    <option value="savings">Tagesgeldkonto</option>
+    <option value="cash">Bargeld</option>
+  </select>
+</div>
+
+<div id="edit-rec-transfer-accounts-group" class="form-row-2" style="display: none;">
+  <div class="form-group">
+    <label for="edit-rec-from" class="field-label"><strong>Von Konto:</strong></label>
+    <select id="edit-rec-from" class="large-select">
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="paypal">PayPal Guthaben</option>
+      <option value="savings">Tagesgeldkonto</option>
+      <option value="cash">Bargeld</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="edit-rec-to" class="field-label"><strong>Auf Konto:</strong></label>
+    <select id="edit-rec-to" class="large-select">
+      <option value="savings">Tagesgeldkonto</option>
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="paypal">PayPal Guthaben</option>
+      <option value="cash">Bargeld</option>
+    </select>
+  </div>
+</div>
+
+<div id="edit-rec-category-section">
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-category" class="field-label"><strong>Hauptkategorie:</strong></label>
+      <select id="edit-rec-category" class="large-select" onchange="onEditRecMainCategoryChange()">
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="edit-rec-subcategory" class="field-label"><strong>Unterkategorie / Laden:</strong></label>
+      <select id="edit-rec-subcategory" class="large-select">
+      </select>
+    </div>
+  </div>
+</div>
+
+<div class="form-actions" style="margin-top: 14px;">
+  <button type="submit" class="btn btn-primary">
+    <span><strong>Dauerauftrag speichern</strong> (Enter)</span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
+    <span>Abbrechen</span>
+  </button>
 </div>
 </form>
 </div>
