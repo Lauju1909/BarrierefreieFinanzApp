@@ -1,4 +1,282 @@
 // ============================================================================
+// 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
+// ============================================================================
+const CURRENT_APP_VERSION = 'v5.3.5';
+const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
+const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
+const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
+const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
+const STORAGE_LOCKOUT_KEY = 'barrierefreie_finanzen_lockout_v1';
+const STORAGE_ATTEMPTS_KEY = 'barrierefreie_finanzen_attempts_v1';
+const STORAGE_SHOW_SYMBOLS_KEY = 'haushaltsbuch_show_symbols_enabled_v1';
+
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden
+
+const MONTH_NAMES = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+];
+
+const CATEGORY_ICONS = {
+  // Ausgaben
+  "Lebensmittel, Supermarkt & Discounter": "🛒",
+  "Miete, Wohnen & Nebenkosten": "🏠",
+  "Haushalt, Möbel, Garten & Handwerker": "🛋️",
+  "Mobilität, Auto & Kraftfahrzeuge": "🚗",
+  "ÖPNV, Bahn, Bus, Flug & Reisen": "🚆",
+  "Restaurants, Cafés & Gastronomie": "🍽️",
+  "Lieferdienste & Essen bestellen": "🛵",
+  "Streaming, Musik, TV & Unterhaltung": "📺",
+  "Gaming, Computer & Konsolen": "🎮",
+  "Elektronik, Internet, Handy & Software": "💻",
+  "Shopping, Online-Kauf & Marktplätze": "🛍️",
+  "Kleidung, Schuhe & Mode": "👗",
+  "Drogerie, Kosmetik & Körperpflege": "🧴",
+  "Gesundheit, Apotheke & Arzt": "💊",
+  "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": "🦯",
+  "Versicherungen & Vorsorge": "🛡️",
+  "Bank, Finanzen, Kredite & Gebühren": "🏦",
+  "Haustiere & Tierhaltung": "🐾",
+  "Familie, Kinder & Babybedarf": "👶",
+  "Schule, Ausbildung & Studium": "🎓",
+  "Sport, Fitness, Verein & Hobbys": "🏆",
+  "Spenden, Gemeinnütziges & Zuwendungen": "❤️",
+  "Sonstige Ausgaben & Bargeld": "📦",
+
+  // Einnahmen
+  "Gehalt, Lohn & Beruf": "💼",
+  "Staatliche Leistungen, Hilfen & Zuschüsse": "🏛️",
+  "Taschengeld & Private Unterstützung": "👛",
+  "Spenden, Zuwendungen & Förderungen": "❤️",
+  "Geschenke, Boni & Gewinne": "🎁",
+  "Rente, Pension & Versorgung": "👴",
+  "Verkäufe, Gebrauchtwaren & Erstattungen": "🏷️",
+  "Zinsen, Dividenden, Miete & Kapital": "📈",
+  "Sonstige Einnahmen": "💰"
+};
+
+const CATEGORIES_DB = {
+  exp: {
+    "Lebensmittel, Supermarkt & Discounter": [
+      "Gesamt / Allgemein", "Aldi Nord", "Aldi Süd", "Lidl", "Rewe", "Edeka", "Kaufland", "Penny", 
+      "Netto Marken-Discount", "Netto mit dem Hund", "Norma", "Globus", "Tegut", "HIT", "Famila", 
+      "Alnatura", "Denns Biomarkt", "Bio Company", "Unverpackt-Laden", 
+      "Asia-Markt / Türkischer Supermarkt", "Bäckerei / Dorfbäcker", "Konditorei", 
+      "Fleischerei / Metzger", "Fischgeschäft", "Wochenmarkt (Obst, Gemüse, Eier)", "Hofladen / Bauernhof", 
+      "Getränkemarkt / Trinkgut", "Sonstiger Supermarkt"
+    ],
+    "Miete, Wohnen & Nebenkosten": [
+      "Kaltmiete", "Warmmiete", "Mietkaution", "Nebenkosten Vorauszahlung / Nachzahlung", "Hausgeld (Eigentümer)", 
+      "Rundfunkbeitrag (GEZ / ARD ZDF)", "Strom (Stadtwerke / Energie)", "Gas & Fernwärme", 
+      "Heizöl / Pellets / Brennholz", "Wasser & Abwasser", "Müllgebühren / Entsorgung", 
+      "Schornsteinfeger & Wartung", "Hausratversicherung", "Glasversicherung", "Wohngebäudeversicherung", "Hausmeister & Treppenreinigung"
+    ],
+    "Haushalt, Möbel, Garten & Handwerker": [
+      "Möbel & Deko (IKEA, Poco, XXXLutz, Mömax)", "Betten, Matratzen & Bettwäsche", 
+      "Waschmaschine, Kühlschrank & Großgeräte", "Kaffeemaschine, Toaster & Küchengeräte", 
+      "Staubsauger & Reinigungsgeräte", "Putzmittel, Waschmittel & Haushaltsbedarf", "Geschirr, Töpfe & Besteck", 
+      "Baumarkt (Obi, Bauhaus, Hornbach, Toom)", "Garten, Balkon, Pflanzen & Blumen", 
+      "Handwerker & Reparaturen (Sanitär, Maler, Elektrik)", "Schlüsseldienst", "Umzugskosten & Transporter mieten"
+    ],
+    "Mobilität, Auto & Kraftfahrzeuge": [
+      "Tanken (Benzin / Super E10 E5)", "Tanken (Diesel)", "Tanken (Autogas / LPG)", "E-Auto Ladestation / Ladestrom", 
+      "KFZ-Haftpflichtversicherung", "KFZ-Teilkasko / Vollkasko", "KFZ-Steuer (Hauptzollamt)", 
+      "Hauptuntersuchung (TÜV / DEKRA / GTÜ)", "Auto-Werkstatt, Inspektion & Ölwechsel", "Autoreparatur & Ersatzteile", 
+      "Sommerreifen / Winterreifen & Reifenwechsel", "Autowäsche & Autopflege", "Auto-Kauf, Leasing & Autokredit", 
+      "Parkgebühren, Parkhaus & Parkschein", "Autobahn-Maut, Vignette & Umweltplakette", "ADAC / Pannenhilfe Mitgliedschaft", 
+      "Führerschein & Fahrstunden"
+    ],
+    "ÖPNV, Bahn, Bus, Flug & Reisen": [
+      "Deutschlandticket (49€ / Monatskarte)", "Bus, Straßenbahn & U-Bahn (Einzeltickets / Streifen)", 
+      "Deutsche Bahn (ICE / IC / Regio)", "BahnCard (25 / 50 / 100)", "Fernbus (Flixbus / Flixtrain)", 
+      "Taxi, Uber, Bolt & FreeNow", "E-Scooter & Leihrad (Tier, Bolt, Lime)", "Eigenes Fahrrad / E-Bike Reparatur & Zubehör", 
+      "Flugtickets & Airline-Gebühren", "Hotel, Ferienwohnung & Airbnb", "Pauschalreise / Urlaub", 
+      "Auslands-Krankenversicherung", "Kurtaxe & Reisekosten"
+    ],
+    "Restaurants, Cafés & Gastronomie": [
+      "Restaurant (Abendessen / Mittagessen)", "Gasthaus / Brauhaus / Biergarten", "Pizzeria / Italienisches Restaurant", 
+      "Asiatisches / Griechisches / Mexikanisches Restaurant", "Burger-Restaurant & Steakhouse", 
+      "Imbiss, Döner, Currywurst & Pommes", "Fast Food (McDonald's, Burger King, KFC, Subway)", 
+      "Café, Bäckerei-Frühstück & Kaffeepause", "Eisdiele & Eisbecher", "Mensa, Betriebskantine & Schulkantine", 
+      "Bar, Kneipe, Pub & Bierstube", "Club, Diskothek & Party", "Snacks, Süßigkeiten & Energy Drinks"
+    ],
+    "Lieferdienste & Essen bestellen": [
+      "Lieferando", "Uber Eats", "Wolt", "Pizza-Lieferdienst vor Ort", "Asia-Lieferdienst", 
+      "Burger & Döner Lieferservice", "Getränke-Lieferdienst (Flaschenpost)", "Kochboxen (HelloFresh, Marley Spoon)"
+    ],
+    "Streaming, Musik, TV & Unterhaltung": [
+      "Netflix", "Amazon Prime Video / Music", "Spotify", "Apple Music / Apple One", "Disney+", 
+      "YouTube Premium / Music", "Paramount+", "WOW / Sky Ticket", "DAZN", "RTL+ / Joyn PLUS+", "Crunchyroll", 
+      "Audible / Hörbücher", "Deezer / Tidal", "Kino, Tickets & Popcorn", "Theater, Oper, Ballett & Musical", 
+      "Konzerte, Festivals & Live-Events", "Comedy & Kabarett", "Freizeitpark (Phantasialand, Europa-Park, Heide Park)", 
+      "Zoo, Tierpark, Aquarium & Botanischer Garten", "Museum, Ausstellungen & Sehenswürdigkeiten"
+    ],
+    "Gaming, Computer & Konsolen": [
+      "Steam & PC-Spiele", "PlayStation Plus (PSN / PS Store)", "Xbox Game Pass & Microsoft Store", 
+      "Nintendo Switch Online & eShop", "In-Game-Käufe, Battle Pass & V-Bucks", "Epic Games / GOG / EA App", 
+      "Computer-Hardware (Grafikkarte, CPU, RAM)", "Gaming-Zubehör (Tastatur, Maus, Headset, Controller)", 
+      "Gaming-Monitor & Gaming-Stuhl", "Spielekonsole (PS5, Xbox Series X, Nintendo Switch, Steam Deck)", 
+      "Mobile Games & App-Käufe (Google Play / App Store)", "Discord Nitro & Twitch Subs"
+    ],
+    "Elektronik, Internet, Handy & Software": [
+      "Smartphone / iPhone Kauf", "Handyvertrag & Monatstarif", 
+      "Prepaid-Guthaben (Telekom, Vodafone, o2, Aldi Talk, Congstar, Blau)", "Tablet / iPad & Zubehör", 
+      "Laptop / Notebook & Zubehör", "Festnetz, Internet & DSL / Glasfaser (Telekom, Vodafone, 1&1, o2)", 
+      "WLAN-Router & Netzwerk (FRITZ!Box)", "Fernseher, Soundbar & Heimkino", "Smart Home (Alexa, Google Nest, Hue)", 
+      "Cloud-Speicher (iCloud, Google One, OneDrive, Dropbox)", "Microsoft 365 / Office Abo", 
+      "Antivirus & VPN Software", "Software-Lizenzen", "Druckertinte, Toner & Papier", "Elektronik-Reparatur"
+    ],
+    "Shopping, Online-Kauf & Marktplätze": [
+      "Amazon Bestellungen", "eBay & Kleinanzeigen Käufe", "Otto Versand", "Zalando, ASOS & Fashion-Shops", 
+      "Temu, AliExpress & Shein", "Kaufland.de / Galaxus / Alternate", "Second-Hand (Vinted, Momox, Rebuy)", 
+      "DHL, Hermes, DPD & Post-Porto / Paketmarken", "Schreibwaren, Bürobedarf & Bastelbedarf", 
+      "Geschenke für Familie & Freunde", "Blumen & Pflanzen"
+    ],
+    "Kleidung, Schuhe & Mode": [
+      "Alltagskleidung (H&M, C&A, Zara, Primark)", "Markenkleidung (Nike, Adidas, Levi's)", 
+      "Schuhe, Sneaker & Stiefel (Deichmann, Snipes)", "Sportkleidung & Funktionskleidung", 
+      "Winterjacke, Mantel & Regenkleidung", "Unterwäsche, Socken & Nachtwäsche", "Anzug, Kleid & Festkleidung", 
+      "Taschen, Rucksäcke & Koffer", "Schmuck, Uhren & Accessoires", "Schneiderei & Textilreinigung"
+    ],
+    "Drogerie, Kosmetik & Körperpflege": [
+      "dm-drogerie markt", "Rossmann", "Müller Drogerie", "Duschgel, Shampoo & Haarpflege", 
+      "Zahnpflege (Zahnbürste, Zahnpasta, Mundspülung)", "Deo, Parfüm & Düfte (Douglas, Sephora)", 
+      "Hautcreme, Sonnencreme & Lotion", "Rasierer, Klingen & Rasierschaum", "Damenhygiene & Pflegeprodukte", 
+      "Make-Up & Kosmetik", "Friseurbesuch (Schneiden, Färben)", "Barbershop / Bartpflege", 
+      "Kosmetikstudio, Fußpflege & Maniküre", "Tattoo & Piercing"
+    ],
+    "Gesundheit, Apotheke & Arzt": [
+      "Apotheke & rezeptfreie Medikamente", "Rezeptgebühren & Zuzahlungen (Krankenkasse)", "Arztbesuch & Praxisgebühren", 
+      "Zahnarzt & Zahnreinigung (PZR)", "Brille, Sehhilfen & Kontaktlinsen (Fielmann, Apollo)", "Hörgeräte, Batterien & Zubehör", 
+      "Physiotherapie, Krankengymnastik & Osteopathie", "Massage & Ergotherapie", "Psychotherapie & Beratung", 
+      "Orthopädische Einlagen & Bandagen", "Krankenhaus-Zuzahlung & Reha", "Nahrungsergänzung, Vitamine & Mineralien", "Erste Hilfe, Pflaster & Verband"
+    ],
+    "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": [
+      "Weißer Blindenlangstock, Rollspitzen & Taststöcke", "Blindenführhund (Futter, Tierarzt, Geschirr)", 
+      "Elektronische Sehhilfen & Kamerasysteme (Orcam)", "Braille-Zeile & Punktschrift-Zubehör", 
+      "Screenreader-Lizenzen (JAWS) & Sprachausgaben", "Sprechende Haushaltsgeräte (Waage, Uhr, Farberkenner)", 
+      "Vergrößerungssoftware (ZoomText)", "Daisy-Player & Hörbuchgeräte", "Tastbare Markierungen & Signalbänder", "Assistenz- & Begleitdienst"
+    ],
+    "Versicherungen & Vorsorge": [
+      "Gesetzliche Krankenversicherung (Freiwillig versichert)", "Private Krankenversicherung (PKV)", 
+      "Private Pflegezusatzversicherung", "Private Haftpflichtversicherung", "Berufsunfähigkeitsversicherung (BU)", 
+      "Unfallversicherung", "Rechtsschutzversicherung (Verkehr, Beruf, Wohnen)", "Zahnzusatzversicherung", 
+      "Risikolebensversicherung", "Sterbegeldversicherung", "Altersvorsorge (Riester, Rürup, Private Rente)"
+    ],
+    "Bank, Finanzen, Kredite & Gebühren": [
+      "Kontoführungsgebühren Girokonto", "Kreditkartengebühren (Mastercard, Visa)", "Dispozinsen & Überziehungszinsen", 
+      "Zinsen & Tilgung Ratenkredit", "Zinsen & Tilgung Baufinanzierung", "Schufa-Auskunft", 
+      "Depotgebühren & Wertpapierkosten", "Fremdautomat-Gebühren", "Notar- & Gerichtskosten", "Steuerberater & Lohnsteuerhilfe"
+    ],
+    "Haustiere & Tierhaltung": [
+      "Hundefutter / Katzenfutter (Fressnapf, Zooplus, Futterhaus)", "Spezialfutter & Diätnahrung", 
+      "Kleintierfutter (Vögel, Nager, Fische, Reptilien)", "Tierarzt, Impfungen & Behandlungen", 
+      "Tierklinik & OP-Kosten", "Tierkrankenversicherung & OP-Schutz", "Hundesteuer (Stadt / Gemeinde)", 
+      "Hundehalter-Haftpflicht", "Katzenstreu & Einstreu", "Leinen, Geschirre & Halsbänder", 
+      "Kratzbäume & Tierbetten", "Spielzeug für Tiere", "Hundeschule & Tiertraining", "Tierpension & Tiersitter", "Hundesalon & Fellpflege"
+    ],
+    "Familie, Kinder & Babybedarf": [
+      "Windeln, Feuchttücher & Babypflege", "Babynahrung & Gläschen", "Babykleidung & Kinderschuhe", 
+      "Kinderwagen, Buggy & Autokindersitz", "Babybett & Kindermöbel", "Spielzeug (Lego, Playmobil)", 
+      "Gesellschaftsspiele & Puzzles", "Kinderbücher & Hörspiele (Tonie-Figuren)", "Kita, Kindergarten & Hortbeiträge", 
+      "Babysitter & Tagesmutter", "Taschengeld an Kinder ausgezahlt"
+    ],
+    "Schule, Ausbildung & Studium": [
+      "Schulranzen, Rucksack & Mäppchen", "Schulbücher, Hefte & Arbeitshefte", "Stifte, Zirkel & Taschenrechner", 
+      "Klassenfahrten & Schulausflüge", "Nachhilfe (Studienkreis, Schülerhilfe)", "Musikschule & Instrumente", 
+      "Semesterbeitrag Universität / FH", "Fachbücher & Studienmaterial", "Prüfungsgebühren & Zertifikate", "Weiterbildung & VHS-Kurse"
+    ],
+    "Sport, Fitness, Verein & Hobbys": [
+      "Fitnessstudio (McFit, FitX, Clever Fit, John Reed)", "Sportverein (Fußball, Tennis, Turnen)", 
+      "Schwimmbad & Sauna", "Kletterhalle & Yoga-Studio", "Sportausrüstung (Bälle, Hanteln, Matte)", 
+      "Sportschuhe & Laufschuhe", "Sportnahrung & Protein", "Blinden- und Sehbehindertenverein (DBSV / PRO RETINA)", 
+      "Schützenverein, Karnevalsverein & Club", "Kleingartenverein / Schrebergarten Pacht", "Hobbys (Modellbau, Handarbeit, Malen, Foto)", "Angelschein & Angelzubehör"
+    ],
+    "Spenden, Gemeinnütziges & Zuwendungen": [
+      "Spende für Blinden- & Sehbehindertenhilfe", "Spende für Menschen in Not (Rotes Kreuz, Notfonds)", 
+      "Spende für Tierschutz / Tierheim", "Spende für Kinderhilfswerke (UNICEF, SOS-Kinderdorf)", 
+      "Spende für Umwelt & Natur (BUND, Greenpeace, NABU)", "Spende für Krebs- & Medizinforschung", 
+      "Spende für Kirche & Religionsgemeinschaften", "Wikipedia & Open-Source Spenden", "Trinkgeld gegeben"
+    ],
+    "Sonstige Ausgaben & Bargeld": [
+      "Bargeldabhebung am Geldautomaten", "Ausweisgebühren & Bürgeramt", "Passfotos", 
+      "Lotto, Rubbellose & Glücksspiel", "Strafzettel & Knöllchen", "Ersatzbeschaffung (Schlüssel, Karten)", "Sonstige ungeplante Ausgabe"
+    ]
+  },
+  inc: {
+    "Gehalt, Lohn & Beruf": [
+      "Hauptjob Monatsgehalt / Nettolohn", "Ausbildungsvergütung / Lehrlingsgehalt", "Beamtenbesoldung / Grundgehalt", 
+      "Minijob / Nebenjob (538 € steuerfrei)", "Zweitjob / Teilzeitgehalt", "Überstundenvergütung & Zulagen (Nacht, Feiertag)", 
+      "Urlaubsgeld", "Weihnachtsgeld / 13. Gehalt", "Jahresbonus / Leistungsprämie / Provision", 
+      "Trinkgeld (im Beruf erhalten)", "Honorar aus Selbstständigkeit / Freiberuflichkeit", "Werkstudenten-Gehalt", 
+      "Praktikumsvergütung", "Abfindung bei Kündigung", "Kurzarbeitergeld", "Insolvenzgeld"
+    ],
+    "Staatliche Leistungen, Hilfen & Zuschüsse": [
+      "Landesblindengeld / Blindengeld / Sehbehindertengeld", "Taubblindengeld", 
+      "Pflegegeld (Pflegegrad 1 bis 5 der Pflegekasse)", "Bürgergeld (Regelsatz & Wohnkosten Jobcenter)", 
+      "Arbeitslosengeld I (ALG 1 Agentur für Arbeit)", "Kindergeld (Familienkasse)", "Kinderzuschlag (KiZ)", 
+      "Wohngeld (Mietzuschuss von Wohngeldstelle)", "BAföG (Schüler / Studenten)", "Berufsausbildungsbeihilfe (BAB)", 
+      "Meister-BAföG (Aufstiegs-BAföG)", "Elterngeld / Elterngeld Plus", "Mutterschaftsgeld (Krankenkasse)", 
+      "Krankengeld (Krankenkasse nach 6 Wochen)", "Verletztengeld / Übergangsgeld (BG / DRV)", 
+      "Unterhaltsvorschuss (Jugendamt)", "Grundsicherung im Alter & Erwerbsminderung (Sozialamt)", 
+      "Hilfe zum Lebensunterhalt (Sozialhilfe)", "Heizkostenzuschuss / Einmalige Beihilfe", "Eingliederungshilfe / Persönliches Budget"
+    ],
+    "Taschengeld & Private Unterstützung": [
+      "Reguläres Taschengeld (Monatlich / Wöchentlich)", "Taschengeld-Erhöhung / Sonderzahlung", 
+      "Finanzielle Unterstützung von Eltern / Familie", "Barzuschuss für Miete / Lebensunterhalt", 
+      "Unterhalt vom Ex-Partner / Kindesunterhalt", "Fahrtkostenzuschuss von Verwandten", "Sonstiges Taschengeld"
+    ],
+    "Spenden, Zuwendungen & Förderungen": [
+      "Private Spende erhalten", "Spende über Spendenaufruf / Crowdfunding (GoFundMe)", "Zuwendung von Stiftungen / Hilfsfonds", 
+      "Stipendium / Studienförderung", "Sponsoring-Gelder", "Schenkung von Verwandten", "Erbschaft / Nachlass-Auszahlung", "Trinkgeld / Dankeschön privat erhalten"
+    ],
+    "Geschenke, Boni & Gewinne": [
+      "Geldgeschenk zum Geburtstag", "Geldgeschenk zu Weihnachten", "Geldgeschenk zu Ostern / Feiertagen", 
+      "Geldgeschenk zur Konfirmation / Jugendweihe", "Geldgeschenk zur Hochzeit / Jubiläum", 
+      "Lottogewinn / Spielbank / Tombola", "Gewinnspiel / Preisausschreiben Einnahme"
+    ],
+    "Rente, Pension & Versorgung": [
+      "Gesetzliche Altersrente (Deutsche Rentenversicherung)", "Erwerbsminderungsrente (Volle / Teilweise Erwerbsminderung)", 
+      "Witwenrente / Witwerrente (Hinterbliebenenrente)", "Waisenrente / Halbwaisenrente", 
+      "Betriebsrente (VBL, ZVK, Firmenrente)", "Private Rentenversicherung Auszahlung", 
+      "Beamtenpension / Ruhegehalt", "Berufsgenossenschafts-Rente (Unfallrente)", "Ausländische Rentenzahlung"
+    ],
+    "Verkäufe, Gebrauchtwaren & Erstattungen": [
+      "Vinted Kleiderverkauf", "eBay & Kleinanzeigen Verkäufe", "Flohmarkt / Trödelmarkt Einnahmen", 
+      "Momox / Rebuy / Zoxs Buch- & Medienverkauf", "Auto / Fahrrad / Roller privat verkauft", 
+      "Möbel & Elektronik privat verkauft", "Steuererstattung (Finanzamt Einkommensteuer)", 
+      "Nebenkosten-Rückzahlung / Guthaben vom Vermieter", "Strom- / Gas-Jahresabrechnung Guthaben", 
+      "Pfandflaschen & Dosen Einnahmen", "Geld von Freunden zurückerhalten (PayPal / Bar)", 
+      "Krankenkassen-Bonus / Erstattung", "Garantie- / Reklamations-Rückerstattung", "Kaution-Rückzahlung nach Umzug"
+    ],
+    "Zinsen, Dividenden, Miete & Kapital": [
+      "Zinsen auf Tagesgeldkonto", "Zinsen auf Festgeldkonto / Sparbuch", "Dividenden aus Aktien / ETFs", 
+      "Mieteinnahmen aus Vermietung / Verpachtung", "Untermieteinnahmen (Zimmer / WG)", 
+      "Krypto-Gewinne (Bitcoin, Ethereum)", "Gewinne aus Wertpapierverkäufen", "Genossenschaftsanteile Dividende", "Zinsen aus P2P-Krediten"
+    ],
+    "Sonstige Einnahmen": [
+      "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
+      "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
+    ]
+  }
+};
+
+let appState = {
+  accounts: [
+    { id: 'bank', name: 'Girokonto (Bank)', type: 'giro', initialBalance: 0, isDefault: true },
+    { id: 'cash', name: 'Bargeld (Geldbeutel)', type: 'cash', initialBalance: 0, isDefault: false },
+    { id: 'savings', name: 'Tagesgeld / Sparkonto', type: 'savings', initialBalance: 0, isDefault: false },
+    { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', initialBalance: 0, isDefault: false }
+  ],
+  initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
+  transactions: [],
+  recurring: [],
+  budgets: {},
+  customCategories: { exp: {}, inc: {}, trf: {} }
+};
+
+// ============================================================================
 // 1e. FINANZ-INTELLIGENZ SUITE: BUDGETS, RANKINGS, CSV-IMPORT, BERICHTE, RECHNER
 // ============================================================================
 
@@ -1199,74 +1477,18 @@ function onEditTxDateChange() {
  * ============================================================================
  */
 
-// ----------------------------------------------------------------------------
-// 1. GLOBALE KONSTANTEN & STATE
-// ----------------------------------------------------------------------------
-const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
-const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
-const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
-const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
-const STORAGE_LOCKOUT_KEY = 'barrierefreie_finanzen_lockout_v1';
-const STORAGE_ATTEMPTS_KEY = 'barrierefreie_finanzen_attempts_v1';
+// (Globale Konstanten an den Dateianfang verschoben)
 
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden
-
-const MONTH_NAMES = [
-  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
-];
-
-let appState = {
-  initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
-  transactions: [],
-  recurring: []
-};
+// (appState oben definiert)
 
 
 // ============================================================================
 // 1b. SYMBOLE & EMOJIS CONTROLLER & KATEGORIE-ICONS
 // ============================================================================
 
-const STORAGE_SHOW_SYMBOLS_KEY = 'haushaltsbuch_show_symbols_enabled_v1';
+// (bereits oben definiert)
 
-const CATEGORY_ICONS = {
-  // Ausgaben
-  "Lebensmittel, Supermarkt & Discounter": "🛒",
-  "Miete, Wohnen & Nebenkosten": "🏠",
-  "Haushalt, Möbel, Garten & Handwerker": "🛋️",
-  "Mobilität, Auto & Kraftfahrzeuge": "🚗",
-  "ÖPNV, Bahn, Bus, Flug & Reisen": "🚆",
-  "Restaurants, Cafés & Gastronomie": "🍽️",
-  "Lieferdienste & Essen bestellen": "🛵",
-  "Streaming, Musik, TV & Unterhaltung": "📺",
-  "Gaming, Computer & Konsolen": "🎮",
-  "Elektronik, Internet, Handy & Software": "💻",
-  "Shopping, Online-Kauf & Marktplätze": "🛍️",
-  "Kleidung, Schuhe & Mode": "👗",
-  "Drogerie, Kosmetik & Körperpflege": "🧴",
-  "Gesundheit, Apotheke & Arzt": "💊",
-  "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": "🦯",
-  "Versicherungen & Vorsorge": "🛡️",
-  "Bank, Finanzen, Kredite & Gebühren": "🏦",
-  "Haustiere & Tierhaltung": "🐾",
-  "Familie, Kinder & Babybedarf": "👶",
-  "Schule, Ausbildung & Studium": "🎓",
-  "Sport, Fitness, Verein & Hobbys": "🏆",
-  "Spenden, Gemeinnütziges & Zuwendungen": "❤️",
-  "Sonstige Ausgaben & Bargeld": "📦",
-
-  // Einnahmen
-  "Gehalt, Lohn & Beruf": "💼",
-  "Staatliche Leistungen, Hilfen & Zuschüsse": "🏛️",
-  "Taschengeld & Private Unterstützung": "👛",
-  "Spenden, Zuwendungen & Förderungen": "❤️",
-  "Geschenke, Boni & Gewinne": "🎁",
-  "Rente, Pension & Versorgung": "👴",
-  "Verkäufe, Gebrauchtwaren & Erstattungen": "🏷️",
-  "Zinsen, Dividenden, Miete & Kapital": "📈",
-  "Sonstige Einnahmen": "💰"
-};
+/* CATEGORY_ICONS moved to top */
 
 function isSymbolsEnabled() {
   const val = localStorage.getItem(STORAGE_SHOW_SYMBOLS_KEY);
@@ -1343,211 +1565,7 @@ function toggleSymbolsDisplay(show) {
 // 1c. ZWEISTUFIGE KATEGORIE-DATENBANK (REINE TEXT-SCHLÜSSEL)
 // ============================================================================
 
-const CATEGORIES_DB = {
-  exp: {
-    "Lebensmittel, Supermarkt & Discounter": [
-      "Gesamt / Allgemein", "Aldi Nord", "Aldi Süd", "Lidl", "Rewe", "Edeka", "Kaufland", "Penny", 
-      "Netto Marken-Discount", "Netto mit dem Hund", "Norma", "Globus", "Tegut", "HIT", "Famila", 
-      "Alnatura", "Denns Biomarkt", "Bio Company", "Unverpackt-Laden", 
-      "Asia-Markt / Türkischer Supermarkt", "Bäckerei / Dorfbäcker", "Konditorei", 
-      "Fleischerei / Metzger", "Fischgeschäft", "Wochenmarkt (Obst, Gemüse, Eier)", "Hofladen / Bauernhof", 
-      "Getränkemarkt / Trinkgut", "Sonstiger Supermarkt"
-    ],
-    "Miete, Wohnen & Nebenkosten": [
-      "Kaltmiete", "Warmmiete", "Mietkaution", "Nebenkosten Vorauszahlung / Nachzahlung", "Hausgeld (Eigentümer)", 
-      "Rundfunkbeitrag (GEZ / ARD ZDF)", "Strom (Stadtwerke / Energie)", "Gas & Fernwärme", 
-      "Heizöl / Pellets / Brennholz", "Wasser & Abwasser", "Müllgebühren / Entsorgung", 
-      "Schornsteinfeger & Wartung", "Hausratversicherung", "Glasversicherung", "Wohngebäudeversicherung", "Hausmeister & Treppenreinigung"
-    ],
-    "Haushalt, Möbel, Garten & Handwerker": [
-      "Möbel & Deko (IKEA, Poco, XXXLutz, Mömax)", "Betten, Matratzen & Bettwäsche", 
-      "Waschmaschine, Kühlschrank & Großgeräte", "Kaffeemaschine, Toaster & Küchengeräte", 
-      "Staubsauger & Reinigungsgeräte", "Putzmittel, Waschmittel & Haushaltsbedarf", "Geschirr, Töpfe & Besteck", 
-      "Baumarkt (Obi, Bauhaus, Hornbach, Toom)", "Garten, Balkon, Pflanzen & Blumen", 
-      "Handwerker & Reparaturen (Sanitär, Maler, Elektrik)", "Schlüsseldienst", "Umzugskosten & Transporter mieten"
-    ],
-    "Mobilität, Auto & Kraftfahrzeuge": [
-      "Tanken (Benzin / Super E10 E5)", "Tanken (Diesel)", "Tanken (Autogas / LPG)", "E-Auto Ladestation / Ladestrom", 
-      "KFZ-Haftpflichtversicherung", "KFZ-Teilkasko / Vollkasko", "KFZ-Steuer (Hauptzollamt)", 
-      "Hauptuntersuchung (TÜV / DEKRA / GTÜ)", "Auto-Werkstatt, Inspektion & Ölwechsel", "Autoreparatur & Ersatzteile", 
-      "Sommerreifen / Winterreifen & Reifenwechsel", "Autowäsche & Autopflege", "Auto-Kauf, Leasing & Autokredit", 
-      "Parkgebühren, Parkhaus & Parkschein", "Autobahn-Maut, Vignette & Umweltplakette", "ADAC / Pannenhilfe Mitgliedschaft", 
-      "Führerschein & Fahrstunden"
-    ],
-    "ÖPNV, Bahn, Bus, Flug & Reisen": [
-      "Deutschlandticket (49€ / Monatskarte)", "Bus, Straßenbahn & U-Bahn (Einzeltickets / Streifen)", 
-      "Deutsche Bahn (ICE / IC / Regio)", "BahnCard (25 / 50 / 100)", "Fernbus (Flixbus / Flixtrain)", 
-      "Taxi, Uber, Bolt & FreeNow", "E-Scooter & Leihrad (Tier, Bolt, Lime)", "Eigenes Fahrrad / E-Bike Reparatur & Zubehör", 
-      "Flugtickets & Airline-Gebühren", "Hotel, Ferienwohnung & Airbnb", "Pauschalreise / Urlaub", 
-      "Auslands-Krankenversicherung", "Kurtaxe & Reisekosten"
-    ],
-    "Restaurants, Cafés & Gastronomie": [
-      "Restaurant (Abendessen / Mittagessen)", "Gasthaus / Brauhaus / Biergarten", "Pizzeria / Italienisches Restaurant", 
-      "Asiatisches / Griechisches / Mexikanisches Restaurant", "Burger-Restaurant & Steakhouse", 
-      "Imbiss, Döner, Currywurst & Pommes", "Fast Food (McDonald's, Burger King, KFC, Subway)", 
-      "Café, Bäckerei-Frühstück & Kaffeepause", "Eisdiele & Eisbecher", "Mensa, Betriebskantine & Schulkantine", 
-      "Bar, Kneipe, Pub & Bierstube", "Club, Diskothek & Party", "Snacks, Süßigkeiten & Energy Drinks"
-    ],
-    "Lieferdienste & Essen bestellen": [
-      "Lieferando", "Uber Eats", "Wolt", "Pizza-Lieferdienst vor Ort", "Asia-Lieferdienst", 
-      "Burger & Döner Lieferservice", "Getränke-Lieferdienst (Flaschenpost)", "Kochboxen (HelloFresh, Marley Spoon)"
-    ],
-    "Streaming, Musik, TV & Unterhaltung": [
-      "Netflix", "Amazon Prime Video / Music", "Spotify", "Apple Music / Apple One", "Disney+", 
-      "YouTube Premium / Music", "Paramount+", "WOW / Sky Ticket", "DAZN", "RTL+ / Joyn PLUS+", "Crunchyroll", 
-      "Audible / Hörbücher", "Deezer / Tidal", "Kino, Tickets & Popcorn", "Theater, Oper, Ballett & Musical", 
-      "Konzerte, Festivals & Live-Events", "Comedy & Kabarett", "Freizeitpark (Phantasialand, Europa-Park, Heide Park)", 
-      "Zoo, Tierpark, Aquarium & Botanischer Garten", "Museum, Ausstellungen & Sehenswürdigkeiten"
-    ],
-    "Gaming, Computer & Konsolen": [
-      "Steam & PC-Spiele", "PlayStation Plus (PSN / PS Store)", "Xbox Game Pass & Microsoft Store", 
-      "Nintendo Switch Online & eShop", "In-Game-Käufe, Battle Pass & V-Bucks", "Epic Games / GOG / EA App", 
-      "Computer-Hardware (Grafikkarte, CPU, RAM)", "Gaming-Zubehör (Tastatur, Maus, Headset, Controller)", 
-      "Gaming-Monitor & Gaming-Stuhl", "Spielekonsole (PS5, Xbox Series X, Nintendo Switch, Steam Deck)", 
-      "Mobile Games & App-Käufe (Google Play / App Store)", "Discord Nitro & Twitch Subs"
-    ],
-    "Elektronik, Internet, Handy & Software": [
-      "Smartphone / iPhone Kauf", "Handyvertrag & Monatstarif", 
-      "Prepaid-Guthaben (Telekom, Vodafone, o2, Aldi Talk, Congstar, Blau)", "Tablet / iPad & Zubehör", 
-      "Laptop / Notebook & Zubehör", "Festnetz, Internet & DSL / Glasfaser (Telekom, Vodafone, 1&1, o2)", 
-      "WLAN-Router & Netzwerk (FRITZ!Box)", "Fernseher, Soundbar & Heimkino", "Smart Home (Alexa, Google Nest, Hue)", 
-      "Cloud-Speicher (iCloud, Google One, OneDrive, Dropbox)", "Microsoft 365 / Office Abo", 
-      "Antivirus & VPN Software", "Software-Lizenzen", "Druckertinte, Toner & Papier", "Elektronik-Reparatur"
-    ],
-    "Shopping, Online-Kauf & Marktplätze": [
-      "Amazon Bestellungen", "eBay & Kleinanzeigen Käufe", "Otto Versand", "Zalando, ASOS & Fashion-Shops", 
-      "Temu, AliExpress & Shein", "Kaufland.de / Galaxus / Alternate", "Second-Hand (Vinted, Momox, Rebuy)", 
-      "DHL, Hermes, DPD & Post-Porto / Paketmarken", "Schreibwaren, Bürobedarf & Bastelbedarf", 
-      "Geschenke für Familie & Freunde", "Blumen & Pflanzen"
-    ],
-    "Kleidung, Schuhe & Mode": [
-      "Alltagskleidung (H&M, C&A, Zara, Primark)", "Markenkleidung (Nike, Adidas, Levi's)", 
-      "Schuhe, Sneaker & Stiefel (Deichmann, Snipes)", "Sportkleidung & Funktionskleidung", 
-      "Winterjacke, Mantel & Regenkleidung", "Unterwäsche, Socken & Nachtwäsche", "Anzug, Kleid & Festkleidung", 
-      "Taschen, Rucksäcke & Koffer", "Schmuck, Uhren & Accessoires", "Schneiderei & Textilreinigung"
-    ],
-    "Drogerie, Kosmetik & Körperpflege": [
-      "dm-drogerie markt", "Rossmann", "Müller Drogerie", "Duschgel, Shampoo & Haarpflege", 
-      "Zahnpflege (Zahnbürste, Zahnpasta, Mundspülung)", "Deo, Parfüm & Düfte (Douglas, Sephora)", 
-      "Hautcreme, Sonnencreme & Lotion", "Rasierer, Klingen & Rasierschaum", "Damenhygiene & Pflegeprodukte", 
-      "Make-Up & Kosmetik", "Friseurbesuch (Schneiden, Färben)", "Barbershop / Bartpflege", 
-      "Kosmetikstudio, Fußpflege & Maniküre", "Tattoo & Piercing"
-    ],
-    "Gesundheit, Apotheke & Arzt": [
-      "Apotheke & rezeptfreie Medikamente", "Rezeptgebühren & Zuzahlungen (Krankenkasse)", "Arztbesuch & Praxisgebühren", 
-      "Zahnarzt & Zahnreinigung (PZR)", "Brille, Sehhilfen & Kontaktlinsen (Fielmann, Apollo)", "Hörgeräte, Batterien & Zubehör", 
-      "Physiotherapie, Krankengymnastik & Osteopathie", "Massage & Ergotherapie", "Psychotherapie & Beratung", 
-      "Orthopädische Einlagen & Bandagen", "Krankenhaus-Zuzahlung & Reha", "Nahrungsergänzung, Vitamine & Mineralien", "Erste Hilfe, Pflaster & Verband"
-    ],
-    "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": [
-      "Weißer Blindenlangstock, Rollspitzen & Taststöcke", "Blindenführhund (Futter, Tierarzt, Geschirr)", 
-      "Elektronische Sehhilfen & Kamerasysteme (Orcam)", "Braille-Zeile & Punktschrift-Zubehör", 
-      "Screenreader-Lizenzen (JAWS) & Sprachausgaben", "Sprechende Haushaltsgeräte (Waage, Uhr, Farberkenner)", 
-      "Vergrößerungssoftware (ZoomText)", "Daisy-Player & Hörbuchgeräte", "Tastbare Markierungen & Signalbänder", "Assistenz- & Begleitdienst"
-    ],
-    "Versicherungen & Vorsorge": [
-      "Gesetzliche Krankenversicherung (Freiwillig versichert)", "Private Krankenversicherung (PKV)", 
-      "Private Pflegezusatzversicherung", "Private Haftpflichtversicherung", "Berufsunfähigkeitsversicherung (BU)", 
-      "Unfallversicherung", "Rechtsschutzversicherung (Verkehr, Beruf, Wohnen)", "Zahnzusatzversicherung", 
-      "Risikolebensversicherung", "Sterbegeldversicherung", "Altersvorsorge (Riester, Rürup, Private Rente)"
-    ],
-    "Bank, Finanzen, Kredite & Gebühren": [
-      "Kontoführungsgebühren Girokonto", "Kreditkartengebühren (Mastercard, Visa)", "Dispozinsen & Überziehungszinsen", 
-      "Zinsen & Tilgung Ratenkredit", "Zinsen & Tilgung Baufinanzierung", "Schufa-Auskunft", 
-      "Depotgebühren & Wertpapierkosten", "Fremdautomat-Gebühren", "Notar- & Gerichtskosten", "Steuerberater & Lohnsteuerhilfe"
-    ],
-    "Haustiere & Tierhaltung": [
-      "Hundefutter / Katzenfutter (Fressnapf, Zooplus, Futterhaus)", "Spezialfutter & Diätnahrung", 
-      "Kleintierfutter (Vögel, Nager, Fische, Reptilien)", "Tierarzt, Impfungen & Behandlungen", 
-      "Tierklinik & OP-Kosten", "Tierkrankenversicherung & OP-Schutz", "Hundesteuer (Stadt / Gemeinde)", 
-      "Hundehalter-Haftpflicht", "Katzenstreu & Einstreu", "Leinen, Geschirre & Halsbänder", 
-      "Kratzbäume & Tierbetten", "Spielzeug für Tiere", "Hundeschule & Tiertraining", "Tierpension & Tiersitter", "Hundesalon & Fellpflege"
-    ],
-    "Familie, Kinder & Babybedarf": [
-      "Windeln, Feuchttücher & Babypflege", "Babynahrung & Gläschen", "Babykleidung & Kinderschuhe", 
-      "Kinderwagen, Buggy & Autokindersitz", "Babybett & Kindermöbel", "Spielzeug (Lego, Playmobil)", 
-      "Gesellschaftsspiele & Puzzles", "Kinderbücher & Hörspiele (Tonie-Figuren)", "Kita, Kindergarten & Hortbeiträge", 
-      "Babysitter & Tagesmutter", "Taschengeld an Kinder ausgezahlt"
-    ],
-    "Schule, Ausbildung & Studium": [
-      "Schulranzen, Rucksack & Mäppchen", "Schulbücher, Hefte & Arbeitshefte", "Stifte, Zirkel & Taschenrechner", 
-      "Klassenfahrten & Schulausflüge", "Nachhilfe (Studienkreis, Schülerhilfe)", "Musikschule & Instrumente", 
-      "Semesterbeitrag Universität / FH", "Fachbücher & Studienmaterial", "Prüfungsgebühren & Zertifikate", "Weiterbildung & VHS-Kurse"
-    ],
-    "Sport, Fitness, Verein & Hobbys": [
-      "Fitnessstudio (McFit, FitX, Clever Fit, John Reed)", "Sportverein (Fußball, Tennis, Turnen)", 
-      "Schwimmbad & Sauna", "Kletterhalle & Yoga-Studio", "Sportausrüstung (Bälle, Hanteln, Matte)", 
-      "Sportschuhe & Laufschuhe", "Sportnahrung & Protein", "Blinden- und Sehbehindertenverein (DBSV / PRO RETINA)", 
-      "Schützenverein, Karnevalsverein & Club", "Kleingartenverein / Schrebergarten Pacht", "Hobbys (Modellbau, Handarbeit, Malen, Foto)", "Angelschein & Angelzubehör"
-    ],
-    "Spenden, Gemeinnütziges & Zuwendungen": [
-      "Spende für Blinden- & Sehbehindertenhilfe", "Spende für Menschen in Not (Rotes Kreuz, Notfonds)", 
-      "Spende für Tierschutz / Tierheim", "Spende für Kinderhilfswerke (UNICEF, SOS-Kinderdorf)", 
-      "Spende für Umwelt & Natur (BUND, Greenpeace, NABU)", "Spende für Krebs- & Medizinforschung", 
-      "Spende für Kirche & Religionsgemeinschaften", "Wikipedia & Open-Source Spenden", "Trinkgeld gegeben"
-    ],
-    "Sonstige Ausgaben & Bargeld": [
-      "Bargeldabhebung am Geldautomaten", "Ausweisgebühren & Bürgeramt", "Passfotos", 
-      "Lotto, Rubbellose & Glücksspiel", "Strafzettel & Knöllchen", "Ersatzbeschaffung (Schlüssel, Karten)", "Sonstige ungeplante Ausgabe"
-    ]
-  },
-  inc: {
-    "Gehalt, Lohn & Beruf": [
-      "Hauptjob Monatsgehalt / Nettolohn", "Ausbildungsvergütung / Lehrlingsgehalt", "Beamtenbesoldung / Grundgehalt", 
-      "Minijob / Nebenjob (538 € steuerfrei)", "Zweitjob / Teilzeitgehalt", "Überstundenvergütung & Zulagen (Nacht, Feiertag)", 
-      "Urlaubsgeld", "Weihnachtsgeld / 13. Gehalt", "Jahresbonus / Leistungsprämie / Provision", 
-      "Trinkgeld (im Beruf erhalten)", "Honorar aus Selbstständigkeit / Freiberuflichkeit", "Werkstudenten-Gehalt", 
-      "Praktikumsvergütung", "Abfindung bei Kündigung", "Kurzarbeitergeld", "Insolvenzgeld"
-    ],
-    "Staatliche Leistungen, Hilfen & Zuschüsse": [
-      "Landesblindengeld / Blindengeld / Sehbehindertengeld", "Taubblindengeld", 
-      "Pflegegeld (Pflegegrad 1 bis 5 der Pflegekasse)", "Bürgergeld (Regelsatz & Wohnkosten Jobcenter)", 
-      "Arbeitslosengeld I (ALG 1 Agentur für Arbeit)", "Kindergeld (Familienkasse)", "Kinderzuschlag (KiZ)", 
-      "Wohngeld (Mietzuschuss von Wohngeldstelle)", "BAföG (Schüler / Studenten)", "Berufsausbildungsbeihilfe (BAB)", 
-      "Meister-BAföG (Aufstiegs-BAföG)", "Elterngeld / Elterngeld Plus", "Mutterschaftsgeld (Krankenkasse)", 
-      "Krankengeld (Krankenkasse nach 6 Wochen)", "Verletztengeld / Übergangsgeld (BG / DRV)", 
-      "Unterhaltsvorschuss (Jugendamt)", "Grundsicherung im Alter & Erwerbsminderung (Sozialamt)", 
-      "Hilfe zum Lebensunterhalt (Sozialhilfe)", "Heizkostenzuschuss / Einmalige Beihilfe", "Eingliederungshilfe / Persönliches Budget"
-    ],
-    "Taschengeld & Private Unterstützung": [
-      "Reguläres Taschengeld (Monatlich / Wöchentlich)", "Taschengeld-Erhöhung / Sonderzahlung", 
-      "Finanzielle Unterstützung von Eltern / Familie", "Barzuschuss für Miete / Lebensunterhalt", 
-      "Unterhalt vom Ex-Partner / Kindesunterhalt", "Fahrtkostenzuschuss von Verwandten", "Sonstiges Taschengeld"
-    ],
-    "Spenden, Zuwendungen & Förderungen": [
-      "Private Spende erhalten", "Spende über Spendenaufruf / Crowdfunding (GoFundMe)", "Zuwendung von Stiftungen / Hilfsfonds", 
-      "Stipendium / Studienförderung", "Sponsoring-Gelder", "Schenkung von Verwandten", "Erbschaft / Nachlass-Auszahlung", "Trinkgeld / Dankeschön privat erhalten"
-    ],
-    "Geschenke, Boni & Gewinne": [
-      "Geldgeschenk zum Geburtstag", "Geldgeschenk zu Weihnachten", "Geldgeschenk zu Ostern / Feiertagen", 
-      "Geldgeschenk zur Konfirmation / Jugendweihe", "Geldgeschenk zur Hochzeit / Jubiläum", 
-      "Lottogewinn / Spielbank / Tombola", "Gewinnspiel / Preisausschreiben Einnahme"
-    ],
-    "Rente, Pension & Versorgung": [
-      "Gesetzliche Altersrente (Deutsche Rentenversicherung)", "Erwerbsminderungsrente (Volle / Teilweise Erwerbsminderung)", 
-      "Witwenrente / Witwerrente (Hinterbliebenenrente)", "Waisenrente / Halbwaisenrente", 
-      "Betriebsrente (VBL, ZVK, Firmenrente)", "Private Rentenversicherung Auszahlung", 
-      "Beamtenpension / Ruhegehalt", "Berufsgenossenschafts-Rente (Unfallrente)", "Ausländische Rentenzahlung"
-    ],
-    "Verkäufe, Gebrauchtwaren & Erstattungen": [
-      "Vinted Kleiderverkauf", "eBay & Kleinanzeigen Verkäufe", "Flohmarkt / Trödelmarkt Einnahmen", 
-      "Momox / Rebuy / Zoxs Buch- & Medienverkauf", "Auto / Fahrrad / Roller privat verkauft", 
-      "Möbel & Elektronik privat verkauft", "Steuererstattung (Finanzamt Einkommensteuer)", 
-      "Nebenkosten-Rückzahlung / Guthaben vom Vermieter", "Strom- / Gas-Jahresabrechnung Guthaben", 
-      "Pfandflaschen & Dosen Einnahmen", "Geld von Freunden zurückerhalten (PayPal / Bar)", 
-      "Krankenkassen-Bonus / Erstattung", "Garantie- / Reklamations-Rückerstattung", "Kaution-Rückzahlung nach Umzug"
-    ],
-    "Zinsen, Dividenden, Miete & Kapital": [
-      "Zinsen auf Tagesgeldkonto", "Zinsen auf Festgeldkonto / Sparbuch", "Dividenden aus Aktien / ETFs", 
-      "Mieteinnahmen aus Vermietung / Verpachtung", "Untermieteinnahmen (Zimmer / WG)", 
-      "Krypto-Gewinne (Bitcoin, Ethereum)", "Gewinne aus Wertpapierverkäufen", "Genossenschaftsanteile Dividende", "Zinsen aus P2P-Krediten"
-    ],
-    "Sonstige Einnahmen": [
-      "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
-      "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
-    ]
-  }
-};
+/* CATEGORIES_DB moved to top */
 
 function mergeCustomCategoriesIntoDB() {
   if (!appState || !appState.customCategories) {
@@ -1805,6 +1823,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initDatePickers();
   setupGlobalKeyboardShortcuts();
+  populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  populateBudgetCategoryDropdown();
+  populateShoppingDropdowns();
   checkVaultStatus();
   checkLockoutStatus();
   startHeartbeat();
@@ -3648,9 +3670,13 @@ function switchView(viewName) {
     updateOverview();
     announceNVDA('Übersicht geöffnet.');
   } else if (viewName === 'expense') {
+    populateCategoriesDropdowns();
+    populateAllAccountDropdowns();
     document.getElementById('exp-amount').focus();
     announceNVDA('Ausgabe eintragen geöffnet.');
   } else if (viewName === 'income') {
+    populateCategoriesDropdowns();
+    populateAllAccountDropdowns();
     document.getElementById('inc-amount').focus();
     announceNVDA('Einnahme eintragen geöffnet.');
   } else if (viewName === 'transfer') {
@@ -4292,7 +4318,7 @@ function escapeHTML(str) {
 // 20. ÄNDERUNGSPROTOKOLL (CHANGELOG) BEI UPDATES
 // ============================================================================
 
-const CURRENT_APP_VERSION = 'v5.3.5';
+// (CURRENT_APP_VERSION oben definiert)
 const STORAGE_CHANGELOG_ENABLED_KEY = 'haushaltsbuch_show_changelog_enabled_v1';
 const STORAGE_LAST_SEEN_VERSION_KEY = 'haushaltsbuch_last_seen_changelog_version_v1';
 
