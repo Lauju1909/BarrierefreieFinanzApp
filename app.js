@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v5.3.5';
+const CURRENT_APP_VERSION = 'v5.3.5.1';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -1685,7 +1685,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.3.5'
+    AppVersion: 'v5.3.5.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -4444,7 +4444,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.3.5'
+    AppVersion: 'v5.3.5.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

@@ -3,7 +3,30 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 5.3.5 (Aktuelle Version - Grosse Finanz-Intelligenz Suite)
+VERSION 5.3.5.1 (Aktuelle Version - Kategorien-Hotfix & Stabilitaet)
+--------------------------------------------------------------------------------
+
+* KATEGORIEN BEIM EINTRAGEN VON AUSGABEN & EINNAHMEN GARANTIERT:
+  Ein Skript-Reihenfolgefehler wurde behoben, durch den die Kategorien-Dropdowns
+  beim Eintragen von Ausgaben und Einnahmen leer bleiben konnten.
+  Alle 23 Ausgaben-Kategorien und 9 Einnahmen-Kategorien sind nun unverlierbar
+  mit festen HTML-Fallbacks hinterlegt und werden beim Oeffnen sofort geladen.
+
+* BEIBEHALTUNG ALLER HIGHLIGHTS AUS VERSION 5.3.5:
+  - Dedizierter Reiter 6: Konto-Optionen & Konten-Verwaltung (Taste 6)
+  - 9 unterstuetzte Kontotypen mit beliebigen Namen und Startguthaben
+  - Monats-Budgets in Reiter 5 (Einstellungen) mit Ampelsystem & NVDA-Warnung
+  - Bank-Kontoauszug / CSV-Import mit interaktiver Vorschautabelle
+  - Druckbarer Monatsbericht & Behoerden-/Steuernachweis (PDF-Export)
+  - Globale Live-Suche & Buchungs-Filter in der Uebersicht
+  - Smarte Liquiditaets- & Kontodeckungswarnung
+  - Barrierefreier Einkaufs- & Kassenrechner (ein- und zuklappbar)
+  - Ausgaben-Rangliste als klappbares Akkordeon
+  - 100% reiner Textmodus fuer NVDA-Bildschirmleser (0 Emojis)
+
+
+--------------------------------------------------------------------------------
+VERSION 5.3.5
 --------------------------------------------------------------------------------
 
 * DEDIZIERTER HAUPT-REITER 6: KONTO-OPTIONEN & KONTEN-VERWALTUNG:
