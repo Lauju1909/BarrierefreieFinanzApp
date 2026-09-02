@@ -640,11 +640,6 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
 <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
 <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
-<button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
-<span class="tab-key-hint" aria-hidden="true">6</span>
-<span><strong>Konto-Optionen &amp; Konten</strong></span>
-</button>
-</div>
 </nav>
 
 <!-- Header -->
@@ -669,13 +664,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </header>
 
 <!-- =========================================================================
- HAUPTNAVIGATION (5 TABS)
+ HAUPTNAVIGATION (6 TABS)
  ========================================================================= -->
 <nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
 <div class="tab-list" role="tablist">
 <button id="tab-overview" data-emoji="📊" class="tab-btn active" role="tab" aria-selected="true" aria-controls="view-overview" onclick="switchView('overview')" tabindex="0">
 <span class="tab-key-hint" aria-hidden="true">1</span>
-<span>📊<strong>Übersicht & Zeiträume</strong></span>
+<span>📊<strong>Übersicht &amp; Zeiträume</strong></span>
 </button>
 <button id="tab-expense" data-emoji="🔴" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-expense" onclick="switchView('expense')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">2</span>
@@ -687,16 +682,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </button>
 <button id="tab-transfer" data-emoji="🔄" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-transfer" onclick="switchView('transfer')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">4</span>
-<span>🔄<strong>Umbuchen & Sparen</strong></span>
+<span>🔄<strong>Umbuchen &amp; Sparen</strong></span>
 </button>
-<button id="tab-settings" data-emoji="" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
+<button id="tab-settings" data-emoji="⚙️" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-settings" onclick="switchView('settings')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">5</span>
-<span><strong>Einstellungen & Backup</strong></span>
+<span>⚙️<strong>Einstellungen &amp; Backup</strong></span>
 </button>
-</div>
 <button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">6</span>
-<span><strong>Konto-Optionen &amp; Konten</strong></span>
+<span>💳<strong>Konto-Optionen &amp; Konten</strong></span>
 </button>
 </div>
 </nav>
@@ -1040,6 +1034,17 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <strong>2. Unterkategorie / Geschäft:</strong>
 </label>
 <select id="exp-subcategory" class="large-select">
+<option value="Gesamt / Allgemein">Gesamt / Allgemein</option>
+<option value="Aldi Nord">Aldi Nord</option>
+<option value="Aldi Süd">Aldi Süd</option>
+<option value="Lidl">Lidl</option>
+<option value="Rewe">Rewe</option>
+<option value="Edeka">Edeka</option>
+<option value="Kaufland">Kaufland</option>
+<option value="Penny">Penny</option>
+<option value="Netto Marken-Discount">Netto Marken-Discount</option>
+<option value="Bäckerei / Dorfbäcker">Bäckerei / Dorfbäcker</option>
+<option value="Getränkemarkt / Trinkgut">Getränkemarkt / Trinkgut</option>
 </select>
 </div>
 </div>
@@ -1187,6 +1192,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <strong>2. Unterkategorie / Detail:</strong>
 </label>
 <select id="inc-subcategory" class="large-select">
+<option value="Hauptjob Monatsgehalt / Nettolohn">Hauptjob Monatsgehalt / Nettolohn</option>
+<option value="Ausbildungsvergütung / Lehrlingsgehalt">Ausbildungsvergütung / Lehrlingsgehalt</option>
+<option value="Beamtenbesoldung / Grundgehalt">Beamtenbesoldung / Grundgehalt</option>
+<option value="Minijob / Nebenjob (538 € steuerfrei)">Minijob / Nebenjob (538 € steuerfrei)</option>
+<option value="Zweitjob / Teilzeitgehalt">Zweitjob / Teilzeitgehalt</option>
+<option value="Überstundenvergütung &amp; Zulagen (Nacht, Feiertag)">Überstundenvergütung &amp; Zulagen (Nacht, Feiertag)</option>
+<option value="Urlaubsgeld">Urlaubsgeld</option>
+<option value="Weihnachtsgeld / 13. Gehalt">Weihnachtsgeld / 13. Gehalt</option>
+<option value="Jahresbonus / Leistungsprämie / Provision">Jahresbonus / Leistungsprämie / Provision</option>
+<option value="Trinkgeld (im Beruf erhalten)">Trinkgeld (im Beruf erhalten)</option>
+<option value="Honorar aus Selbstständigkeit / Freiberuflichkeit">Honorar aus Selbstständigkeit / Freiberuflichkeit</option>
+<option value="Werkstudenten-Gehalt">Werkstudenten-Gehalt</option>
+<option value="Praktikumsvergütung">Praktikumsvergütung</option>
 </select>
 </div>
 </div>

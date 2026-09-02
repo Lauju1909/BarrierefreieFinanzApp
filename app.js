@@ -3672,15 +3672,27 @@ function switchView(viewName) {
   } else if (viewName === 'expense') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
-    document.getElementById('exp-amount').focus();
+    onMainCategoryChange('exp');
+    const expDate = document.getElementById('exp-date');
+    if (expDate && !expDate.value) expDate.value = new Date().toISOString().split('T')[0];
+    const expAmount = document.getElementById('exp-amount');
+    if (expAmount) expAmount.focus();
     announceNVDA('Ausgabe eintragen geöffnet.');
   } else if (viewName === 'income') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
-    document.getElementById('inc-amount').focus();
+    onMainCategoryChange('inc');
+    const incDate = document.getElementById('inc-date');
+    if (incDate && !incDate.value) incDate.value = new Date().toISOString().split('T')[0];
+    const incAmount = document.getElementById('inc-amount');
+    if (incAmount) incAmount.focus();
     announceNVDA('Einnahme eintragen geöffnet.');
   } else if (viewName === 'transfer') {
-    document.getElementById('trf-amount').focus();
+    populateAllAccountDropdowns();
+    const trfDate = document.getElementById('trf-date');
+    if (trfDate && !trfDate.value) trfDate.value = new Date().toISOString().split('T')[0];
+    const trfAmount = document.getElementById('trf-amount');
+    if (trfAmount) trfAmount.focus();
     announceNVDA('Umbuchen und Sparen geöffnet.');
   } else if (viewName === 'settings') {
     renderSettingsRecurringList();
