@@ -3,7 +3,50 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 5.1.2.1 (Aktuelle Version)
+VERSION 5.3.0 (Aktuelle Version - Grosses Meilenstein-Update)
+--------------------------------------------------------------------------------
+
+* DEDIZIERTER HAUPT-REITER 6: KONTO-OPTIONEN & KONTEN-VERWALTUNG:
+  Ausserhalb der Einstellungen gibt es nun den eigenstaendigen Hauptreiter 6
+  '💳 Konto-Optionen & Konten' (direkt erreichbar ueber das Tastaturkuerzel '6').
+
+* UNBEGRENZT VIELE EIGENE KONTEN & ALLE 9 KONTOTYPEN:
+  Lege beliebig viele eigene Konten an und waehle aus 9 Kontotypen:
+  1. 🏦 Bankkonto / Girokonto (z. B. ING, DKB, Sparkasse, Volksbank)
+  2. 💳 Kreditkarte / Debitkarte (z. B. Visa, Mastercard, Barclays, Amex)
+  3. 🅿 PayPal & Online-Zahlungsdienste (z. B. PayPal, Klarna, Apple Pay)
+  4. 📈 Tagesgeld, Festgeld & Sparkonto (z. B. Notgroschen, Sparbuch, Urlaub)
+  5. 💵 Bargeld & Portemonnaie (z. B. Geldboerse, Haushaltskasse, Spardose)
+  6. 📊 Depot, Wertpapiere & ETFs (z. B. Trade Republic, Scalable, Flatex)
+  7. 🪙 Krypto & Web3 Wallet (z. B. Bitcoin, Bitvavo, Ledger)
+  8. 🏛️ Bausparvertrag, Kredit & Darlehen (z. B. Immobilienkredit, Ratenkredit)
+  9. 📦 Sonstiges Konto / Guthabenkarte (z. B. Gutscheine, Essensmarken)
+
+* KONTEN JEDERZEIT BEARBEITEN, UMBENENNEN & LOESCHEN:
+  Aendere Namen, Kontotyp oder Startguthaben mit einem Klick. Nicht mehr
+  genutzte Konten koennen sicher geloescht werden.
+
+* DYNAMISCHE KONTOSTANDSKARTEN IN DER UEBERSICHT:
+  Fuer jedes angelegte Konto wird automatisch eine eigene Karte mit Live-Saldo
+  in der Uebersicht (Reiter 1) angezeigt und in allen Dropdowns eingebunden.
+
+* INTELLIGENTE DATUMSERKENNUNG (GEPLANT VS. GEBUCHT):
+  Buchungen mit einem Datum in der Zukunft werden automatisch als '🎯 Geplant'
+  markiert. Buchungen mit heutigem oder vergangenem Datum werden automatisch
+  als '✅ Gebucht' verbucht und in den Kontostand eingerechnet.
+
+* VOLLSTAENDIGE BEARBEITUNG ALLER DETAILS:
+  Ausnahmslose Anpassbarkeit aller Felder bei Buchungen und Dauerauftraegen.
+
+* AENDERUNGSPROTOKOLL-START VOLLSTAENDIG ABGESICHERT:
+  Das Aenderungsprotokoll oeffnet sich bei jedem Update garantiert 1x automatisch.
+  Schutz vor versehentlichem Deaktivieren (nur noch in Reiter 5 abschaltbar).
+
+* 100% REINER TEXTMODUS FUER NVDA (0 EMOJIS).
+
+
+--------------------------------------------------------------------------------
+VERSION 5.1.2.1
 --------------------------------------------------------------------------------
 
 * AENDERUNGSPROTOKOLL-START VOLLSTAENDIG ABGESICHERT:

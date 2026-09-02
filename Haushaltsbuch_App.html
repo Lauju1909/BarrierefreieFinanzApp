@@ -397,12 +397,44 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.1.2.1)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 20px;">⭐ Neu in Version 5.3.0 (Großes Meilenstein-Update)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>💳 Neuer Haupt-Reiter 6: Konto-Optionen &amp; Konten-Verwaltung (Taste 6):</strong><br>
+Verwalte ab sofort beliebig viele eigene Konten außerhalb der Einstellungen in einem eigenen Hauptbereich!
+</li>
+<li>
+<strong>🏦 Alle 9 Kontotypen unterstützt:</strong><br>
+Girokonto, Kreditkarte, PayPal, Tagesgeld/Sparkonto, Bargeld/Portemonnaie, Wertpapier-Depot/ETFs, Krypto-Wallet, Bausparvertrag/Darlehen und Gutscheine/Sonstiges.
+</li>
+<li>
+<strong>✏️ Konten flexibel anpassen:</strong><br>
+Benenne Konten jederzeit um, ändere das Startguthaben oder lösche nicht mehr benötigte Konten mit Sicherheitsabfrage.
+</li>
+<li>
+<strong>📊 Automatische Kontostandskarten in der Übersicht:</strong><br>
+Für jedes angelegte Konto wird automatisch eine eigene Karte mit aktuellem Saldo in der Übersicht angezeigt.
+</li>
+<li>
+<strong>📅 Intelligente Datumserkennung:</strong><br>
+Zukünftige Buchungen werden automatisch als <em>🎯 Geplant</em> gekennzeichnet, heutige oder vergangene Buchungen als <em>✅ Gebucht</em>.
+</li>
+<li>
+<strong>🛠️ Vollständige Bearbeitbarkeit:</strong><br>
+Ausnahmslose nachträgliche Anpassung aller Felder bei Buchungen und Daueraufträgen.
+</li>
+<li>
+<strong>🔒 Gesicherter Änderungsprotokoll-Autostart &amp; 100% NVDA-Sprachklarheit.</strong>
+</li>
+</ul>
+</div>
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #4CAF50; font-size: 19px;">⭐ Neu in Version 5.1.2.1 (Aktuelles Update)</h3>
 <ul style="margin: 0; padding-left: 20px;">
@@ -798,6 +830,60 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <!-- =========================================================================
+ MODAL DIALOG: KONTO ANLEGEN / BEARBEITEN
+ ========================================================================= -->
+<div id="account-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="account-modal-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 600px;">
+<h2 id="account-modal-heading" tabindex="-1">Konto verwalten</h2>
+<p class="field-hint">Lege hier ein neues Konto an oder passe ein bestehendes Konto an:</p>
+ 
+<form id="form-account" onsubmit="saveAccount(event)" class="accessible-form" style="margin-top: 16px;">
+<input type="hidden" id="account-modal-id">
+
+<div class="form-group">
+  <label for="account-modal-name" class="field-label"><strong>Name des Kontos:</strong><span class="required-star">*</span></label>
+  <input type="text" id="account-modal-name" class="large-input" placeholder="z. B. ING Girokonto, Trade Republic Depot, Notgroschen..." required>
+</div>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="account-modal-type" class="field-label"><strong>Art des Kontos:</strong><span class="required-star">*</span></label>
+    <select id="account-modal-type" class="large-select" onchange="onAccountTypeSelectChange()" required>
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="credit">Kreditkarte / Debitkarte</option>
+      <option value="paypal">PayPal &amp; Online-Zahlungsdienst</option>
+      <option value="savings">Tagesgeld, Festgeld &amp; Sparkonto</option>
+      <option value="cash">Bargeld &amp; Portemonnaie</option>
+      <option value="depot">Depot, Wertpapiere &amp; ETFs</option>
+      <option value="crypto">Krypto &amp; Web3 Wallet</option>
+      <option value="loan">Bausparvertrag, Kredit &amp; Darlehen</option>
+      <option value="other">Sonstiges Konto / Guthabenkarte</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="account-modal-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
+    <input type="number" step="0.01" id="account-modal-balance" class="large-input" placeholder="0,00" value="0.00">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="account-modal-hint" class="field-label"><strong>Hinweis / Verwendung (optional):</strong></label>
+  <input type="text" id="account-modal-hint" class="large-input" placeholder="z. B. Miete &amp; Gehalt, Notgroschen, Taschengeld...">
+</div>
+
+<div class="form-actions" style="margin-top: 16px;">
+  <button type="submit" class="btn btn-primary" id="btn-save-account">
+    <span><strong>Konto speichern</strong> (Enter)</span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">
+    <span>Abbrechen</span>
+  </button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =========================================================================
  4. HAUPTANWENDUNG
  ========================================================================= -->
 <div id="app-wrapper" style="display: none;">
@@ -807,6 +893,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
 <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
 <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
+<button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">6</span>
+<span><strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+</div>
 </nav>
 
 <!-- Header -->
@@ -856,6 +947,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span><strong>Einstellungen & Backup</strong></span>
 </button>
 </div>
+<button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">6</span>
+<span><strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+</div>
 </nav>
 
 <!-- =========================================================================
@@ -900,42 +996,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <section class="overview-section" aria-labelledby="section-accounts-heading">
 <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
  
-<div class="accounts-grid">
-<div class="account-card" tabindex="0" aria-label="Bankkonto Girokonto">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">🏦</span>
-<span class="acc-name">Bankkonto (Girokonto)</span>
-</div>
-<div class="acc-balance" id="acc-balance-bank">0,00 €</div>
-<span class="acc-hint">Miete, EC-Karte, Daueraufträge</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="PayPal Guthaben">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">🅿</span>
-<span class="acc-name">PayPal Guthaben</span>
-</div>
-<div class="acc-balance" id="acc-balance-paypal">0,00 €</div>
-<span class="acc-hint">Online-Shopping, Freunde, Spotify</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="Tagesgeldkonto Erspartes">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">📈</span>
-<span class="acc-name">Tagesgeldkonto (Sparen)</span>
-</div>
-<div class="acc-balance" id="acc-balance-savings">0,00 €</div>
-<span class="acc-hint">Notgroschen, Führerschein, Urlaub</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="Bargeld Portemonnaie">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">💵</span>
-<span class="acc-name">Bargeld (Portemonnaie)</span>
-</div>
-<div class="acc-balance" id="acc-balance-cash">0,00 €</div>
-<span class="acc-hint">Bäcker, Döner, Barbezahlung</span>
-</div>
+<div class="accounts-grid" id="overview-accounts-grid">
+<!-- Dynamisch befüllt durch renderAccountCardBalances -->
 </div>
 </section>
 
@@ -1457,7 +1519,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version:<strong>v5.1.2.1</strong>(Open Source auf GitHub)
+ Installierte Version:<strong>v5.3.0</strong>(Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -1605,18 +1667,466 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- =======================================================================
+ ANSICHT 6: KONTO-OPTIONEN & KONTEN VERWALTEN (DEDIZIERTER REITER)
+ ======================================================================= -->
+<div id="view-accounts" class="view-panel" role="tabpanel" aria-labelledby="tab-accounts" style="display: none;">
+<div class="form-container" style="max-width: 860px;">
+<h2 class="view-heading" tabindex="-1" id="heading-accounts-view" data-emoji="💳">💳 Konto-Optionen &amp; Konten verwalten</h2>
+<p class="view-sub">Hier kannst du beliebig viele Konten verwalten (Girokonten, Kreditkarten, PayPal, Tagesgeld, Sparbücher, Depots, Bargeld, Krypto), Namen ändern, Startguthaben festlegen oder Konten löschen.</p>
+
+<!-- 1. NEUES KONTO ANLEGEN -->
+<section class="settings-box" style="border-left: 8px solid #2196F3; margin-bottom: 24px;">
+<h3 data-emoji="➕">Neues Konto hinzufügen</h3>
+<form id="form-add-new-account" onsubmit="handleAddNewAccountFromTab(event)" class="accessible-form" style="margin-top: 14px;">
+<div class="form-group">
+  <label for="new-acc-name" class="field-label"><strong>Name des neuen Kontos:</strong><span class="required-star" aria-hidden="true">*</span></label>
+  <input type="text" id="new-acc-name" class="large-input" placeholder="z. B. ING Girokonto, Trade Republic Depot, Urlaubskonto..." required autocomplete="off">
+</div>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="new-acc-type" class="field-label"><strong>Art des Kontos:</strong><span class="required-star" aria-hidden="true">*</span></label>
+    <select id="new-acc-type" class="large-select" onchange="onNewAccTypeTabChange()" required>
+      <option value="bank" selected>Bankkonto / Girokonto</option>
+      <option value="credit">Kreditkarte / Debitkarte</option>
+      <option value="paypal">PayPal &amp; Online-Zahlungsdienst</option>
+      <option value="savings">Tagesgeld, Festgeld &amp; Sparkonto</option>
+      <option value="cash">Bargeld &amp; Portemonnaie</option>
+      <option value="depot">Depot, Wertpapiere &amp; ETFs</option>
+      <option value="crypto">Krypto &amp; Web3 Wallet</option>
+      <option value="loan">Bausparvertrag, Kredit &amp; Darlehen</option>
+      <option value="other">Sonstiges Konto / Guthabenkarte</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="new-acc-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
+    <input type="number" step="0.01" id="new-acc-balance" class="large-input" placeholder="0,00" value="0.00">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="new-acc-hint" class="field-label"><strong>Hinweis / Verwendung (optional):</strong></label>
+  <input type="text" id="new-acc-hint" class="large-input" placeholder="z. B. Miete &amp; Gehalt, Notgroschen, Taschengeld...">
+</div>
+
+<div class="form-actions" style="margin-top: 16px;">
+  <button type="submit" class="btn btn-primary" style="background-color: #2196F3; border-color: #1976D2; width: 100%;">
+    <span>➕ <strong>Neues Konto speichern</strong> (Enter)</span>
+  </button>
+</div>
+</form>
+</section>
+
+<!-- 2. VORHANDENE KONTEN VERWALTEN -->
+<section class="settings-box" style="border-left: 8px solid #4CAF50;">
+<h3 data-emoji="📋">Deine vorhandenen Konten (Namen ändern &amp; löschen)</h3>
+<p class="field-hint">Hier siehst du alle aktuell aktiven Konten. Klicke auf "Bearbeiten", um den Namen oder das Startguthaben anzupassen, oder auf "Löschen", um ein Konto zu entfernen:</p>
+
+<div id="tab-accounts-list" style="margin-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+<!-- Dynamisch befüllt -->
+</div>
+</section>
+
+</div>
+</div>
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.1.2.1</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+<p><strong>Barrierefreie Finanzen v5.3.0</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
 </div>
 
 <script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>
 <script>
+
+function renderAccountsViewList() {
+  ensureAccountsInitialized();
+  const container = document.getElementById('tab-accounts-list');
+  if (!container) return;
+
+  const show = isSymbolsEnabled();
+
+  container.innerHTML = appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    const typeLabel = ACCOUNT_TYPE_NAMES[acc.type] || acc.type;
+    const balanceStr = formatCurrency(acc.initialBalance || 0);
+
+    const iconHtml = show ? `<span class="emoji-icon" aria-hidden="true" style="font-size: 26px;">${icon}</span>` : '';
+    const editBtnText = show ? '✏️ Bearbeiten' : 'Bearbeiten';
+    const delBtnText = show ? '🗑️ Löschen' : 'Löschen';
+
+    return `
+      <div class="settings-account-item" style="display: flex; align-items: center; justify-content: space-between; background: var(--card-bg, #ffffff); border: 2px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 14px 18px; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px;">
+          ${iconHtml}
+          <div>
+            <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">${escapeHTML(acc.name)}</div>
+            <div style="font-size: 14px; color: var(--text-secondary); margin-top: 2px;">
+              ${escapeHTML(typeLabel)} | Startguthaben: <strong style="color: var(--text-primary);">${balanceStr}</strong>
+            </div>
+            ${acc.hint ? `<div style="font-size: 13px; color: var(--text-muted, #777); margin-top: 2px;">${escapeHTML(acc.hint)}</div>` : ''}
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="openAccountModal('${acc.id}')" title="Konto bearbeiten" aria-label="Konto ${escapeHTML(acc.name)} bearbeiten" style="padding: 8px 16px;">
+            ${editBtnText}
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="deleteAccount('${acc.id}')" title="Konto löschen" aria-label="Konto ${escapeHTML(acc.name)} löschen" style="padding: 8px 16px; color: #f44336; border-color: rgba(244, 67, 54, 0.4);">
+            ${delBtnText}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function onNewAccTypeTabChange() {
+  const type = document.getElementById('new-acc-type').value;
+  const hintInput = document.getElementById('new-acc-hint');
+  if (hintInput && !hintInput.value) {
+    hintInput.placeholder = getAccountTypeDefaultHint(type);
+  }
+}
+
+async function handleAddNewAccountFromTab(e) {
+  e.preventDefault();
+  ensureAccountsInitialized();
+
+  const nameInput = document.getElementById('new-acc-name');
+  const typeInput = document.getElementById('new-acc-type');
+  const balInput = document.getElementById('new-acc-balance');
+  const hintInput = document.getElementById('new-acc-hint');
+
+  const name = nameInput.value.trim();
+  const type = typeInput.value;
+  const balance = parseFloat(balInput.value) || 0;
+  const hint = hintInput.value.trim();
+  const icon = ACCOUNT_TYPE_ICONS[type] || '💳';
+
+  if (!name) {
+    alert('Bitte gib einen Namen für das neue Konto ein.');
+    return;
+  }
+
+  const newId = 'acc_' + Date.now();
+  appState.accounts.push({
+    id: newId,
+    name: name,
+    type: type,
+    icon: icon,
+    hint: hint,
+    initialBalance: balance
+  });
+
+  if (!appState.initialBalances) appState.initialBalances = {};
+  appState.accounts.forEach(a => {
+    appState.initialBalances[a.id] = a.initialBalance || 0;
+  });
+
+  await saveStateToEncryptedStorage();
+
+  nameInput.value = '';
+  balInput.value = '0.00';
+  hintInput.value = '';
+
+  populateAllAccountDropdowns();
+  renderAccountsViewList();
+  updateOverview();
+  announceNVDA(`Neues Konto ${name} erfolgreich hinzugefügt!`);
+  alert(`✅ Das Konto "${name}" wurde erfolgreich angelegt und steht sofort in der gesamten App bereit!`);
+}
+
+// ============================================================================
+// 1d. DYNAMISCHES KONTEN-SYSTEM & KONTO-OPTIONEN
+// ============================================================================
+const ACCOUNT_TYPE_ICONS = {
+  bank: '🏦',
+  credit: '💳',
+  paypal: '🅿',
+  savings: '📈',
+  cash: '💵',
+  depot: '📊',
+  crypto: '🪙',
+  loan: '🏛️',
+  other: '📦'
+};
+
+const ACCOUNT_TYPE_NAMES = {
+  bank: 'Bankkonto / Girokonto',
+  credit: 'Kreditkarte / Debitkarte',
+  paypal: 'PayPal & Online-Zahlungsdienst',
+  savings: 'Tagesgeld, Festgeld & Sparkonto',
+  cash: 'Bargeld & Portemonnaie',
+  depot: 'Depot, Wertpapiere & ETFs',
+  crypto: 'Krypto & Web3 Wallet',
+  loan: 'Bausparvertrag, Kredit & Darlehen',
+  other: 'Sonstiges Konto / Guthabenkarte'
+};
+
+const DEFAULT_ACCOUNTS = [
+  { id: 'bank', name: 'Bankkonto / Girokonto', type: 'bank', icon: '🏦', hint: 'Miete, EC-Karte, Gehalt, Daueraufträge', initialBalance: 0 },
+  { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', icon: '🅿', hint: 'Online-Shopping, Freunde, Abos', initialBalance: 0 },
+  { id: 'savings', name: 'Tagesgeldkonto', type: 'savings', icon: '📈', hint: 'Notgroschen, Rücklagen, Urlaub', initialBalance: 0 },
+  { id: 'cash', name: 'Bargeld', type: 'cash', icon: '💵', hint: 'Bäcker, Barbezahlung, Portemonnaie', initialBalance: 0 }
+];
+
+function ensureAccountsInitialized() {
+  if (!appState.accounts || !Array.isArray(appState.accounts) || appState.accounts.length === 0) {
+    appState.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
+    if (appState.initialBalances) {
+      appState.accounts.forEach(acc => {
+        if (appState.initialBalances[acc.id] !== undefined) {
+          acc.initialBalance = Number(appState.initialBalances[acc.id] || 0);
+        }
+      });
+    }
+  }
+}
+
+function getAccountTypeDefaultHint(type) {
+  const hints = {
+    bank: 'Girokonto, Gehaltskonto, Daueraufträge',
+    credit: 'Kreditkarte, Online-Käufe, Reisekarte',
+    paypal: 'Online-Shopping, PayPal-Zahlungen, Freunde',
+    savings: 'Notgroschen, Festgeld, Sparkonto',
+    cash: 'Bargeld, Portemonnaie, Haushaltskasse',
+    depot: 'Aktien, ETFs, Fonds, Wertpapiere',
+    crypto: 'Bitcoin, Ethereum, Hardware Wallet',
+    loan: 'Darlehen, Bausparvertrag, Ratenkredit',
+    other: 'Gutscheinkarte, Essensmarken, Sonstiges'
+  };
+  return hints[type] || 'Finanzkonto';
+}
+
+function formatAccountName(accKey) {
+  if (!accKey) return 'Konto';
+  ensureAccountsInitialized();
+  const found = appState.accounts.find(a => a.id === accKey);
+  if (found) return found.name;
+  return ACCOUNT_TYPE_NAMES[accKey] || accKey;
+}
+
+function getAccountIcon(accKey) {
+  ensureAccountsInitialized();
+  const found = appState.accounts.find(a => a.id === accKey);
+  if (found && found.icon) return found.icon;
+  return ACCOUNT_TYPE_ICONS[accKey] || '💳';
+}
+
+function populateAllAccountDropdowns() {
+  ensureAccountsInitialized();
+  
+  const dropdownIds = [
+    'exp-account',
+    'inc-account',
+    'trf-from',
+    'trf-to',
+    'edit-tx-account',
+    'edit-tx-from',
+    'edit-tx-to',
+    'edit-rec-account',
+    'edit-rec-from',
+    'edit-rec-to'
+  ];
+
+  dropdownIds.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const currentVal = sel.value;
+
+    sel.innerHTML = appState.accounts.map(acc => {
+      const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+      return `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
+    }).join('');
+
+    if (currentVal && appState.accounts.some(a => a.id === currentVal)) {
+      sel.value = currentVal;
+    } else if (id === 'trf-to' && appState.accounts.length > 1) {
+      sel.value = appState.accounts[1].id;
+    } else if (appState.accounts.length > 0) {
+      sel.value = appState.accounts[0].id;
+    }
+
+    applySymbolsToOptions(sel);
+  });
+}
+
+function renderSettingsAccountsList() {
+  ensureAccountsInitialized();
+  const container = document.getElementById('settings-accounts-list');
+  if (!container) return;
+
+  const show = isSymbolsEnabled();
+
+  container.innerHTML = appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    const typeLabel = ACCOUNT_TYPE_NAMES[acc.type] || acc.type;
+    const balanceStr = formatCurrency(acc.initialBalance || 0);
+
+    const iconHtml = show ? `<span class="emoji-icon" aria-hidden="true" style="font-size: 24px;">${icon}</span>` : '';
+    const editBtnText = show ? '✏️ Bearbeiten' : 'Bearbeiten';
+    const delBtnText = show ? '🗑️ Löschen' : 'Löschen';
+
+    return `
+      <div class="settings-account-item" style="display: flex; align-items: center; justify-content: space-between; background: var(--card-bg, #ffffff); border: 2px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 12px 16px; gap: 12px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 200px;">
+          ${iconHtml}
+          <div>
+            <div style="font-size: 17px; font-weight: bold; color: var(--text-primary);">${escapeHTML(acc.name)}</div>
+            <div style="font-size: 14px; color: var(--text-secondary);">${escapeHTML(typeLabel)} | Startguthaben: <strong>${balanceStr}</strong></div>
+            ${acc.hint ? `<div style="font-size: 13px; color: var(--text-muted, #777);">${escapeHTML(acc.hint)}</div>` : ''}
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="openAccountModal('${acc.id}')" title="Konto bearbeiten" aria-label="Konto ${escapeHTML(acc.name)} bearbeiten" style="padding: 6px 12px;">
+            ${editBtnText}
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="deleteAccount('${acc.id}')" title="Konto löschen" aria-label="Konto ${escapeHTML(acc.name)} löschen" style="padding: 6px 12px; color: #f44336;">
+            ${delBtnText}
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openAccountModal(accId) {
+  ensureAccountsInitialized();
+  const modal = document.getElementById('account-modal');
+  const heading = document.getElementById('account-modal-heading');
+  const idInput = document.getElementById('account-modal-id');
+  const nameInput = document.getElementById('account-modal-name');
+  const typeInput = document.getElementById('account-modal-type');
+  const balInput = document.getElementById('account-modal-balance');
+  const hintInput = document.getElementById('account-modal-hint');
+
+  if (accId) {
+    const acc = appState.accounts.find(a => a.id === accId);
+    if (!acc) return;
+    heading.textContent = 'Konto bearbeiten';
+    idInput.value = acc.id;
+    nameInput.value = acc.name;
+    typeInput.value = acc.type || 'bank';
+    balInput.value = (acc.initialBalance !== undefined) ? acc.initialBalance : 0;
+    hintInput.value = acc.hint || '';
+  } else {
+    heading.textContent = 'Neues Konto hinzufügen';
+    idInput.value = '';
+    nameInput.value = '';
+    typeInput.value = 'bank';
+    balInput.value = '0.00';
+    hintInput.value = '';
+  }
+
+  if (modal) modal.style.display = 'flex';
+  if (nameInput) nameInput.focus();
+  announceNVDA(accId ? 'Konto bearbeiten geöffnet.' : 'Neues Konto hinzufügen geöffnet.');
+}
+
+function closeAccountModal() {
+  const modal = document.getElementById('account-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function onAccountTypeSelectChange() {
+  const type = document.getElementById('account-modal-type').value;
+  const hintInput = document.getElementById('account-modal-hint');
+  if (hintInput && !hintInput.value) {
+    hintInput.placeholder = getAccountTypeDefaultHint(type);
+  }
+}
+
+async function saveAccount(e) {
+  e.preventDefault();
+  ensureAccountsInitialized();
+
+  const id = document.getElementById('account-modal-id').value;
+  const name = document.getElementById('account-modal-name').value.trim();
+  const type = document.getElementById('account-modal-type').value;
+  const balance = parseFloat(document.getElementById('account-modal-balance').value) || 0;
+  const hint = document.getElementById('account-modal-hint').value.trim();
+  const icon = ACCOUNT_TYPE_ICONS[type] || '💳';
+
+  if (!name) {
+    alert('Bitte gib einen Namen für das Konto ein.');
+    return;
+  }
+
+  if (id) {
+    // Edit existing
+    const acc = appState.accounts.find(a => a.id === id);
+    if (acc) {
+      acc.name = name;
+      acc.type = type;
+      acc.icon = icon;
+      acc.hint = hint;
+      acc.initialBalance = balance;
+    }
+  } else {
+    // Add new
+    const newId = 'acc_' + Date.now();
+    appState.accounts.push({
+      id: newId,
+      name: name,
+      type: type,
+      icon: icon,
+      hint: hint,
+      initialBalance: balance
+    });
+  }
+
+  // Synchronize initialBalances map
+  if (!appState.initialBalances) appState.initialBalances = {};
+  appState.accounts.forEach(a => {
+    appState.initialBalances[a.id] = a.initialBalance || 0;
+  });
+
+  await saveStateToEncryptedStorage();
+  closeAccountModal();
+  populateAllAccountDropdowns();
+  renderAccountsViewList();
+  updateOverview();
+  announceNVDA(`Konto ${name} erfolgreich gespeichert!`);
+}
+
+async function deleteAccount(accId) {
+  ensureAccountsInitialized();
+  if (appState.accounts.length <= 1) {
+    alert('Du benötigst mindestens ein Konto in deiner App.');
+    return;
+  }
+
+  const acc = appState.accounts.find(a => a.id === accId);
+  if (!acc) return;
+
+  const txCount = appState.transactions.filter(t => t.account === accId || t.fromAccount === accId || t.toAccount === accId).length;
+  const recCount = appState.recurring.filter(r => r.account === accId || r.fromAccount === accId || r.toAccount === accId).length;
+
+  let confirmMsg = `Möchtest du das Konto "${acc.name}" wirklich löschen?`;
+  if (txCount > 0 || recCount > 0) {
+    confirmMsg += `\n\nHinweis: Es sind ${txCount} Buchungen und ${recCount} Daueraufträge mit diesem Konto verknüpft.`;
+  }
+
+  if (!confirm(confirmMsg)) return;
+
+  const idx = appState.accounts.findIndex(a => a.id === accId);
+  if (idx !== -1) {
+    appState.accounts.splice(idx, 1);
+    if (appState.initialBalances && appState.initialBalances[accId] !== undefined) {
+      delete appState.initialBalances[accId];
+    }
+    await saveStateToEncryptedStorage();
+    populateAllAccountDropdowns();
+    renderAccountsViewList();
+    updateOverview();
+    announceNVDA(`Konto ${acc.name} gelöscht.`);
+  }
+}
+
 
 function autoUpdateFrequencyByDate(type) {
   const dateInput = document.getElementById(type + '-date');
@@ -1798,6 +2308,7 @@ function applySymbolsDisplay(show) {
     });
   }
 
+  renderAccountsViewList();
   // 3. Dropdowns aktualisieren
   const selects = document.querySelectorAll('select');
   selects.forEach(sel => applySymbolsToOptions(sel));
@@ -2115,6 +2626,8 @@ async function handleAddCustomCategory(e) {
 
   mergeCustomCategoriesIntoDB();
   populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  renderAccountsViewList();
   initCustomCatSettingsForm();
   await saveStateToEncryptedStorage();
 
@@ -2131,7 +2644,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.1.2.1'
+    AppVersion: 'v5.3.0'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -2340,6 +2853,7 @@ function setupGlobalKeyboardShortcuts() {
     else if (e.key === '3') { e.preventDefault(); switchView('income'); }
     else if (e.key === '4') { e.preventDefault(); switchView('transfer'); }
     else if (e.key === '5') { e.preventDefault(); switchView('settings'); }
+    else if (e.key === '6') { e.preventDefault(); switchView('accounts'); }
     else if (e.key === 't' || e.key === 'T') {
       e.preventDefault();
       setDayToToday();
@@ -2902,13 +3416,15 @@ function getRecurringTransactionsForMonth(year, month) {
 // 8. FINANZIELLE MATHEMATIK & KONTOSTÄNDE
 // ----------------------------------------------------------------------------
 function calculateBalancesUpToDate(targetDateStr) {
+  ensureAccountsInitialized();
+
   const balances = {
-    bank: Number(appState.initialBalances.bank || 0),
-    paypal: Number(appState.initialBalances.paypal || 0),
-    savings: Number(appState.initialBalances.savings || 0),
-    cash: Number(appState.initialBalances.cash || 0),
     total: 0
   };
+
+  appState.accounts.forEach(acc => {
+    balances[acc.id] = Number(acc.initialBalance || (appState.initialBalances && appState.initialBalances[acc.id]) || 0);
+  });
 
   const targetDate = new Date(targetDateStr + 'T23:59:59');
   const targetYear = targetDate.getFullYear();
@@ -2949,7 +3465,11 @@ function calculateBalancesUpToDate(targetDateStr) {
     }
   }
 
-  balances.total = balances.bank + balances.paypal + balances.savings + balances.cash;
+  let totalSum = 0;
+  appState.accounts.forEach(acc => {
+    totalSum += balances[acc.id] || 0;
+  });
+  balances.total = totalSum;
   return balances;
 }
 
@@ -3236,15 +3756,27 @@ function updateOverview() {
 }
 
 function renderAccountCardBalances(balances) {
-  const bBank = document.getElementById('acc-balance-bank');
-  const bPaypal = document.getElementById('acc-balance-paypal');
-  const bSavings = document.getElementById('acc-balance-savings');
-  const bCash = document.getElementById('acc-balance-cash');
+  ensureAccountsInitialized();
+  const grid = document.getElementById('overview-accounts-grid');
+  if (!grid) return;
 
-  if (bBank) bBank.textContent = formatCurrency(balances.bank);
-  if (bPaypal) bPaypal.textContent = formatCurrency(balances.paypal);
-  if (bSavings) bSavings.textContent = formatCurrency(balances.savings);
-  if (bCash) bCash.textContent = formatCurrency(balances.cash);
+  grid.innerHTML = appState.accounts.map(acc => {
+    const bal = balances[acc.id] !== undefined ? balances[acc.id] : (balances[acc.type] !== undefined ? balances[acc.type] : 0);
+    const colorClass = bal >= 0 ? 'income' : 'expense';
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    const hintText = acc.hint || getAccountTypeDefaultHint(acc.type);
+
+    return `
+      <div class="account-card" tabindex="0" aria-label="${escapeHTML(acc.name)}: ${formatCurrency(bal)}">
+        <div class="acc-header">
+          <span class="acc-icon" aria-hidden="true">${icon}</span>
+          <span class="acc-name">${escapeHTML(acc.name)}</span>
+        </div>
+        <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}">${formatCurrency(bal)}</div>
+        <span class="acc-hint">${escapeHTML(hintText)}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 // ----------------------------------------------------------------------------
@@ -4051,7 +4583,7 @@ function initTheme() {
 function switchView(viewName) {
   currentActiveView = viewName;
 
-  const views = ['overview', 'expense', 'income', 'transfer', 'settings'];
+  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     const tab = document.getElementById(`tab-${v}`);
@@ -4083,6 +4615,11 @@ function switchView(viewName) {
   } else if (viewName === 'settings') {
     renderSettingsRecurringList();
     announceNVDA('Einstellungen geöffnet.');
+  } else if (viewName === 'accounts') {
+    renderAccountsViewList();
+    const newNameInput = document.getElementById('new-acc-name');
+    if (newNameInput) newNameInput.focus();
+    announceNVDA('Konto-Optionen und Konten verwalten (Reiter 6) geöffnet.');
   }
 }
 
@@ -4335,6 +4872,8 @@ async function handlePinSubmit(e) {
             if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
             mergeCustomCategoriesIntoDB();
             populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  renderAccountsViewList();
       if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
 
@@ -4412,6 +4951,8 @@ async function saveStateToEncryptedStorage() {
 function unlockApp() {
   mergeCustomCategoriesIntoDB();
   populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  renderAccountsViewList();
   const lockScreen = document.getElementById('lock-screen');
   const appWrapper = document.getElementById('app-wrapper');
   if (lockScreen) lockScreen.style.display = 'none';
@@ -4699,7 +5240,7 @@ function escapeHTML(str) {
 // 20. ÄNDERUNGSPROTOKOLL (CHANGELOG) BEI UPDATES
 // ============================================================================
 
-const CURRENT_APP_VERSION = 'v5.1.2.1';
+const CURRENT_APP_VERSION = 'v5.3.0';
 const STORAGE_CHANGELOG_ENABLED_KEY = 'haushaltsbuch_show_changelog_enabled_v1';
 const STORAGE_LAST_SEEN_VERSION_KEY = 'haushaltsbuch_last_seen_changelog_version_v1';
 
@@ -4825,7 +5366,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.1.2.1'
+    AppVersion: 'v5.3.0'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

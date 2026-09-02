@@ -21,12 +21,44 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.1.2.1)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #1976D2; font-size: 20px;">⭐ Neu in Version 5.3.0 (Großes Meilenstein-Update)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>💳 Neuer Haupt-Reiter 6: Konto-Optionen &amp; Konten-Verwaltung (Taste 6):</strong><br>
+Verwalte ab sofort beliebig viele eigene Konten außerhalb der Einstellungen in einem eigenen Hauptbereich!
+</li>
+<li>
+<strong>🏦 Alle 9 Kontotypen unterstützt:</strong><br>
+Girokonto, Kreditkarte, PayPal, Tagesgeld/Sparkonto, Bargeld/Portemonnaie, Wertpapier-Depot/ETFs, Krypto-Wallet, Bausparvertrag/Darlehen und Gutscheine/Sonstiges.
+</li>
+<li>
+<strong>✏️ Konten flexibel anpassen:</strong><br>
+Benenne Konten jederzeit um, ändere das Startguthaben oder lösche nicht mehr benötigte Konten mit Sicherheitsabfrage.
+</li>
+<li>
+<strong>📊 Automatische Kontostandskarten in der Übersicht:</strong><br>
+Für jedes angelegte Konto wird automatisch eine eigene Karte mit aktuellem Saldo in der Übersicht angezeigt.
+</li>
+<li>
+<strong>📅 Intelligente Datumserkennung:</strong><br>
+Zukünftige Buchungen werden automatisch als <em>🎯 Geplant</em> gekennzeichnet, heutige oder vergangene Buchungen als <em>✅ Gebucht</em>.
+</li>
+<li>
+<strong>🛠️ Vollständige Bearbeitbarkeit:</strong><br>
+Ausnahmslose nachträgliche Anpassung aller Felder bei Buchungen und Daueraufträgen.
+</li>
+<li>
+<strong>🔒 Gesicherter Änderungsprotokoll-Autostart &amp; 100% NVDA-Sprachklarheit.</strong>
+</li>
+</ul>
+</div>
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #4CAF50; font-size: 19px;">⭐ Neu in Version 5.1.2.1 (Aktuelles Update)</h3>
 <ul style="margin: 0; padding-left: 20px;">
@@ -422,6 +454,60 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <!-- =========================================================================
+ MODAL DIALOG: KONTO ANLEGEN / BEARBEITEN
+ ========================================================================= -->
+<div id="account-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="account-modal-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 600px;">
+<h2 id="account-modal-heading" tabindex="-1">Konto verwalten</h2>
+<p class="field-hint">Lege hier ein neues Konto an oder passe ein bestehendes Konto an:</p>
+ 
+<form id="form-account" onsubmit="saveAccount(event)" class="accessible-form" style="margin-top: 16px;">
+<input type="hidden" id="account-modal-id">
+
+<div class="form-group">
+  <label for="account-modal-name" class="field-label"><strong>Name des Kontos:</strong><span class="required-star">*</span></label>
+  <input type="text" id="account-modal-name" class="large-input" placeholder="z. B. ING Girokonto, Trade Republic Depot, Notgroschen..." required>
+</div>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="account-modal-type" class="field-label"><strong>Art des Kontos:</strong><span class="required-star">*</span></label>
+    <select id="account-modal-type" class="large-select" onchange="onAccountTypeSelectChange()" required>
+      <option value="bank">Bankkonto / Girokonto</option>
+      <option value="credit">Kreditkarte / Debitkarte</option>
+      <option value="paypal">PayPal &amp; Online-Zahlungsdienst</option>
+      <option value="savings">Tagesgeld, Festgeld &amp; Sparkonto</option>
+      <option value="cash">Bargeld &amp; Portemonnaie</option>
+      <option value="depot">Depot, Wertpapiere &amp; ETFs</option>
+      <option value="crypto">Krypto &amp; Web3 Wallet</option>
+      <option value="loan">Bausparvertrag, Kredit &amp; Darlehen</option>
+      <option value="other">Sonstiges Konto / Guthabenkarte</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="account-modal-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
+    <input type="number" step="0.01" id="account-modal-balance" class="large-input" placeholder="0,00" value="0.00">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="account-modal-hint" class="field-label"><strong>Hinweis / Verwendung (optional):</strong></label>
+  <input type="text" id="account-modal-hint" class="large-input" placeholder="z. B. Miete &amp; Gehalt, Notgroschen, Taschengeld...">
+</div>
+
+<div class="form-actions" style="margin-top: 16px;">
+  <button type="submit" class="btn btn-primary" id="btn-save-account">
+    <span><strong>Konto speichern</strong> (Enter)</span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="closeAccountModal()">
+    <span>Abbrechen</span>
+  </button>
+</div>
+</form>
+</div>
+</div>
+
+<!-- =========================================================================
  4. HAUPTANWENDUNG
  ========================================================================= -->
 <div id="app-wrapper" style="display: none;">
@@ -431,6 +517,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
 <a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
 <a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
+<button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">6</span>
+<span><strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+</div>
 </nav>
 
 <!-- Header -->
@@ -480,6 +571,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span><strong>Einstellungen & Backup</strong></span>
 </button>
 </div>
+<button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">6</span>
+<span><strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+</div>
 </nav>
 
 <!-- =========================================================================
@@ -524,42 +620,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <section class="overview-section" aria-labelledby="section-accounts-heading">
 <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
  
-<div class="accounts-grid">
-<div class="account-card" tabindex="0" aria-label="Bankkonto Girokonto">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">🏦</span>
-<span class="acc-name">Bankkonto (Girokonto)</span>
-</div>
-<div class="acc-balance" id="acc-balance-bank">0,00 €</div>
-<span class="acc-hint">Miete, EC-Karte, Daueraufträge</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="PayPal Guthaben">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">🅿</span>
-<span class="acc-name">PayPal Guthaben</span>
-</div>
-<div class="acc-balance" id="acc-balance-paypal">0,00 €</div>
-<span class="acc-hint">Online-Shopping, Freunde, Spotify</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="Tagesgeldkonto Erspartes">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">📈</span>
-<span class="acc-name">Tagesgeldkonto (Sparen)</span>
-</div>
-<div class="acc-balance" id="acc-balance-savings">0,00 €</div>
-<span class="acc-hint">Notgroschen, Führerschein, Urlaub</span>
-</div>
-
-<div class="account-card" tabindex="0" aria-label="Bargeld Portemonnaie">
-<div class="acc-header">
-<span class="acc-icon" aria-hidden="true">💵</span>
-<span class="acc-name">Bargeld (Portemonnaie)</span>
-</div>
-<div class="acc-balance" id="acc-balance-cash">0,00 €</div>
-<span class="acc-hint">Bäcker, Döner, Barbezahlung</span>
-</div>
+<div class="accounts-grid" id="overview-accounts-grid">
+<!-- Dynamisch befüllt durch renderAccountCardBalances -->
 </div>
 </section>
 
@@ -1081,7 +1143,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version:<strong>v5.1.2.1</strong>(Open Source auf GitHub)
+ Installierte Version:<strong>v5.3.0</strong>(Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -1229,12 +1291,75 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- =======================================================================
+ ANSICHT 6: KONTO-OPTIONEN & KONTEN VERWALTEN (DEDIZIERTER REITER)
+ ======================================================================= -->
+<div id="view-accounts" class="view-panel" role="tabpanel" aria-labelledby="tab-accounts" style="display: none;">
+<div class="form-container" style="max-width: 860px;">
+<h2 class="view-heading" tabindex="-1" id="heading-accounts-view" data-emoji="💳">💳 Konto-Optionen &amp; Konten verwalten</h2>
+<p class="view-sub">Hier kannst du beliebig viele Konten verwalten (Girokonten, Kreditkarten, PayPal, Tagesgeld, Sparbücher, Depots, Bargeld, Krypto), Namen ändern, Startguthaben festlegen oder Konten löschen.</p>
+
+<!-- 1. NEUES KONTO ANLEGEN -->
+<section class="settings-box" style="border-left: 8px solid #2196F3; margin-bottom: 24px;">
+<h3 data-emoji="➕">Neues Konto hinzufügen</h3>
+<form id="form-add-new-account" onsubmit="handleAddNewAccountFromTab(event)" class="accessible-form" style="margin-top: 14px;">
+<div class="form-group">
+  <label for="new-acc-name" class="field-label"><strong>Name des neuen Kontos:</strong><span class="required-star" aria-hidden="true">*</span></label>
+  <input type="text" id="new-acc-name" class="large-input" placeholder="z. B. ING Girokonto, Trade Republic Depot, Urlaubskonto..." required autocomplete="off">
+</div>
+
+<div class="form-row-2">
+  <div class="form-group">
+    <label for="new-acc-type" class="field-label"><strong>Art des Kontos:</strong><span class="required-star" aria-hidden="true">*</span></label>
+    <select id="new-acc-type" class="large-select" onchange="onNewAccTypeTabChange()" required>
+      <option value="bank" selected>Bankkonto / Girokonto</option>
+      <option value="credit">Kreditkarte / Debitkarte</option>
+      <option value="paypal">PayPal &amp; Online-Zahlungsdienst</option>
+      <option value="savings">Tagesgeld, Festgeld &amp; Sparkonto</option>
+      <option value="cash">Bargeld &amp; Portemonnaie</option>
+      <option value="depot">Depot, Wertpapiere &amp; ETFs</option>
+      <option value="crypto">Krypto &amp; Web3 Wallet</option>
+      <option value="loan">Bausparvertrag, Kredit &amp; Darlehen</option>
+      <option value="other">Sonstiges Konto / Guthabenkarte</option>
+    </select>
+  </div>
+  <div class="form-group">
+    <label for="new-acc-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
+    <input type="number" step="0.01" id="new-acc-balance" class="large-input" placeholder="0,00" value="0.00">
+  </div>
+</div>
+
+<div class="form-group">
+  <label for="new-acc-hint" class="field-label"><strong>Hinweis / Verwendung (optional):</strong></label>
+  <input type="text" id="new-acc-hint" class="large-input" placeholder="z. B. Miete &amp; Gehalt, Notgroschen, Taschengeld...">
+</div>
+
+<div class="form-actions" style="margin-top: 16px;">
+  <button type="submit" class="btn btn-primary" style="background-color: #2196F3; border-color: #1976D2; width: 100%;">
+    <span>➕ <strong>Neues Konto speichern</strong> (Enter)</span>
+  </button>
+</div>
+</form>
+</section>
+
+<!-- 2. VORHANDENE KONTEN VERWALTEN -->
+<section class="settings-box" style="border-left: 8px solid #4CAF50;">
+<h3 data-emoji="📋">Deine vorhandenen Konten (Namen ändern &amp; löschen)</h3>
+<p class="field-hint">Hier siehst du alle aktuell aktiven Konten. Klicke auf "Bearbeiten", um den Namen oder das Startguthaben anzupassen, oder auf "Löschen", um ein Konto zu entfernen:</p>
+
+<div id="tab-accounts-list" style="margin-top: 14px; display: flex; flex-direction: column; gap: 12px;">
+<!-- Dynamisch befüllt -->
+</div>
+</section>
+
+</div>
+</div>
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.1.2.1</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+<p><strong>Barrierefreie Finanzen v5.3.0</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
 </div>
