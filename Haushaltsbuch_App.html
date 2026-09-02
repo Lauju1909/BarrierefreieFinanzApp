@@ -472,14 +472,9 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </ul>
 </div>
 </div>
-<div style="margin-top: 18px; border-top: 2px solid var(--border-color); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-<label style="display: flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer;">
-<input type="checkbox" id="chk-dont-show-changelog-again" onchange="toggleChangelogAutoShow(event)">
-<span>Bei Updates nicht mehr automatisch anzeigen</span>
-</label>
-
-<button type="button" class="btn btn-primary" id="btn-close-changelog" onclick="closeChangelogModal()" style="min-width: 180px;">
-<span><strong>Schließen & Weiter (Enter)</strong></span>
+<div style="margin-top: 18px; border-top: 2px solid var(--border-color); padding-top: 14px; display: flex; justify-content: flex-end; align-items: center;">
+<button type="button" class="btn btn-primary" id="btn-close-changelog" onclick="closeChangelogModal()" style="width: 100%; font-size: 17px; padding: 12px 24px;">
+<span><strong>Schließen &amp; Weiter zur PIN-Eingabe (Enter)</strong></span>
 </button>
 </div>
 </div>
@@ -2265,6 +2260,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkLockoutStatus();
   startHeartbeat();
   updateTodayDisplay();
+  checkChangelogOnStartup();
 
   const todayVal = new Date().toISOString().split('T')[0];
   if (document.getElementById('exp-date')) document.getElementById('exp-date').value = todayVal;

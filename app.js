@@ -654,6 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkLockoutStatus();
   startHeartbeat();
   updateTodayDisplay();
+  checkChangelogOnStartup();
 
   const todayVal = new Date().toISOString().split('T')[0];
   if (document.getElementById('exp-date')) document.getElementById('exp-date').value = todayVal;
