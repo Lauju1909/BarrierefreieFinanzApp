@@ -397,12 +397,25 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.1.2)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.1.2.1)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #4CAF50; font-size: 19px;">⭐ Neu in Version 5.1.2.1 (Aktuelles Update)</h3>
+<ul style="margin: 0; padding-left: 20px;">
+<li style="margin-bottom: 6px;">
+<strong>📜 Änderungsprotokoll öffnet sich bei jedem Update garantiert automatisch:</strong><br>
+Die Anzeige der Neuerungen vor dem Starten ist fest im Programmstart verankert.
+</li>
+<li style="margin-bottom: 6px;">
+<strong>🔒 Schutz vor versehentlichem Deaktivieren:</strong><br>
+Das Häkchen im Popup-Fenster wurde entfernt. Die Funktion kann nur noch ganz bewusst in Reiter 5 (Einstellungen) ein- oder ausgeschaltet werden.
+</li>
+</ul>
+</div>
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #4CAF50; font-size: 19px;">⭐ Neu in Version 5.1.2 (Aktuelles Update)</h3>
 <ul style="margin: 0; padding-left: 20px;">
@@ -1444,7 +1457,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version:<strong>v5.1.2</strong>(Open Source auf GitHub)
+ Installierte Version:<strong>v5.1.2.1</strong>(Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -1596,7 +1609,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.1.2</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v5.1.2.1</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -2118,7 +2131,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.1.2'
+    AppVersion: 'v5.1.2.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -4686,7 +4699,7 @@ function escapeHTML(str) {
 // 20. ÄNDERUNGSPROTOKOLL (CHANGELOG) BEI UPDATES
 // ============================================================================
 
-const CURRENT_APP_VERSION = 'v5.1.2';
+const CURRENT_APP_VERSION = 'v5.1.2.1';
 const STORAGE_CHANGELOG_ENABLED_KEY = 'haushaltsbuch_show_changelog_enabled_v1';
 const STORAGE_LAST_SEEN_VERSION_KEY = 'haushaltsbuch_last_seen_changelog_version_v1';
 
@@ -4812,7 +4825,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.1.2'
+    AppVersion: 'v5.1.2.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

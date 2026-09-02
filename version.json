@@ -1,8 +1,10 @@
 {
-  "version": "5.1.2",
+  "version": "5.1.2.1",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-02",
   "features": [
+    "Aenderungsprotokoll-Popup oeffnet sich bei Updates zuverlaessig automatisch vor dem Start",
+    "Abschalten des Aenderungsprotokolls nur noch ueber Reiter 5 (Einstellungen) moeglich (Schutz vor versehentlichem Deaktivieren)",
     "Intelligente Datumserkennung: Zukuenftige Tage automatisch als Geplant, heute/vergangen als Gebucht",
     "Vollstaendige Bearbeitbarkeit ALLER Details in Buchungen und Dauerauftraegen",
     "Unterkategorien-Anzeige in der Uebersicht (z. B. Lebensmittel › Rewe)",

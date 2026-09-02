@@ -3,6 +3,30 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 5.1.2.1 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* AENDERUNGSPROTOKOLL-START VOLLSTAENDIG ABGESICHERT:
+  Das Aenderungsprotokoll oeffnet sich bei jedem neuen Update nun garantiert
+  automatisch vor der PIN-Eingabe.
+
+* SCHUTZ VOR VERSEHENTLICHEM DEAKTIVIEREN:
+  Die Checkbox im Aenderungsfenster wurde entfernt, um ein versehentliches
+  Ausschalten mit der Tastatur oder durch Tabben zu verhindern. Das Abschalten
+  ist ausschliesslich und bewusst in Reiter 5 (Einstellungen) moeglich.
+
+* INTELLIGENTE DATUMSERKENNUNG (GEPLANT VS. GEBUCHT):
+  Buchungen mit einem Datum in der Zukunft werden nun vollautomatisch als
+  '🎯 Geplant' markiert. Buchungen mit heutigem oder vergangenem Datum werden
+  automatisch als '✅ Gebucht' verbucht und in den Kontostand eingerechnet.
+
+* VOLLSTAENDIGE BEARBEITUNG ALLER DETAILS:
+  Ausnahmslose Anpassbarkeit aller Felder bei Buchungen und Dauerauftraegen.
+
+* UNTERKATEGORIEN & GESCHAEFTE IN DER UEBERSICHT.
+
+
+--------------------------------------------------------------------------------
 VERSION 5.1.2 (Aktuelle Version)
 --------------------------------------------------------------------------------
 
