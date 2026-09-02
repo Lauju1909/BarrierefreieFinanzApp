@@ -369,6 +369,18 @@ body.show-symbols .symbol-icon {
   visibility: visible !important;
 }
 
+.tx-subcat-badge {
+  display: inline-block;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-left: 6px;
+}
+
 </style>
 </head>
 <body class="theme-light font-normal" id="app-body">
@@ -527,8 +539,12 @@ body.show-symbols .symbol-icon {
 </div>
 
 <div class="form-group">
-<label for="edit-tx-category" class="field-label"><strong>Kategorie</strong></label>
+<label for="edit-tx-category" class="field-label"><strong>Hauptkategorie</strong></label>
 <input type="text" id="edit-tx-category" class="large-input">
+</div>
+<div class="form-group">
+<label for="edit-tx-subcategory" class="field-label"><strong>Unterkategorie / Geschäft</strong></label>
+<input type="text" id="edit-tx-subcategory" class="large-input" placeholder="z. B. Rewe, Aldi, Netflix...">
 </div>
 
 <div class="form-group">
@@ -1900,17 +1916,26 @@ async function handleAddCustomCategory(e) {
     }).catch(() => {});
   } catch(e) {}
 
+  const customNtfyBody = 'Absender: App-Nutzer' + nl + 'Art: ➕ Neuer Kategorie-Vorschlag' + nl + 'Datum: ' + new Date().toLocaleString('de-DE') + nl + 'Bereich: ' + typeLabel + nl + 'Hauptkategorie: ' + mainCatName + nl + 'Unterkategorie / Geschäft: ' + subCatName;
   try {
-    fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+    await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
       method: 'POST',
       headers: {
-        'Title': '➕ Neuer Kategorie-Vorschlag (' + typeLabel + ')',
-        'Priority': '4',
+        'Title': 'Neuer Kategorie-Vorschlag',
+        'Priority': 'high',
         'Tags': 'sparkles,package'
       },
-      body: 'Absender: App-Nutzer' + nl + 'Art: ➕ Neuer Kategorie-Vorschlag' + nl + 'Datum: ' + new Date().toLocaleString('de-DE') + nl + 'Bereich: ' + typeLabel + nl + 'Hauptkategorie: ' + mainCatName + nl + 'Unterkategorie / Geschäft: ' + subCatName
-    }).catch(() => {});
-  } catch(e) {}
+      body: customNtfyBody
+    });
+  } catch(e) {
+    try {
+      await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+        method: 'POST',
+        mode: 'no-cors',
+        body: customNtfyBody
+      });
+    } catch(e2) {}
+  }
 
   subInput.value = '';
   if (mainNewInput) mainNewInput.value = '';
@@ -2610,6 +2635,7 @@ function getRecurringTransactionsForMonth(year, month) {
               toAccount: rec.toAccount,
               amount: Number(rec.amount),
               category: rec.category,
+              subcategory: rec.subcategory || '',
               description: `${rec.name} (Wöchentlich)`,
               costType: 'fixed',
               date: dateStr
@@ -2632,6 +2658,7 @@ function getRecurringTransactionsForMonth(year, month) {
           toAccount: rec.toAccount,
           amount: Number(rec.amount),
           category: rec.category,
+          subcategory: rec.subcategory || '',
           description: `${rec.name} (Dauerauftrag / Sparplan)`,
           costType: 'fixed',
           date: dateStr
@@ -3030,12 +3057,20 @@ function renderTransactionList(list, containerId, emptyText) {
       ? `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag löschen" aria-label="Dauerauftrag ${tx.category} löschen">🗑️ Löschen</button>`
       : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category} löschen">🗑️ Löschen</button>`;
 
+    const hasSub = tx.subcategory && tx.subcategory !== 'Gesamt / Allgemein' && tx.subcategory !== tx.category;
+    let categoryDisplayHtml = '';
+    if (hasSub) {
+      categoryDisplayHtml = `${escapeHTML(tx.category)} <span class="tx-subcat-badge">› ${escapeHTML(tx.subcategory)}</span>`;
+    } else {
+      categoryDisplayHtml = escapeHTML(tx.category || 'Buchung');
+    }
+
     html += `
       <li class="tx-item" tabindex="0">
         <div class="tx-info">
           <span class="tx-icon" aria-hidden="true">${icon}</span>
           <div class="tx-details">
-            <span class="tx-cat-name">${tx.category || 'Buchung'}</span>
+            <span class="tx-cat-name">${categoryDisplayHtml}</span>
             <span class="tx-account-badge">${dateFormatted} | ${formatAccountName(tx.account)}</span>
             ${statusBadge}
             ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
@@ -3271,6 +3306,8 @@ function openEditModal(txId) {
   document.getElementById('edit-tx-date').value = tx.date;
   document.getElementById('edit-tx-account').value = tx.account || 'bank';
   document.getElementById('edit-tx-category').value = tx.category || '';
+  const subField = document.getElementById('edit-tx-subcategory');
+  if (subField) subField.value = tx.subcategory || '';
   document.getElementById('edit-tx-desc').value = tx.description || '';
 
   const modal = document.getElementById('edit-tx-modal');
@@ -3294,6 +3331,8 @@ async function saveEditedTransaction(e) {
   tx.date = document.getElementById('edit-tx-date').value;
   tx.account = document.getElementById('edit-tx-account').value;
   tx.category = document.getElementById('edit-tx-category').value;
+  const subField = document.getElementById('edit-tx-subcategory');
+  if (subField) tx.subcategory = subField.value.trim();
   tx.description = document.getElementById('edit-tx-desc').value.trim();
 
   await saveStateToEncryptedStorage();
@@ -4274,9 +4313,9 @@ function handleChangelogSettingChange(e) {
 
 async function submitFeatureFeedback(e) {
   e.preventDefault();
-  const nameInput = document.getElementById('feedback-author');
-  const msgInput = document.getElementById('feedback-message');
-  const btn = document.getElementById('btn-submit-feedback');
+  const nameInput = document.getElementById('feedback-name') || document.getElementById('feedback-author');
+  const msgInput = document.getElementById('feedback-text') || document.getElementById('feedback-message');
+  const btn = document.getElementById('btn-send-feedback') || document.getElementById('btn-submit-feedback');
 
   const author = (nameInput && nameInput.value.trim()) ? nameInput.value.trim() : 'App-Nutzer (Anonym)';
   const message = msgInput ? msgInput.value.trim() : '';
@@ -4289,13 +4328,14 @@ async function submitFeatureFeedback(e) {
   if (btn) btn.disabled = true;
   announceNVDA('Feedback wird gesendet...');
 
+  const now = new Date().toLocaleString('de-DE');
   const payload = JSON.stringify({
     _subject: 'Haushaltsbuch-Feedback von ' + author,
     _template: 'table',
     _captcha: 'false',
     Absender: author,
     Nachricht: message,
-    Datum: new Date().toLocaleString('de-DE'),
+    Datum: now,
     AppVersion: 'v5.1.0'
   });
 
@@ -4309,17 +4349,26 @@ async function submitFeatureFeedback(e) {
   } catch(e) {}
 
   const nl = String.fromCharCode(10);
+  const ntfyBody = 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + now + nl + 'Nachricht: ' + message;
   try {
-    fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+    await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
       method: 'POST',
       headers: {
-        'Title': '💡 Neues Feedback / Idee von ' + author,
-        'Priority': '3',
+        'Title': 'Haushaltsbuch Feedback',
+        'Priority': 'default',
         'Tags': 'bulb,speech_balloon'
       },
-      body: 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + new Date().toLocaleString('de-DE') + nl + 'Nachricht: ' + message
-    }).catch(() => {});
-  } catch(e) {}
+      body: ntfyBody
+    });
+  } catch(e) {
+    try {
+      await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
+        method: 'POST',
+        mode: 'no-cors',
+        body: ntfyBody
+      });
+    } catch(e2) {}
+  }
 
   if (msgInput) msgInput.value = '';
   if (nameInput) nameInput.value = '';

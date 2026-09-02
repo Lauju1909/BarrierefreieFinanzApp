@@ -360,3 +360,15 @@ body.show-symbols .symbol-icon {
   display: inline !important;
   visibility: visible !important;
 }
+
+.tx-subcat-badge {
+  display: inline-block;
+  background-color: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-left: 6px;
+}
