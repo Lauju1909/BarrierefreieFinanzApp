@@ -1,11 +1,12 @@
 {
-  "version": "5.1.1",
+  "version": "5.1.2",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-02",
   "features": [
+    "Intelligente Datumserkennung: Zukuenftige Tage automatisch als Geplant, heute/vergangen als Gebucht",
+    "Vollstaendige Bearbeitbarkeit ALLER Details in Buchungen und Dauerauftraegen",
     "Unterkategorien-Anzeige in der Uebersicht (z. B. Lebensmittel › Rewe)",
     "Universelles Feedback-System fuer alle Computer & Browser ohne Login",
-    "Bearbeiten-Dialog unterstuetzt jetzt auch die Anpassung der Unterkategorie",
     "Komplette Pruefung aller 393 Kategorien und Geschaefte",
     "100% reine NVDA-Sprachausgabe im Textmodus (0 Emojis)"
   ]

@@ -3,6 +3,35 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 5.1.2 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* INTELLIGENTE DATUMSERKENNUNG (GEPLANT VS. GEBUCHT):
+  Buchungen mit einem Datum in der Zukunft werden nun vollautomatisch als
+  '🎯 Geplant' markiert. Buchungen mit heutigem oder vergangenem Datum werden
+  automatisch als '✅ Gebucht' verbucht und in den Kontostand eingerechnet.
+  Auch im Bearbeiten-Dialog passt sich der Status automatisch an das Datum an.
+
+* VOLLSTAENDIGE BEARBEITUNG ALLER DETAILS:
+  Ausnahmslose Anpassbarkeit aller Felder bei Buchungen und Dauerauftraegen:
+  - Art der Buchung (Ausgabe, Einnahme, Umbuchung)
+  - Betrag, Datum & Notiz
+  - Status (Gebucht / Geplant)
+  - Konto-Auswahl (bei Umbuchungen: Von- und Zu-Konto)
+  - Haupt- und Unterkategorie mit Live-Schnellsuche
+  - Bei Dauerauftraegen: Intervall, Tag im Monat, Wochentag, Monat und Aktiv/Pausiert.
+
+* UNTERKATEGORIEN & GESCHAEFTE IN DER UEBERSICHT:
+  Jede Buchung zeigt die Kombination aus Hauptkategorie und Geschaeft an
+  (z. B. 'Lebensmittel, Supermarkt & Discounter › Rewe').
+
+* UNIVERSELLES FEEDBACK-SYSTEM:
+  Funktioniert auf jedem Computer und Browser direkt und zuverlaessig.
+
+* 100% REINER TEXTMODUS FUER NVDA (0 EMOJIS).
+
+
+--------------------------------------------------------------------------------
 VERSION 5.1.1 (Aktuelle Version)
 --------------------------------------------------------------------------------
 

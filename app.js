@@ -512,7 +512,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.1.1'
+    AppVersion: 'v5.1.2'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -3079,7 +3079,7 @@ function escapeHTML(str) {
 // 20. ÄNDERUNGSPROTOKOLL (CHANGELOG) BEI UPDATES
 // ============================================================================
 
-const CURRENT_APP_VERSION = 'v5.1.1';
+const CURRENT_APP_VERSION = 'v5.1.2';
 const STORAGE_CHANGELOG_ENABLED_KEY = 'haushaltsbuch_show_changelog_enabled_v1';
 const STORAGE_LAST_SEEN_VERSION_KEY = 'haushaltsbuch_last_seen_changelog_version_v1';
 
@@ -3205,7 +3205,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.1.1'
+    AppVersion: 'v5.1.2'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
