@@ -61,10 +61,7 @@ namespace HaushaltsbuchApp
                 catch { }
 
                 // 2. ENTPACKEN ODER SYNCHRONISIEREN DER HTML-DATEI
-                if (!File.Exists(_htmlPath))
-                {
-                    SyncEmbeddedApp(_htmlPath, _versionPath);
-                }
+                SyncEmbeddedApp(_htmlPath, _versionPath);
 
                 // 3. BACKGROUND UPDATE CHECK VON GITHUB
                 CheckAndApplyUpdate(_htmlPath, _versionPath);
