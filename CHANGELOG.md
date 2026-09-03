@@ -3,6 +3,24 @@
 
 ---
 
+## 🔄 Version 6.0.1 (Aktuelles Update)
+*Datum: 03. September 2026*
+
+### 🔄 1. Umbuchungs-Daueraufträge & Sparpläne repariert (Reiter 4)
+- **Fehlerbehebung Formularübermittlung:** Beim Anlegen von Sparplänen und Daueraufträgen unter *„Reiter 4: Umbuchen & Sparen“* (wöchentlich, monatlich, quartalsweise, halbjährlich, jährlich) blockierte zuvor ein verstecktes Pflichtfeld im Browser das Speichern.
+- **Dynamische Pflichtfeldsteuerung:** Das Datumsfeld passt sich nun automatisch an und Daueraufträge werden verlässlich in den Sparplan-Bestand übernommen.
+
+### 📋 2. Eigener Bereich „🔄 Umbuchungen & Sparpläne“ in der Übersicht (Reiter 1)
+- **Eigene Karte & Gesamtsumme:** In Reiter 1 (Übersicht) gibt es ab sofort eine eigene Karte *„3c. 🔄 Umbuchungen, Sparpläne & Daueraufträge“* mit Ausführungssumme und Zähler.
+- **Detaillierte Historie:** Listet alle durchgeführten Umbuchungen und Sparplan-Ausführungen mit Quell- und Zielkonto (z. B. *Von: Bankkonto ➔ An: Tagesgeldkonto*), Betrag, Datum und Notizen auf.
+- **Vollständige Aktionen:** Jeder Eintrag hat die Schaltflächen `[✏️ Bearbeiten]` und `[🗑️ Löschen]`.
+
+### 🔍 3. Super-Suche & Kontofilter
+- Die intelligente Suche findet ab sofort auch alle Umbuchungen und Sparpläne.
+- Beim Filtern nach einem bestimmten Konto werden alle Umbuchungen angezeigt, bei denen das Konto als Absender oder Empfänger beteiligt ist.
+
+---
+
 ## 🌟 Version 6.0.0 (Meilenstein-Release)
 *Datum: 03. September 2026*
 

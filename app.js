@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.0.0';
+const CURRENT_APP_VERSION = 'v6.0.1';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -993,19 +993,23 @@ function handleTxSearchFilterChange() {
   const countExp = feedExp ? feedExp.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
   const feedInc = document.getElementById('overview-income-items-feed');
   const countInc = feedInc ? feedInc.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
-  const totalHits = countExp + countInc;
+  const feedTrf = document.getElementById('overview-transfer-items-feed');
+  const countTrf = feedTrf ? feedTrf.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const totalHits = countExp + countInc + countTrf;
 
   const detExp = document.getElementById('details-expense-list');
   const detInc = document.getElementById('details-income-list');
+  const detTrf = document.getElementById('details-transfer-list');
 
   if (isSearchActive) {
     if (detExp) detExp.open = countExp > 0;
     if (detInc) detInc.open = countInc > 0;
+    if (detTrf) detTrf.open = countTrf > 0;
 
     if (banner && bannerText) {
       banner.style.display = 'flex';
       if (totalHits > 0) {
-        bannerText.textContent = `🔍 ${totalHits} Treffer gefunden (${countExp} Ausgaben, ${countInc} Einnahmen).`;
+        bannerText.textContent = `🔍 ${totalHits} Treffer gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen).`;
       } else {
         bannerText.textContent = `⚠️ Keine Buchungen gefunden für "${currentTxFilter.query || 'aktuelle Filter'}".`;
       }
@@ -1013,7 +1017,7 @@ function handleTxSearchFilterChange() {
 
     if (currentTxFilter.query && currentTxFilter.query.length >= 2) {
       if (totalHits > 0) {
-        announceNVDA(`${totalHits} Buchungen für "${currentTxFilter.query}" gefunden (${countExp} Ausgaben, ${countInc} Einnahmen). Listen geöffnet.`);
+        announceNVDA(`${totalHits} Buchungen für "${currentTxFilter.query}" gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen). Listen geöffnet.`);
       } else {
         announceNVDA(`Keine Buchungen für "${currentTxFilter.query}" gefunden.`);
       }
@@ -1022,6 +1026,7 @@ function handleTxSearchFilterChange() {
     if (banner) banner.style.display = 'none';
     if (detExp) detExp.open = false;
     if (detInc) detInc.open = false;
+    if (detTrf) detTrf.open = false;
   }
 }
 
@@ -1412,6 +1417,10 @@ function applyTxFilters(list) {
 
       const acc = appState.accounts ? appState.accounts.find(a => a.id === tx.account) : null;
       const accName = acc ? acc.name : (tx.account || '');
+      const fromAcc = appState.accounts ? appState.accounts.find(a => a.id === tx.fromAccount) : null;
+      const fromAccName = fromAcc ? fromAcc.name : (tx.fromAccount || '');
+      const toAcc = appState.accounts ? appState.accounts.find(a => a.id === tx.toAccount) : null;
+      const toAccName = toAcc ? toAcc.name : (tx.toAccount || '');
       const txAmt = Number(tx.amount || 0);
       const amtStr = txAmt.toFixed(2);
       const amtGerman = amtStr.replace('.', ',');
@@ -1441,10 +1450,10 @@ function applyTxFilters(list) {
       // Types & Tags
       let typeWords = [];
       if (tx.type === 'income') typeWords.push('einnahme', 'geld plus', 'einnahmen', 'habenseite');
-      else if (tx.type === 'transfer') typeWords.push('umbuchung', 'transfer', 'sparen', 'verschieben');
+      else if (tx.type === 'transfer') typeWords.push('umbuchung', 'transfer', 'sparen', 'verschieben', 'sparplan');
       else typeWords.push('ausgabe', 'ausgaben', 'minus', 'kosten');
 
-      if (tx.isRecurring) typeWords.push('wiederkehrend', 'dauerauftrag', 'abo', 'fixkosten', 'vertrag');
+      if (tx.isRecurring) typeWords.push('wiederkehrend', 'dauerauftrag', 'abo', 'fixkosten', 'vertrag', 'sparplan');
       else typeWords.push('einmalig', 'variabel');
 
       if (tx.isInstallment || (tx.description && (tx.description.includes('Rate') || tx.description.includes('Kredit')))) {
@@ -1457,6 +1466,10 @@ function applyTxFilters(list) {
         tx.subcategory || '',
         accName,
         tx.account || '',
+        fromAccName,
+        tx.fromAccount || '',
+        toAccName,
+        tx.toAccount || '',
         ...dateWords,
         ...typeWords,
         amtStr,
@@ -2564,7 +2577,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v6.0.0'
+    AppVersion: 'v6.0.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -3421,14 +3434,16 @@ function calculateDayStats(dayStr) {
 
   const incomeList = allDay.filter(t => t.type === 'income');
   const expenseList = allDay.filter(t => t.type === 'expense');
+  const transferList = allDay.filter(t => t.type === 'transfer');
 
   const dayIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const dayExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const dayTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const dayLeftover = dayIncome - dayExpense;
 
   const balances = calculateBalancesUpToDate(dayStr);
 
-  return { dayIncome, dayExpense, dayLeftover, incomeList, expenseList, balances };
+  return { dayIncome, dayExpense, dayTransfer, dayLeftover, incomeList, expenseList, transferList, balances };
 }
 
 function calculateMonthStats(year, month) {
@@ -3441,16 +3456,18 @@ function calculateMonthStats(year, month) {
 
   const incomeList = allMonth.filter(t => t.type === 'income');
   const expenseList = allMonth.filter(t => t.type === 'expense');
+  const transferList = allMonth.filter(t => t.type === 'transfer');
 
   const totalIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const totalExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const totalTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const leftover = totalIncome - totalExpense;
 
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const endOfMonthStr = `${year}-${mFormatted}-${String(daysInMonth).padStart(2, '0')}`;
   const balances = calculateBalancesUpToDate(endOfMonthStr);
 
-  return { totalIncome, totalExpense, leftover, incomeList, expenseList, balances };
+  return { totalIncome, totalExpense, totalTransfer, leftover, incomeList, expenseList, transferList, balances };
 }
 
 // ----------------------------------------------------------------------------
@@ -3474,6 +3491,8 @@ function updateOverview() {
   const monthLeftover = document.getElementById('month-leftover-display');
   const incomeSummarySub = document.getElementById('income-summary-subtext');
   const expenseSummarySub = document.getElementById('expense-summary-subtext');
+  const cardTransfer = document.getElementById('card-month-transfer');
+  const transferSummarySub = document.getElementById('transfer-summary-subtext');
 
   if (periodSection) periodSection.style.display = 'none';
 
@@ -3493,9 +3512,11 @@ function updateOverview() {
 
     if (incomeSummarySub) incomeSummarySub.textContent = `${dayStats.incomeList.length} Einnahme(n) an diesem Tag`;
     if (expenseSummarySub) expenseSummarySub.textContent = `${dayStats.expenseList.length} Ausgabe(n) an diesem Tag`;
+    if (transferSummarySub) transferSummarySub.textContent = `${dayStats.transferList.length} Umbuchung(en) an diesem Tag`;
 
     if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(dayStats.dayIncome)}`;
     if (cardExpense) cardExpense.textContent = `- ${formatCurrency(dayStats.dayExpense)}`;
+    if (cardTransfer) cardTransfer.textContent = formatCurrency(dayStats.dayTransfer || 0);
     if (cardTotal) cardTotal.textContent = formatCurrency(dayStats.balances.total);
 
     if (monthLeftover) {
@@ -3506,6 +3527,7 @@ function updateOverview() {
     renderAccountCardBalances(dayStats.balances);
     renderTransactionList(dayStats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen an diesem Tag erfasst.');
     renderTransactionList(dayStats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben an diesem Tag erfasst.');
+    renderTransactionList(dayStats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen an diesem Tag erfasst.');
     runPurchaseSimulation();
         populateFilterAccountDropdown();
     renderExpenseRankings(dayStats.expenseList);
@@ -3546,9 +3568,11 @@ function updateOverview() {
 
     const incomeList = allTx.filter(t => t.type === 'income');
     const expenseList = allTx.filter(t => t.type === 'expense');
+    const transferList = allTx.filter(t => t.type === 'transfer');
 
     const weekIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const weekExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const weekTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const weekLeftover = weekIncome - weekExpense;
 
     if (bannerTitle) bannerTitle.textContent = `Wochenübersicht für KW ${wb.weekNum} (${monFormatted} bis ${sunFormatted})`;
@@ -3562,9 +3586,11 @@ function updateOverview() {
 
     if (incomeSummarySub) incomeSummarySub.textContent = `${incomeList.length} Einnahme(n) in dieser Woche`;
     if (expenseSummarySub) expenseSummarySub.textContent = `${expenseList.length} Ausgabe(n) in dieser Woche`;
+    if (transferSummarySub) transferSummarySub.textContent = `${transferList.length} Umbuchung(en) in dieser Woche`;
 
     if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(weekIncome)}`;
     if (cardExpense) cardExpense.textContent = `- ${formatCurrency(weekExpense)}`;
+    if (cardTransfer) cardTransfer.textContent = formatCurrency(weekTransfer);
     if (cardTotal) cardTotal.textContent = formatCurrency(weekBalances.total);
 
     if (monthLeftover) {
@@ -3575,6 +3601,7 @@ function updateOverview() {
     renderAccountCardBalances(weekBalances);
     renderTransactionList(incomeList, 'overview-income-items-feed', 'Keine Einnahmen in dieser Kalenderwoche erfasst.');
     renderTransactionList(expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in dieser Kalenderwoche erfasst.');
+    renderTransactionList(transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen in dieser Kalenderwoche erfasst.');
     runPurchaseSimulation();
         populateFilterAccountDropdown();
     renderExpenseRankings(allTx.filter(t => t.type === 'expense'));
@@ -3599,9 +3626,11 @@ function updateOverview() {
 
     if (incomeSummarySub) incomeSummarySub.textContent = `${stats.incomeList.length} Einnahme(n) in diesem Monat`;
     if (expenseSummarySub) expenseSummarySub.textContent = `${stats.expenseList.length} Ausgabe(n) in diesem Monat`;
+    if (transferSummarySub) transferSummarySub.textContent = `${stats.transferList.length} Umbuchung(en) & Sparpläne im ${monthName}`;
 
     if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(stats.totalIncome)}`;
     if (cardExpense) cardExpense.textContent = `- ${formatCurrency(stats.totalExpense)}`;
+    if (cardTransfer) cardTransfer.textContent = formatCurrency(stats.totalTransfer || 0);
     if (cardTotal) cardTotal.textContent = formatCurrency(stats.balances.total);
 
     if (monthLeftover) {
@@ -3612,6 +3641,7 @@ function updateOverview() {
     renderAccountCardBalances(stats.balances);
     renderTransactionList(stats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen in diesem Monat erfasst.');
     renderTransactionList(stats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in diesem Monat erfasst.');
+    renderTransactionList(stats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen oder Sparpläne in diesem Monat erfasst.');
     runPurchaseSimulation();
         populateFilterAccountDropdown();
     renderExpenseRankings(stats.expenseList);
@@ -3635,17 +3665,20 @@ function updateOverview() {
     titlePeriod = `${h}. Halbjahr ${selectedYear} (${MONTH_NAMES[startM]} - ${MONTH_NAMES[endM]})`;
   }
 
-  let grandIncome = 0, grandExpense = 0;
+  let grandIncome = 0, grandExpense = 0, grandTransfer = 0;
   const allPeriodIncome = [];
   const allPeriodExpense = [];
+  const allPeriodTransfer = [];
   const monthlyBreakdown = [];
 
   for (let m = startM; m <= endM; m++) {
     const mStats = calculateMonthStats(selectedYear, m);
     grandIncome += mStats.totalIncome;
     grandExpense += mStats.totalExpense;
+    grandTransfer += mStats.totalTransfer;
     allPeriodIncome.push(...mStats.incomeList);
     allPeriodExpense.push(...mStats.expenseList);
+    allPeriodTransfer.push(...mStats.transferList);
     monthlyBreakdown.push({
       monthName: MONTH_NAMES[m],
       income: mStats.totalIncome,
@@ -3670,9 +3703,11 @@ function updateOverview() {
 
   if (incomeSummarySub) incomeSummarySub.textContent = `${allPeriodIncome.length} Einnahme(n) im Zeitraum`;
   if (expenseSummarySub) expenseSummarySub.textContent = `${allPeriodExpense.length} Ausgabe(n) im Zeitraum`;
+  if (transferSummarySub) transferSummarySub.textContent = `${allPeriodTransfer.length} Umbuchung(en) im Zeitraum`;
 
   if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(grandIncome)}`;
   if (cardExpense) cardExpense.textContent = `- ${formatCurrency(grandExpense)}`;
+  if (cardTransfer) cardTransfer.textContent = formatCurrency(grandTransfer);
   if (cardTotal) cardTotal.textContent = formatCurrency(periodEndBalances.total);
 
   if (monthLeftover) {
@@ -3683,6 +3718,7 @@ function updateOverview() {
   renderAccountCardBalances(periodEndBalances);
   renderTransactionList(allPeriodIncome, 'overview-income-items-feed', 'Keine Einnahmen in diesem Zeitraum.');
   renderTransactionList(allPeriodExpense, 'overview-expense-items-feed', 'Keine Ausgaben in diesem Zeitraum.');
+  renderTransactionList(allPeriodTransfer, 'overview-transfer-items-feed', 'Keine Umbuchungen in diesem Zeitraum.');
 
   if (periodSection) {
     periodSection.style.display = 'block';
@@ -3752,9 +3788,10 @@ function renderTransactionList(list, containerId, emptyText) {
   let html = '<ul class="tx-list">';
   sorted.forEach(tx => {
     const isIncome = tx.type === 'income';
-    const sign = isIncome ? '+' : '-';
-    const colorClass = isIncome ? 'income' : 'expense';
-    const icon = isIncome ? '📥' : '📤';
+    const isTransfer = tx.type === 'transfer';
+    const sign = isIncome ? '+' : (isTransfer ? '🔄' : '-');
+    const colorClass = isIncome ? 'income' : (isTransfer ? 'transfer' : 'expense');
+    const icon = isIncome ? '📥' : (isTransfer ? '🔄' : '📤');
     const dateFormatted = formatDateGerman(tx.date);
 
     const todayStr = new Date().toISOString().split('T')[0];
@@ -3765,26 +3802,33 @@ function renderTransactionList(list, containerId, emptyText) {
     if (isEffectivelyPlanned) {
       statusBadge = '<span class="status-badge status-planned">🎯 Geplant</span>';
     } else if (tx.isRecurring) {
-      statusBadge = '<span class="status-badge status-booked">🔁 Dauerhaft (Gebucht)</span>';
+      statusBadge = '<span class="status-badge status-booked">🔁 Sparplan / Dauerauftrag</span>';
     } else {
       statusBadge = '<span class="status-badge status-booked">✅ Gebucht</span>';
     }
 
     // JEDER EINTRAG HAT BEARBEITEN & LÖSCHEN BUTTONS (AUCH DAUERHAFTE!)
     const editBtn = tx.isRecurring
-      ? `<button type="button" class="btn-edit-tx" onclick="openEditRecModal('${tx.recurringId}')" title="Dauerauftrag bearbeiten" aria-label="Dauerauftrag ${tx.category} bearbeiten">✏️ Bearbeiten</button>`
-      : `<button type="button" class="btn-edit-tx" onclick="openEditModal('${tx.id}')" title="Buchung bearbeiten" aria-label="Buchung ${tx.category} bearbeiten">✏️ Bearbeiten</button>`;
+      ? `<button type="button" class="btn-edit-tx" onclick="openEditRecModal('${tx.recurringId}')" title="Dauerauftrag / Sparplan bearbeiten" aria-label="Dauerauftrag ${tx.category || tx.name || ''} bearbeiten">✏️ Bearbeiten</button>`
+      : `<button type="button" class="btn-edit-tx" onclick="openEditModal('${tx.id}')" title="Buchung bearbeiten" aria-label="Buchung ${tx.category || ''} bearbeiten">✏️ Bearbeiten</button>`;
 
     const deleteBtn = tx.isRecurring
-      ? `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag löschen" aria-label="Dauerauftrag ${tx.category} löschen">🗑️ Löschen</button>`
-      : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category} löschen">🗑️ Löschen</button>`;
+      ? `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag / Sparplan löschen" aria-label="Dauerauftrag ${tx.category || tx.name || ''} löschen">🗑️ Löschen</button>`
+      : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category || ''} löschen">🗑️ Löschen</button>`;
 
     const hasSub = tx.subcategory && tx.subcategory !== 'Gesamt / Allgemein' && tx.subcategory !== tx.category;
     let categoryDisplayHtml = '';
     if (hasSub) {
       categoryDisplayHtml = `${escapeHTML(tx.category)} <span class="tx-subcat-badge">› ${escapeHTML(tx.subcategory)}</span>`;
     } else {
-      categoryDisplayHtml = escapeHTML(tx.category || 'Buchung');
+      categoryDisplayHtml = escapeHTML(tx.category || (isTransfer ? 'Umbuchung & Sparplan' : 'Buchung'));
+    }
+
+    let accountBadgeText = '';
+    if (isTransfer) {
+      accountBadgeText = `${dateFormatted} | Von: ${formatAccountName(tx.fromAccount)} ➔ An: ${formatAccountName(tx.toAccount)}`;
+    } else {
+      accountBadgeText = `${dateFormatted} | ${formatAccountName(tx.account)}`;
     }
 
     html += `
@@ -3793,13 +3837,13 @@ function renderTransactionList(list, containerId, emptyText) {
           <span class="tx-icon" aria-hidden="true">${icon}</span>
           <div class="tx-details">
             <span class="tx-cat-name">${categoryDisplayHtml}</span>
-            <span class="tx-account-badge">${dateFormatted} | ${formatAccountName(tx.account)}</span>
+            <span class="tx-account-badge">${accountBadgeText}</span>
             ${statusBadge}
             ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
           </div>
         </div>
         <div class="tx-amount-col">
-          <span class="tx-sum ${colorClass}">${sign} ${formatCurrency(tx.amount)}</span>
+          <span class="tx-sum ${colorClass}">${sign ? sign + ' ' : ''}${formatCurrency(tx.amount)}</span>
           ${editBtn}
           ${deleteBtn}
         </div>
@@ -3838,6 +3882,7 @@ function toggleExpenseFrequencyFields() {
   // Dynamic Labeling for Date
   const dateLabel = document.querySelector('label[for="exp-date"] strong');
   const dateInput = document.getElementById('exp-date');
+  if (dateInput) dateInput.required = !isRec;
   if (dateLabel && dateInput) {
     if (isInst) {
       dateLabel.textContent = '💳 Kaufdatum & Beginn der Ratenzahlung:';
@@ -3970,9 +4015,14 @@ function handleInstallmentRateManualChange() {
 
 function toggleIncomeFrequencyFields() {
   const freq = document.getElementById('inc-frequency').value;
-  const isRec = ['weekly', 'monthly', 'yearly'].includes(freq);
-  document.getElementById('inc-recurring-details').style.display = isRec ? 'block' : 'none';
-  document.getElementById('inc-date-group').style.display = isRec ? 'none' : 'block';
+  const isRec = ['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq);
+  const recDetails = document.getElementById('inc-recurring-details');
+  const dateGroup = document.getElementById('inc-date-group');
+  const dateInput = document.getElementById('inc-date');
+
+  if (recDetails) recDetails.style.display = isRec ? 'block' : 'none';
+  if (dateGroup) dateGroup.style.display = isRec ? 'none' : 'block';
+  if (dateInput) dateInput.required = !isRec;
 
   const isWeekly = freq === 'weekly';
   if (document.getElementById('inc-weekday-group')) document.getElementById('inc-weekday-group').style.display = isWeekly ? 'block' : 'none';
@@ -3982,8 +4032,13 @@ function toggleIncomeFrequencyFields() {
 function toggleTransferFrequencyFields() {
   const freq = document.getElementById('trf-frequency').value;
   const isRec = ['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq);
-  document.getElementById('trf-recurring-details').style.display = isRec ? 'block' : 'none';
-  document.getElementById('trf-date-group').style.display = isRec ? 'none' : 'block';
+  const recDetails = document.getElementById('trf-recurring-details');
+  const dateGroup = document.getElementById('trf-date-group');
+  const dateInput = document.getElementById('trf-date');
+
+  if (recDetails) recDetails.style.display = isRec ? 'block' : 'none';
+  if (dateGroup) dateGroup.style.display = isRec ? 'none' : 'block';
+  if (dateInput) dateInput.required = !isRec;
 
   const isWeekly = freq === 'weekly';
   if (document.getElementById('trf-weekday-group')) document.getElementById('trf-weekday-group').style.display = isWeekly ? 'block' : 'none';
@@ -4243,7 +4298,9 @@ async function handleAddTransfer(e) {
   const freq = document.getElementById('trf-frequency').value;
   const fromAccount = document.getElementById('trf-from').value;
   const toAccount = document.getElementById('trf-to').value;
-  const date = document.getElementById('trf-date').value;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const curDate = new Date();
+  const date = document.getElementById('trf-date').value || todayStr;
   const desc = document.getElementById('trf-desc').value.trim();
 
   const fromPotId = document.getElementById('trf-from-pot') ? document.getElementById('trf-from-pot').value : '';
@@ -4279,7 +4336,6 @@ async function handleAddTransfer(e) {
 
   const potInfo = potNoteParts.length > 0 ? ` (${potNoteParts.join(', ')})` : '';
 
-  const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
 
@@ -4298,13 +4354,13 @@ async function handleAddTransfer(e) {
       interval: freq,
       day: day,
       weekday: weekday,
-      startYear: selectedYear,
-      startMonth: selectedMonth,
+      startYear: curDate.getFullYear(),
+      startMonth: curDate.getMonth(),
       targetPotId: toPotId || '',
       sourcePotId: fromPotId || '',
       active: true
     });
-    announceNVDA(`Sparplan über ${formatCurrency(amount)}${potInfo} gespeichert!`);
+    announceNVDA(`Dauerhafter Sparplan über ${formatCurrency(amount)}${potInfo} gespeichert!`);
   } else {
     appState.transactions.push({
       id: `tx_${Date.now()}`,
@@ -4312,7 +4368,7 @@ async function handleAddTransfer(e) {
       fromAccount: fromAccount,
       toAccount: toAccount,
       amount: amount,
-      category: 'Umbuchung',
+      category: 'Umbuchung & Sparplan',
       description: desc ? `${desc}${potInfo}` : `Umbuchung ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}${potInfo}`,
       isPlanned: isPlanned,
       date: date
@@ -5698,7 +5754,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v6.0.0'
+    AppVersion: 'v6.0.1'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

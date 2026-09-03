@@ -1,13 +1,15 @@
 {
-  "version": "6.0.0",
+  "version": "6.0.1",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-03",
   "features": [
+    "Dauerauftraege & Sparplaene bei Umbuchungen (Reiter 4) repariert (kein Blockieren durch versteckte Pflichtfelder)",
+    "Neuer Bereich 'Umbuchungen & Sparplaene' in der Hauptuebersicht (Reiter 1) mit eigener Karte, Details und Von/Nach-Konten",
+    "Super-Suche durchsucht auch Umbuchungen und klappt Trefferlisten automatisch auf",
     "Intelligente Super-Suche mit Tippfehler-Toleranz (Fuzzy Matching, Umlaute, phonetische Suche)",
     "Automatische Betragsbereiche, Operatoren, relatives Datum und Negation in der Suche",
-    "Automatisches Aufklappen aller Trefferlisten fuer NVDA-Bildschirmleser",
     "Raten- und Finanzierungsrechner mit nur 1x Kaufpreis-Eingabe und Live-Berechnung",
-    "Strikte Spartopf-Architektur: Verwaltung in Reiter 6, Besparen & Entnahme ausschliesslich ueber Reiter 4 (Umbuchen)",
+    "Strikte Spartopf-Architektur: Verwaltung in Reiter 6, Besparen & Entnahme ausschliesslich ueber Reiter 4",
     "Wunschliste (Reiter 7): Auswahl aus vorhandenen Spartoepfen & automatische Abbuchung bei Erfuellung",
     "Natuerliche Datums- & Faelligkeitsbeschriftungen mit Schnelltasten [Heute], [Gestern], [1.], [15.], [Monatsende]",
     "Bereinigte Einstellungen (Reiter 5): Redundante Listen fuer Dauerauftraege und Ratenkaeufe entfernt",

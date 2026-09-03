@@ -3,7 +3,32 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 6.0.0 (Aktuelle Version - Meilenstein-Release)
+VERSION 6.0.1 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* UMBUCHUNGS-DAUERAUFTRAEGE & SPARPLAENE REPARIERT (REITER 4):
+  - Fehler behoben: Beim Anlegen von wiederkehrenden Umbuchungen und Sparplaenen
+    (woechentlich, monatlich, quartalsweise, halbjaehrlich, jaehrlich) blockierte
+    ein verstecktes Pflichtfeld im Formular bisher das Absenden im Browser.
+  - Das Datumsfeld passt sich nun dynamisch an und die Speicherung funktioniert
+    ausnahmslos zuverlaessig mit NVDA-Bestaetigung.
+
+* EIGENER BEREICH "UMBUCHUNGEN & SPARPLAENE" IN DER HAUPTUEBERSICHT (REITER 1):
+  - In der Uebersicht gibt es jetzt eine dedizierte Karte "3c. Umbuchungen,
+    Sparplaene & Dauerauftraege" mit Gesamtsumme und Zaehler.
+  - Eigene aufklappbare Liste mit allen Umbuchungen des gewaehlten Zeitraums
+    (Tag, Woche, Monat, Zeitraum).
+  - Zeigt glasklar Sender- und Empfaengerkonto (z. B. "Von: Bankkonto -> An: Tagesgeldkonto").
+  - Jeder Eintrag verfuegt ueber vollstaendige [Bearbeiten]- und [Loeschen]-Schaltflaechen.
+
+* VOLLSTAENDIGE SUPER-SUCHE & KONTENFILTER-INTEGRATION:
+  - Die intelligente Suche durchsucht jetzt auch alle Umbuchungen und Sparplaene.
+  - Beim Filtern nach einem bestimmten Konto werden alle Umbuchungen angezeigt,
+    an denen dieses Konto beteiligt ist.
+  - Gefundene Umbuchungen klappen in der Uebersicht automatisch auf.
+
+--------------------------------------------------------------------------------
+VERSION 6.0.0 (Meilenstein-Release)
 --------------------------------------------------------------------------------
 
 * INTELLIGENTE SUPER-SUCHE & TIPPFEHLER-TOLERANZ (FUZZY MATCHING):

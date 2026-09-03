@@ -21,12 +21,30 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.0.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.0.1)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 6.0.1 (Aktuelles Update: Umbuchungs-Daueraufträge, Sparpläne &amp; Anzeige in der Übersicht)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🔄 Umbuchungs-Daueraufträge &amp; Sparpläne repariert:</strong><br>
+Beim Anlegen von Sparplänen und Daueraufträgen unter „Reiter 4: Umbuchen &amp; Sparen“ blockierte zuvor ein verstecktes Pflichtfeld die Speicherung im Browser. Dies wurde behoben – Sparpläne (wöchentlich, monatlich, quartalsweise, halbjährlich, jährlich) lassen sich nun reibungslos anlegen.
+</li>
+<li>
+<strong>📋 Eigener Bereich „🔄 Umbuchungen &amp; Sparpläne“ in der Hauptübersicht:</strong><br>
+In Reiter 1 (Übersicht) gibt es ab sofort eine eigene Karte und eine vollständige Liste für alle Umbuchungen und ausgeführten Sparpläne mit Quell- und Zielkonto (z. B. <em>Von: Bankkonto ➔ An: Tagesgeldkonto</em>), Betrag, Datum, Bearbeiten- und Löschen-Funktion.
+</li>
+<li>
+<strong>🔍 Vollständige Integration in die Super-Suche &amp; Kontenfilter:</strong><br>
+Die intelligente Suche durchsucht jetzt auch alle Umbuchungen und Sparpläne. Wird nach einem Konto gefiltert, erscheinen auch alle Umbuchungen, bei denen das gewählte Konto als Absender oder Empfänger beteiligt ist.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 6.0.0 (Meilenstein-Release: Intelligente Suche, Ratenrechner, Spartopf-Architektur &amp; Bereinigungen)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -993,6 +1011,28 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </section>
 
+<!-- 3c. DANN: UMBUCHUNGEN, SPARPLÄNE & DAUERAUFTRÄGE -->
+<section class="overview-section" aria-labelledby="section-transfer-heading">
+<div class="section-card card-transfer-wrap" style="border-left: 8px solid var(--accent-action, #0288D1);">
+  <div class="card-header-flex">
+    <div>
+      <h3 id="section-transfer-heading" class="section-title" style="margin-bottom: 2px;">🔄 Umbuchungen, Sparpläne &amp; Daueraufträge</h3>
+      <span class="sub-counter" id="transfer-summary-subtext">Lade Umbuchungen...</span>
+    </div>
+    <div class="stat-big-val" id="card-month-transfer" style="color: var(--accent-action, #0288D1);">0,00 €</div>
+  </div>
+
+  <details class="accessible-accordion" id="details-transfer-list">
+    <summary class="accordion-summary" aria-label="Alle Umbuchungen und Sparpläne ausklappen oder einklappen">
+      <span>📋<strong id="details-transfer-summary-text">Alle Umbuchungen &amp; Sparpläne anzeigen (mit Von/Nach-Konto, Bearbeiten &amp; Löschen)</strong></span>
+    </summary>
+    <div class="accordion-content" id="overview-transfer-items-feed" style="padding-top: 10px;">
+      <!-- Wird per JS befüllt -->
+    </div>
+  </details>
+</div>
+</section>
+
 <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
 <section class="overview-section" aria-labelledby="section-total-heading">
 <div class="balance-hero-card" tabindex="0">
@@ -1311,7 +1351,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
-  <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')" required>
+  <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')">
 </div>
 
 <div id="exp-recurring-details" style="display: none;">
@@ -1491,7 +1531,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
-  <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')" required>
+  <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')">
 </div>
 
 <div id="inc-recurring-details" style="display: none;">
@@ -1621,7 +1661,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <button type="button" class="btn btn-secondary" onclick="setQuickDate('trf', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Umbuchungsdatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
-  <input type="date" id="trf-date" class="large-input" aria-label="Datum der Umbuchung" onchange="autoUpdateFrequencyByDate('trf')" required>
+  <input type="date" id="trf-date" class="large-input" aria-label="Datum der Umbuchung" onchange="autoUpdateFrequencyByDate('trf')">
 </div>
 
 <div id="trf-recurring-details" style="display: none;">
@@ -2187,7 +2227,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v5.3.5.3</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.0.1</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
