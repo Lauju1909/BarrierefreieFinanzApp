@@ -21,14 +21,45 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.5.3)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.0.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 5.3.5.3 (Sparpläne &amp; Eigene Kategorien Perfektionierung)</h3>
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 6.0.0 (Meilenstein-Release: Intelligente Suche, Ratenrechner, Spartopf-Architektur &amp; Bereinigungen)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🔍 Intelligente Super-Suche mit Tippfehler-Toleranz (Fuzzy Match):</strong><br>
+Die Suche in der Übersicht verzeiht ab sofort Schreib- und Tippfehler (z. B. <code>amazn</code> findet Amazon, <code>gehald</code> findet Gehalt, <code>baeker</code> findet Bäckerei). Deutsche Umlaute und Laut-Kombinationen (ck/k, ph/f) werden vollautomatisch normalisiert. Erkennt zudem Betragsbereiche (z. B. <code>20-50</code>, <code>&gt;50</code>), relative Datumsangaben (<code>heute</code>, <code>gestern</code>, <code>September</code>) und Negation (<code>-Begriff</code>). Listen mit Treffern klappen für Screenreader automatisch auf.
+</li>
+<li>
+<strong>💳 Raten- &amp; Finanzierungsrechner ohne Doppeleingabe:</strong><br>
+Der Kaufpreis wird nur noch 1x im Hauptfeld eingetragen und berechnet die Monatsrate live beim Tippen. Alle Zusatzoptionen (Anbieter wie PayPal/Klarna, Anzahlung, Zinsen, Schlussrate) sind übersichtlich in einem aufklappbaren Bereich untergebracht.
+</li>
+<li>
+<strong>🎯 Strikte Spartopf-Architektur &amp; Bereinigte Menüs:</strong><br>
+Spartöpfe werden sauber zentral in Reiter 6 angelegt. Direkte freihändige Buchungsbuttons wurden entfernt: Geld wird nun verbindlich über das Umbuchungs-Menü (Reiter 4) mit Quell- und Zielkonto überwiesen. In der Wunschliste (Reiter 7) wählt man direkt aus den bestehenden Spartöpfen aus.
+</li>
+<li>
+<strong>📅 Natürliche Datums- &amp; Fälligkeitsbeschriftungen:</strong><br>
+Keine holprigen Standardphrasen mehr: Ausgaben haben ein echtes <em>„Datum der Ausgabe (Kaufdatum)“</em>, Ratenkäufe ein <em>„Kaufdatum &amp; Beginn der Ratenzahlung“</em> und Daueraufträge einen <em>„Fälligkeitstag im Monat“</em>. Schnelltasten wie <code>[Heute]</code>, <code>[Gestern]</code>, <code>[1.]</code>, <code>[15.]</code> und <code>[Monatsende]</code> setzen das Datum mit einem einzigen Tastendruck.
+</li>
+<li>
+<strong>🧹 Bereinigte Einstellungen (Reiter 5):</strong><br>
+Die doppelten Listen für Daueraufträge und Ratenkäufe wurden aus den Einstellungen entfernt, da sie bereits in der Übersicht und der Wunschliste integriert sind.
+</li>
+<li>
+<strong>🛡️ Vollständige Absicherung des Sperrbildschirms:</strong><br>
+PIN im Klartext anzeigen/verbergen und Tresor-Reset wurden lückenlos funktionsfähig angebunden und getestet.
+</li>
+<li>
+<strong>✅ 100% Barrierefreiheit &amp; 0 Duplikate:</strong><br>
+Vollständiger Audit bestanden: 0 doppelte IDs, 0 doppelte Funktionen, 0 doppelte Kategorien, 74 von 74 Event-Handlern geprüft.
+</li>
+</ul>
+</div>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
 <li>
 <strong>🔄 Perfektionierte Umbuchungen &amp; Sparpläne (Reiter 4):</strong><br>
@@ -728,7 +759,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </header>
 
 <!-- =========================================================================
- HAUPTNAVIGATION (6 TABS)
+ HAUPTNAVIGATION (7 TABS)
  ========================================================================= -->
 <nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
 <div class="tab-list" role="tablist">
@@ -755,6 +786,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">6</span>
 <span>💳<strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+<button id="tab-wishlist" data-emoji="🎁" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-wishlist" onclick="switchView('wishlist')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">7</span>
+<span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>
 </button>
 </div>
 </nav>
@@ -807,6 +842,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="accounts-grid" id="overview-accounts-grid">
 <!-- Dynamisch befüllt durch renderAccountCardBalances -->
 </div>
+  <div id="tx-search-results-banner" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(33, 150, 243, 0.1); border-left: 5px solid #2196F3; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="status" aria-live="polite">
+    <span id="tx-search-results-text" style="font-weight: 500;"></span>
+    <button type="button" class="btn btn-secondary" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
+  </div>
 </section>
 
 <!-- MEHRMONATS- / JAHRES-TABELLE (WIRD BEI 3M, 6M, JAHR ANGEZEIGT) -->
@@ -835,7 +874,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- AUSGABEN-RANGLISTE (TOP-GELDFRESSER DES MONATS) -->
 <section class="overview-section" aria-labelledby="expense-ranking-heading">
 <div class="section-card">
-<details class="accessible-accordion" id="details-expense-rankings" open>
+<details class="accessible-accordion" id="details-expense-rankings">
   <summary class="accordion-summary" aria-label="Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen">
     <span>🏆 <strong id="expense-ranking-heading">Größte Geldfresser des Monats (Ausgaben-Rangliste)</strong></span>
   </summary>
@@ -852,9 +891,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <section class="overview-section" aria-labelledby="tx-search-heading">
 <div class="tx-filter-bar" role="search" aria-label="Buchungen durchsuchen und filtern">
   <div class="filter-item">
-    <label for="tx-search-query" class="field-label" style="font-size: 13px;">🔍 <strong>Suche nach Text / Laden:</strong></label>
-    <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, Miete, Amazon..." oninput="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
-  </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <label for="tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
+      <button type="button" id="btn-clear-tx-search" onclick="clearTxSearch()" style="display: none; background: none; border: none; font-size: 13px; cursor: pointer; color: #D32F2F;">✖️ Suche leeren</button>
+    </div>
+    <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal..." oninput="handleTxSearchFilterChange()" onkeydown="handleTxSearchKeyDown(event)" style="padding: 6px 10px; font-size: 15px;">
+    </div>
   <div class="filter-item">
     <label for="tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
     <select id="tx-filter-status" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
@@ -868,6 +910,18 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <label for="tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
     <select id="tx-filter-account" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Konten</option>
+    </select>
+  </div>
+  <div class="filter-item">
+    <label for="tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
+    <select id="tx-sort-order" class="large-select" onchange="handleTxSortChange()" style="padding: 6px 10px; font-size: 15px;">
+      <option value="date-desc" selected>📅 Datum: Neueste zuerst (Neu bis Alt)</option>
+      <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
+      <option value="alpha-asc">🔤 Name: Alphabetisch (A bis Z)</option>
+      <option value="alpha-desc">🔤 Name: Alphabetisch (Z bis A)</option>
+      <option value="amount-desc">💶 Betrag: Höchste zuerst (Groß bis Klein)</option>
+      <option value="amount-asc">💶 Betrag: Niedrigste zuerst (Klein bis Groß)</option>
+      <option value="category-asc">🏷️ Kategorie: Alphabetisch (A bis Z)</option>
     </select>
   </div>
 </div>
@@ -884,7 +938,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="stat-big-val" id="card-month-income" style="color: var(--accent-income);">+ 0,00 €</div>
 </div>
 
-<details class="accessible-accordion" id="details-income-list" open>
+<details class="accessible-accordion" id="details-income-list">
 <summary class="accordion-summary" aria-label="Alle Einnahmen ausklappen oder einklappen">
 <span>📋<strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
 </summary>
@@ -906,7 +960,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="stat-big-val" id="card-month-expense" style="color: var(--accent-expense);">- 0,00 €</div>
 </div>
 
-<details class="accessible-accordion" id="details-expense-list" open>
+<details class="accessible-accordion" id="details-expense-list">
 <summary class="accordion-summary" aria-label="Alle Ausgaben ausklappen oder einklappen">
 <span>📋<strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
 </summary>
@@ -914,6 +968,28 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- Wird per JS befüllt -->
 </div>
 </details>
+</div>
+</section>
+
+<!-- 3b. DANN: LAUFENDE KREDITE & RATENKÄUFE -->
+<section class="overview-section" aria-labelledby="section-credit-heading">
+<div class="section-card">
+  <div class="card-header-flex">
+    <div>
+      <h3 id="section-credit-heading" class="section-title" style="margin-bottom: 2px;">💳 Laufende Kredite, Ratenkäufe &amp; Finanzierungen</h3>
+      <span class="sub-counter" id="credit-summary-subtext">0 aktive Kredite</span>
+    </div>
+    <div class="stat-big-val" id="card-month-credit" style="color: #E65100;">0,00 € Rest</div>
+  </div>
+
+  <details class="accessible-accordion" id="details-credit-list">
+    <summary class="accordion-summary" aria-label="Alle Kredite und Ratenkäufe ausklappen oder einklappen">
+      <span>📋<strong id="details-credit-summary-text">Laufende Kredite &amp; Ratenpläne anzeigen</strong></span>
+    </summary>
+    <div class="accordion-content" id="overview-credit-items-feed" style="padding-top: 10px;">
+      <!-- Wird per JS befüllt -->
+    </div>
+  </details>
 </div>
 </section>
 
@@ -1024,7 +1100,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <label for="exp-amount" class="field-label">
 <strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">* (Pflichtfeld)</span>
 </label>
-<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off">
+<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()">
 </div>
 
 <div class="form-group">
@@ -1032,14 +1108,126 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <strong>Art & Häufigkeit der Ausgabe</strong>
 </label>
 <select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
-<option value="once" selected>Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
-<option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung)</option>
-<option value="weekly">📅 Wöchentlich (Jede Woche)</option>
-<option value="monthly">📅 Monatlich (Jeden Monat)</option>
-<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise)</option>
+<option value="once" selected>Einmalige Ausgabe (Sofort oder an bestimmtem Tag bezahlt)</option>
+<option value="installment">💳 Ratenzahlung &amp; Kredit (In monatlichen Raten abbezahlen)</option>
+<option value="monthly">📅 Monatlich regelmäßig (Dauerauftrag, Miete, Abo, Fixkosten)</option>
+<option value="planned">🎯 Geplante Zukunftsausgabe (Vormerkung für später)</option>
+<option value="weekly">📅 Wöchentlich regelmäßig</option>
+<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise, z. B. GEZ)</option>
 <option value="halfyear">📈 Alle 6 Monate (Halbjährlich)</option>
-<option value="yearly">🗓Jährlich (1x im Jahr)</option>
+<option value="yearly">🗓️ Jährlich regelmäßig (z. B. Kfz-Steuer, Jahresabo)</option>
 </select>
+</div>
+
+<!-- RATENZAHLUNGS-RECHNER -->
+<div id="exp-installment-fields" class="settings-box" style="display: none; border-left: 8px solid #FF9800; margin-top: 10px; margin-bottom: 14px; background: rgba(255, 152, 0, 0.05); padding: 14px; border-radius: 8px;">
+  <h4 style="margin-top: 0; margin-bottom: 8px; color: #E65100;">💳 Ratenkauf &amp; Finanzierungs-Rechner</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Der Kaufpreis von oben wird automatisch übernommen. Wähle einfach Laufzeit und Art:</p>
+  
+  <div class="form-row-2">
+    <div class="form-group">
+      <label class="field-label"><strong>Laufzeit &amp; Raten-Intervall:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <div style="display: flex; gap: 8px;">
+        <input type="number" id="exp-installment-duration-val" class="large-input" min="1" value="12" style="max-width: 90px;" oninput="handleInstallmentCalculation()">
+        <select id="exp-installment-duration-unit" class="large-select" onchange="handleInstallmentCalculation()" style="flex: 1;">
+          <option value="months" selected>Monate (Monatliche Raten)</option>
+          <option value="weeks">Wochen (Wöchentliche Raten)</option>
+          <option value="years">Jahre (Jährliche Raten)</option>
+          <option value="days">Tage (Tägliche Raten)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="exp-installment-type" class="field-label"><strong>Art der Finanzierung:</strong></label>
+      <select id="exp-installment-type" class="large-select" onchange="handleInstallmentTypeChange()">
+        <option value="ratenkauf" selected>🛒 Ratenkauf / Ratenzahlung</option>
+        <option value="kredit">🏦 Bankkredit / Ratenkredit</option>
+        <option value="finanzierung_0">🏷️ 0%-Finanzierung (Zinsfrei)</option>
+        <option value="darlehen">🤝 Privates Darlehen (Familie / Freunde)</option>
+        <option value="leasing">🚗 Leasing (Auto, E-Bike, Technik)</option>
+        <option value="dispo">💳 Dispokredit / Rahmenkredit</option>
+        <option value="sonstiges">💳 Sonstige Finanzierung</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-top: 8px; margin-bottom: 6px;">
+    <label for="exp-installment-rate" class="field-label"><strong>Berechnete monatliche Rate (€):</strong></label>
+    <input type="number" step="0.01" min="0.01" id="exp-installment-rate" class="large-input" style="font-weight: bold; color: #D32F2F;" placeholder="0,00 €" oninput="handleInstallmentRateManualChange()">
+  </div>
+
+  <div id="exp-installment-calc-hint" style="font-size: 13px; font-weight: bold; color: #E65100; margin-top: 6px; padding: 6px 10px; background: rgba(255, 152, 0, 0.1); border-radius: 4px;" aria-live="polite">
+    Gib oben den Kaufbetrag ein.
+  </div>
+
+  <!-- AUSKLAPPBARE ZUSATZOPTIONEN (NUR BEI BEDARF, NICHT WÜST) -->
+  <details class="accessible-accordion" id="details-installment-advanced" style="margin-top: 12px; border: 1px dashed #FF9800; border-radius: 6px; padding: 6px 10px; background: rgba(255,255,255,0.7);">
+    <summary class="accordion-summary" style="font-size: 13px; cursor: pointer; color: #E65100;">
+      <span>⚙️ <strong>Weitere Optionen (Anbieter, Anzahlung, Zinsen, Schlussrate)</strong></span>
+    </summary>
+    <div class="accordion-content" style="padding-top: 10px;">
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="exp-installment-provider" class="field-label"><strong>Anbieter / Zahlungsdienst:</strong></label>
+          <select id="exp-installment-provider" class="large-select" onchange="handleInstallmentCalculation()">
+            <option value="paypal" selected>🅿️ PayPal Ratenzahlung</option>
+            <option value="klarna">🛍️ Klarna (Slice It / Flexibel)</option>
+            <option value="amazon">📦 Amazon Ratenzahlung</option>
+            <option value="santander">🏦 Santander Consumer Bank</option>
+            <option value="targobank">🏦 Targobank</option>
+            <option value="consors">🏦 Consors Finanz</option>
+            <option value="hausbank">🏛️ Hausbank (Sparkasse, VR-Bank, ING...)</option>
+            <option value="apple_mediamarkt">📱 MediaMarkt-Saturn / Apple</option>
+            <option value="privat">🤝 Privatkredit</option>
+            <option value="sonstiger">💳 Sonstiger Anbieter</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="exp-installment-downpayment" class="field-label"><strong>Anzahlung zu Beginn (€):</strong></label>
+          <input type="number" step="0.01" min="0" id="exp-installment-downpayment" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+        </div>
+      </div>
+
+      <div class="form-row-2" style="margin-top: 8px;">
+        <div class="form-group" id="group-installment-interest">
+          <label for="exp-installment-interest" class="field-label"><strong>Zinsen / Gebühren (optional):</strong></label>
+          <div style="display: flex; gap: 6px;">
+            <input type="number" step="0.01" min="0" id="exp-installment-interest" class="large-input" placeholder="0" oninput="handleInstallmentCalculation()" style="flex: 1;">
+            <select id="exp-installment-interest-type" class="large-select" onchange="handleInstallmentCalculation()" style="flex: 1;">
+              <option value="percent" selected>% p. a.</option>
+              <option value="euro">€ Gesamt</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="group-installment-balloon">
+          <label for="exp-installment-balloon" class="field-label"><strong>Schlussrate / Restwert (€):</strong></label>
+          <input type="number" step="0.01" min="0" id="exp-installment-balloon" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+        </div>
+      </div>
+
+      <div class="form-row-2" style="margin-top: 8px;">
+        <div class="form-group">
+          <label for="exp-installment-first-due" class="field-label"><strong>Erste Rate fällig:</strong></label>
+          <select id="exp-installment-first-due" class="large-select">
+            <option value="now" selected>Sofort am Kauftag (Standard)</option>
+            <option value="days30">In 30 Tagen (Zahlpause)</option>
+            <option value="days60">In 60 Tagen</option>
+            <option value="days90">In 90 Tagen (3 Monate Pause)</option>
+          </select>
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; justify-content: center;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 14px; font-size: 13px;">
+            <input type="checkbox" id="exp-installment-special-repay" checked>
+            <span>Kostenlose Sondertilgung erlaubt</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 6px; font-size: 13px;">
+            <input type="checkbox" id="exp-installment-pause-allowed">
+            <span>Ratenpause vertraglich möglich</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </details>
 </div>
 
 <div class="form-group" id="exp-account-group">
@@ -1114,19 +1302,32 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div class="form-group" id="exp-date-group">
-<label for="exp-date" class="field-label">
-<strong>An welchem Tag (Datum)?</strong>
-</label>
-<input type="date" id="exp-date" class="large-input" onchange="autoUpdateFrequencyByDate('exp')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="exp-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Ausgabe (Kaufdatum):</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')" required>
 </div>
 
 <div id="exp-recurring-details" style="display: none;">
 <div class="form-row-2">
 <div class="form-group" id="exp-month-day-group">
-<label for="exp-rec-day" class="field-label">
-<strong>An welchem Tag des Monats? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="exp-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Fälligkeitstag im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1" aria-label="Fälligkeitstag im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="exp-weekday-group" style="display: none;">
 <label for="exp-rec-weekday" class="field-label">
@@ -1248,6 +1449,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Verkäufe, Gebrauchtwaren & Erstattungen">Verkäufe, Gebrauchtwaren & Erstattungen</option>
 <option value="Zinsen, Dividenden, Miete & Kapital">Zinsen, Dividenden, Miete & Kapital</option>
 <option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
+<option value="Nebenjob, Minijob & Freiberufliche Projekte">Nebenjob, Minijob & Freiberufliche Projekte</option>
+<option value="Kreatives, Musik, Kunst & Content Creation">Kreatives, Musik, Kunst & Content Creation</option>
+<option value="Krypto, Staking & Web3-Erträge">Krypto, Staking & Web3-Erträge</option>
+<option value="Cashback, Prämien & Treueprogramme">Cashback, Prämien & Treueprogramme</option>
+<option value="Erstattungen, Steuern & Kautionen">Erstattungen, Steuern & Kautionen</option>
+<option value="Private Rückzahlungen & Kostenbeteiligungen">Private Rückzahlungen & Kostenbeteiligungen</option>
+<option value="Vermietung, Verpachtung & Carsharing">Vermietung, Verpachtung & Carsharing</option>
 </select>
 </div>
 
@@ -1274,18 +1482,31 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div class="form-group" id="inc-date-group">
-<label for="inc-date" class="field-label">
-<strong>Wann (Datum)?</strong>
-</label>
-<input type="date" id="inc-date" class="large-input" onchange="autoUpdateFrequencyByDate('inc')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="inc-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Einnahme (Geldeingang):</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')" required>
 </div>
 
 <div id="inc-recurring-details" style="display: none;">
 <div class="form-group" id="inc-month-day-group">
-<label for="inc-rec-day" class="field-label">
-<strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="inc-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Tag des Geldeingangs im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1" aria-label="Tag des Geldeingangs im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="inc-weekday-group" style="display: none;">
 <label for="inc-rec-weekday" class="field-label">
@@ -1355,7 +1576,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-row-2">
 <div class="form-group">
 <label for="trf-from" class="field-label"><strong>Von welchem Konto abbuchen (Quelle)?</strong></label>
-<select id="trf-from" class="large-select" required>
+<select id="trf-from" class="large-select" required onchange="handleTransferAccountsChange()">
 <option value="bank" selected>🏦 Bankkonto / Girokonto</option>
 <option value="paypal">🅿PayPal Guthaben</option>
 <option value="cash">💵 Bargeld</option>
@@ -1365,7 +1586,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div class="form-group">
 <label for="trf-to" class="field-label"><strong>Auf welches Konto einzahlen (Ziel / Sparen)?</strong></label>
-<select id="trf-to" class="large-select" required>
+<select id="trf-to" class="large-select" required onchange="handleTransferAccountsChange()">
 <option value="savings" selected>📈 Tagesgeldkonto (Sparen / Notgroschen)</option>
 <option value="paypal">🅿PayPal Guthaben</option>
 <option value="bank">🏦 Bankkonto / Girokonto</option>
@@ -1374,17 +1595,48 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- OPTIONALE SPARTÖPFE FÜR QUELLE & ZIEL -->
+<div class="form-row-2" style="margin-top: 4px;">
+<div class="form-group" id="group-trf-from-pot" style="display: none;">
+  <label for="trf-from-pot" class="field-label"><strong>Aus Spartopf entnehmen (optional):</strong></label>
+  <select id="trf-from-pot" class="large-select">
+    <option value="">(Kein Spartopf - Allgemeines Kontoguthaben)</option>
+  </select>
+</div>
+<div class="form-group" id="group-trf-to-pot" style="display: none;">
+  <label for="trf-to-pot" class="field-label"><strong>🎯 In Spartopf einzahlen (optional):</strong></label>
+  <select id="trf-to-pot" class="large-select">
+    <option value="">(Kein Spartopf - Allgemeines Kontoguthaben)</option>
+  </select>
+</div>
+</div>
+
 <div class="form-group" id="trf-date-group">
-<label for="trf-date" class="field-label"><strong>Datum der Umbuchung</strong></label>
-<input type="date" id="trf-date" class="large-input" onchange="autoUpdateFrequencyByDate('trf')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="trf-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Umbuchung:</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('trf', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Umbuchungsdatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('trf', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Umbuchungsdatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="trf-date" class="large-input" aria-label="Datum der Umbuchung" onchange="autoUpdateFrequencyByDate('trf')" required>
 </div>
 
 <div id="trf-recurring-details" style="display: none;">
 <div class="form-group" id="trf-month-day-group">
-<label for="trf-rec-day" class="field-label">
-<strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="trf-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Sparplan-Ausführungstag im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1" aria-label="Ausführungstag im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="trf-weekday-group" style="display: none;">
 <label for="trf-rec-weekday" class="field-label">
@@ -1495,6 +1747,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
  
+
+
 <!-- MONATS-BUDGETS & AUSGABEN-LIMITS -->
 <section class="settings-box" aria-labelledby="heading-budgets-view" style="border-left: 8px solid #FF9800; margin-top: 18px;">
 <h3 id="heading-budgets-view" data-emoji="🎯">Monats-Budgets &amp; Ausgaben-Limits</h3>
@@ -1735,14 +1989,206 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </section>
 
+<!-- 3. SPARTÖPFE & SPARZIELE DER KONTEN -->
+<section class="settings-box" style="border-left: 8px solid #9C27B0; margin-top: 24px;">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+  <div>
+    <h3 data-emoji="🎯" style="margin-bottom: 4px;">🎯 Spartöpfe &amp; Sparziele deiner Konten</h3>
+    <p class="field-hint" style="margin: 0;">Erstelle konkrete Spartöpfe (z. B. Notgroschen, Urlaub, Neues Auto) und ordne sie deinen Sparkonten oder Girokonten zu:</p>
+  </div>
+</div>
+
+<!-- FORMULAR NEUER SPARTOPF -->
+<form id="form-add-saving-pot" onsubmit="handleAddSavingPot(event)" class="accessible-form" style="margin-top: 14px; background: var(--card-bg, #fff); border: 2px solid var(--border-color); border-radius: 8px; padding: 16px;">
+  <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 16px;">➕ Neuen Spartopf anlegen</h4>
+  
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="pot-name" class="field-label"><strong>Name des Spartopfs / Sparziel:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="pot-name" class="large-input" placeholder="z. B. Urlaub Ostsee, Notgroschen, Neues E-Bike..." required autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label for="pot-parent-account" class="field-label"><strong>Zugeordnetes Hauptkonto:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <select id="pot-parent-account" class="large-select" required>
+        <!-- Dynamisch befüllt -->
+      </select>
+    </div>
+  </div>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="pot-current-amount" class="field-label"><strong>Bereits angesparter Startbetrag (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="pot-current-amount" class="large-input" placeholder="0,00" value="0.00">
+    </div>
+    <div class="form-group">
+      <label for="pot-target-amount" class="field-label"><strong>Sparziel / Zielsumme in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="number" step="0.01" min="0.01" id="pot-target-amount" class="large-input" placeholder="z. B. 1000 oder 2500" required>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pot-note" class="field-label"><strong>Notiz / Zweck (optional):</strong></label>
+    <input type="text" id="pot-note" class="large-input" placeholder="z. B. Bis Sommer 2027 monatlich 50 € sparen">
+  </div>
+
+  <div class="form-actions" style="margin-top: 10px;">
+    <button type="submit" class="btn btn-primary" style="background-color: #9C27B0; border-color: #7B1FA2; width: 100%;">
+      <span>🎯 <strong>Spartopf erstellen</strong></span>
+    </button>
+  </div>
+</form>
+
+<div style="font-size: 13px; color: var(--text-muted); margin-top: 10px; margin-bottom: 8px; padding: 8px 12px; background: rgba(156, 39, 176, 0.06); border-left: 4px solid #9C27B0; border-radius: 4px;">
+  💡 <strong>Hinweis:</strong> Einzahlungen in Spartöpfe und Entnahmen erfolgen verbindlich und sauber nachvollziehbar über <strong>Reiter 4 (Umbuchen &amp; Sparen)</strong>.
+</div>
+
+<!-- LISTE DER SPARTÖPFE -->
+<div id="tab-saving-pots-list" style="margin-top: 16px;">
+  <!-- Per JS befüllt -->
+</div>
+</section>
+
 </div>
 </div>
+
+<!-- =======================================================================
+ ANSICHT 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
+ ======================================================================= -->
+<div id="view-wishlist" class="view-panel" role="tabpanel" aria-labelledby="tab-wishlist" style="display: none;">
+<div class="form-container" style="max-width: 920px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+    <div>
+      <h2 class="view-heading" tabindex="-1" id="heading-wishlist-view" data-emoji="🎁" style="margin-bottom: 4px;">🎁 Wunschliste, Sparziele &amp; Anschaffungen</h2>
+      <p class="view-sub" style="margin: 0;">Plane Anschaffungen, behalte den Überblick über deine Ersparnisse und erfülle Wünsche direkt als Ausgabe.</p>
+    </div>
+  </div>
+
+  <!-- STATISTIK-KARTEN -->
+  <div class="wishlist-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+    <div class="stat-card" style="border-left: 6px solid #9C27B0; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Offene Wünsche</span>
+      <strong class="stat-val" id="wishlist-stat-count" style="display: block; font-size: 22px; margin-top: 4px;">0 Wünsche</strong>
+    </div>
+    <div class="stat-card" style="border-left: 6px solid #2196F3; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Gesamtwert aller Wünsche</span>
+      <strong class="stat-val" id="wishlist-stat-total" style="display: block; font-size: 22px; margin-top: 4px; color: #1976D2;">0,00 €</strong>
+    </div>
+    <div class="stat-card" style="border-left: 6px solid #4CAF50; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Bereits sofort leistbar</span>
+      <strong class="stat-val" id="wishlist-stat-affordable" style="display: block; font-size: 22px; margin-top: 4px; color: #2E7D32;">0 Wünsche</strong>
+    </div>
+  </div>
+
+  <!-- NEUEN WUNSCH EINTRAGEN -->
+  <div class="settings-box" style="border-left: 8px solid #9C27B0; margin-bottom: 24px;">
+    <h3 data-emoji="➕" style="margin-top: 0;">Neuen Wunsch eintragen</h3>
+    <form id="form-add-wish" class="accessible-form" onsubmit="handleAddWish(event)">
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label for="wish-type" class="field-label"><strong>Art des Wunsches / Kostenstruktur:</strong></label>
+        <select id="wish-type" class="large-select" onchange="handleWishTypeChange()">
+          <option value="once" selected>📦 Einmalige Anschaffung / Kauf (z. B. Laptop, Fahrrad, Reise)</option>
+          <option value="monthly">🔄 Monatliches Abonnement / Vertrag (z. B. Streaming, Fitnessstudio, Software)</option>
+          <option value="quarterly">🔄 Vierteljährliches Abonnement (alle 3 Monate)</option>
+          <option value="halfyear">🔄 Halbjährliches Abonnement (alle 6 Monate)</option>
+          <option value="yearly">🗓 Jährliches Abonnement / Jahresbeitrag (z. B. BahnCard, Club, Prime)</option>
+        </select>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-title" class="field-label"><strong>Wunsch / Dienst / Anschaffung:</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="text" id="wish-title" class="large-input" placeholder="z. B. Netflix, Fitnessstudio, Neuer Laptop..." required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="wish-amount" class="field-label"><strong id="wish-amount-label">Geschätzte Kosten in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="number" step="0.01" min="0.01" id="wish-amount" class="large-input" placeholder="z. B. 14.99 oder 450" required autocomplete="off" oninput="handleWishAmountInput()">
+          <div id="wish-amount-calc-hint" style="font-size: 13px; color: #9C27B0; font-weight: bold; margin-top: 4px;" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-priority" class="field-label"><strong>Priorität:</strong></label>
+          <select id="wish-priority" class="large-select">
+            <option value="high" selected>⭐⭐⭐ Hohe Priorität (Sehr wichtig)</option>
+            <option value="medium">⭐⭐ Mittlere Priorität (Wichtig)</option>
+            <option value="low">⭐ Geringe Priorität (Schön zu haben)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="wish-category" class="field-label"><strong>Kategorie / Bereich:</strong></label>
+          <select id="wish-category" class="large-select">
+            <option value="Elektronik &amp; Technik" selected>Elektronik &amp; Technik</option>
+            <option value="Urlaub &amp; Reisen">Urlaub &amp; Reisen</option>
+            <option value="Möbel &amp; Wohnen">Möbel &amp; Wohnen</option>
+            <option value="Kleidung &amp; Mode">Kleidung &amp; Mode</option>
+            <option value="Hobby, Sport &amp; Freizeit">Hobby, Sport &amp; Freizeit</option>
+            <option value="Gesundheit &amp; Hilfsmittel">Gesundheit &amp; Hilfsmittel</option>
+            <option value="Bildung &amp; Kurse">Bildung &amp; Kurse</option>
+            <option value="Sonstiges">Sonstiges</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-target-account" class="field-label"><strong>Vorhandenen Spartopf oder Konto auswählen:</strong></label>
+          <select id="wish-target-account" class="large-select" aria-label="Vorhandenen Spartopf oder Konto für Wunsch auswählen">
+            <!-- Dynamisch befüllt -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="wish-target-date" class="field-label"><strong>Ziel-Datum (optional):</strong></label>
+          <input type="date" id="wish-target-date" class="large-input">
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="wish-note" class="field-label"><strong>Notiz oder Link zum Angebot (optional):</strong></label>
+        <input type="text" id="wish-note" class="large-input" placeholder="z. B. Modell XYZ, Rabattaktion im Oktober...">
+      </div>
+
+      <div class="form-actions" style="margin-top: 14px;">
+        <button type="submit" class="btn btn-primary" style="background-color: #9C27B0; border-color: #7B1FA2; width: 100%;">
+          <span>🎁 <strong>Wunsch zur Liste hinzufügen</strong></span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- INTERAKTIVE LISTE DER WÜNSCHE -->
+  <div class="section-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+      <h3 style="margin: 0;">Deine Wünsche &amp; Sparziele</h3>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <label for="wish-filter-status" class="field-label" style="margin: 0; font-size: 13px;">Filter:</label>
+        <select id="wish-filter-status" class="large-select" onchange="renderWishlist()" style="padding: 4px 8px; font-size: 14px;">
+          <option value="open" selected>Nur offene Wünsche</option>
+          <option value="fulfilled">Nur erfüllte Wünsche</option>
+          <option value="all">Alle Wünsche anzeigen</option>
+        </select>
+        <label for="wish-filter-type" class="field-label" style="margin: 0 0 0 8px; font-size: 13px;">Art:</label>
+        <select id="wish-filter-type" class="large-select" onchange="renderWishlist()" style="padding: 4px 8px; font-size: 14px;">
+          <option value="all" selected>Alle Arten</option>
+          <option value="once">Nur Einmalkäufe</option>
+          <option value="subscriptions">Nur Abos &amp; Verträge</option>
+        </select>
+      </div>
+    </div>
+    <div id="wishlist-items-container">
+      <!-- Dynamisch befüllt -->
+    </div>
+  </div>
+</div>
+</div>
+
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
 <p><strong>Barrierefreie Finanzen v5.3.5.3</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
 </div>

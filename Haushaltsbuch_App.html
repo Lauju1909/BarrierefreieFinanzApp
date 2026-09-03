@@ -567,14 +567,45 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v5.3.5.3)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.0.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 5.3.5.3 (Sparpläne &amp; Eigene Kategorien Perfektionierung)</h3>
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⭐ Neu in Version 6.0.0 (Meilenstein-Release: Intelligente Suche, Ratenrechner, Spartopf-Architektur &amp; Bereinigungen)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🔍 Intelligente Super-Suche mit Tippfehler-Toleranz (Fuzzy Match):</strong><br>
+Die Suche in der Übersicht verzeiht ab sofort Schreib- und Tippfehler (z. B. <code>amazn</code> findet Amazon, <code>gehald</code> findet Gehalt, <code>baeker</code> findet Bäckerei). Deutsche Umlaute und Laut-Kombinationen (ck/k, ph/f) werden vollautomatisch normalisiert. Erkennt zudem Betragsbereiche (z. B. <code>20-50</code>, <code>&gt;50</code>), relative Datumsangaben (<code>heute</code>, <code>gestern</code>, <code>September</code>) und Negation (<code>-Begriff</code>). Listen mit Treffern klappen für Screenreader automatisch auf.
+</li>
+<li>
+<strong>💳 Raten- &amp; Finanzierungsrechner ohne Doppeleingabe:</strong><br>
+Der Kaufpreis wird nur noch 1x im Hauptfeld eingetragen und berechnet die Monatsrate live beim Tippen. Alle Zusatzoptionen (Anbieter wie PayPal/Klarna, Anzahlung, Zinsen, Schlussrate) sind übersichtlich in einem aufklappbaren Bereich untergebracht.
+</li>
+<li>
+<strong>🎯 Strikte Spartopf-Architektur &amp; Bereinigte Menüs:</strong><br>
+Spartöpfe werden sauber zentral in Reiter 6 angelegt. Direkte freihändige Buchungsbuttons wurden entfernt: Geld wird nun verbindlich über das Umbuchungs-Menü (Reiter 4) mit Quell- und Zielkonto überwiesen. In der Wunschliste (Reiter 7) wählt man direkt aus den bestehenden Spartöpfen aus.
+</li>
+<li>
+<strong>📅 Natürliche Datums- &amp; Fälligkeitsbeschriftungen:</strong><br>
+Keine holprigen Standardphrasen mehr: Ausgaben haben ein echtes <em>„Datum der Ausgabe (Kaufdatum)“</em>, Ratenkäufe ein <em>„Kaufdatum &amp; Beginn der Ratenzahlung“</em> und Daueraufträge einen <em>„Fälligkeitstag im Monat“</em>. Schnelltasten wie <code>[Heute]</code>, <code>[Gestern]</code>, <code>[1.]</code>, <code>[15.]</code> und <code>[Monatsende]</code> setzen das Datum mit einem einzigen Tastendruck.
+</li>
+<li>
+<strong>🧹 Bereinigte Einstellungen (Reiter 5):</strong><br>
+Die doppelten Listen für Daueraufträge und Ratenkäufe wurden aus den Einstellungen entfernt, da sie bereits in der Übersicht und der Wunschliste integriert sind.
+</li>
+<li>
+<strong>🛡️ Vollständige Absicherung des Sperrbildschirms:</strong><br>
+PIN im Klartext anzeigen/verbergen und Tresor-Reset wurden lückenlos funktionsfähig angebunden und getestet.
+</li>
+<li>
+<strong>✅ 100% Barrierefreiheit &amp; 0 Duplikate:</strong><br>
+Vollständiger Audit bestanden: 0 doppelte IDs, 0 doppelte Funktionen, 0 doppelte Kategorien, 74 von 74 Event-Handlern geprüft.
+</li>
+</ul>
+</div>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
 <li>
 <strong>🔄 Perfektionierte Umbuchungen &amp; Sparpläne (Reiter 4):</strong><br>
@@ -1274,7 +1305,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </header>
 
 <!-- =========================================================================
- HAUPTNAVIGATION (6 TABS)
+ HAUPTNAVIGATION (7 TABS)
  ========================================================================= -->
 <nav class="nav-tabs-wrapper" aria-label="Hauptmenü" id="main-nav-tabs">
 <div class="tab-list" role="tablist">
@@ -1301,6 +1332,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <button id="tab-accounts" data-emoji="💳" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-accounts" onclick="switchView('accounts')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">6</span>
 <span>💳<strong>Konto-Optionen &amp; Konten</strong></span>
+</button>
+<button id="tab-wishlist" data-emoji="🎁" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-wishlist" onclick="switchView('wishlist')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">7</span>
+<span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>
 </button>
 </div>
 </nav>
@@ -1353,6 +1388,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="accounts-grid" id="overview-accounts-grid">
 <!-- Dynamisch befüllt durch renderAccountCardBalances -->
 </div>
+  <div id="tx-search-results-banner" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(33, 150, 243, 0.1); border-left: 5px solid #2196F3; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="status" aria-live="polite">
+    <span id="tx-search-results-text" style="font-weight: 500;"></span>
+    <button type="button" class="btn btn-secondary" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
+  </div>
 </section>
 
 <!-- MEHRMONATS- / JAHRES-TABELLE (WIRD BEI 3M, 6M, JAHR ANGEZEIGT) -->
@@ -1381,7 +1420,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- AUSGABEN-RANGLISTE (TOP-GELDFRESSER DES MONATS) -->
 <section class="overview-section" aria-labelledby="expense-ranking-heading">
 <div class="section-card">
-<details class="accessible-accordion" id="details-expense-rankings" open>
+<details class="accessible-accordion" id="details-expense-rankings">
   <summary class="accordion-summary" aria-label="Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen">
     <span>🏆 <strong id="expense-ranking-heading">Größte Geldfresser des Monats (Ausgaben-Rangliste)</strong></span>
   </summary>
@@ -1398,9 +1437,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <section class="overview-section" aria-labelledby="tx-search-heading">
 <div class="tx-filter-bar" role="search" aria-label="Buchungen durchsuchen und filtern">
   <div class="filter-item">
-    <label for="tx-search-query" class="field-label" style="font-size: 13px;">🔍 <strong>Suche nach Text / Laden:</strong></label>
-    <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, Miete, Amazon..." oninput="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
-  </div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <label for="tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
+      <button type="button" id="btn-clear-tx-search" onclick="clearTxSearch()" style="display: none; background: none; border: none; font-size: 13px; cursor: pointer; color: #D32F2F;">✖️ Suche leeren</button>
+    </div>
+    <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal..." oninput="handleTxSearchFilterChange()" onkeydown="handleTxSearchKeyDown(event)" style="padding: 6px 10px; font-size: 15px;">
+    </div>
   <div class="filter-item">
     <label for="tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
     <select id="tx-filter-status" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
@@ -1414,6 +1456,18 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <label for="tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
     <select id="tx-filter-account" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Konten</option>
+    </select>
+  </div>
+  <div class="filter-item">
+    <label for="tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
+    <select id="tx-sort-order" class="large-select" onchange="handleTxSortChange()" style="padding: 6px 10px; font-size: 15px;">
+      <option value="date-desc" selected>📅 Datum: Neueste zuerst (Neu bis Alt)</option>
+      <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
+      <option value="alpha-asc">🔤 Name: Alphabetisch (A bis Z)</option>
+      <option value="alpha-desc">🔤 Name: Alphabetisch (Z bis A)</option>
+      <option value="amount-desc">💶 Betrag: Höchste zuerst (Groß bis Klein)</option>
+      <option value="amount-asc">💶 Betrag: Niedrigste zuerst (Klein bis Groß)</option>
+      <option value="category-asc">🏷️ Kategorie: Alphabetisch (A bis Z)</option>
     </select>
   </div>
 </div>
@@ -1430,7 +1484,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="stat-big-val" id="card-month-income" style="color: var(--accent-income);">+ 0,00 €</div>
 </div>
 
-<details class="accessible-accordion" id="details-income-list" open>
+<details class="accessible-accordion" id="details-income-list">
 <summary class="accordion-summary" aria-label="Alle Einnahmen ausklappen oder einklappen">
 <span>📋<strong id="details-income-summary-text">Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
 </summary>
@@ -1452,7 +1506,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="stat-big-val" id="card-month-expense" style="color: var(--accent-expense);">- 0,00 €</div>
 </div>
 
-<details class="accessible-accordion" id="details-expense-list" open>
+<details class="accessible-accordion" id="details-expense-list">
 <summary class="accordion-summary" aria-label="Alle Ausgaben ausklappen oder einklappen">
 <span>📋<strong id="details-expense-summary-text">Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)</strong></span>
 </summary>
@@ -1460,6 +1514,28 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- Wird per JS befüllt -->
 </div>
 </details>
+</div>
+</section>
+
+<!-- 3b. DANN: LAUFENDE KREDITE & RATENKÄUFE -->
+<section class="overview-section" aria-labelledby="section-credit-heading">
+<div class="section-card">
+  <div class="card-header-flex">
+    <div>
+      <h3 id="section-credit-heading" class="section-title" style="margin-bottom: 2px;">💳 Laufende Kredite, Ratenkäufe &amp; Finanzierungen</h3>
+      <span class="sub-counter" id="credit-summary-subtext">0 aktive Kredite</span>
+    </div>
+    <div class="stat-big-val" id="card-month-credit" style="color: #E65100;">0,00 € Rest</div>
+  </div>
+
+  <details class="accessible-accordion" id="details-credit-list">
+    <summary class="accordion-summary" aria-label="Alle Kredite und Ratenkäufe ausklappen oder einklappen">
+      <span>📋<strong id="details-credit-summary-text">Laufende Kredite &amp; Ratenpläne anzeigen</strong></span>
+    </summary>
+    <div class="accordion-content" id="overview-credit-items-feed" style="padding-top: 10px;">
+      <!-- Wird per JS befüllt -->
+    </div>
+  </details>
 </div>
 </section>
 
@@ -1570,7 +1646,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <label for="exp-amount" class="field-label">
 <strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">* (Pflichtfeld)</span>
 </label>
-<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off">
+<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()">
 </div>
 
 <div class="form-group">
@@ -1578,14 +1654,126 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <strong>Art & Häufigkeit der Ausgabe</strong>
 </label>
 <select id="exp-frequency" class="large-select" onchange="toggleExpenseFrequencyFields()">
-<option value="once" selected>Einmalig (bereits gekauft oder für einen bestimmten Tag)</option>
-<option value="planned">🎯 Geplante einmalige Zukunftsausgabe (Wunsch / Anschaffung)</option>
-<option value="weekly">📅 Wöchentlich (Jede Woche)</option>
-<option value="monthly">📅 Monatlich (Jeden Monat)</option>
-<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise)</option>
+<option value="once" selected>Einmalige Ausgabe (Sofort oder an bestimmtem Tag bezahlt)</option>
+<option value="installment">💳 Ratenzahlung &amp; Kredit (In monatlichen Raten abbezahlen)</option>
+<option value="monthly">📅 Monatlich regelmäßig (Dauerauftrag, Miete, Abo, Fixkosten)</option>
+<option value="planned">🎯 Geplante Zukunftsausgabe (Vormerkung für später)</option>
+<option value="weekly">📅 Wöchentlich regelmäßig</option>
+<option value="quarterly">🔄 Alle 3 Monate (Quartalsweise, z. B. GEZ)</option>
 <option value="halfyear">📈 Alle 6 Monate (Halbjährlich)</option>
-<option value="yearly">🗓Jährlich (1x im Jahr)</option>
+<option value="yearly">🗓️ Jährlich regelmäßig (z. B. Kfz-Steuer, Jahresabo)</option>
 </select>
+</div>
+
+<!-- RATENZAHLUNGS-RECHNER -->
+<div id="exp-installment-fields" class="settings-box" style="display: none; border-left: 8px solid #FF9800; margin-top: 10px; margin-bottom: 14px; background: rgba(255, 152, 0, 0.05); padding: 14px; border-radius: 8px;">
+  <h4 style="margin-top: 0; margin-bottom: 8px; color: #E65100;">💳 Ratenkauf &amp; Finanzierungs-Rechner</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Der Kaufpreis von oben wird automatisch übernommen. Wähle einfach Laufzeit und Art:</p>
+  
+  <div class="form-row-2">
+    <div class="form-group">
+      <label class="field-label"><strong>Laufzeit &amp; Raten-Intervall:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <div style="display: flex; gap: 8px;">
+        <input type="number" id="exp-installment-duration-val" class="large-input" min="1" value="12" style="max-width: 90px;" oninput="handleInstallmentCalculation()">
+        <select id="exp-installment-duration-unit" class="large-select" onchange="handleInstallmentCalculation()" style="flex: 1;">
+          <option value="months" selected>Monate (Monatliche Raten)</option>
+          <option value="weeks">Wochen (Wöchentliche Raten)</option>
+          <option value="years">Jahre (Jährliche Raten)</option>
+          <option value="days">Tage (Tägliche Raten)</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="exp-installment-type" class="field-label"><strong>Art der Finanzierung:</strong></label>
+      <select id="exp-installment-type" class="large-select" onchange="handleInstallmentTypeChange()">
+        <option value="ratenkauf" selected>🛒 Ratenkauf / Ratenzahlung</option>
+        <option value="kredit">🏦 Bankkredit / Ratenkredit</option>
+        <option value="finanzierung_0">🏷️ 0%-Finanzierung (Zinsfrei)</option>
+        <option value="darlehen">🤝 Privates Darlehen (Familie / Freunde)</option>
+        <option value="leasing">🚗 Leasing (Auto, E-Bike, Technik)</option>
+        <option value="dispo">💳 Dispokredit / Rahmenkredit</option>
+        <option value="sonstiges">💳 Sonstige Finanzierung</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group" style="margin-top: 8px; margin-bottom: 6px;">
+    <label for="exp-installment-rate" class="field-label"><strong>Berechnete monatliche Rate (€):</strong></label>
+    <input type="number" step="0.01" min="0.01" id="exp-installment-rate" class="large-input" style="font-weight: bold; color: #D32F2F;" placeholder="0,00 €" oninput="handleInstallmentRateManualChange()">
+  </div>
+
+  <div id="exp-installment-calc-hint" style="font-size: 13px; font-weight: bold; color: #E65100; margin-top: 6px; padding: 6px 10px; background: rgba(255, 152, 0, 0.1); border-radius: 4px;" aria-live="polite">
+    Gib oben den Kaufbetrag ein.
+  </div>
+
+  <!-- AUSKLAPPBARE ZUSATZOPTIONEN (NUR BEI BEDARF, NICHT WÜST) -->
+  <details class="accessible-accordion" id="details-installment-advanced" style="margin-top: 12px; border: 1px dashed #FF9800; border-radius: 6px; padding: 6px 10px; background: rgba(255,255,255,0.7);">
+    <summary class="accordion-summary" style="font-size: 13px; cursor: pointer; color: #E65100;">
+      <span>⚙️ <strong>Weitere Optionen (Anbieter, Anzahlung, Zinsen, Schlussrate)</strong></span>
+    </summary>
+    <div class="accordion-content" style="padding-top: 10px;">
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="exp-installment-provider" class="field-label"><strong>Anbieter / Zahlungsdienst:</strong></label>
+          <select id="exp-installment-provider" class="large-select" onchange="handleInstallmentCalculation()">
+            <option value="paypal" selected>🅿️ PayPal Ratenzahlung</option>
+            <option value="klarna">🛍️ Klarna (Slice It / Flexibel)</option>
+            <option value="amazon">📦 Amazon Ratenzahlung</option>
+            <option value="santander">🏦 Santander Consumer Bank</option>
+            <option value="targobank">🏦 Targobank</option>
+            <option value="consors">🏦 Consors Finanz</option>
+            <option value="hausbank">🏛️ Hausbank (Sparkasse, VR-Bank, ING...)</option>
+            <option value="apple_mediamarkt">📱 MediaMarkt-Saturn / Apple</option>
+            <option value="privat">🤝 Privatkredit</option>
+            <option value="sonstiger">💳 Sonstiger Anbieter</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="exp-installment-downpayment" class="field-label"><strong>Anzahlung zu Beginn (€):</strong></label>
+          <input type="number" step="0.01" min="0" id="exp-installment-downpayment" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+        </div>
+      </div>
+
+      <div class="form-row-2" style="margin-top: 8px;">
+        <div class="form-group" id="group-installment-interest">
+          <label for="exp-installment-interest" class="field-label"><strong>Zinsen / Gebühren (optional):</strong></label>
+          <div style="display: flex; gap: 6px;">
+            <input type="number" step="0.01" min="0" id="exp-installment-interest" class="large-input" placeholder="0" oninput="handleInstallmentCalculation()" style="flex: 1;">
+            <select id="exp-installment-interest-type" class="large-select" onchange="handleInstallmentCalculation()" style="flex: 1;">
+              <option value="percent" selected>% p. a.</option>
+              <option value="euro">€ Gesamt</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" id="group-installment-balloon">
+          <label for="exp-installment-balloon" class="field-label"><strong>Schlussrate / Restwert (€):</strong></label>
+          <input type="number" step="0.01" min="0" id="exp-installment-balloon" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+        </div>
+      </div>
+
+      <div class="form-row-2" style="margin-top: 8px;">
+        <div class="form-group">
+          <label for="exp-installment-first-due" class="field-label"><strong>Erste Rate fällig:</strong></label>
+          <select id="exp-installment-first-due" class="large-select">
+            <option value="now" selected>Sofort am Kauftag (Standard)</option>
+            <option value="days30">In 30 Tagen (Zahlpause)</option>
+            <option value="days60">In 60 Tagen</option>
+            <option value="days90">In 90 Tagen (3 Monate Pause)</option>
+          </select>
+        </div>
+        <div class="form-group" style="display: flex; flex-direction: column; justify-content: center;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 14px; font-size: 13px;">
+            <input type="checkbox" id="exp-installment-special-repay" checked>
+            <span>Kostenlose Sondertilgung erlaubt</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-top: 6px; font-size: 13px;">
+            <input type="checkbox" id="exp-installment-pause-allowed">
+            <span>Ratenpause vertraglich möglich</span>
+          </label>
+        </div>
+      </div>
+    </div>
+  </details>
 </div>
 
 <div class="form-group" id="exp-account-group">
@@ -1660,19 +1848,32 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div class="form-group" id="exp-date-group">
-<label for="exp-date" class="field-label">
-<strong>An welchem Tag (Datum)?</strong>
-</label>
-<input type="date" id="exp-date" class="large-input" onchange="autoUpdateFrequencyByDate('exp')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="exp-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Ausgabe (Kaufdatum):</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')" required>
 </div>
 
 <div id="exp-recurring-details" style="display: none;">
 <div class="form-row-2">
 <div class="form-group" id="exp-month-day-group">
-<label for="exp-rec-day" class="field-label">
-<strong>An welchem Tag des Monats? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="exp-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Fälligkeitstag im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('exp', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1" aria-label="Fälligkeitstag im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="exp-weekday-group" style="display: none;">
 <label for="exp-rec-weekday" class="field-label">
@@ -1794,6 +1995,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Verkäufe, Gebrauchtwaren & Erstattungen">Verkäufe, Gebrauchtwaren & Erstattungen</option>
 <option value="Zinsen, Dividenden, Miete & Kapital">Zinsen, Dividenden, Miete & Kapital</option>
 <option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
+<option value="Nebenjob, Minijob & Freiberufliche Projekte">Nebenjob, Minijob & Freiberufliche Projekte</option>
+<option value="Kreatives, Musik, Kunst & Content Creation">Kreatives, Musik, Kunst & Content Creation</option>
+<option value="Krypto, Staking & Web3-Erträge">Krypto, Staking & Web3-Erträge</option>
+<option value="Cashback, Prämien & Treueprogramme">Cashback, Prämien & Treueprogramme</option>
+<option value="Erstattungen, Steuern & Kautionen">Erstattungen, Steuern & Kautionen</option>
+<option value="Private Rückzahlungen & Kostenbeteiligungen">Private Rückzahlungen & Kostenbeteiligungen</option>
+<option value="Vermietung, Verpachtung & Carsharing">Vermietung, Verpachtung & Carsharing</option>
 </select>
 </div>
 
@@ -1820,18 +2028,31 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div class="form-group" id="inc-date-group">
-<label for="inc-date" class="field-label">
-<strong>Wann (Datum)?</strong>
-</label>
-<input type="date" id="inc-date" class="large-input" onchange="autoUpdateFrequencyByDate('inc')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="inc-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Einnahme (Geldeingang):</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')" required>
 </div>
 
 <div id="inc-recurring-details" style="display: none;">
 <div class="form-group" id="inc-month-day-group">
-<label for="inc-rec-day" class="field-label">
-<strong>An welchem Tag des Monats kommt das Geld? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="inc-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Tag des Geldeingangs im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('inc', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1" aria-label="Tag des Geldeingangs im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="inc-weekday-group" style="display: none;">
 <label for="inc-rec-weekday" class="field-label">
@@ -1901,7 +2122,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-row-2">
 <div class="form-group">
 <label for="trf-from" class="field-label"><strong>Von welchem Konto abbuchen (Quelle)?</strong></label>
-<select id="trf-from" class="large-select" required>
+<select id="trf-from" class="large-select" required onchange="handleTransferAccountsChange()">
 <option value="bank" selected>🏦 Bankkonto / Girokonto</option>
 <option value="paypal">🅿PayPal Guthaben</option>
 <option value="cash">💵 Bargeld</option>
@@ -1911,7 +2132,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div class="form-group">
 <label for="trf-to" class="field-label"><strong>Auf welches Konto einzahlen (Ziel / Sparen)?</strong></label>
-<select id="trf-to" class="large-select" required>
+<select id="trf-to" class="large-select" required onchange="handleTransferAccountsChange()">
 <option value="savings" selected>📈 Tagesgeldkonto (Sparen / Notgroschen)</option>
 <option value="paypal">🅿PayPal Guthaben</option>
 <option value="bank">🏦 Bankkonto / Girokonto</option>
@@ -1920,17 +2141,48 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- OPTIONALE SPARTÖPFE FÜR QUELLE & ZIEL -->
+<div class="form-row-2" style="margin-top: 4px;">
+<div class="form-group" id="group-trf-from-pot" style="display: none;">
+  <label for="trf-from-pot" class="field-label"><strong>Aus Spartopf entnehmen (optional):</strong></label>
+  <select id="trf-from-pot" class="large-select">
+    <option value="">(Kein Spartopf - Allgemeines Kontoguthaben)</option>
+  </select>
+</div>
+<div class="form-group" id="group-trf-to-pot" style="display: none;">
+  <label for="trf-to-pot" class="field-label"><strong>🎯 In Spartopf einzahlen (optional):</strong></label>
+  <select id="trf-to-pot" class="large-select">
+    <option value="">(Kein Spartopf - Allgemeines Kontoguthaben)</option>
+  </select>
+</div>
+</div>
+
 <div class="form-group" id="trf-date-group">
-<label for="trf-date" class="field-label"><strong>Datum der Umbuchung</strong></label>
-<input type="date" id="trf-date" class="large-input" onchange="autoUpdateFrequencyByDate('trf')" required>
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="trf-date" class="field-label" style="margin: 0;">
+      <strong>📅 Datum der Umbuchung:</strong>
+    </label>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('trf', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Umbuchungsdatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickDate('trf', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Umbuchungsdatum auf Gestern setzen">Gestern</button>
+    </div>
+  </div>
+  <input type="date" id="trf-date" class="large-input" aria-label="Datum der Umbuchung" onchange="autoUpdateFrequencyByDate('trf')" required>
 </div>
 
 <div id="trf-recurring-details" style="display: none;">
 <div class="form-group" id="trf-month-day-group">
-<label for="trf-rec-day" class="field-label">
-<strong>An welchem Tag des Monats automatisch sparen? (1 - 31)</strong>
-</label>
-<input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="trf-rec-day" class="field-label" style="margin: 0;">
+      <strong>📅 Sparplan-Ausführungstag im Monat (1 bis 31):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 1)" style="padding: 2px 6px; font-size: 11px;">1.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 15)" style="padding: 2px 6px; font-size: 11px;">15.</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickRecDay('trf', 28)" style="padding: 2px 6px; font-size: 11px;">Monatsende</button>
+    </div>
+  </div>
+  <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1" aria-label="Ausführungstag im Monat als Zahl von 1 bis 31">
 </div>
 <div class="form-group" id="trf-weekday-group" style="display: none;">
 <label for="trf-rec-weekday" class="field-label">
@@ -2041,6 +2293,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
  
+
+
 <!-- MONATS-BUDGETS & AUSGABEN-LIMITS -->
 <section class="settings-box" aria-labelledby="heading-budgets-view" style="border-left: 8px solid #FF9800; margin-top: 18px;">
 <h3 id="heading-budgets-view" data-emoji="🎯">Monats-Budgets &amp; Ausgaben-Limits</h3>
@@ -2281,14 +2535,206 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </section>
 
+<!-- 3. SPARTÖPFE & SPARZIELE DER KONTEN -->
+<section class="settings-box" style="border-left: 8px solid #9C27B0; margin-top: 24px;">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+  <div>
+    <h3 data-emoji="🎯" style="margin-bottom: 4px;">🎯 Spartöpfe &amp; Sparziele deiner Konten</h3>
+    <p class="field-hint" style="margin: 0;">Erstelle konkrete Spartöpfe (z. B. Notgroschen, Urlaub, Neues Auto) und ordne sie deinen Sparkonten oder Girokonten zu:</p>
+  </div>
+</div>
+
+<!-- FORMULAR NEUER SPARTOPF -->
+<form id="form-add-saving-pot" onsubmit="handleAddSavingPot(event)" class="accessible-form" style="margin-top: 14px; background: var(--card-bg, #fff); border: 2px solid var(--border-color); border-radius: 8px; padding: 16px;">
+  <h4 style="margin-top: 0; margin-bottom: 10px; font-size: 16px;">➕ Neuen Spartopf anlegen</h4>
+  
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="pot-name" class="field-label"><strong>Name des Spartopfs / Sparziel:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="pot-name" class="large-input" placeholder="z. B. Urlaub Ostsee, Notgroschen, Neues E-Bike..." required autocomplete="off">
+    </div>
+    <div class="form-group">
+      <label for="pot-parent-account" class="field-label"><strong>Zugeordnetes Hauptkonto:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <select id="pot-parent-account" class="large-select" required>
+        <!-- Dynamisch befüllt -->
+      </select>
+    </div>
+  </div>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="pot-current-amount" class="field-label"><strong>Bereits angesparter Startbetrag (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="pot-current-amount" class="large-input" placeholder="0,00" value="0.00">
+    </div>
+    <div class="form-group">
+      <label for="pot-target-amount" class="field-label"><strong>Sparziel / Zielsumme in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="number" step="0.01" min="0.01" id="pot-target-amount" class="large-input" placeholder="z. B. 1000 oder 2500" required>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="pot-note" class="field-label"><strong>Notiz / Zweck (optional):</strong></label>
+    <input type="text" id="pot-note" class="large-input" placeholder="z. B. Bis Sommer 2027 monatlich 50 € sparen">
+  </div>
+
+  <div class="form-actions" style="margin-top: 10px;">
+    <button type="submit" class="btn btn-primary" style="background-color: #9C27B0; border-color: #7B1FA2; width: 100%;">
+      <span>🎯 <strong>Spartopf erstellen</strong></span>
+    </button>
+  </div>
+</form>
+
+<div style="font-size: 13px; color: var(--text-muted); margin-top: 10px; margin-bottom: 8px; padding: 8px 12px; background: rgba(156, 39, 176, 0.06); border-left: 4px solid #9C27B0; border-radius: 4px;">
+  💡 <strong>Hinweis:</strong> Einzahlungen in Spartöpfe und Entnahmen erfolgen verbindlich und sauber nachvollziehbar über <strong>Reiter 4 (Umbuchen &amp; Sparen)</strong>.
+</div>
+
+<!-- LISTE DER SPARTÖPFE -->
+<div id="tab-saving-pots-list" style="margin-top: 16px;">
+  <!-- Per JS befüllt -->
+</div>
+</section>
+
 </div>
 </div>
+
+<!-- =======================================================================
+ ANSICHT 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
+ ======================================================================= -->
+<div id="view-wishlist" class="view-panel" role="tabpanel" aria-labelledby="tab-wishlist" style="display: none;">
+<div class="form-container" style="max-width: 920px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+    <div>
+      <h2 class="view-heading" tabindex="-1" id="heading-wishlist-view" data-emoji="🎁" style="margin-bottom: 4px;">🎁 Wunschliste, Sparziele &amp; Anschaffungen</h2>
+      <p class="view-sub" style="margin: 0;">Plane Anschaffungen, behalte den Überblick über deine Ersparnisse und erfülle Wünsche direkt als Ausgabe.</p>
+    </div>
+  </div>
+
+  <!-- STATISTIK-KARTEN -->
+  <div class="wishlist-summary-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 20px;">
+    <div class="stat-card" style="border-left: 6px solid #9C27B0; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Offene Wünsche</span>
+      <strong class="stat-val" id="wishlist-stat-count" style="display: block; font-size: 22px; margin-top: 4px;">0 Wünsche</strong>
+    </div>
+    <div class="stat-card" style="border-left: 6px solid #2196F3; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Gesamtwert aller Wünsche</span>
+      <strong class="stat-val" id="wishlist-stat-total" style="display: block; font-size: 22px; margin-top: 4px; color: #1976D2;">0,00 €</strong>
+    </div>
+    <div class="stat-card" style="border-left: 6px solid #4CAF50; background: var(--card-bg, #fff); padding: 14px; border-radius: 8px; border: 1px solid var(--border-color);">
+      <span class="stat-title" style="font-size: 13px; color: var(--text-muted, #666); font-weight: bold;">Bereits sofort leistbar</span>
+      <strong class="stat-val" id="wishlist-stat-affordable" style="display: block; font-size: 22px; margin-top: 4px; color: #2E7D32;">0 Wünsche</strong>
+    </div>
+  </div>
+
+  <!-- NEUEN WUNSCH EINTRAGEN -->
+  <div class="settings-box" style="border-left: 8px solid #9C27B0; margin-bottom: 24px;">
+    <h3 data-emoji="➕" style="margin-top: 0;">Neuen Wunsch eintragen</h3>
+    <form id="form-add-wish" class="accessible-form" onsubmit="handleAddWish(event)">
+      <div class="form-group" style="margin-bottom: 14px;">
+        <label for="wish-type" class="field-label"><strong>Art des Wunsches / Kostenstruktur:</strong></label>
+        <select id="wish-type" class="large-select" onchange="handleWishTypeChange()">
+          <option value="once" selected>📦 Einmalige Anschaffung / Kauf (z. B. Laptop, Fahrrad, Reise)</option>
+          <option value="monthly">🔄 Monatliches Abonnement / Vertrag (z. B. Streaming, Fitnessstudio, Software)</option>
+          <option value="quarterly">🔄 Vierteljährliches Abonnement (alle 3 Monate)</option>
+          <option value="halfyear">🔄 Halbjährliches Abonnement (alle 6 Monate)</option>
+          <option value="yearly">🗓 Jährliches Abonnement / Jahresbeitrag (z. B. BahnCard, Club, Prime)</option>
+        </select>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-title" class="field-label"><strong>Wunsch / Dienst / Anschaffung:</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="text" id="wish-title" class="large-input" placeholder="z. B. Netflix, Fitnessstudio, Neuer Laptop..." required autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="wish-amount" class="field-label"><strong id="wish-amount-label">Geschätzte Kosten in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="number" step="0.01" min="0.01" id="wish-amount" class="large-input" placeholder="z. B. 14.99 oder 450" required autocomplete="off" oninput="handleWishAmountInput()">
+          <div id="wish-amount-calc-hint" style="font-size: 13px; color: #9C27B0; font-weight: bold; margin-top: 4px;" aria-live="polite"></div>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-priority" class="field-label"><strong>Priorität:</strong></label>
+          <select id="wish-priority" class="large-select">
+            <option value="high" selected>⭐⭐⭐ Hohe Priorität (Sehr wichtig)</option>
+            <option value="medium">⭐⭐ Mittlere Priorität (Wichtig)</option>
+            <option value="low">⭐ Geringe Priorität (Schön zu haben)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="wish-category" class="field-label"><strong>Kategorie / Bereich:</strong></label>
+          <select id="wish-category" class="large-select">
+            <option value="Elektronik &amp; Technik" selected>Elektronik &amp; Technik</option>
+            <option value="Urlaub &amp; Reisen">Urlaub &amp; Reisen</option>
+            <option value="Möbel &amp; Wohnen">Möbel &amp; Wohnen</option>
+            <option value="Kleidung &amp; Mode">Kleidung &amp; Mode</option>
+            <option value="Hobby, Sport &amp; Freizeit">Hobby, Sport &amp; Freizeit</option>
+            <option value="Gesundheit &amp; Hilfsmittel">Gesundheit &amp; Hilfsmittel</option>
+            <option value="Bildung &amp; Kurse">Bildung &amp; Kurse</option>
+            <option value="Sonstiges">Sonstiges</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row-2">
+        <div class="form-group">
+          <label for="wish-target-account" class="field-label"><strong>Vorhandenen Spartopf oder Konto auswählen:</strong></label>
+          <select id="wish-target-account" class="large-select" aria-label="Vorhandenen Spartopf oder Konto für Wunsch auswählen">
+            <!-- Dynamisch befüllt -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="wish-target-date" class="field-label"><strong>Ziel-Datum (optional):</strong></label>
+          <input type="date" id="wish-target-date" class="large-input">
+        </div>
+      </div>
+
+
+      <div class="form-group">
+        <label for="wish-note" class="field-label"><strong>Notiz oder Link zum Angebot (optional):</strong></label>
+        <input type="text" id="wish-note" class="large-input" placeholder="z. B. Modell XYZ, Rabattaktion im Oktober...">
+      </div>
+
+      <div class="form-actions" style="margin-top: 14px;">
+        <button type="submit" class="btn btn-primary" style="background-color: #9C27B0; border-color: #7B1FA2; width: 100%;">
+          <span>🎁 <strong>Wunsch zur Liste hinzufügen</strong></span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- INTERAKTIVE LISTE DER WÜNSCHE -->
+  <div class="section-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+      <h3 style="margin: 0;">Deine Wünsche &amp; Sparziele</h3>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <label for="wish-filter-status" class="field-label" style="margin: 0; font-size: 13px;">Filter:</label>
+        <select id="wish-filter-status" class="large-select" onchange="renderWishlist()" style="padding: 4px 8px; font-size: 14px;">
+          <option value="open" selected>Nur offene Wünsche</option>
+          <option value="fulfilled">Nur erfüllte Wünsche</option>
+          <option value="all">Alle Wünsche anzeigen</option>
+        </select>
+        <label for="wish-filter-type" class="field-label" style="margin: 0 0 0 8px; font-size: 13px;">Art:</label>
+        <select id="wish-filter-type" class="large-select" onchange="renderWishlist()" style="padding: 4px 8px; font-size: 14px;">
+          <option value="all" selected>Alle Arten</option>
+          <option value="once">Nur Einmalkäufe</option>
+          <option value="subscriptions">Nur Abos &amp; Verträge</option>
+        </select>
+      </div>
+    </div>
+    <div id="wishlist-items-container">
+      <!-- Dynamisch befüllt -->
+    </div>
+  </div>
+</div>
+</div>
+
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
 <p><strong>Barrierefreie Finanzen v5.3.5.3</strong>– 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
-<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
 </div>
@@ -2298,7 +2744,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v5.3.5.3';
+const CURRENT_APP_VERSION = 'v6.0.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -2356,212 +2802,546 @@ const CATEGORY_ICONS = {
 const CATEGORIES_DB = {
   exp: {
     "Lebensmittel, Supermarkt & Discounter": [
-      "Gesamt / Allgemein", "Aldi Nord", "Aldi Süd", "Lidl", "Rewe", "Edeka", "Kaufland", "Penny", 
-      "Netto Marken-Discount", "Netto mit dem Hund", "Norma", "Globus", "Tegut", "HIT", "Famila", 
-      "Alnatura", "Denns Biomarkt", "Bio Company", "Unverpackt-Laden", 
-      "Asia-Markt / Türkischer Supermarkt", "Bäckerei / Dorfbäcker", "Konditorei", 
-      "Fleischerei / Metzger", "Fischgeschäft", "Wochenmarkt (Obst, Gemüse, Eier)", "Hofladen / Bauernhof", 
-      "Getränkemarkt / Trinkgut", "Sonstiger Supermarkt"
+      "Gesamt / Allgemein",
+      "Aldi Nord",
+      "Aldi Süd",
+      "Lidl",
+      "Rewe",
+      "Edeka",
+      "Kaufland",
+      "Penny",
+      "Netto Marken-Discount",
+      "Netto mit dem Hund",
+      "Norma",
+      "Globus",
+      "Tegut",
+      "HIT",
+      "Famila",
+      "Alnatura",
+      "Denns Biomarkt",
+      "Bio Company",
+      "Unverpackt-Laden",
+      "Asia-Markt / Türkischer Supermarkt",
+      "Bäckerei / Dorfbäcker",
+      "Konditorei",
+      "Fleischerei / Metzger",
+      "Fischgeschäft",
+      "Wochenmarkt (Obst, Gemüse, Eier)",
+      "Hofladen / Bauernhof",
+      "Getränkemarkt / Trinkgut",
+      "Sonstiger Supermarkt"
     ],
     "Miete, Wohnen & Nebenkosten": [
-      "Kaltmiete", "Warmmiete", "Mietkaution", "Nebenkosten Vorauszahlung / Nachzahlung", "Hausgeld (Eigentümer)", 
-      "Rundfunkbeitrag (GEZ / ARD ZDF)", "Strom (Stadtwerke / Energie)", "Gas & Fernwärme", 
-      "Heizöl / Pellets / Brennholz", "Wasser & Abwasser", "Müllgebühren / Entsorgung", 
-      "Schornsteinfeger & Wartung", "Hausratversicherung", "Glasversicherung", "Wohngebäudeversicherung", "Hausmeister & Treppenreinigung"
+      "Kaltmiete",
+      "Warmmiete",
+      "Mietkaution",
+      "Nebenkosten Vorauszahlung / Nachzahlung",
+      "Hausgeld (Eigentümer)",
+      "Rundfunkbeitrag (GEZ / ARD ZDF)",
+      "Strom (Stadtwerke / Energie)",
+      "Gas & Fernwärme",
+      "Heizöl / Pellets / Brennholz",
+      "Wasser & Abwasser",
+      "Müllgebühren / Entsorgung",
+      "Schornsteinfeger & Wartung",
+      "Hausratversicherung",
+      "Glasversicherung",
+      "Wohngebäudeversicherung",
+      "Hausmeister & Treppenreinigung"
     ],
     "Haushalt, Möbel, Garten & Handwerker": [
-      "Möbel & Deko (IKEA, Poco, XXXLutz, Mömax)", "Betten, Matratzen & Bettwäsche", 
-      "Waschmaschine, Kühlschrank & Großgeräte", "Kaffeemaschine, Toaster & Küchengeräte", 
-      "Staubsauger & Reinigungsgeräte", "Putzmittel, Waschmittel & Haushaltsbedarf", "Geschirr, Töpfe & Besteck", 
-      "Baumarkt (Obi, Bauhaus, Hornbach, Toom)", "Garten, Balkon, Pflanzen & Blumen", 
-      "Handwerker & Reparaturen (Sanitär, Maler, Elektrik)", "Schlüsseldienst", "Umzugskosten & Transporter mieten"
+      "Möbel & Deko (IKEA, Poco, XXXLutz, Mömax)",
+      "Betten, Matratzen & Bettwäsche",
+      "Waschmaschine, Kühlschrank & Großgeräte",
+      "Kaffeemaschine, Toaster & Küchengeräte",
+      "Staubsauger & Reinigungsgeräte",
+      "Putzmittel, Waschmittel & Haushaltsbedarf",
+      "Geschirr, Töpfe & Besteck",
+      "Baumarkt (Obi, Bauhaus, Hornbach, Toom)",
+      "Garten, Balkon, Pflanzen & Blumen",
+      "Handwerker & Reparaturen (Sanitär, Maler, Elektrik)",
+      "Schlüsseldienst",
+      "Umzugskosten & Transporter mieten"
     ],
     "Mobilität, Auto & Kraftfahrzeuge": [
-      "Tanken (Benzin / Super E10 E5)", "Tanken (Diesel)", "Tanken (Autogas / LPG)", "E-Auto Ladestation / Ladestrom", 
-      "KFZ-Haftpflichtversicherung", "KFZ-Teilkasko / Vollkasko", "KFZ-Steuer (Hauptzollamt)", 
-      "Hauptuntersuchung (TÜV / DEKRA / GTÜ)", "Auto-Werkstatt, Inspektion & Ölwechsel", "Autoreparatur & Ersatzteile", 
-      "Sommerreifen / Winterreifen & Reifenwechsel", "Autowäsche & Autopflege", "Auto-Kauf, Leasing & Autokredit", 
-      "Parkgebühren, Parkhaus & Parkschein", "Autobahn-Maut, Vignette & Umweltplakette", "ADAC / Pannenhilfe Mitgliedschaft", 
+      "Tanken (Benzin / Super E10 E5)",
+      "Tanken (Diesel)",
+      "Tanken (Autogas / LPG)",
+      "E-Auto Ladestation / Ladestrom",
+      "KFZ-Haftpflichtversicherung",
+      "KFZ-Teilkasko / Vollkasko",
+      "KFZ-Steuer (Hauptzollamt)",
+      "Hauptuntersuchung (TÜV / DEKRA / GTÜ)",
+      "Auto-Werkstatt, Inspektion & Ölwechsel",
+      "Autoreparatur & Ersatzteile",
+      "Sommerreifen / Winterreifen & Reifenwechsel",
+      "Autowäsche & Autopflege",
+      "Auto-Kauf, Leasing & Autokredit",
+      "Parkgebühren, Parkhaus & Parkschein",
+      "Autobahn-Maut, Vignette & Umweltplakette",
+      "ADAC / Pannenhilfe Mitgliedschaft",
       "Führerschein & Fahrstunden"
     ],
     "ÖPNV, Bahn, Bus, Flug & Reisen": [
-      "Deutschlandticket (49€ / Monatskarte)", "Bus, Straßenbahn & U-Bahn (Einzeltickets / Streifen)", 
-      "Deutsche Bahn (ICE / IC / Regio)", "BahnCard (25 / 50 / 100)", "Fernbus (Flixbus / Flixtrain)", 
-      "Taxi, Uber, Bolt & FreeNow", "E-Scooter & Leihrad (Tier, Bolt, Lime)", "Eigenes Fahrrad / E-Bike Reparatur & Zubehör", 
-      "Flugtickets & Airline-Gebühren", "Hotel, Ferienwohnung & Airbnb", "Pauschalreise / Urlaub", 
-      "Auslands-Krankenversicherung", "Kurtaxe & Reisekosten"
+      "Deutschlandticket (49€ / Monatskarte)",
+      "Bus, Straßenbahn & U-Bahn (Einzeltickets / Streifen)",
+      "Deutsche Bahn (ICE / IC / Regio)",
+      "BahnCard (25 / 50 / 100)",
+      "Fernbus (Flixbus / Flixtrain)",
+      "Taxi, Uber, Bolt & FreeNow",
+      "E-Scooter & Leihrad (Tier, Bolt, Lime)",
+      "Eigenes Fahrrad / E-Bike Reparatur & Zubehör",
+      "Flugtickets & Airline-Gebühren",
+      "Hotel, Ferienwohnung & Airbnb",
+      "Pauschalreise / Urlaub",
+      "Auslands-Krankenversicherung",
+      "Kurtaxe & Reisekosten"
     ],
     "Restaurants, Cafés & Gastronomie": [
-      "Restaurant (Abendessen / Mittagessen)", "Gasthaus / Brauhaus / Biergarten", "Pizzeria / Italienisches Restaurant", 
-      "Asiatisches / Griechisches / Mexikanisches Restaurant", "Burger-Restaurant & Steakhouse", 
-      "Imbiss, Döner, Currywurst & Pommes", "Fast Food (McDonald's, Burger King, KFC, Subway)", 
-      "Café, Bäckerei-Frühstück & Kaffeepause", "Eisdiele & Eisbecher", "Mensa, Betriebskantine & Schulkantine", 
-      "Bar, Kneipe, Pub & Bierstube", "Club, Diskothek & Party", "Snacks, Süßigkeiten & Energy Drinks"
+      "Restaurant (Abendessen / Mittagessen)",
+      "Gasthaus / Brauhaus / Biergarten",
+      "Pizzeria / Italienisches Restaurant",
+      "Asiatisches / Griechisches / Mexikanisches Restaurant",
+      "Burger-Restaurant & Steakhouse",
+      "Imbiss, Döner, Currywurst & Pommes",
+      "Fast Food (McDonald's, Burger King, KFC, Subway)",
+      "Café, Bäckerei-Frühstück & Kaffeepause",
+      "Eisdiele & Eisbecher",
+      "Mensa, Betriebskantine & Schulkantine",
+      "Bar, Kneipe, Pub & Bierstube",
+      "Club, Diskothek & Party",
+      "Snacks, Süßigkeiten & Energy Drinks"
     ],
     "Lieferdienste & Essen bestellen": [
-      "Lieferando", "Uber Eats", "Wolt", "Pizza-Lieferdienst vor Ort", "Asia-Lieferdienst", 
-      "Burger & Döner Lieferservice", "Getränke-Lieferdienst (Flaschenpost)", "Kochboxen (HelloFresh, Marley Spoon)"
+      "Lieferando",
+      "Uber Eats",
+      "Wolt",
+      "Pizza-Lieferdienst vor Ort",
+      "Asia-Lieferdienst",
+      "Burger & Döner Lieferservice",
+      "Getränke-Lieferdienst (Flaschenpost)",
+      "Kochboxen (HelloFresh, Marley Spoon)"
     ],
     "Streaming, Musik, TV & Unterhaltung": [
-      "Netflix", "Amazon Prime Video / Music", "Spotify", "Apple Music / Apple One", "Disney+", 
-      "YouTube Premium / Music", "Paramount+", "WOW / Sky Ticket", "DAZN", "RTL+ / Joyn PLUS+", "Crunchyroll", 
-      "Audible / Hörbücher", "Deezer / Tidal", "Kino, Tickets & Popcorn", "Theater, Oper, Ballett & Musical", 
-      "Konzerte, Festivals & Live-Events", "Comedy & Kabarett", "Freizeitpark (Phantasialand, Europa-Park, Heide Park)", 
-      "Zoo, Tierpark, Aquarium & Botanischer Garten", "Museum, Ausstellungen & Sehenswürdigkeiten"
+      "Netflix",
+      "Amazon Prime Video / Music",
+      "Spotify",
+      "Apple Music / Apple One",
+      "Disney+",
+      "YouTube Premium / Music",
+      "Paramount+",
+      "WOW / Sky Ticket",
+      "DAZN",
+      "RTL+ / Joyn PLUS+",
+      "Crunchyroll",
+      "Audible / Hörbücher",
+      "Deezer / Tidal",
+      "Kino, Tickets & Popcorn",
+      "Theater, Oper, Ballett & Musical",
+      "Konzerte, Festivals & Live-Events",
+      "Comedy & Kabarett",
+      "Freizeitpark (Phantasialand, Europa-Park, Heide Park)",
+      "Zoo, Tierpark, Aquarium & Botanischer Garten",
+      "Museum, Ausstellungen & Sehenswürdigkeiten"
     ],
     "Gaming, Computer & Konsolen": [
-      "Steam & PC-Spiele", "PlayStation Plus (PSN / PS Store)", "Xbox Game Pass & Microsoft Store", 
-      "Nintendo Switch Online & eShop", "In-Game-Käufe, Battle Pass & V-Bucks", "Epic Games / GOG / EA App", 
-      "Computer-Hardware (Grafikkarte, CPU, RAM)", "Gaming-Zubehör (Tastatur, Maus, Headset, Controller)", 
-      "Gaming-Monitor & Gaming-Stuhl", "Spielekonsole (PS5, Xbox Series X, Nintendo Switch, Steam Deck)", 
-      "Mobile Games & App-Käufe (Google Play / App Store)", "Discord Nitro & Twitch Subs"
+      "Steam & PC-Spiele",
+      "PlayStation Plus (PSN / PS Store)",
+      "Xbox Game Pass & Microsoft Store",
+      "Nintendo Switch Online & eShop",
+      "In-Game-Käufe, Battle Pass & V-Bucks",
+      "Epic Games / GOG / EA App",
+      "Computer-Hardware (Grafikkarte, CPU, RAM)",
+      "Gaming-Zubehör (Tastatur, Maus, Headset, Controller)",
+      "Gaming-Monitor & Gaming-Stuhl",
+      "Spielekonsole (PS5, Xbox Series X, Nintendo Switch, Steam Deck)",
+      "Mobile Games & App-Käufe (Google Play / App Store)",
+      "Discord Nitro & Twitch Subs"
     ],
     "Elektronik, Internet, Handy & Software": [
-      "Smartphone / iPhone Kauf", "Handyvertrag & Monatstarif", 
-      "Prepaid-Guthaben (Telekom, Vodafone, o2, Aldi Talk, Congstar, Blau)", "Tablet / iPad & Zubehör", 
-      "Laptop / Notebook & Zubehör", "Festnetz, Internet & DSL / Glasfaser (Telekom, Vodafone, 1&1, o2)", 
-      "WLAN-Router & Netzwerk (FRITZ!Box)", "Fernseher, Soundbar & Heimkino", "Smart Home (Alexa, Google Nest, Hue)", 
-      "Cloud-Speicher (iCloud, Google One, OneDrive, Dropbox)", "Microsoft 365 / Office Abo", 
-      "Antivirus & VPN Software", "Software-Lizenzen", "Druckertinte, Toner & Papier", "Elektronik-Reparatur"
+      "Smartphone / iPhone Kauf",
+      "Handyvertrag & Monatstarif",
+      "Prepaid-Guthaben (Telekom, Vodafone, o2, Aldi Talk, Congstar, Blau)",
+      "Tablet / iPad & Zubehör",
+      "Laptop / Notebook & Zubehör",
+      "Festnetz, Internet & DSL / Glasfaser (Telekom, Vodafone, 1&1, o2)",
+      "WLAN-Router & Netzwerk (FRITZ!Box)",
+      "Fernseher, Soundbar & Heimkino",
+      "Smart Home (Alexa, Google Nest, Hue)",
+      "Cloud-Speicher (iCloud, Google One, OneDrive, Dropbox)",
+      "Microsoft 365 / Office Abo",
+      "Antivirus & VPN Software",
+      "Software-Lizenzen",
+      "Druckertinte, Toner & Papier",
+      "Elektronik-Reparatur"
     ],
     "Shopping, Online-Kauf & Marktplätze": [
-      "Amazon Bestellungen", "eBay & Kleinanzeigen Käufe", "Otto Versand", "Zalando, ASOS & Fashion-Shops", 
-      "Temu, AliExpress & Shein", "Kaufland.de / Galaxus / Alternate", "Second-Hand (Vinted, Momox, Rebuy)", 
-      "DHL, Hermes, DPD & Post-Porto / Paketmarken", "Schreibwaren, Bürobedarf & Bastelbedarf", 
-      "Geschenke für Familie & Freunde", "Blumen & Pflanzen"
+      "Amazon Bestellungen",
+      "eBay & Kleinanzeigen Käufe",
+      "Otto Versand",
+      "Zalando, ASOS & Fashion-Shops",
+      "Temu, AliExpress & Shein",
+      "Kaufland.de / Galaxus / Alternate",
+      "Second-Hand (Vinted, Momox, Rebuy)",
+      "DHL, Hermes, DPD & Post-Porto / Paketmarken",
+      "Schreibwaren, Bürobedarf & Bastelbedarf",
+      "Geschenke für Familie & Freunde",
+      "Blumen & Pflanzen"
     ],
     "Kleidung, Schuhe & Mode": [
-      "Alltagskleidung (H&M, C&A, Zara, Primark)", "Markenkleidung (Nike, Adidas, Levi's)", 
-      "Schuhe, Sneaker & Stiefel (Deichmann, Snipes)", "Sportkleidung & Funktionskleidung", 
-      "Winterjacke, Mantel & Regenkleidung", "Unterwäsche, Socken & Nachtwäsche", "Anzug, Kleid & Festkleidung", 
-      "Taschen, Rucksäcke & Koffer", "Schmuck, Uhren & Accessoires", "Schneiderei & Textilreinigung"
+      "Alltagskleidung (H&M, C&A, Zara, Primark)",
+      "Markenkleidung (Nike, Adidas, Levi's)",
+      "Schuhe, Sneaker & Stiefel (Deichmann, Snipes)",
+      "Sportkleidung & Funktionskleidung",
+      "Winterjacke, Mantel & Regenkleidung",
+      "Unterwäsche, Socken & Nachtwäsche",
+      "Anzug, Kleid & Festkleidung",
+      "Taschen, Rucksäcke & Koffer",
+      "Schmuck, Uhren & Accessoires",
+      "Schneiderei & Textilreinigung"
     ],
     "Drogerie, Kosmetik & Körperpflege": [
-      "dm-drogerie markt", "Rossmann", "Müller Drogerie", "Duschgel, Shampoo & Haarpflege", 
-      "Zahnpflege (Zahnbürste, Zahnpasta, Mundspülung)", "Deo, Parfüm & Düfte (Douglas, Sephora)", 
-      "Hautcreme, Sonnencreme & Lotion", "Rasierer, Klingen & Rasierschaum", "Damenhygiene & Pflegeprodukte", 
-      "Make-Up & Kosmetik", "Friseurbesuch (Schneiden, Färben)", "Barbershop / Bartpflege", 
-      "Kosmetikstudio, Fußpflege & Maniküre", "Tattoo & Piercing"
+      "dm-drogerie markt",
+      "Rossmann",
+      "Friseur & Haarpflege",
+      "Zahnpflege & Aufsteckbürsten",
+      "Waschmittel & Haushaltsreiniger",
+      "Müller Drogerie",
+      "Duschgel, Shampoo & Haarpflege",
+      "Zahnpflege (Zahnbürste, Zahnpasta, Mundspülung)",
+      "Deo, Parfüm & Düfte (Douglas, Sephora)",
+      "Hautcreme, Sonnencreme & Lotion",
+      "Rasierer, Klingen & Rasierschaum",
+      "Damenhygiene & Pflegeprodukte",
+      "Make-Up & Kosmetik",
+      "Friseurbesuch (Schneiden, Färben)",
+      "Barbershop / Bartpflege",
+      "Kosmetikstudio, Fußpflege & Maniküre",
+      "Tattoo & Piercing"
     ],
     "Gesundheit, Apotheke & Arzt": [
-      "Apotheke & rezeptfreie Medikamente", "Rezeptgebühren & Zuzahlungen (Krankenkasse)", "Arztbesuch & Praxisgebühren", 
-      "Zahnarzt & Zahnreinigung (PZR)", "Brille, Sehhilfen & Kontaktlinsen (Fielmann, Apollo)", "Hörgeräte, Batterien & Zubehör", 
-      "Physiotherapie, Krankengymnastik & Osteopathie", "Massage & Ergotherapie", "Psychotherapie & Beratung", 
-      "Orthopädische Einlagen & Bandagen", "Krankenhaus-Zuzahlung & Reha", "Nahrungsergänzung, Vitamine & Mineralien", "Erste Hilfe, Pflaster & Verband"
+      "Apotheke & rezeptfreie Medikamente",
+      "Zahnarzt & Professionelle Zahnreinigung (PZR)",
+      "Brille, Sehhilfen & Kontaktlinsen",
+      "Hörgeräte & Zubehör",
+      "Physiotherapie & Osteopathie",
+      "Rezeptgebühren & Zuzahlungen (Krankenkasse)",
+      "Arztbesuch & Praxisgebühren",
+      "Zahnarzt & Zahnreinigung (PZR)",
+      "Brille, Sehhilfen & Kontaktlinsen (Fielmann, Apollo)",
+      "Hörgeräte, Batterien & Zubehör",
+      "Physiotherapie, Krankengymnastik & Osteopathie",
+      "Massage & Ergotherapie",
+      "Psychotherapie & Beratung",
+      "Orthopädische Einlagen & Bandagen",
+      "Krankenhaus-Zuzahlung & Reha",
+      "Nahrungsergänzung, Vitamine & Mineralien",
+      "Erste Hilfe, Pflaster & Verband"
     ],
     "Barrierefreiheit & Hilfsmittel (Blind / Sehbehindert)": [
-      "Weißer Blindenlangstock, Rollspitzen & Taststöcke", "Blindenführhund (Futter, Tierarzt, Geschirr)", 
-      "Elektronische Sehhilfen & Kamerasysteme (Orcam)", "Braille-Zeile & Punktschrift-Zubehör", 
-      "Screenreader-Lizenzen (JAWS) & Sprachausgaben", "Sprechende Haushaltsgeräte (Waage, Uhr, Farberkenner)", 
-      "Vergrößerungssoftware (ZoomText)", "Daisy-Player & Hörbuchgeräte", "Tastbare Markierungen & Signalbänder", "Assistenz- & Begleitdienst"
+      "Weißer Blindenlangstock, Rollspitzen & Taststöcke",
+      "Braille-Zeile & Wartung",
+      "Screenreader-Lizenzen & Software",
+      "Taktile Markierungen & Hilfsmittel",
+      "Sprechende Uhren & Haushaltsgeräte",
+      "Blindenführhund (Futter, Tierarzt, Geschirr)",
+      "Elektronische Sehhilfen & Kamerasysteme (Orcam)",
+      "Braille-Zeile & Punktschrift-Zubehör",
+      "Screenreader-Lizenzen (JAWS) & Sprachausgaben",
+      "Sprechende Haushaltsgeräte (Waage, Uhr, Farberkenner)",
+      "Vergrößerungssoftware (ZoomText)",
+      "Daisy-Player & Hörbuchgeräte",
+      "Tastbare Markierungen & Signalbänder",
+      "Assistenz- & Begleitdienst"
     ],
     "Versicherungen & Vorsorge": [
-      "Gesetzliche Krankenversicherung (Freiwillig versichert)", "Private Krankenversicherung (PKV)", 
-      "Private Pflegezusatzversicherung", "Private Haftpflichtversicherung", "Berufsunfähigkeitsversicherung (BU)", 
-      "Unfallversicherung", "Rechtsschutzversicherung (Verkehr, Beruf, Wohnen)", "Zahnzusatzversicherung", 
-      "Risikolebensversicherung", "Sterbegeldversicherung", "Altersvorsorge (Riester, Rürup, Private Rente)"
+      "Private Haftpflichtversicherung",
+      "Hausratversicherung",
+      "Berufsunfähigkeitsversicherung (BU)",
+      "Zahnzusatzversicherung",
+      "Rechtsschutzversicherung",
+      "Gesetzliche Krankenversicherung (Freiwillig versichert)",
+      "Private Krankenversicherung (PKV)",
+      "Private Pflegezusatzversicherung",
+      "Unfallversicherung",
+      "Rechtsschutzversicherung (Verkehr, Beruf, Wohnen)",
+      "Risikolebensversicherung",
+      "Sterbegeldversicherung",
+      "Altersvorsorge (Riester, Rürup, Private Rente)"
     ],
     "Bank, Finanzen, Kredite & Gebühren": [
-      "Kontoführungsgebühren Girokonto", "Kreditkartengebühren (Mastercard, Visa)", "Dispozinsen & Überziehungszinsen", 
-      "Zinsen & Tilgung Ratenkredit", "Zinsen & Tilgung Baufinanzierung", "Schufa-Auskunft", 
-      "Depotgebühren & Wertpapierkosten", "Fremdautomat-Gebühren", "Notar- & Gerichtskosten", "Steuerberater & Lohnsteuerhilfe"
+      "Kontoführungsgebühren Girokonto",
+      "Kreditkartengebühren (Mastercard, Visa)",
+      "Dispozinsen & Überziehungszinsen",
+      "Zinsen & Tilgung Ratenkredit",
+      "Zinsen & Tilgung Baufinanzierung",
+      "Schufa-Auskunft",
+      "Depotgebühren & Wertpapierkosten",
+      "Fremdautomat-Gebühren",
+      "Notar- & Gerichtskosten",
+      "Steuerberater & Lohnsteuerhilfe"
     ],
     "Haustiere & Tierhaltung": [
-      "Hundefutter / Katzenfutter (Fressnapf, Zooplus, Futterhaus)", "Spezialfutter & Diätnahrung", 
-      "Kleintierfutter (Vögel, Nager, Fische, Reptilien)", "Tierarzt, Impfungen & Behandlungen", 
-      "Tierklinik & OP-Kosten", "Tierkrankenversicherung & OP-Schutz", "Hundesteuer (Stadt / Gemeinde)", 
-      "Hundehalter-Haftpflicht", "Katzenstreu & Einstreu", "Leinen, Geschirre & Halsbänder", 
-      "Kratzbäume & Tierbetten", "Spielzeug für Tiere", "Hundeschule & Tiertraining", "Tierpension & Tiersitter", "Hundesalon & Fellpflege"
+      "Hundefutter / Katzenfutter (Fressnapf, Zooplus, Futterhaus)",
+      "Tierarzt & Tierklinik",
+      "Tier-Medikamente & Wurmkur",
+      "Hundesteuer (Gemeinde)",
+      "Katzenstreu & Zubehör",
+      "Spezialfutter & Diätnahrung",
+      "Kleintierfutter (Vögel, Nager, Fische, Reptilien)",
+      "Tierarzt, Impfungen & Behandlungen",
+      "Tierklinik & OP-Kosten",
+      "Tierkrankenversicherung & OP-Schutz",
+      "Hundesteuer (Stadt / Gemeinde)",
+      "Hundehalter-Haftpflicht",
+      "Katzenstreu & Einstreu",
+      "Leinen, Geschirre & Halsbänder",
+      "Kratzbäume & Tierbetten",
+      "Spielzeug für Tiere",
+      "Hundeschule & Tiertraining",
+      "Tierpension & Tiersitter",
+      "Hundesalon & Fellpflege"
     ],
     "Familie, Kinder & Babybedarf": [
-      "Windeln, Feuchttücher & Babypflege", "Babynahrung & Gläschen", "Babykleidung & Kinderschuhe", 
-      "Kinderwagen, Buggy & Autokindersitz", "Babybett & Kindermöbel", "Spielzeug (Lego, Playmobil)", 
-      "Gesellschaftsspiele & Puzzles", "Kinderbücher & Hörspiele (Tonie-Figuren)", "Kita, Kindergarten & Hortbeiträge", 
-      "Babysitter & Tagesmutter", "Taschengeld an Kinder ausgezahlt"
+      "Windeln, Feuchttücher & Babypflege",
+      "Babynahrung & Gläschen",
+      "Babykleidung & Kinderschuhe",
+      "Kinderwagen, Buggy & Autokindersitz",
+      "Babybett & Kindermöbel",
+      "Spielzeug (Lego, Playmobil)",
+      "Gesellschaftsspiele & Puzzles",
+      "Kinderbücher & Hörspiele (Tonie-Figuren)",
+      "Kita, Kindergarten & Hortbeiträge",
+      "Babysitter & Tagesmutter",
+      "Taschengeld an Kinder ausgezahlt"
     ],
     "Schule, Ausbildung & Studium": [
-      "Schulranzen, Rucksack & Mäppchen", "Schulbücher, Hefte & Arbeitshefte", "Stifte, Zirkel & Taschenrechner", 
-      "Klassenfahrten & Schulausflüge", "Nachhilfe (Studienkreis, Schülerhilfe)", "Musikschule & Instrumente", 
-      "Semesterbeitrag Universität / FH", "Fachbücher & Studienmaterial", "Prüfungsgebühren & Zertifikate", "Weiterbildung & VHS-Kurse"
+      "Schulranzen, Rucksack & Mäppchen",
+      "Schulbücher, Hefte & Arbeitshefte",
+      "Stifte, Zirkel & Taschenrechner",
+      "Klassenfahrten & Schulausflüge",
+      "Nachhilfe (Studienkreis, Schülerhilfe)",
+      "Musikschule & Instrumente",
+      "Semesterbeitrag Universität / FH",
+      "Fachbücher & Studienmaterial",
+      "Prüfungsgebühren & Zertifikate",
+      "Weiterbildung & VHS-Kurse"
     ],
     "Sport, Fitness, Verein & Hobbys": [
-      "Fitnessstudio (McFit, FitX, Clever Fit, John Reed)", "Sportverein (Fußball, Tennis, Turnen)", 
-      "Schwimmbad & Sauna", "Kletterhalle & Yoga-Studio", "Sportausrüstung (Bälle, Hanteln, Matte)", 
-      "Sportschuhe & Laufschuhe", "Sportnahrung & Protein", "Blinden- und Sehbehindertenverein (DBSV / PRO RETINA)", 
-      "Schützenverein, Karnevalsverein & Club", "Kleingartenverein / Schrebergarten Pacht", "Hobbys (Modellbau, Handarbeit, Malen, Foto)", "Angelschein & Angelzubehör"
+      "Fitnessstudio (McFit, FitX, Clever Fit, John Reed)",
+      "Sportverein (Fußball, Tennis, Turnen)",
+      "Schwimmbad & Sauna",
+      "Kletterhalle & Yoga-Studio",
+      "Sportausrüstung (Bälle, Hanteln, Matte)",
+      "Sportschuhe & Laufschuhe",
+      "Sportnahrung & Protein",
+      "Blinden- und Sehbehindertenverein (DBSV / PRO RETINA)",
+      "Schützenverein, Karnevalsverein & Club",
+      "Kleingartenverein / Schrebergarten Pacht",
+      "Hobbys (Modellbau, Handarbeit, Malen, Foto)",
+      "Angelschein & Angelzubehör"
     ],
     "Spenden, Gemeinnütziges & Zuwendungen": [
-      "Spende für Blinden- & Sehbehindertenhilfe", "Spende für Menschen in Not (Rotes Kreuz, Notfonds)", 
-      "Spende für Tierschutz / Tierheim", "Spende für Kinderhilfswerke (UNICEF, SOS-Kinderdorf)", 
-      "Spende für Umwelt & Natur (BUND, Greenpeace, NABU)", "Spende für Krebs- & Medizinforschung", 
-      "Spende für Kirche & Religionsgemeinschaften", "Wikipedia & Open-Source Spenden", "Trinkgeld gegeben"
+      "Spende für Blinden- & Sehbehindertenhilfe",
+      "Spende für Menschen in Not (Rotes Kreuz, Notfonds)",
+      "Spende für Tierschutz / Tierheim",
+      "Spende für Kinderhilfswerke (UNICEF, SOS-Kinderdorf)",
+      "Spende für Umwelt & Natur (BUND, Greenpeace, NABU)",
+      "Spende für Krebs- & Medizinforschung",
+      "Spende für Kirche & Religionsgemeinschaften",
+      "Wikipedia & Open-Source Spenden",
+      "Trinkgeld gegeben"
     ],
     "Sonstige Ausgaben & Bargeld": [
-      "Bargeldabhebung am Geldautomaten", "Ausweisgebühren & Bürgeramt", "Passfotos", 
-      "Lotto, Rubbellose & Glücksspiel", "Strafzettel & Knöllchen", "Ersatzbeschaffung (Schlüssel, Karten)", "Sonstige ungeplante Ausgabe"
+      "Bargeldabhebung am Geldautomaten",
+      "Ausweisgebühren & Bürgeramt",
+      "Passfotos",
+      "Lotto, Rubbellose & Glücksspiel",
+      "Strafzettel & Knöllchen",
+      "Ersatzbeschaffung (Schlüssel, Karten)",
+      "Sonstige ungeplante Ausgabe"
     ]
   },
   inc: {
     "Gehalt, Lohn & Beruf": [
-      "Hauptjob Monatsgehalt / Nettolohn", "Ausbildungsvergütung / Lehrlingsgehalt", "Beamtenbesoldung / Grundgehalt", 
-      "Minijob / Nebenjob (538 € steuerfrei)", "Zweitjob / Teilzeitgehalt", "Überstundenvergütung & Zulagen (Nacht, Feiertag)", 
-      "Urlaubsgeld", "Weihnachtsgeld / 13. Gehalt", "Jahresbonus / Leistungsprämie / Provision", 
-      "Trinkgeld (im Beruf erhalten)", "Honorar aus Selbstständigkeit / Freiberuflichkeit", "Werkstudenten-Gehalt", 
-      "Praktikumsvergütung", "Abfindung bei Kündigung", "Kurzarbeitergeld", "Insolvenzgeld"
+      "Hauptjob Monatsgehalt / Nettolohn",
+      "Sonn-, Nacht- & Feiertagszuschläge",
+      "Schichtzulage & Gefahrenzulage",
+      "Fahrtkostenerstattung & Spesen",
+      "Ausbildungsvergütung / Lehrlingsgehalt",
+      "Beamtenbesoldung / Grundgehalt",
+      "Zweitjob / Teilzeitgehalt",
+      "Überstundenvergütung & Zulagen (Nacht, Feiertag)",
+      "Urlaubsgeld",
+      "Weihnachtsgeld / 13. Gehalt",
+      "Jahresbonus / Leistungsprämie / Provision",
+      "Trinkgeld (im Beruf erhalten)",
+      "Honorar aus Selbstständigkeit / Freiberuflichkeit",
+      "Werkstudenten-Gehalt",
+      "Praktikumsvergütung",
+      "Abfindung bei Kündigung",
+      "Kurzarbeitergeld",
+      "Insolvenzgeld"
     ],
     "Staatliche Leistungen, Hilfen & Zuschüsse": [
-      "Landesblindengeld / Blindengeld / Sehbehindertengeld", "Taubblindengeld", 
-      "Pflegegeld (Pflegegrad 1 bis 5 der Pflegekasse)", "Bürgergeld (Regelsatz & Wohnkosten Jobcenter)", 
-      "Arbeitslosengeld I (ALG 1 Agentur für Arbeit)", "Kindergeld (Familienkasse)", "Kinderzuschlag (KiZ)", 
-      "Wohngeld (Mietzuschuss von Wohngeldstelle)", "BAföG (Schüler / Studenten)", "Berufsausbildungsbeihilfe (BAB)", 
-      "Meister-BAföG (Aufstiegs-BAföG)", "Elterngeld / Elterngeld Plus", "Mutterschaftsgeld (Krankenkasse)", 
-      "Krankengeld (Krankenkasse nach 6 Wochen)", "Verletztengeld / Übergangsgeld (BG / DRV)", 
-      "Unterhaltsvorschuss (Jugendamt)", "Grundsicherung im Alter & Erwerbsminderung (Sozialamt)", 
-      "Hilfe zum Lebensunterhalt (Sozialhilfe)", "Heizkostenzuschuss / Einmalige Beihilfe", "Eingliederungshilfe / Persönliches Budget"
+      "Landesblindengeld / Blindengeld / Sehbehindertengeld",
+      "Bildungs- und Teilhabepaket (BuT)",
+      "Heizkostenzuschuss",
+      "Taubblindengeld",
+      "Pflegegeld (Pflegegrad 1 bis 5 der Pflegekasse)",
+      "Bürgergeld (Regelsatz & Wohnkosten Jobcenter)",
+      "Arbeitslosengeld I (ALG 1 Agentur für Arbeit)",
+      "Kindergeld (Familienkasse)",
+      "Kinderzuschlag (KiZ)",
+      "Wohngeld (Mietzuschuss von Wohngeldstelle)",
+      "BAföG (Schüler / Studenten)",
+      "Berufsausbildungsbeihilfe (BAB)",
+      "Meister-BAföG (Aufstiegs-BAföG)",
+      "Elterngeld / Elterngeld Plus",
+      "Mutterschaftsgeld (Krankenkasse)",
+      "Krankengeld (Krankenkasse nach 6 Wochen)",
+      "Verletztengeld / Übergangsgeld (BG / DRV)",
+      "Unterhaltsvorschuss (Jugendamt)",
+      "Grundsicherung im Alter & Erwerbsminderung (Sozialamt)",
+      "Hilfe zum Lebensunterhalt (Sozialhilfe)",
+      "Heizkostenzuschuss / Einmalige Beihilfe",
+      "Eingliederungshilfe / Persönliches Budget"
     ],
     "Taschengeld & Private Unterstützung": [
-      "Reguläres Taschengeld (Monatlich / Wöchentlich)", "Taschengeld-Erhöhung / Sonderzahlung", 
-      "Finanzielle Unterstützung von Eltern / Familie", "Barzuschuss für Miete / Lebensunterhalt", 
-      "Unterhalt vom Ex-Partner / Kindesunterhalt", "Fahrtkostenzuschuss von Verwandten", "Sonstiges Taschengeld"
+      "Reguläres Taschengeld (Monatlich / Wöchentlich)",
+      "Taschengeld-Erhöhung / Sonderzahlung",
+      "Finanzielle Unterstützung von Eltern / Familie",
+      "Barzuschuss für Miete / Lebensunterhalt",
+      "Unterhalt vom Ex-Partner / Kindesunterhalt",
+      "Fahrtkostenzuschuss von Verwandten",
+      "Sonstiges Taschengeld"
     ],
     "Spenden, Zuwendungen & Förderungen": [
-      "Private Spende erhalten", "Spende über Spendenaufruf / Crowdfunding (GoFundMe)", "Zuwendung von Stiftungen / Hilfsfonds", 
-      "Stipendium / Studienförderung", "Sponsoring-Gelder", "Schenkung von Verwandten", "Erbschaft / Nachlass-Auszahlung", "Trinkgeld / Dankeschön privat erhalten"
+      "Private Spende erhalten",
+      "Spende über Spendenaufruf / Crowdfunding (GoFundMe)",
+      "Zuwendung von Stiftungen / Hilfsfonds",
+      "Stipendium / Studienförderung",
+      "Sponsoring-Gelder",
+      "Schenkung von Verwandten",
+      "Erbschaft / Nachlass-Auszahlung",
+      "Trinkgeld / Dankeschön privat erhalten"
     ],
     "Geschenke, Boni & Gewinne": [
-      "Geldgeschenk zum Geburtstag", "Geldgeschenk zu Weihnachten", "Geldgeschenk zu Ostern / Feiertagen", 
-      "Geldgeschenk zur Konfirmation / Jugendweihe", "Geldgeschenk zur Hochzeit / Jubiläum", 
-      "Lottogewinn / Spielbank / Tombola", "Gewinnspiel / Preisausschreiben Einnahme"
+      "Geldgeschenk zum Geburtstag",
+      "Geldgeschenk zu Weihnachten",
+      "Geldgeschenk zu Ostern / Feiertagen",
+      "Geldgeschenk zur Konfirmation / Jugendweihe",
+      "Geldgeschenk zur Hochzeit / Jubiläum",
+      "Lottogewinn / Spielbank / Tombola",
+      "Gewinnspiel / Preisausschreiben Einnahme"
     ],
     "Rente, Pension & Versorgung": [
-      "Gesetzliche Altersrente (Deutsche Rentenversicherung)", "Erwerbsminderungsrente (Volle / Teilweise Erwerbsminderung)", 
-      "Witwenrente / Witwerrente (Hinterbliebenenrente)", "Waisenrente / Halbwaisenrente", 
-      "Betriebsrente (VBL, ZVK, Firmenrente)", "Private Rentenversicherung Auszahlung", 
-      "Beamtenpension / Ruhegehalt", "Berufsgenossenschafts-Rente (Unfallrente)", "Ausländische Rentenzahlung"
+      "Gesetzliche Altersrente (Deutsche Rentenversicherung)",
+      "Erwerbsminderungsrente (Volle / Teilweise Erwerbsminderung)",
+      "Witwenrente / Witwerrente (Hinterbliebenenrente)",
+      "Waisenrente / Halbwaisenrente",
+      "Betriebsrente (VBL, ZVK, Firmenrente)",
+      "Private Rentenversicherung Auszahlung",
+      "Beamtenpension / Ruhegehalt",
+      "Berufsgenossenschafts-Rente (Unfallrente)",
+      "Ausländische Rentenzahlung"
     ],
     "Verkäufe, Gebrauchtwaren & Erstattungen": [
-      "Vinted Kleiderverkauf", "eBay & Kleinanzeigen Verkäufe", "Flohmarkt / Trödelmarkt Einnahmen", 
-      "Momox / Rebuy / Zoxs Buch- & Medienverkauf", "Auto / Fahrrad / Roller privat verkauft", 
-      "Möbel & Elektronik privat verkauft", "Steuererstattung (Finanzamt Einkommensteuer)", 
-      "Nebenkosten-Rückzahlung / Guthaben vom Vermieter", "Strom- / Gas-Jahresabrechnung Guthaben", 
-      "Pfandflaschen & Dosen Einnahmen", "Geld von Freunden zurückerhalten (PayPal / Bar)", 
-      "Krankenkassen-Bonus / Erstattung", "Garantie- / Reklamations-Rückerstattung", "Kaution-Rückzahlung nach Umzug"
+      "Vinted Kleiderverkauf",
+      "eBay & Kleinanzeigen Verkäufe",
+      "Flohmarkt / Trödelmarkt Einnahmen",
+      "Momox / Rebuy / Zoxs Buch- & Medienverkauf",
+      "Auto / Motorrad / Roller privat verkauft",
+      "Möbel & Haushaltsgegenstände privat verkauft",
+      "Elektronik & Handys privat verkauft",
+      "Sonstige Gebrauchtwaren Verkäufe"
     ],
     "Zinsen, Dividenden, Miete & Kapital": [
-      "Zinsen auf Tagesgeldkonto", "Zinsen auf Festgeldkonto / Sparbuch", "Dividenden aus Aktien / ETFs", 
-      "Mieteinnahmen aus Vermietung / Verpachtung", "Untermieteinnahmen (Zimmer / WG)", 
-      "Krypto-Gewinne (Bitcoin, Ethereum)", "Gewinne aus Wertpapierverkäufen", "Genossenschaftsanteile Dividende", "Zinsen aus P2P-Krediten"
+      "Zinsen auf Tagesgeldkonto",
+      "Zinsen auf Festgeldkonto / Sparbuch",
+      "Dividenden aus Aktien / ETFs",
+      "Gewinne aus Wertpapierverkäufen",
+      "Genossenschaftsanteile Dividende",
+      "Zinsen aus P2P-Krediten & Crowdinvesting",
+      "Bausparzinsen & Prämien",
+      "Sonstige Kapitalerträge"
     ],
     "Sonstige Einnahmen": [
-      "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt", "Einmalige Gutschrift", "Cashback (Shoop, Payback Auszahlung)", 
-      "Entschädigung (Bahnverspätung, Flugausfall)", "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)", "Sonstige unvorhergesehene Einnahme"
+      "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt",
+      "Einmalige Gutschrift",
+      "Entschädigung (Bahnverspätung, Flugausfall)",
+      "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)",
+      "Sonstige unvorhergesehene Einnahme"
+    ],
+    "Nebenjob, Minijob & Freiberufliche Projekte": [
+      "Nachhilfeunterricht (Schüler / Studenten)",
+      "Babysitting & Kinderbetreuung",
+      "Haustierbetreuung & Gassigehen",
+      "Gartenarbeiten & Rasenmähen",
+      "Haushaltshilfe & Putzjob",
+      "Umzugshilfe & Handlangerdienste",
+      "Webdesign, IT-Support & PC-Hilfe",
+      "Freie Textarbeiten, Lektorat & Übersetzungen",
+      "Grafikdesign & Illustrationen"
+    ],
+    "Kreatives, Musik, Kunst & Content Creation": [
+      "YouTube Werbeeinnahmen (AdSense)",
+      "Twitch Stream-Erlöse, Abos & Bits",
+      "Patreon / Steady Unterstützer-Beiträge",
+      "Etsy & Handgemachtes Verkäufe",
+      "Musik-Auftritte & Band-Gigs",
+      "Kunsthandwerk, Malerei & Skulpturen",
+      "Fotografie & Stockfotos Verkäufe",
+      "Podcast-Sponsoring & Audio-Honorare"
+    ],
+    "Krypto, Staking & Web3-Erträge": [
+      "Krypto-Staking Belohnungen (ETH, SOL etc.)",
+      "Mining Erträge",
+      "Krypto Airdrops",
+      "DeFi-Zinsen & Liquidity Providing",
+      "NFT-Verkäufe & Tantiemen",
+      "Krypto-Cashback"
+    ],
+    "Cashback, Prämien & Treueprogramme": [
+      "Payback Punkte Barauszahlung",
+      "Shoop & TopCashback Auszahlungen",
+      "Girokonto-Eröffnungsprämie",
+      "Kreditkarten-Cashback",
+      "Freundschaftswerbung / Empfehlungsprämie",
+      "Pfandflaschen & Leergut Auszahlung"
+    ],
+    "Erstattungen, Steuern & Kautionen": [
+      "Einkommensteuer-Erstattung Finanzamt",
+      "Rundfunkbeitrag Rückerstattung (Befreiung)",
+      "Doppelt gezahlter Betrag Erstattung",
+      "Krankenkassen-Wahltarif Bonus & Kostenerstattung",
+      "Nebenkosten-Guthaben / Abrechnung Vermieter",
+      "Strom- & Gas-Guthaben Jahresabrechnung",
+      "Mietkaution Rückzahlung nach Auszug",
+      "Bahn- & Flugverspätung Entschädigung",
+      "Garantie- & Retouren-Rückzahlung"
+    ],
+    "Private Rückzahlungen & Kostenbeteiligungen": [
+      "Rückzahlung von geliehenem Geld (Freunde / Familie)",
+      "WG-Kostenabrechnung Anteil",
+      "Gemeinsamer Einkauf Abrechnung (PayPal / Bar)",
+      "Urlaubsabrechnung von Mitreisenden"
+    ],
+    "Vermietung, Verpachtung & Carsharing": [
+      "WG-Zimmer / Untermiete Mieteinnahme",
+      "Garagen- & Stellplatzvermietung",
+      "Privates Carsharing (Getaround etc.)",
+      "Verleih von Werkzeug, Geräten & Anhänger"
     ]
   }
 ,
   trf: {
     "Umbuchung & Sparplan": [
-      "Sparplan Notgroschen", "Sparplan Urlaub", "Sparplan Investieren / Depot", 
-      "Sparplan Führerschein / Auto", "Umbuchung Allgemein"
+      "Sparplan Notgroschen",
+      "Sparplan Urlaub",
+      "Sparplan Investieren / Depot",
+      "Sparplan Führerschein / Auto",
+      "Umbuchung Allgemein"
     ]
   }
 };
@@ -2577,7 +3357,8 @@ let appState = {
   transactions: [],
   recurring: [],
   budgets: {},
-  customCategories: { exp: {}, inc: {}, trf: {} }
+  customCategories: { exp: {}, inc: {}, trf: {} },
+  wishlist: []
 };
 
 // ============================================================================
@@ -2937,12 +3718,54 @@ function handleTxSearchFilterChange() {
   const qInput = document.getElementById('tx-search-query');
   const sSelect = document.getElementById('tx-filter-status');
   const aSelect = document.getElementById('tx-filter-account');
+  const banner = document.getElementById('tx-search-results-banner');
+  const bannerText = document.getElementById('tx-search-results-text');
+  const clearBtn = document.getElementById('btn-clear-tx-search');
 
   currentTxFilter.query = qInput ? qInput.value.trim().toLowerCase() : '';
   currentTxFilter.status = sSelect ? sSelect.value : 'all';
   currentTxFilter.account = aSelect ? aSelect.value : 'all';
 
+  if (clearBtn) clearBtn.style.display = currentTxFilter.query ? 'inline-block' : 'none';
+
   updateOverview();
+
+  const isSearchActive = Boolean(currentTxFilter.query || currentTxFilter.status !== 'all' || currentTxFilter.account !== 'all');
+
+  const feedExp = document.getElementById('overview-expense-items-feed');
+  const countExp = feedExp ? feedExp.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const feedInc = document.getElementById('overview-income-items-feed');
+  const countInc = feedInc ? feedInc.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const totalHits = countExp + countInc;
+
+  const detExp = document.getElementById('details-expense-list');
+  const detInc = document.getElementById('details-income-list');
+
+  if (isSearchActive) {
+    if (detExp) detExp.open = countExp > 0;
+    if (detInc) detInc.open = countInc > 0;
+
+    if (banner && bannerText) {
+      banner.style.display = 'flex';
+      if (totalHits > 0) {
+        bannerText.textContent = `🔍 ${totalHits} Treffer gefunden (${countExp} Ausgaben, ${countInc} Einnahmen).`;
+      } else {
+        bannerText.textContent = `⚠️ Keine Buchungen gefunden für "${currentTxFilter.query || 'aktuelle Filter'}".`;
+      }
+    }
+
+    if (currentTxFilter.query && currentTxFilter.query.length >= 2) {
+      if (totalHits > 0) {
+        announceNVDA(`${totalHits} Buchungen für "${currentTxFilter.query}" gefunden (${countExp} Ausgaben, ${countInc} Einnahmen). Listen geöffnet.`);
+      } else {
+        announceNVDA(`Keine Buchungen für "${currentTxFilter.query}" gefunden.`);
+      }
+    }
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (detExp) detExp.open = false;
+    if (detInc) detInc.open = false;
+  }
 }
 
 function populateFilterAccountDropdown() {
@@ -2955,29 +3778,513 @@ function populateFilterAccountDropdown() {
   applySymbolsToOptions(sel);
 }
 
+
+// ----------------------------------------------------------------------------
+// GLOBAL SORTING ENGINE FOR OVERVIEW TRANSACTIONS
+// ----------------------------------------------------------------------------
+let currentTxSortOrder = 'date-desc';
+
+function handleTxSortChange() {
+  const sel = document.getElementById('tx-sort-order');
+  if (sel) {
+    currentTxSortOrder = sel.value;
+    const sortLabels = {
+      'date-desc': 'Datum: Neueste zuerst (Neu bis Alt)',
+      'date-asc': 'Datum: Älteste zuerst (Alt bis Neu)',
+      'alpha-asc': 'Alphabetisch: A bis Z',
+      'alpha-desc': 'Alphabetisch: Z bis A',
+      'amount-desc': 'Betrag: Höchste zuerst (Groß bis Klein)',
+      'amount-asc': 'Betrag: Niedrigste zuerst (Klein bis Groß)',
+      'category-asc': 'Kategorie: Alphabetisch (A bis Z)'
+    };
+    announceNVDA(`Sortierung geändert auf: ${sortLabels[currentTxSortOrder] || currentTxSortOrder}`);
+  }
+  updateOverview();
+}
+
+function applyTxSorting(list) {
+  return [...list].sort((a, b) => {
+    switch (currentTxSortOrder) {
+      case 'date-asc':
+        return a.date.localeCompare(b.date);
+      case 'alpha-asc': {
+        const nameA = a.description || a.subcategory || a.category || '';
+        const nameB = b.description || b.subcategory || b.category || '';
+        return nameA.localeCompare(nameB, 'de', { sensitivity: 'base' });
+      }
+      case 'alpha-desc': {
+        const nameA = a.description || a.subcategory || a.category || '';
+        const nameB = b.description || b.subcategory || b.category || '';
+        return nameB.localeCompare(nameA, 'de', { sensitivity: 'base' });
+      }
+      case 'amount-desc':
+        return Number(b.amount || 0) - Number(a.amount || 0);
+      case 'amount-asc':
+        return Number(a.amount || 0) - Number(b.amount || 0);
+      case 'category-asc': {
+        const catA = a.category || '';
+        const catB = b.category || '';
+        return catA.localeCompare(catB, 'de', { sensitivity: 'base' });
+      }
+      case 'date-desc':
+      default:
+        return b.date.localeCompare(a.date);
+    }
+  });
+}
+
+// ----------------------------------------------------------------------------
+// REITER 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
+// ----------------------------------------------------------------------------
+function ensureWishlistInitialized() {
+  if (!appState.wishlist || !Array.isArray(appState.wishlist)) {
+    appState.wishlist = [];
+  }
+}
+
+function populateWishlistAccountDropdown() {
+  ensureAccountsInitialized();
+  ensureSavingPotsInitialized();
+  const sel = document.getElementById('wish-target-account');
+  if (!sel) return;
+
+  let html = '';
+
+  if (appState.savingPots && appState.savingPots.length > 0) {
+    html += '<optgroup label="🎯 Vorhandene Spartöpfe">';
+    html += appState.savingPots.map(pot => {
+      const acc = appState.accounts.find(a => a.id === pot.accountId);
+      const accName = acc ? acc.name : 'Konto';
+      const val = pot.id.startsWith('pot_') ? pot.id : `pot_${pot.id}`;
+      return `<option value="${escapeHTML(val)}" data-emoji="🎯">🎯 ${escapeHTML(pot.name)} (${formatCurrency(pot.currentAmount)} auf ${escapeHTML(accName)})</option>`;
+    }).join('');
+    html += '</optgroup>';
+  }
+
+  html += '<optgroup label="🏦 Reguläre Konten">';
+  html += appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    return `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
+  }).join('');
+  html += '</optgroup>';
+
+  sel.innerHTML = html;
+  applySymbolsToOptions(sel);
+}
+
+async function handleAddWish(e) {
+  e.preventDefault();
+  ensureWishlistInitialized();
+
+  const typeSelect = document.getElementById('wish-type');
+  const wishType = typeSelect ? typeSelect.value : 'once';
+  const title = document.getElementById('wish-title').value.trim();
+  const amount = parseFloat(document.getElementById('wish-amount').value);
+  const priority = document.getElementById('wish-priority').value;
+  const category = document.getElementById('wish-category').value;
+  const account = document.getElementById('wish-target-account').value;
+  const targetDate = document.getElementById('wish-target-date').value;
+  const note = document.getElementById('wish-note').value.trim();
+
+  if (!title || isNaN(amount) || amount <= 0) return;
+
+  const newWish = {
+    id: `wish_${Date.now()}`,
+    type: wishType,
+    title: title,
+    amount: amount,
+    priority: priority,
+    category: category,
+    account: account,
+    targetDate: targetDate,
+    note: note,
+    fulfilled: false,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+
+  appState.wishlist.push(newWish);
+  await saveStateToEncryptedStorage();
+
+  document.getElementById('form-add-wish').reset();
+  renderWishlist();
+  announceNVDA(`Wunsch "${title}" über ${formatCurrency(amount)} erfolgreich zur Wunschliste hinzugefügt!`);
+}
+
+function renderWishlist() {
+  ensureWishlistInitialized();
+  const container = document.getElementById('wishlist-items-container');
+  if (!container) return;
+
+  const filterSel = document.getElementById('wish-filter-status');
+  const filterStatus = filterSel ? filterSel.value : 'open';
+
+  const filterTypeSel = document.getElementById('wish-filter-type');
+  const filterType = filterTypeSel ? filterTypeSel.value : 'all';
+
+  let list = appState.wishlist;
+  if (filterStatus === 'open') {
+    list = list.filter(w => !w.fulfilled);
+  } else if (filterStatus === 'fulfilled') {
+    list = list.filter(w => w.fulfilled);
+  }
+
+  if (filterType === 'once') {
+    list = list.filter(w => !w.type || w.type === 'once');
+  } else if (filterType === 'subscriptions') {
+    list = list.filter(w => w.type && w.type !== 'once');
+  }
+
+  // Calculate statistics
+  const openWishes = appState.wishlist.filter(w => !w.fulfilled);
+  const totalAmount = openWishes.reduce((sum, w) => sum + Number(w.amount || 0), 0);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const balances = calculateBalancesUpToDate(todayStr);
+
+  let affordableCount = 0;
+  openWishes.forEach(w => {
+    const accBal = balances[w.account] !== undefined ? balances[w.account] : balances.total;
+    if (accBal >= w.amount) affordableCount++;
+  });
+
+  const statCount = document.getElementById('wishlist-stat-count');
+  const statTotal = document.getElementById('wishlist-stat-total');
+  const statAffordable = document.getElementById('wishlist-stat-affordable');
+
+  if (statCount) statCount.textContent = `${openWishes.length} Wunsch / Wünsche`;
+  if (statTotal) statTotal.textContent = formatCurrency(totalAmount);
+  if (statAffordable) statAffordable.textContent = `${affordableCount} sofort leistbar`;
+
+  if (list.length === 0) {
+    container.innerHTML = `<p class="empty-state" style="padding: 24px; text-align: center;">Keine Wünsche in dieser Ansicht vorhanden. Trage oben einen neuen Wunsch ein!</p>`;
+    return;
+  }
+
+  const prioLabels = {
+    high: '⭐⭐⭐ Hohe Priorität',
+    medium: '⭐⭐ Mittlere Priorität',
+    low: '⭐ Geringe Priorität'
+  };
+
+  let html = '<div class="wishlist-cards-grid" style="display: flex; flex-direction: column; gap: 14px;">';
+
+  list.forEach(w => {
+    const isSub = w.type && w.type !== 'once';
+    let accName = 'Gesamtguthaben';
+    let accBal = balances.total;
+    if (w.account && w.account.startsWith('pot_')) {
+      const potId = w.account.replace('pot_', '');
+      const pot = (appState.savingPots || []).find(p => p.id === potId || p.id === w.account);
+      if (pot) {
+        accName = `🎯 Spartopf: ${pot.name}`;
+        accBal = Number(pot.currentAmount || 0);
+      }
+    } else {
+      const acc = appState.accounts.find(a => a.id === w.account);
+      if (acc) accName = acc.name;
+      if (balances[w.account] !== undefined) accBal = balances[w.account];
+    }
+    const isAffordable = accBal >= w.amount;
+    const diff = w.amount - accBal;
+    const percent = Math.max(0, Math.min(100, Math.round((Math.max(0, accBal) / w.amount) * 100)));
+
+    let typeBadge = '<span class="badge" style="background: #E8EAF6; color: #283593; padding: 2px 8px; border-radius: 4px; font-weight: bold;">📦 Einmalkauf</span>';
+    let subIntervalText = '';
+    if (w.type === 'monthly') {
+      typeBadge = '<span class="badge" style="background: #E1F5FE; color: #0277BD; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Monatliches Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 12)} / Jahr</div>`;
+    } else if (w.type === 'yearly') {
+      typeBadge = '<span class="badge" style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🗓 Jährliches Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount / 12)} / Monat</div>`;
+    } else if (w.type === 'quarterly') {
+      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Quartals-Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 4)} / Jahr</div>`;
+    } else if (w.type === 'halfyear') {
+      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Halbjahres-Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 2)} / Jahr</div>`;
+    }
+
+    html += `
+      <div class="wish-card" style="border: 2px solid var(--border-color); border-radius: 8px; padding: 16px; background: var(--card-bg, #ffffff); ${w.fulfilled ? 'opacity: 0.75; border-left: 8px solid #4CAF50;' : (isAffordable ? 'border-left: 8px solid #2E7D32;' : 'border-left: 8px solid #FF9800;')}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h4 style="margin: 0 0 6px 0; font-size: 18px;">${w.fulfilled ? '✅ ' : (isSub ? '🔄 ' : '🎁 ')}${escapeHTML(w.title)}</h4>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted, #666); align-items: center;">
+              ${typeBadge}
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">🏷️ ${escapeHTML(w.category || 'Allgemein')}</span>
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">${prioLabels[w.priority] || w.priority}</span>
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">💳 Spartopf: ${escapeHTML(accName)}</span>
+              ${w.targetDate ? `<span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">📅 Bis: ${escapeHTML(w.targetDate)}</span>` : ''}
+            </div>
+            ${w.note ? `<p style="margin: 8px 0 0 0; font-size: 14px; font-style: italic;">📝 ${escapeHTML(w.note)}</p>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 22px; font-weight: bold; color: var(--accent-primary, #2196F3);">${formatCurrency(w.amount)}${isSub ? (w.type === 'monthly' ? ' / Mt.' : (w.type === 'yearly' ? ' / Jr.' : '')) : ''}</div>
+            ${subIntervalText}
+            ${w.fulfilled ? '<span style="color: #2E7D32; font-weight: bold; font-size: 14px;">✅ Aktiv / Erfüllt!</span>' : ''}
+          </div>
+        </div>
+
+        ${!w.fulfilled ? `
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 4px;">
+              <span>Guthaben auf ${escapeHTML(accName)}: ${formatCurrency(accBal)}</span>
+              <span>${isAffordable ? '🟢 100% Leistbar!' : `Fortschritt: ${percent}% (Fehlen noch ${formatCurrency(diff)})`}</span>
+            </div>
+            <div style="background: #e0e0e0; border-radius: 6px; height: 10px; overflow: hidden;">
+              <div style="width: ${percent}%; height: 100%; background: ${isAffordable ? '#4CAF50' : '#FF9800'}; transition: width 0.3s;"></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+          ${!w.fulfilled ? (
+            isSub ? `
+              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsRecurring('${w.id}')" style="background-color: #0288D1; border-color: #01579B; padding: 6px 12px; font-size: 14px;">
+                <span>🔄 <strong>Als Dauerauftrag (Abo) starten &amp; Erfüllen</strong></span>
+              </button>
+            ` : `
+              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsExpense('${w.id}')" style="background-color: #2E7D32; border-color: #1B5E20; padding: 6px 12px; font-size: 14px;">
+                <span>🛒 <strong>Als Ausgabe buchen &amp; Erfüllen</strong></span>
+              </button>
+            `
+          ) : `
+            <button type="button" class="btn btn-secondary" onclick="handleToggleWishFulfilled('${w.id}')" style="padding: 6px 12px; font-size: 14px;">
+              <span>Wieder als offen markieren</span>
+            </button>
+          `}
+          <button type="button" class="btn btn-secondary" onclick="handleDeleteWish('${w.id}')" style="padding: 6px 12px; font-size: 14px; color: #D32F2F;">
+            <span>🗑️ Löschen</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function handleFulfillWishAsExpense(wishId) {
+  ensureWishlistInitialized();
+  ensureSavingPotsInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  let bookedAccount = wish.account || 'bank';
+  let potObj = null;
+  let potName = '';
+
+  if (wish.account && wish.account.startsWith('pot_')) {
+    const rawId = wish.account.replace(/^pot_+/, '');
+    potObj = (appState.savingPots || []).find(p => p.id === wish.account || p.id === rawId || p.id === `pot_${rawId}`);
+    if (potObj) {
+      potName = potObj.name;
+      bookedAccount = potObj.accountId || 'bank';
+      const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich aus dem Spartopf "${potObj.name}" entnehmen und als Ausgabe buchen?`;
+      if (!confirm(confirmMsg)) return;
+      potObj.currentAmount = Math.max(0, Math.round((Number(potObj.currentAmount || 0) - wish.amount) * 100) / 100);
+    }
+  } else {
+    const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich als Ausgabe von Konto "${formatAccountName(wish.account)}" abbuchen und den Wunsch als erfüllt markieren?`;
+    if (!confirm(confirmMsg)) return;
+  }
+
+  // Add expense transaction
+  appState.transactions.push({
+    id: `tx_${Date.now()}`,
+    type: 'expense',
+    account: bookedAccount,
+    amount: wish.amount,
+    category: 'Shopping, Online-Kauf & Marktplätze',
+    subcategory: wish.title,
+    description: `Wunsch erfüllt: ${wish.title}${potName ? ` (aus Spartopf "${potName}")` : ''}`,
+    isPlanned: false,
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  wish.fulfilled = true;
+  wish.fulfilledDate = new Date().toISOString().split('T')[0];
+
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  renderWishlist();
+  renderSavingPotsList();
+  announceNVDA(`Glückwunsch! Wunsch "${wish.title}" wurde als Ausgabe über ${formatCurrency(wish.amount)} abgebucht und erfüllt!`);
+}
+
+async function handleToggleWishFulfilled(wishId) {
+  ensureWishlistInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  wish.fulfilled = !wish.fulfilled;
+  await saveStateToEncryptedStorage();
+  renderWishlist();
+  announceNVDA(`Wunsch "${wish.title}" Status aktualisiert.`);
+}
+
+async function handleDeleteWish(wishId) {
+  ensureWishlistInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
+
+  appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
+  await saveStateToEncryptedStorage();
+  renderWishlist();
+  announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
+}
+
 function applyTxFilters(list) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  const monthNamesDe = ['januar', 'februar', 'maerz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
+  const monthNamesRaw = ['januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
+  const weekdayNames = ['sonntag', 'montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag'];
+
   return list.filter(tx => {
-    // 1. Text Query
+    // 1. Super-Suche Engine
     if (currentTxFilter.query) {
-      const q = currentTxFilter.query;
-      const matchCat = (tx.category || '').toLowerCase().includes(q);
-      const matchSub = (tx.subcategory || '').toLowerCase().includes(q);
-      const matchDesc = (tx.description || '').toLowerCase().includes(q);
-      const matchAmt = (tx.amount || '').toString().includes(q);
-      if (!matchCat && !matchSub && !matchDesc && !matchAmt) return false;
+      const rawQuery = currentTxFilter.query.trim().toLowerCase();
+      const qTokens = rawQuery.split(/\s+/).filter(Boolean);
+
+      const acc = appState.accounts ? appState.accounts.find(a => a.id === tx.account) : null;
+      const accName = acc ? acc.name : (tx.account || '');
+      const txAmt = Number(tx.amount || 0);
+      const amtStr = txAmt.toFixed(2);
+      const amtGerman = amtStr.replace('.', ',');
+      const amtNoDec = Math.round(txAmt).toString();
+
+      // Date information
+      let dateWords = [];
+      if (tx.date) {
+        dateWords.push(tx.date);
+        const [y, m, d] = tx.date.split('-');
+        if (y && m && d) {
+          const mIdx = parseInt(m, 10) - 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            dateWords.push(monthNamesDe[mIdx], monthNamesRaw[mIdx]);
+            dateWords.push(monthNamesRaw[mIdx].substring(0, 3), monthNamesDe[mIdx].substring(0, 3));
+          }
+          const dtObj = new Date(tx.date + 'T12:00:00');
+          if (!isNaN(dtObj.getTime())) {
+            dateWords.push(weekdayNames[dtObj.getDay()]);
+          }
+          dateWords.push(`${d}.${m}.${y}`, `${d}.${m}.`, `${d}.`);
+        }
+        if (tx.date === todayStr) dateWords.push('heute');
+        if (tx.date === yesterdayStr) dateWords.push('gestern');
+      }
+
+      // Types & Tags
+      let typeWords = [];
+      if (tx.type === 'income') typeWords.push('einnahme', 'geld plus', 'einnahmen', 'habenseite');
+      else if (tx.type === 'transfer') typeWords.push('umbuchung', 'transfer', 'sparen', 'verschieben');
+      else typeWords.push('ausgabe', 'ausgaben', 'minus', 'kosten');
+
+      if (tx.isRecurring) typeWords.push('wiederkehrend', 'dauerauftrag', 'abo', 'fixkosten', 'vertrag');
+      else typeWords.push('einmalig', 'variabel');
+
+      if (tx.isInstallment || (tx.description && (tx.description.includes('Rate') || tx.description.includes('Kredit')))) {
+        typeWords.push('kredit', 'rate', 'ratenkauf', 'ratenzahlung', 'finanzierung', 'darlehen', 'schuld');
+      }
+
+      const rawComp = [
+        tx.description || '',
+        tx.category || '',
+        tx.subcategory || '',
+        accName,
+        tx.account || '',
+        ...dateWords,
+        ...typeWords,
+        amtStr,
+        amtGerman,
+        amtNoDec,
+        `${amtGerman} €`,
+        `${amtGerman}€`,
+        `${amtNoDec} €`,
+        `${amtNoDec}€`
+      ].join(' ').toLowerCase();
+
+      const normComp = normalizeSearchText(rawComp);
+      const compWords = normComp.split(/\s+/).filter(Boolean);
+
+      // Check each token
+      for (let token of qTokens) {
+        // Strip trailing currency symbols
+        token = token.replace(/€|euro/g, '').trim();
+        if (!token) continue;
+
+        // A. Negation: -token (e.g. -rewe, -paypal)
+        if (token.startsWith('-') && token.length > 1) {
+          const negToken = token.slice(1);
+          if (matchesFuzzyOrExact(negToken, compWords, rawComp, normComp)) {
+            return false;
+          }
+          continue;
+        }
+
+        // B. Range match: 10-50 or 10..50
+        const rangeMatch = token.match(/^(\d+(?:[.,]\d+)?)(?:-|\.\.)(\d+(?:[.,]\d+)?)$/);
+        if (rangeMatch) {
+          const minVal = parseFloat(rangeMatch[1].replace(',', '.'));
+          const maxVal = parseFloat(rangeMatch[2].replace(',', '.'));
+          if (!isNaN(minVal) && !isNaN(maxVal)) {
+            if (!(txAmt >= minVal && txAmt <= maxVal)) return false;
+            continue;
+          }
+        }
+
+        // C. Approximate amount: ~50
+        if (token.startsWith('~') && token.length > 1) {
+          const approxTarget = parseFloat(token.slice(1).replace(',', '.'));
+          if (!isNaN(approxTarget)) {
+            const margin = Math.max(2, approxTarget * 0.1);
+            if (Math.abs(txAmt - approxTarget) > margin) return false;
+            continue;
+          }
+        }
+
+        // D. Greater / Lesser comparison operators: >50, <100, >=20, <=80
+        if (token.startsWith('>') || token.startsWith('<')) {
+          const isGte = token.startsWith('>=');
+          const isLte = token.startsWith('<=');
+          const isGt = !isGte && token.startsWith('>');
+          const isLt = !isLte && token.startsWith('<');
+          const numStr = token.replace(/^[><]=?/, '').replace(',', '.');
+          const threshold = parseFloat(numStr);
+          if (!isNaN(threshold)) {
+            if (isGt && !(txAmt > threshold)) return false;
+            if (isLt && !(txAmt < threshold)) return false;
+            if (isGte && !(txAmt >= threshold)) return false;
+            if (isLte && !(txAmt <= threshold)) return false;
+            continue;
+          }
+        }
+
+        // E. Fuzzy, phonetic & exact token matching
+        if (!matchesFuzzyOrExact(token, compWords, rawComp, normComp)) {
+          return false;
+        }
+      }
     }
 
     // 2. Status
     if (currentTxFilter.status === 'booked') {
-      if (tx.isPlanned || tx.date > new Date().toISOString().split('T')[0]) return false;
+      if (tx.isPlanned || tx.date > todayStr) return false;
     } else if (currentTxFilter.status === 'planned') {
-      if (!tx.isPlanned && tx.date <= new Date().toISOString().split('T')[0]) return false;
+      if (!tx.isPlanned && tx.date <= todayStr) return false;
     } else if (currentTxFilter.status === 'recurring') {
       if (!tx.isRecurring) return false;
     }
 
     // 3. Account
-    if (currentTxFilter.account !== 'all') {
+    if (currentTxFilter.account && currentTxFilter.account !== 'all') {
       if (tx.account !== currentTxFilter.account && tx.fromAccount !== currentTxFilter.account && tx.toAccount !== currentTxFilter.account) {
         return false;
       }
@@ -3878,7 +5185,13 @@ function mergeCustomCategoriesIntoDB() {
   }
 
   if (!CATEGORIES_DB.trf) {
-    CATEGORIES_DB.trf = { "Umbuchung & Sparplan": ["Sparplan Notgroschen", "Sparplan Urlaub", "Umbuchung Allgemein"] };
+    CATEGORIES_DB.trf = { "Umbuchung & Sparplan": [
+      "Sparplan Notgroschen",
+      "Sparplan Urlaub",
+      "Sparplan Investieren / Depot",
+      "Sparplan Führerschein / Auto",
+      "Umbuchung Allgemein"
+    ] };
   }
 
   ['exp', 'inc', 'trf'].forEach(type => {
@@ -3994,7 +5307,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v5.3.5.3'
+    AppVersion: 'v6.0.0'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -4070,25 +5383,34 @@ function onMainCategoryChange(type) {
 function handleCategorySearch(type) {
   const input = document.getElementById(type + '-cat-search');
   if (!input) return;
-  const query = input.value.trim().toLowerCase();
-  if (!query) return;
+  const rawQuery = input.value.trim();
+  if (!rawQuery) return;
 
+  const queryNorm = normalizeSearchText(rawQuery);
   const db = CATEGORIES_DB[type];
   let matchedMain = null;
   let matchedSub = null;
 
+  // 1. Search in subcategories with fuzzy matching
   for (const [mainCat, subs] of Object.entries(db)) {
-    const subMatch = subs.find(s => s.toLowerCase().includes(query));
-    if (subMatch) {
-      matchedMain = mainCat;
-      matchedSub = subMatch;
-      break;
+    for (const s of subs) {
+      const sNorm = normalizeSearchText(s);
+      const sWords = sNorm.split(/\s+/);
+      if (matchesFuzzyOrExact(queryNorm, sWords, s.toLowerCase(), sNorm)) {
+        matchedMain = mainCat;
+        matchedSub = s;
+        break;
+      }
     }
+    if (matchedMain) break;
   }
 
+  // 2. Fallback to main categories
   if (!matchedMain) {
     for (const mainCat of Object.keys(db)) {
-      if (mainCat.toLowerCase().includes(query)) {
+      const mNorm = normalizeSearchText(mainCat);
+      const mWords = mNorm.split(/\s+/);
+      if (matchesFuzzyOrExact(queryNorm, mWords, mainCat.toLowerCase(), mNorm)) {
         matchedMain = mainCat;
         matchedSub = db[mainCat][0] || 'Gesamt / Allgemein';
         break;
@@ -4105,11 +5427,10 @@ function handleCategorySearch(type) {
       if (matchedSub) {
         subSel.value = matchedSub;
       }
-      announceNVDA('Kategorie gewählt: ' + matchedMain + ', Unterkategorie: ' + matchedSub);
+      announceNVDA(`Kategorie "${matchedMain}", Unterkategorie "${matchedSub}" ausgewählt.`);
     }
   }
 }
-
 
 let cryptoKey = null;
 let currentActiveView = 'overview';
@@ -4208,6 +5529,7 @@ function setupGlobalKeyboardShortcuts() {
     else if (e.key === '4') { e.preventDefault(); switchView('transfer'); }
     else if (e.key === '5') { e.preventDefault(); switchView('settings'); }
     else if (e.key === '6') { e.preventDefault(); switchView('accounts'); }
+    else if (e.key === '7') { e.preventDefault(); switchView('wishlist'); }
     else if (e.key === 't' || e.key === 'T') {
       e.preventDefault();
       setDayToToday();
@@ -5038,6 +6360,7 @@ function updateOverview() {
     renderExpenseRankings(stats.expenseList);
     checkLiquidityWarning(stats.balances);
     renderBudgetsList();
+    renderOverviewCreditAccordion();
     return;
   }
 
@@ -5127,6 +6450,7 @@ function updateOverview() {
   renderExpenseRankings(periodAllTxs.filter(t => t.type === 'expense'));
   checkLiquidityWarning(periodEndBalances);
   renderBudgetsList();
+  renderOverviewCreditAccordion();
 }
 
 function renderAccountCardBalances(balances) {
@@ -5166,7 +6490,7 @@ function renderTransactionList(list, containerId, emptyText) {
   }
 
   const filtered = applyTxFilters(list);
-  const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
+  const sorted = applyTxSorting(filtered);
 
   let html = '<ul class="tx-list">';
   sorted.forEach(tx => {
@@ -5234,14 +6558,157 @@ function renderTransactionList(list, containerId, emptyText) {
 // ----------------------------------------------------------------------------
 function toggleExpenseFrequencyFields() {
   const freq = document.getElementById('exp-frequency').value;
-  const isRec = ['weekly', 'monthly', 'yearly', 'quarterly'].includes(freq);
-  document.getElementById('exp-recurring-details').style.display = isRec ? 'block' : 'none';
-  document.getElementById('exp-date-group').style.display = isRec ? 'none' : 'block';
-  document.getElementById('exp-yearly-month-group').style.display = freq === 'yearly' ? 'block' : 'none';
+  const isRec = ['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq);
+  const isInst = freq === 'installment';
+
+  const recDetails = document.getElementById('exp-recurring-details');
+  if (recDetails) recDetails.style.display = isRec ? 'block' : 'none';
+
+  const instFields = document.getElementById('exp-installment-fields');
+  if (instFields) instFields.style.display = isInst ? 'block' : 'none';
+
+  const dateGroup = document.getElementById('exp-date-group');
+  if (dateGroup) dateGroup.style.display = isRec ? 'none' : 'block';
+
+  // Dynamic Labeling for Amount
+  const amtLabel = document.querySelector('label[for="exp-amount"] strong');
+  if (amtLabel) {
+    if (isInst) amtLabel.textContent = 'Gesamtkaufpreis / Kaufsumme (€)';
+    else if (freq === 'planned') amtLabel.textContent = 'Geplanter Betrag in Euro (€)';
+    else amtLabel.textContent = 'Betrag in Euro (€)';
+  }
+
+  // Dynamic Labeling for Date
+  const dateLabel = document.querySelector('label[for="exp-date"] strong');
+  const dateInput = document.getElementById('exp-date');
+  if (dateLabel && dateInput) {
+    if (isInst) {
+      dateLabel.textContent = '💳 Kaufdatum & Beginn der Ratenzahlung:';
+      dateInput.setAttribute('aria-label', 'Kaufdatum und Beginn der Ratenzahlung');
+    } else if (freq === 'planned') {
+      dateLabel.textContent = '🎯 Geplantes Kaufdatum (Zukunft):';
+      dateInput.setAttribute('aria-label', 'Geplantes Kaufdatum');
+    } else {
+      dateLabel.textContent = '📅 Datum der Ausgabe (Kaufdatum):';
+      dateInput.setAttribute('aria-label', 'Datum der Ausgabe');
+    }
+  }
+
+  if (isInst) {
+    handleInstallmentCalculation();
+    announceNVDA('Ratenzahlung ausgewählt. Gib oben den Kaufpreis ein und passe unten die Laufzeit an.');
+  }
+
+  const yearlyMonth = document.getElementById('exp-yearly-month-group');
+  if (yearlyMonth) yearlyMonth.style.display = freq === 'yearly' ? 'block' : 'none';
   
   const isWeekly = freq === 'weekly';
   if (document.getElementById('exp-weekday-group')) document.getElementById('exp-weekday-group').style.display = isWeekly ? 'block' : 'none';
-  if (document.getElementById('exp-month-day-group')) document.getElementById('exp-month-day-group').style.display = isWeekly ? 'none' : 'block';
+}
+
+function handleMainExpenseAmountInput() {
+  const freq = document.getElementById('exp-frequency') ? document.getElementById('exp-frequency').value : 'once';
+  if (freq === 'installment') {
+    handleInstallmentCalculation();
+  }
+}
+
+function handleInstallmentTypeChange() {
+  const type = document.getElementById('exp-installment-type') ? document.getElementById('exp-installment-type').value : 'ratenkauf';
+  const interestGroup = document.getElementById('group-installment-interest');
+  const balloonGroup = document.getElementById('group-installment-balloon');
+
+  // If 0% financing, hide interest
+  if (interestGroup) {
+    interestGroup.style.display = type === 'finanzierung_0' ? 'none' : 'block';
+  }
+  // If not leasing or credit, hide balloon
+  if (balloonGroup) {
+    balloonGroup.style.display = (type === 'leasing' || type === 'kredit') ? 'block' : 'none';
+  }
+
+  handleInstallmentCalculation();
+}
+
+function handleInstallmentCalculation() {
+  const mainAmountInput = document.getElementById('exp-amount');
+  const totalInput = document.getElementById('exp-installment-total'); // fallback if exists
+  const downpaymentInput = document.getElementById('exp-installment-downpayment');
+  const durValInput = document.getElementById('exp-installment-duration-val');
+  const durUnitSelect = document.getElementById('exp-installment-duration-unit');
+  const interestInput = document.getElementById('exp-installment-interest');
+  const interestTypeSelect = document.getElementById('exp-installment-interest-type');
+  const balloonInput = document.getElementById('exp-installment-balloon');
+  const typeSelect = document.getElementById('exp-installment-type');
+  const rateInput = document.getElementById('exp-installment-rate');
+  const hintEl = document.getElementById('exp-installment-calc-hint');
+
+  if (!durValInput || !rateInput) return;
+
+  // Single entry: Take total from #exp-installment-total OR #exp-amount
+  let total = 0;
+  if (totalInput && parseFloat(totalInput.value) > 0) {
+    total = parseFloat(totalInput.value);
+  } else if (mainAmountInput && parseFloat(mainAmountInput.value) > 0) {
+    total = parseFloat(mainAmountInput.value);
+  }
+
+  const downpayment = Math.min(total, parseFloat(downpaymentInput ? downpaymentInput.value : 0) || 0);
+  const durVal = Math.max(1, parseInt(durValInput.value, 10) || 12);
+  const durUnit = durUnitSelect ? durUnitSelect.value : 'months';
+  const instType = typeSelect ? typeSelect.value : 'ratenkauf';
+  const interestVal = (instType !== 'finanzierung_0' && interestInput) ? (parseFloat(interestInput.value) || 0) : 0;
+  const interestType = interestTypeSelect ? interestTypeSelect.value : 'percent';
+  const balloon = (balloonInput && (instType === 'leasing' || instType === 'kredit')) ? (parseFloat(balloonInput.value) || 0) : 0;
+
+  if (total <= 0) {
+    rateInput.value = '';
+    if (hintEl) hintEl.textContent = 'Gib oben den Kaufbetrag ein.';
+    return;
+  }
+
+  // Net financing sum after downpayment
+  const netFinancing = Math.max(0, total - downpayment);
+
+  // Calculate interest on net financing
+  let interestSum = 0;
+  if (interestVal > 0) {
+    if (interestType === 'euro') {
+      interestSum = interestVal;
+    } else {
+      let yearsFraction = durVal / 12;
+      if (durUnit === 'weeks') yearsFraction = durVal / 52;
+      else if (durUnit === 'days') yearsFraction = durVal / 365;
+      else if (durUnit === 'years') yearsFraction = durVal;
+      interestSum = (netFinancing * (interestVal / 100)) * Math.max(0.08, yearsFraction);
+    }
+  }
+
+  const totalFinancedWithInterest = Math.round((netFinancing + interestSum) * 100) / 100;
+  const sumForRegularRates = Math.max(0, totalFinancedWithInterest - balloon);
+  const rate = Math.round((sumForRegularRates / durVal) * 100) / 100;
+
+  rateInput.value = rate.toFixed(2);
+
+  const unitLabels = { months: 'Monate', weeks: 'Wochen', years: 'Jahre', days: 'Tage' };
+  const unitRateLabels = { months: 'monatlich', weeks: 'wöchentlich', years: 'jährlich', days: 'täglich' };
+
+  if (hintEl) {
+    let parts = [];
+    if (downpayment > 0) parts.push(`Anzahlung: ${formatCurrency(downpayment)}`);
+    if (interestSum > 0) parts.push(`inkl. ${formatCurrency(interestSum)} Zinsen`);
+    if (balloon > 0) parts.push(`Schlussrate: ${formatCurrency(balloon)}`);
+    const extraHint = parts.length > 0 ? ` (${parts.join(', ')})` : ' (Zinsfrei)';
+    hintEl.textContent = `💡 Kaufpreis: ${formatCurrency(total)} -> Finanzierung: ${formatCurrency(totalFinancedWithInterest)}${extraHint} über ${durVal} ${unitLabels[durUnit] || durUnit} = ${formatCurrency(rate)} ${unitRateLabels[durUnit] || 'pro Rate'}.`;
+  }
+}
+
+function handleInstallmentRateManualChange() {
+  const rateInput = document.getElementById('exp-installment-rate');
+  const mainAmountInput = document.getElementById('exp-amount');
+  if (rateInput && mainAmountInput && rateInput.value) {
+    mainAmountInput.value = rateInput.value;
+  }
 }
 
 function toggleIncomeFrequencyFields() {
@@ -5282,7 +6749,134 @@ async function handleAddExpense(e) {
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
 
-  if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
+  if (freq === 'installment') {
+    const totalInput = document.getElementById('exp-installment-total');
+    const downpaymentInput = document.getElementById('exp-installment-downpayment');
+    const durValInput = document.getElementById('exp-installment-duration-val');
+    const durUnitSelect = document.getElementById('exp-installment-duration-unit');
+    const typeSelect = document.getElementById('exp-installment-type');
+    const providerSelect = document.getElementById('exp-installment-provider');
+    const rateInput = document.getElementById('exp-installment-rate');
+    const interestInput = document.getElementById('exp-installment-interest');
+    const interestTypeSelect = document.getElementById('exp-installment-interest-type');
+    const balloonInput = document.getElementById('exp-installment-balloon');
+    const specialRepayInput = document.getElementById('exp-installment-special-repay');
+    const pauseAllowedInput = document.getElementById('exp-installment-pause-allowed');
+    const firstDueSelect = document.getElementById('exp-installment-first-due');
+
+    const fullTotal = (totalInput && parseFloat(totalInput.value) > 0) ? parseFloat(totalInput.value) : amount;
+    const downpayment = Math.min(fullTotal, parseFloat(downpaymentInput ? downpaymentInput.value : 0) || 0);
+    const netFinancing = Math.max(0, fullTotal - downpayment);
+    const durVal = Math.max(1, parseInt(durValInput.value, 10) || 12);
+    const durUnit = durUnitSelect ? durUnitSelect.value : 'months';
+    const instType = typeSelect ? typeSelect.value : 'ratenkauf';
+    const provider = providerSelect ? providerSelect.value : 'paypal';
+    const rateAmount = parseFloat(rateInput.value) || amount;
+    const interestVal = interestInput ? (parseFloat(interestInput.value) || 0) : 0;
+    const interestType = interestTypeSelect ? interestTypeSelect.value : 'percent';
+    const balloon = parseFloat(balloonInput ? balloonInput.value : 0) || 0;
+    const specialRepay = specialRepayInput ? specialRepayInput.checked : true;
+    const pauseAllowed = pauseAllowedInput ? pauseAllowedInput.checked : false;
+    const firstDue = firstDueSelect ? firstDueSelect.value : 'now';
+
+    let interestSum = 0;
+    if (interestVal > 0 && instType !== 'finanzierung_0') {
+      if (interestType === 'euro') interestSum = interestVal;
+      else {
+        let yf = durVal / 12;
+        if (durUnit === 'weeks') yf = durVal / 52;
+        else if (durUnit === 'days') yf = durVal / 365;
+        else if (durUnit === 'years') yf = durVal;
+        interestSum = (netFinancing * (interestVal / 100)) * Math.max(0.08, yf);
+      }
+    }
+    const finalFinancedTotal = Math.round((netFinancing + interestSum) * 100) / 100;
+
+    const providerNames = {
+      paypal: 'PayPal Ratenzahlung',
+      klarna: 'Klarna Ratenkauf',
+      amazon: 'Amazon Raten',
+      santander: 'Santander BestCredit',
+      targobank: 'Targobank Ratenkredit',
+      consors: 'Consors Finanz',
+      hausbank: 'Bankkredit Hausbank',
+      apple_mediamarkt: 'Finanzierung',
+      privat: 'Privates Darlehen',
+      sonstiger: 'Ratenfinanzierung'
+    };
+    const provLabel = providerNames[provider] || 'Ratenzahlung';
+
+    // 1. Wenn Anzahlung geleistet wurde: Anzahlung buchen
+    if (downpayment > 0) {
+      appState.transactions.push({
+        id: `tx_down_${Date.now()}`,
+        type: 'expense',
+        account: account,
+        amount: downpayment,
+        category: category,
+        subcategory: subcategory,
+        description: desc ? `${desc} (${provLabel}, Anzahlung)` : `${provLabel} Anzahlung`,
+        isPlanned: false,
+        date: date
+      });
+    }
+
+    // 2. Erste Rate sofort buchen (falls nicht Zahlpause gewählt)
+    if (firstDue === 'now') {
+      const txDesc = desc ? `${desc} (${provLabel}, Rate 1 von ${durVal})` : `${provLabel} (Rate 1 von ${durVal})`;
+      appState.transactions.push({
+        id: `tx_${Date.now()}`,
+        type: 'expense',
+        account: account,
+        amount: rateAmount,
+        category: category,
+        subcategory: subcategory,
+        description: txDesc,
+        isPlanned: isPlanned,
+        date: date
+      });
+    }
+
+    // 3. Ratenplan anlegen
+    const day = parseInt(date.split('-')[2], 10) || 1;
+    let recInterval = 'monthly';
+    if (durUnit === 'weeks') recInterval = 'weekly';
+    else if (durUnit === 'years') recInterval = 'yearly';
+
+    const paidCount = firstDue === 'now' ? 1 : 0;
+    const remainingSum = Math.max(0, finalFinancedTotal - (paidCount * rateAmount));
+
+    appState.recurring.push({
+      id: `rec_inst_${Date.now()}`,
+      type: 'expense',
+      account: account,
+      amount: rateAmount,
+      category: category,
+      subcategory: subcategory,
+      name: desc ? `${desc} (${provLabel})` : `${provLabel} ${category}`,
+      interval: recInterval,
+      day: day,
+      startYear: selectedYear,
+      startMonth: selectedMonth,
+      isInstallment: true,
+      installmentType: instType,
+      installmentProvider: provider,
+      installmentTotal: finalFinancedTotal,
+      installmentDownpayment: downpayment,
+      installmentBalloon: balloon,
+      installmentSpecialRepay: specialRepay,
+      installmentPauseAllowed: pauseAllowed,
+      installmentFirstDue: firstDue,
+      installmentInterest: interestSum,
+      installmentTotalMonths: durVal,
+      installmentDurationUnit: durUnit,
+      installmentPaidMonths: paidCount,
+      installmentRemaining: remainingSum,
+      active: true
+    });
+
+    announceNVDA(`${provLabel} über ${formatCurrency(finalFinancedTotal)} angelegt!`);
+  } else if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
     const weekday = document.getElementById('exp-rec-weekday') ? parseInt(document.getElementById('exp-rec-weekday').value, 10) : 5;
     
@@ -5386,6 +6980,8 @@ async function handleAddIncome(e) {
 
 async function handleAddTransfer(e) {
   e.preventDefault();
+  ensureSavingPotsInitialized();
+
   const amount = parseFloat(document.getElementById('trf-amount').value);
   const freq = document.getElementById('trf-frequency').value;
   const fromAccount = document.getElementById('trf-from').value;
@@ -5393,11 +6989,38 @@ async function handleAddTransfer(e) {
   const date = document.getElementById('trf-date').value;
   const desc = document.getElementById('trf-desc').value.trim();
 
-  if (isNaN(amount) || amount <= 0 || fromAccount === toAccount) {
+  const fromPotId = document.getElementById('trf-from-pot') ? document.getElementById('trf-from-pot').value : '';
+  const toPotId = document.getElementById('trf-to-pot') ? document.getElementById('trf-to-pot').value : '';
+
+  if (isNaN(amount) || amount <= 0 || (fromAccount === toAccount && !fromPotId && !toPotId)) {
     announceNVDA('Fehler: Quelle und Zielkonto müssen unterschiedlich sein.', true);
     alert('⚠️ Bitte wähle zwei unterschiedliche Konten für die Umbuchung aus (Quelle und Ziel dürfen nicht identisch sein).');
     return;
   }
+
+  let potNoteParts = [];
+
+  // 1. Wenn Geld aus Spartopf entnommen wird
+  let fromPotObj = null;
+  if (fromPotId) {
+    fromPotObj = (appState.savingPots || []).find(p => p.id === fromPotId);
+    if (fromPotObj) {
+      fromPotObj.currentAmount = Math.max(0, Math.round((Number(fromPotObj.currentAmount || 0) - amount) * 100) / 100);
+      potNoteParts.push(`aus Spartopf "${fromPotObj.name}"`);
+    }
+  }
+
+  // 2. Wenn Geld in Spartopf eingezahlt wird
+  let toPotObj = null;
+  if (toPotId) {
+    toPotObj = (appState.savingPots || []).find(p => p.id === toPotId);
+    if (toPotObj) {
+      toPotObj.currentAmount = Math.round((Number(toPotObj.currentAmount || 0) + amount) * 100) / 100;
+      potNoteParts.push(`in Spartopf "${toPotObj.name}"`);
+    }
+  }
+
+  const potInfo = potNoteParts.length > 0 ? ` (${potNoteParts.join(', ')})` : '';
 
   const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
@@ -5414,15 +7037,17 @@ async function handleAddTransfer(e) {
       toAccount: toAccount,
       amount: amount,
       category: 'Umbuchung & Sparplan',
-      name: desc || `Sparplan ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}`,
+      name: desc ? `${desc}${potInfo}` : `Sparplan ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}${potInfo}`,
       interval: freq,
       day: day,
       weekday: weekday,
       startYear: selectedYear,
       startMonth: selectedMonth,
+      targetPotId: toPotId || '',
+      sourcePotId: fromPotId || '',
       active: true
     });
-    announceNVDA(`Sparplan über ${formatCurrency(amount)} gespeichert!`);
+    announceNVDA(`Sparplan über ${formatCurrency(amount)}${potInfo} gespeichert!`);
   } else {
     appState.transactions.push({
       id: `tx_${Date.now()}`,
@@ -5431,17 +7056,19 @@ async function handleAddTransfer(e) {
       toAccount: toAccount,
       amount: amount,
       category: 'Umbuchung',
-      description: desc,
+      description: desc ? `${desc}${potInfo}` : `Umbuchung ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}${potInfo}`,
       isPlanned: isPlanned,
       date: date
     });
-    announceNVDA(`Umbuchung über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    announceNVDA(`Umbuchung über ${formatCurrency(amount)}${potInfo} ${isPlanned ? 'geplant' : 'gebucht'}!`);
   }
 
   await saveStateToEncryptedStorage();
   document.getElementById('form-add-transfer').reset();
   document.getElementById('trf-date').value = new Date().toISOString().split('T')[0];
   toggleTransferFrequencyFields();
+  renderSavingPotsList();
+  renderWishlist();
   updateOverview();
   switchView('overview');
 }
@@ -5963,7 +7590,7 @@ function initTheme() {
 function switchView(viewName) {
   currentActiveView = viewName;
 
-  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts'];
+  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     const tab = document.getElementById(`tab-${v}`);
@@ -6012,12 +7639,21 @@ function switchView(viewName) {
     renderSettingsRecurringList();
     populateBudgetCategoryDropdown();
     renderBudgetsList();
+    renderSettingsInstallmentsList();
     announceNVDA('Einstellungen geöffnet.');
   } else if (viewName === 'accounts') {
     renderAccountsViewList();
+    populateSavingPotParentDropdown();
+    renderSavingPotsList();
     const newNameInput = document.getElementById('new-acc-name');
     if (newNameInput) newNameInput.focus();
     announceNVDA('Konto-Optionen und Konten verwalten (Reiter 6) geöffnet.');
+  } else if (viewName === 'wishlist') {
+    populateWishlistAccountDropdown();
+    renderWishlist();
+    const wishTitleInput = document.getElementById('wish-title');
+    if (wishTitleInput) wishTitleInput.focus();
+    announceNVDA('Wunschliste und Sparziele (Reiter 7) geöffnet.');
   }
 }
 
@@ -6212,6 +7848,50 @@ function updateLockScreenUI(isFirstTime) {
   }
 }
 
+function togglePinVisibility() {
+  const pinInput = document.getElementById('pin-input');
+  const toggleIcon = document.getElementById('pin-toggle-icon');
+  if (!pinInput) return;
+
+  if (pinInput.type === 'password') {
+    pinInput.type = 'text';
+    if (toggleIcon) toggleIcon.textContent = '🙈 Verbergen';
+    announceNVDA('PIN wird im Klartext angezeigt.');
+  } else {
+    pinInput.type = 'password';
+    if (toggleIcon) toggleIcon.textContent = '👁 Anzeigen';
+    announceNVDA('PIN ist verborgen.');
+  }
+}
+
+async function resetVaultSetup() {
+  const confirmReset = confirm(
+    '⚠️ WICHTIGER HINWEIS ZUM ZURÜCKSETZEN:\n\n' +
+    'Wenn du deinen Tresor zurücksetzt, wird der bisherige verschlüsselte Tresor auf diesem Computer geleert, ' +
+    'damit du eine neue PIN und ein leeres Haushaltsbuch einrichten kannst.\n\n' +
+    'Möchtest du wirklich einen neuen leeren Tresor einrichten?'
+  );
+  if (!confirmReset) return;
+
+  const secondConfirm = confirm(
+    'Bist du dir ganz sicher? Alle bisherigen Buchungen werden gelöscht (sofern du kein Backup hast).'
+  );
+  if (!secondConfirm) return;
+
+  try {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.__DISK_VAULT__ = null;
+    
+    const port = window.__LOCAL_PORT__ || 48123;
+    await fetch(`http://127.0.0.1:${port}/api/reset_vault`, { method: 'POST' }).catch(() => {});
+  } catch(e) {}
+
+  announceNVDA('Tresor wurde zurückgesetzt. Bitte gib eine neue PIN ein.');
+  alert('✅ Tresor wurde zurückgesetzt. Bitte erstelle jetzt deine neue PIN.');
+  window.location.reload();
+}
+
 async function handlePinSubmit(e) {
   e.preventDefault();
 
@@ -6268,6 +7948,7 @@ async function handlePinSubmit(e) {
 
       if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
             if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+            if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
             mergeCustomCategoriesIntoDB();
             populateCategoriesDropdowns();
   populateAllAccountDropdowns();
@@ -6620,16 +8301,6 @@ function formatDateGerman(dateStr) {
   return `${day}. ${m} ${y}`;
 }
 
-function formatAccountName(accKey) {
-  const map = {
-    bank: 'Bankkonto (Giro)',
-    paypal: 'PayPal',
-    savings: 'Tagesgeld (Sparen)',
-    cash: 'Bargeld'
-  };
-  return map[accKey] || accKey || 'Konto';
-}
-
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -6770,7 +8441,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v5.3.5.3'
+    AppVersion: 'v6.0.0'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -6814,6 +8485,592 @@ async function submitFeatureFeedback(e) {
 
 function downloadEncryptedBackup() {
   exportEncryptedBackup();
+}
+
+
+function renderSettingsInstallmentsList() {
+  const container = document.getElementById('settings-installments-list');
+  if (!container) return;
+
+  const plans = (appState.recurring || []).filter(r => r.isInstallment);
+  if (plans.length === 0) {
+    container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Keine laufenden Ratenkäufe oder Kredite vorhanden.</p>';
+    return;
+  }
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+  plans.forEach(plan => {
+    const total = Number(plan.installmentTotal || 0);
+    const paidMonths = Number(plan.installmentPaidMonths || 1);
+    const totalMonths = Number(plan.installmentTotalMonths || 12);
+    const rate = Number(plan.amount || 0);
+    const paidSum = Math.min(total, paidMonths * rate);
+    const remaining = Math.max(0, total - paidSum);
+    const percent = total > 0 ? Math.min(100, Math.round((paidSum / total) * 100)) : 0;
+
+    html += `
+      <div class="settings-box" style="margin: 0; padding: 14px; border-left: 6px solid #FF9800; background: var(--card-bg, #fff);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong style="font-size: 16px;">💳 ${escapeHTML(plan.name || 'Ratenkauf')}</strong>
+            <div style="font-size: 13px; color: var(--text-muted, #666); margin-top: 2px;">
+              Kategorie: ${escapeHTML(plan.category || 'Finanzen')} • Konto: ${escapeHTML(formatAccountName(plan.account))}
+            </div>
+            <div style="font-size: 13px; font-weight: bold; margin-top: 6px; color: #E65100;">
+              ${paidMonths} von ${totalMonths} Raten bezahlt • Rate: ${formatCurrency(rate)} monatlich
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 18px; font-weight: bold; color: #D32F2F;">Restschuld: ${formatCurrency(remaining)}</div>
+            <div style="font-size: 12px; color: var(--text-muted, #666);">Gesamt: ${formatCurrency(total)}</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+            <span>Tilgungsfortschritt</span>
+            <span>${percent}% abbezahlt</span>
+          </div>
+          <div style="background: #e0e0e0; border-radius: 6px; height: 8px; overflow: hidden;">
+            <div style="width: ${percent}%; height: 100%; background: #4CAF50; transition: width 0.3s;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button type="button" class="btn btn-secondary" onclick="handlePayOffInstallment('${plan.id}')" style="padding: 4px 10px; font-size: 13px;">
+            <span>Vollständig ablösen / beenden</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="handleDeleteInstallmentPlan('${plan.id}')" style="padding: 4px 10px; font-size: 13px; color: #D32F2F;">
+            <span>🗑️ Löschen</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function handlePayOffInstallment(planId) {
+  const plan = (appState.recurring || []).find(r => r.id === planId);
+  if (!plan) return;
+
+  const total = Number(plan.installmentTotal || 0);
+  const paidMonths = Number(plan.installmentPaidMonths || 1);
+  const rate = Number(plan.amount || 0);
+  const paidSum = Math.min(total, paidMonths * rate);
+  const remaining = Math.max(0, total - paidSum);
+
+  if (!confirm(`Möchtest du den Ratenkauf "${plan.name}" vorzeitig beenden? Restschuld von ${formatCurrency(remaining)} wird als Einmalzahlung verbucht und der Plan gestoppt.`)) return;
+
+  if (remaining > 0) {
+    appState.transactions.push({
+      id: `tx_${Date.now()}`,
+      type: 'expense',
+      account: plan.account,
+      amount: remaining,
+      category: plan.category,
+      subcategory: plan.subcategory,
+      description: `${plan.name} (Vorzeitige Gesamtablösung)`,
+      date: new Date().toISOString().split('T')[0]
+    });
+  }
+
+  appState.recurring = appState.recurring.filter(r => r.id !== planId);
+  await saveStateToEncryptedStorage();
+  renderSettingsInstallmentsList();
+  renderSettingsRecurringList();
+  updateOverview();
+  announceNVDA(`Ratenkauf ${plan.name} erfolgreich vollständig abgelöst und beendet!`);
+}
+
+async function handleDeleteInstallmentPlan(planId) {
+  if (!confirm('Möchtest du diesen Ratenplan wirklich löschen? Bereits getätigte Buchungen bleiben erhalten.')) return;
+  appState.recurring = (appState.recurring || []).filter(r => r.id !== planId);
+  await saveStateToEncryptedStorage();
+  renderSettingsInstallmentsList();
+  renderSettingsRecurringList();
+  announceNVDA('Ratenplan gelöscht.');
+}
+
+
+function handleWishTypeChange() {
+  const typeSelect = document.getElementById('wish-type');
+  const labelEl = document.getElementById('wish-amount-label');
+  const amountInput = document.getElementById('wish-amount');
+  const type = typeSelect ? typeSelect.value : 'once';
+
+  if (!labelEl || !amountInput) return;
+
+  if (type === 'monthly') {
+    labelEl.textContent = 'Monatliche Abo-Kosten in Euro (€ / Monat):';
+    amountInput.placeholder = 'z. B. 14.99 oder 29.90';
+  } else if (type === 'yearly') {
+    labelEl.textContent = 'Jährliche Abo-Kosten in Euro (€ / Jahr):';
+    amountInput.placeholder = 'z. B. 89.00 oder 120.00';
+  } else if (type === 'quarterly') {
+    labelEl.textContent = 'Kosten pro Quartal in Euro (€ / 3 Monate):';
+    amountInput.placeholder = 'z. B. 35.00';
+  } else if (type === 'halfyear') {
+    labelEl.textContent = 'Kosten pro Halbjahr in Euro (€ / 6 Monate):';
+    amountInput.placeholder = 'z. B. 60.00';
+  } else {
+    labelEl.textContent = 'Geschätzte Kosten in Euro (€ einmalig):';
+    amountInput.placeholder = 'z. B. 80 oder 450';
+  }
+
+  handleWishAmountInput();
+}
+
+function handleWishAmountInput() {
+  const typeSelect = document.getElementById('wish-type');
+  const amountInput = document.getElementById('wish-amount');
+  const hintEl = document.getElementById('wish-amount-calc-hint');
+  if (!typeSelect || !amountInput || !hintEl) return;
+
+  const type = typeSelect.value;
+  const val = parseFloat(amountInput.value) || 0;
+
+  if (val <= 0) {
+    hintEl.textContent = '';
+    return;
+  }
+
+  if (type === 'monthly') {
+    const yearVal = val * 12;
+    hintEl.textContent = `💡 ${formatCurrency(val)} / Monat = ${formatCurrency(yearVal)} im Jahr`;
+  } else if (type === 'yearly') {
+    const monthVal = val / 12;
+    hintEl.textContent = `💡 ${formatCurrency(val)} / Jahr = ${formatCurrency(monthVal)} pro Monat`;
+  } else if (type === 'quarterly') {
+    const yearVal = val * 4;
+    hintEl.textContent = `💡 ${formatCurrency(val)} alle 3 Monate = ${formatCurrency(yearVal)} im Jahr`;
+  } else if (type === 'halfyear') {
+    const yearVal = val * 2;
+    hintEl.textContent = `💡 ${formatCurrency(val)} alle 6 Monate = ${formatCurrency(yearVal)} im Jahr`;
+  } else {
+    hintEl.textContent = '';
+  }
+}
+
+
+async function handleFulfillWishAsRecurring(wishId) {
+  ensureWishlistInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  const intervalNames = {
+    monthly: 'monatlichen',
+    yearly: 'jährlichen',
+    quarterly: 'vierteljährlichen',
+    halfyear: 'halbjährlichen'
+  };
+  const intName = intervalNames[wish.type] || 'wiederkehrenden';
+
+  const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt als ${intName} Dauerauftrag aktivieren und die 1. Abbuchung auf Konto "${formatAccountName(wish.account)}" verbuchen?`;
+  if (!confirm(confirmMsg)) return;
+
+  // 1. In appState.recurring anlegen
+  if (!appState.recurring) appState.recurring = [];
+  appState.recurring.push({
+    id: `rec_sub_${Date.now()}`,
+    type: 'expense',
+    account: wish.account,
+    amount: wish.amount,
+    category: wish.category || 'Streaming, Musik, TV & Unterhaltung',
+    subcategory: wish.title,
+    name: `Abo: ${wish.title}`,
+    interval: wish.type || 'monthly',
+    day: 1,
+    startYear: selectedYear,
+    startMonth: selectedMonth,
+    active: true
+  });
+
+  // 2. Erste Abbuchung sofort buchen
+  const todayStr = new Date().toISOString().split('T')[0];
+  appState.transactions.push({
+    id: `tx_${Date.now()}`,
+    type: 'expense',
+    account: wish.account,
+    amount: wish.amount,
+    category: wish.category || 'Streaming, Musik, TV & Unterhaltung',
+    subcategory: wish.title,
+    description: `Abo gestartet (Wunsch erfüllt): ${wish.title}`,
+    isPlanned: false,
+    date: todayStr
+  });
+
+  wish.fulfilled = true;
+  await saveStateToEncryptedStorage();
+  renderWishlist();
+  updateOverview();
+  announceNVDA(`Abo "${wish.title}" erfolgreich als Dauerauftrag aktiviert und erste Abbuchung gebucht!`);
+}
+
+
+// ----------------------------------------------------------------------------
+// SPARTÖPFE (UNTERKONTEN & SPARZIELE) & KREDIT-ACCORDION IN DER ÜBERSICHT
+// ----------------------------------------------------------------------------
+function ensureSavingPotsInitialized() {
+  if (!appState.savingPots || !Array.isArray(appState.savingPots)) {
+    appState.savingPots = [];
+  }
+}
+
+function populateSavingPotParentDropdown() {
+  ensureAccountsInitialized();
+  const sel = document.getElementById('pot-parent-account');
+  if (!sel) return;
+
+  sel.innerHTML = appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    return `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
+  }).join('');
+  applySymbolsToOptions(sel);
+}
+
+async function handleAddSavingPot(e) {
+  e.preventDefault();
+  ensureSavingPotsInitialized();
+
+  const name = document.getElementById('pot-name').value.trim();
+  const parentId = document.getElementById('pot-parent-account').value;
+  const currentAmount = parseFloat(document.getElementById('pot-current-amount').value) || 0;
+  const targetAmount = parseFloat(document.getElementById('pot-target-amount').value);
+  const note = document.getElementById('pot-note').value.trim();
+
+  if (!name || isNaN(targetAmount) || targetAmount <= 0) return;
+
+  const newPot = {
+    id: `pot_${Date.now()}`,
+    accountId: parentId,
+    name: name,
+    currentAmount: currentAmount,
+    targetAmount: targetAmount,
+    note: note,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+
+  appState.savingPots.push(newPot);
+  await saveStateToEncryptedStorage();
+
+  document.getElementById('form-add-saving-pot').reset();
+  renderSavingPotsList();
+  populateWishlistAccountDropdown();
+  announceNVDA(`Spartopf "${name}" mit Ziel ${formatCurrency(targetAmount)} erfolgreich angelegt!`);
+}
+
+function renderSavingPotsList() {
+  ensureSavingPotsInitialized();
+  const container = document.getElementById('tab-saving-pots-list');
+  if (!container) return;
+
+  if (appState.savingPots.length === 0) {
+    container.innerHTML = '<p class="empty-state" style="padding: 14px; text-align: center; color: var(--text-muted, #666);">Noch keine Spartöpfe angelegt. Erstelle oben deinen ersten Spartopf!</p>';
+    return;
+  }
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 12px;">';
+  appState.savingPots.forEach(pot => {
+    const acc = appState.accounts.find(a => a.id === pot.accountId);
+    const accName = acc ? acc.name : 'Hauptkonto';
+    const current = Number(pot.currentAmount || 0);
+    const target = Number(pot.targetAmount || 1);
+    const percent = Math.min(100, Math.round((current / target) * 100));
+    const remaining = Math.max(0, target - current);
+
+    html += `
+      <div class="settings-box" style="margin: 0; padding: 14px; border-left: 6px solid #9C27B0; background: var(--card-bg, #fff);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong style="font-size: 16px;">🎯 ${escapeHTML(pot.name)}</strong>
+            <div style="font-size: 13px; color: var(--text-muted, #666); margin-top: 2px;">
+              Zugeordnet zu: <strong>${escapeHTML(accName)}</strong> ${pot.note ? `• <em>${escapeHTML(pot.note)}</em>` : ''}
+            </div>
+            <div style="font-size: 14px; font-weight: bold; margin-top: 6px; color: #7B1FA2;">
+              ${formatCurrency(current)} von ${formatCurrency(target)} gespart (${percent}%)
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 16px; font-weight: bold; color: ${remaining === 0 ? '#2E7D32' : '#E65100'};">
+              ${remaining === 0 ? '🟢 Ziel erreicht!' : `Noch ${formatCurrency(remaining)}`}
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top: 10px;">
+          <div style="background: #e0e0e0; border-radius: 6px; height: 10px; overflow: hidden;">
+            <div style="width: ${percent}%; height: 100%; background: ${remaining === 0 ? '#4CAF50' : '#9C27B0'}; transition: width 0.3s;"></div>
+          </div>
+        </div>
+
+        <div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+          <button type="button" class="btn btn-secondary" onclick="switchViewToTransferForPot('${pot.id}')" style="padding: 4px 10px; font-size: 13px;">
+            <span>🔄 Per Umbuchung besparen / entnehmen</span>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="handleDeleteSavingPot('${pot.id}')" style="padding: 4px 10px; font-size: 13px; color: #D32F2F;">
+            <span>🗑️ Löschen</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function switchViewToTransferForPot(potId) {
+  ensureSavingPotsInitialized();
+  const pot = appState.savingPots.find(p => p.id === potId);
+  if (!pot) return;
+
+  switchView('transfer');
+  
+  const toAccSel = document.getElementById('trf-to');
+  if (toAccSel) {
+    toAccSel.value = pot.accountId;
+    handleTransferAccountsChange();
+  }
+
+  const toPotSel = document.getElementById('trf-to-pot');
+  if (toPotSel) {
+    toPotSel.value = pot.id;
+  }
+
+  announceNVDA(`Reiter 4 (Umbuchen) geöffnet. Spartopf "${pot.name}" für Einzahlung ausgewählt.`);
+}
+
+async function handleDeleteSavingPot(potId) {
+  if (!confirm('Möchtest du diesen Spartopf wirklich löschen?')) return;
+  appState.savingPots = (appState.savingPots || []).filter(p => p.id !== potId);
+  await saveStateToEncryptedStorage();
+  renderSavingPotsList();
+  populateWishlistAccountDropdown();
+  renderWishlist();
+  announceNVDA('Spartopf gelöscht.');
+}
+
+function renderOverviewCreditAccordion() {
+  const container = document.getElementById('overview-credit-items-feed');
+  const subText = document.getElementById('credit-summary-subtext');
+  const monthCreditEl = document.getElementById('card-month-credit');
+  if (!container) return;
+
+  const plans = (appState.recurring || []).filter(r => r.isInstallment && r.active);
+  const totalRemaining = plans.reduce((sum, p) => sum + Number(p.installmentRemaining || 0), 0);
+
+  if (subText) subText.textContent = `${plans.length} aktive Kredite & Raten`;
+  if (monthCreditEl) monthCreditEl.textContent = formatCurrency(totalRemaining) + ' Rest';
+
+  if (plans.length === 0) {
+    container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Aktuell keine laufenden Kredite oder Ratenkäufe vorhanden.</p>';
+    return;
+  }
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
+  plans.forEach(plan => {
+    const total = Number(plan.installmentTotal || 0);
+    const paidMonths = Number(plan.installmentPaidMonths || 1);
+    const totalMonths = Number(plan.installmentTotalMonths || 12);
+    const rate = Number(plan.amount || 0);
+    const remaining = Number(plan.installmentRemaining || 0);
+    const percent = total > 0 ? Math.min(100, Math.round(((total - remaining) / total) * 100)) : 0;
+
+    html += `
+      <div style="background: var(--bg-hover, #f8f9fa); border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+          <div>
+            <strong>💳 ${escapeHTML(plan.name || 'Ratenkauf')}</strong>
+            <div style="font-size: 12px; color: var(--text-muted, #666);">
+              Rate: <strong>${formatCurrency(rate)}</strong> • ${paidMonths} von ${totalMonths} gezahlt (${percent}%)
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <strong style="color: #D32F2F; font-size: 15px;">Rest: ${formatCurrency(remaining)}</strong>
+          </div>
+        </div>
+        <div style="margin-top: 6px; background: #e0e0e0; border-radius: 4px; height: 6px; overflow: hidden;">
+          <div style="width: ${percent}%; height: 100%; background: #4CAF50;"></div>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+
+function handleTransferAccountsChange() {
+  ensureSavingPotsInitialized();
+  const fromAccId = document.getElementById('trf-from') ? document.getElementById('trf-from').value : '';
+  const toAccId = document.getElementById('trf-to') ? document.getElementById('trf-to').value : '';
+
+  const fromPotGroup = document.getElementById('group-trf-from-pot');
+  const fromPotSelect = document.getElementById('trf-from-pot');
+  const toPotGroup = document.getElementById('group-trf-to-pot');
+  const toPotSelect = document.getElementById('trf-to-pot');
+
+  // 1. Source Account Pots
+  if (fromPotGroup && fromPotSelect) {
+    const fromPots = (appState.savingPots || []).filter(p => p.accountId === fromAccId);
+    if (fromPots.length > 0) {
+      fromPotGroup.style.display = 'block';
+      let opts = '<option value="">(Kein Spartopf - Aus Kontoguthaben)</option>';
+      opts += fromPots.map(p => `<option value="${escapeHTML(p.id)}">🎯 ${escapeHTML(p.name)} (${formatCurrency(p.currentAmount)})</option>`).join('');
+      fromPotSelect.innerHTML = opts;
+    } else {
+      fromPotGroup.style.display = 'none';
+      fromPotSelect.innerHTML = '<option value="">(Kein Spartopf)</option>';
+    }
+  }
+
+  // 2. Destination Account Pots
+  if (toPotGroup && toPotSelect) {
+    const toPots = (appState.savingPots || []).filter(p => p.accountId === toAccId);
+    if (toPots.length > 0) {
+      toPotGroup.style.display = 'block';
+      let opts = '<option value="">(Kein Spartopf - Auf Kontoguthaben)</option>';
+      opts += toPots.map(p => `<option value="${escapeHTML(p.id)}">🎯 ${escapeHTML(p.name)} (${formatCurrency(p.currentAmount)} von ${formatCurrency(p.targetAmount)})</option>`).join('');
+      toPotSelect.innerHTML = opts;
+    } else {
+      toPotGroup.style.display = 'none';
+      toPotSelect.innerHTML = '<option value="">(Kein Spartopf)</option>';
+    }
+  }
+}
+
+
+// ----------------------------------------------------------------------------
+// HIGH-ACCURACY FUZZY & PHONETIC SEARCH ENGINE
+// ----------------------------------------------------------------------------
+function levenshteinDistance(a, b) {
+  if (a.length === 0) return b.length;
+  if (b.length === 0) return a.length;
+  const matrix = [];
+  for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+  for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  return matrix[b.length][a.length];
+}
+
+function normalizeSearchText(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    .replace(/ck/g, 'k')
+    .replace(/ph/g, 'f')
+    .replace(/[^a-z0-9\s.,><=~-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function matchesFuzzyOrExact(token, compWords, rawCompText, normCompText) {
+  // 1. Exact or normalized full text contains token
+  if (rawCompText.includes(token) || normCompText.includes(token)) return true;
+
+  const normToken = normalizeSearchText(token);
+  if (!normToken) return false;
+  if (normCompText.includes(normToken)) return true;
+
+  if (normToken.length < 3) return false;
+
+  // 2. Word-level fuzzy & prefix matching
+  for (const word of compWords) {
+    if (word.length < 2) continue;
+    // Prefix or full word contains token
+    if (word.startsWith(normToken) || normToken.startsWith(word)) return true;
+    if (word.includes(normToken)) return true;
+
+    // Direct word distance (lengths must be very close: at most 1 char difference)
+    if (Math.abs(word.length - normToken.length) <= 1) {
+      const maxAllowedDist = normToken.length <= 4 ? 1 : 2;
+      if (levenshteinDistance(word, normToken) <= maxAllowedDist) {
+        return true;
+      }
+    }
+
+    // Substring distance only for longer tokens (at least 6 chars) and with max distance 1
+    // (e.g. 'dorfbaecker' vs 'baeker' (length 6) -> 'baecker' has distance 1)
+    if (normToken.length >= 6 && word.length > normToken.length) {
+      for (let i = 0; i <= word.length - normToken.length; i++) {
+        const sub = word.substr(i, normToken.length);
+        if (levenshteinDistance(sub, normToken) <= 1) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function clearTxSearch() {
+  const qInput = document.getElementById('tx-search-query');
+  if (qInput) qInput.value = '';
+  currentTxFilter.query = '';
+  handleTxSearchFilterChange();
+  if (qInput) qInput.focus();
+  announceNVDA('Suche zurückgesetzt. Alle Buchungen werden wieder angezeigt.');
+}
+
+function handleTxSearchKeyDown(e) {
+  if (e.key === 'Escape') {
+    clearTxSearch();
+  }
+}
+
+function applyQuickSearchChip(chipText) {
+  const qInput = document.getElementById('tx-search-query');
+  if (!qInput) return;
+  qInput.value = chipText;
+  handleTxSearchFilterChange();
+  qInput.focus();
+}
+
+
+function setQuickDate(type, offsetDays) {
+  const dt = new Date();
+  dt.setDate(dt.getDate() + offsetDays);
+  const dateStr = dt.toISOString().split('T')[0];
+  const input = document.getElementById(type + '-date');
+  if (input) {
+    input.value = dateStr;
+    autoUpdateFrequencyByDate(type);
+    input.focus();
+    const deFormat = dt.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const label = offsetDays === 0 ? 'Heute' : (offsetDays === -1 ? 'Gestern' : (offsetDays === 1 ? 'Morgen' : deFormat));
+    announceNVDA(`Datum auf ${label} (${deFormat}) gesetzt.`);
+  }
+}
+
+
+function setQuickRecDay(type, dayVal) {
+  const input = document.getElementById(type + '-rec-day');
+  if (input) {
+    input.value = dayVal;
+    input.focus();
+    const label = dayVal === 28 ? 'Monatsende (28.)' : `${dayVal}. des Monats`;
+    announceNVDA(`Fälligkeitstag auf ${label} gesetzt.`);
+  }
 }
 
 </script>
