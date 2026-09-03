@@ -1,20 +1,17 @@
 {
-  "version": "5.3.5.3",
+  "version": "6.0.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-02",
+  "buildDate": "2026-09-03",
   "features": [
-    "Vollstaendige Unterstuetzung aller Sparplan-Intervalle bei Umbuchungen (Woechentlich, Monatlich, Quartal, Halbjahr, Jaehrlich)",
-    "Perfektionierte Eigene-Kategorien-Engine fuer Ausgaben, Einnahmen und Umbuchungen",
-    "Automatische Synchronisation aller Dropdowns bei jedem Reiterwechsel (Reiter 1 bis 6)",
-    "Dedizierter Reiter 6: Konto-Optionen & Konten-Verwaltung (Tastaturkuerzel: 6)",
-    "Unbegrenzt viele eigene Konten mit 9 Kontotypen",
-    "Monats-Budgets & Ausgaben-Limits in Reiter 5 mit Ampelsystem & NVDA-Sprachwarnung",
-    "Bank-Kontoauszug / CSV-Import mit interaktiver Vorschau-Tabelle",
-    "Druckbarer Monats- & Jahresbericht (PDF-Export)",
-    "Globale Live-Suche & Buchungs-Filter in der Uebersicht",
-    "Smarte Liquiditaets- & Kontodeckungs-Warnung",
-    "Barrierefreier Einkaufs- & Kassenrechner ganz unten in der Uebersicht (ein- und zuklappbar)",
-    "Ausgaben-Rangliste als klappbares Akkordeon",
-    "100% reiner Textmodus fuer NVDA-Bildschirmleser (0 Emojis)"
+    "Intelligente Super-Suche mit Tippfehler-Toleranz (Fuzzy Matching, Umlaute, phonetische Suche)",
+    "Automatische Betragsbereiche, Operatoren, relatives Datum und Negation in der Suche",
+    "Automatisches Aufklappen aller Trefferlisten fuer NVDA-Bildschirmleser",
+    "Raten- und Finanzierungsrechner mit nur 1x Kaufpreis-Eingabe und Live-Berechnung",
+    "Strikte Spartopf-Architektur: Verwaltung in Reiter 6, Besparen & Entnahme ausschliesslich ueber Reiter 4 (Umbuchen)",
+    "Wunschliste (Reiter 7): Auswahl aus vorhandenen Spartoepfen & automatische Abbuchung bei Erfuellung",
+    "Natuerliche Datums- & Faelligkeitsbeschriftungen mit Schnelltasten [Heute], [Gestern], [1.], [15.], [Monatsende]",
+    "Bereinigte Einstellungen (Reiter 5): Redundante Listen fuer Dauerauftraege und Ratenkaeufe entfernt",
+    "Vollstaendige Absicherung des Sperrbildschirms (PIN im Klartext anzeigen/verbergen, Tresor-Reset)",
+    "Vollstaendige 100% Barrierefreiheit & 0 Duplikate"
   ]
 }

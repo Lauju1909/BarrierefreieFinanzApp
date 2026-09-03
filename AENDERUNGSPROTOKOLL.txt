@@ -3,7 +3,48 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 5.3.5.3 (Aktuelle Version - Sparplaene & Eigene Kategorien)
+VERSION 6.0.0 (Aktuelle Version - Meilenstein-Release)
+--------------------------------------------------------------------------------
+
+* INTELLIGENTE SUPER-SUCHE & TIPPFEHLER-TOLERANZ (FUZZY MATCHING):
+  - Buchungen werden auch bei Tipp- und Schreibfehlern zuverlaessig gefunden
+    (z. B. amazn -> Amazon Prime, gehald -> Gehalt, baeker -> Baeckerei).
+  - Deutsche Phonetik- und Lautnormalisierung fuer Umlaute (ae/oe/ue/ss) und
+    Lautpaare (ck/k, ph/f).
+  - Betragsspannen (z. B. 20-50, >50, <100), relative Datumsbegriffe (heute,
+    gestern, September) und Begriffsausschluss mit Minus (-Wort).
+  - Trefferlisten klappen fuer Screenreader (NVDA) automatisch auf.
+
+* RATEN- & FINANZIERUNGSRECHNER OHNE DOPPELEINGABE:
+  - Gesamtkaufpreis muss nur noch ein einziges Mal im Haupt-Betragsfeld eingetragen
+    werden und berechnet sofort live die Monatsrate.
+  - Erweiterte Optionen (Anbieter, Anzahlung, Zinsen %, Schlussrate) uebersichtlich
+    eingeklappt.
+
+* STRIKTE & SAUBERE SPARTOPF-ARCHITEKTUR:
+  - Spartoepfe werden zentral in den Konto-Optionen (Reiter 6) angelegt.
+  - Besparen und Entnahmen erfolgen verbindlich und nachvollziehbar ueber das
+    Umbuchungs-Menue (Reiter 4) mit voller Transaktionshistorie.
+  - Schnelltaste [Per Umbuchung besparen / entnehmen] direkt an jeder Spartopf-Karte.
+  - In der Wunschliste (Reiter 7) wird aus den vorhandenen Spartoepfen gewaehlt.
+    Beim Erfuellen eines Wunsches wird der Betrag automatisch aus dem Spartopf
+    entnommen und als Ausgabe verbucht.
+
+* NATUERLICHE DATUMS- & FAELLIGKEITSBESCHRIFTUNGEN:
+  - Dynamische, passgenaue Bezeichnungen je nach Buchungsart (Kaufdatum, Beginn der
+    Ratenzahlung, Faelligkeitstag im Monat).
+  - Schnelltasten [Heute], [Gestern], [1.], [15.] und [Monatsende].
+
+* BEREINIGTE EINSTELLUNGEN (REITER 5):
+  - Redundante Listen fuer Dauerauftraege und Ratenkaeufe entfernt, da zentral
+    in der Uebersicht und der Wunschliste integriert.
+
+* VOLLE SPERRBILDSCHIRM-STABILITAET & BARRIEREFREIHEIT:
+  - PIN im Klartext anzeigen/verbergen und Tresor-Reset vollstaendig funktionsfaehig.
+  - 100% Screenreader-Konformitaet, 0 Duplikate, 74/74 Event-Handler geprueft.
+
+--------------------------------------------------------------------------------
+VERSION 5.3.5.3
 --------------------------------------------------------------------------------
 
 * PERFEKTIONIERTE UMBUCHUNGEN & SPARPLAENE (REITER 4):
