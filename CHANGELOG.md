@@ -3,7 +3,26 @@
 
 ---
 
-## 🔄 Version 6.0.1 (Aktuelles Update)
+## 🛡️ Version 6.0.2 (Sicherheits-Härtung & Update-Schutz)
+*Datum: 07. September 2026*
+
+### 🔒 1. Kryptografischer Token-Schutz für lokalen Server (CSRF-Schutz)
+- **Hintergrund-Server geschützt:** Der integrierte lokale TCP-Server (Port 48123) fordert ab sofort für alle Anfragen (`/api/get_vault`, `/api/save_vault`, `/api/reset_vault`, `/api/heartbeat`) einen dynamischen, geheimen Sitzungsschlüssel (`X-Vault-Token`).
+- **Schutz vor Webseiten:** Fremde Webseiten oder andere Anwendungen im Browser können nicht mehr unbefugt auf den Tresor zugreifen oder Daten verändern.
+- **CORS-Einschränkung:** Streng auf die eigene lokale App beschränkt.
+
+### 💾 2. Automatischer Schutz vor Datenverlust (Rollierende Backups)
+- **Automatischer Backup-Ordner:** Es wurde der Unterordner `Tresor_Sicherheitskopien` eingerichtet.
+- **Rotierende Sicherung:** Vor jedem Speichervorgang und vor jedem Programm-Update wird eine zeitgestempelte Kopie (`vault_DATUM_ZEIT.bak`) gesichert.
+- **5-fache Historie:** Bis zu 5 historische Speicherstände bleiben gesichert, sodass niemals Daten verloren gehen können.
+
+### 🛡️ 3. Garantierte Update-Sicherheit & Abwärtskompatibilität
+- **Keine neuen Funktionen oder veränderten Menüs:** Der gewohnte Bedienablauf mit dem NVDA-Screenreader bleibt zu 100 % unverändert.
+- **Volle Tresor-Kompatibilität:** Bestehende Tresore (`Haushaltsbuch_Daten.vault`) und Passwörter/PINs funktionieren nach dem Update ohne jegliche Unterbrechung weiter.
+
+---
+
+## 🔄 Version 6.0.1
 *Datum: 03. September 2026*
 
 ### 🔄 1. Umbuchungs-Daueraufträge & Sparpläne repariert (Reiter 4)

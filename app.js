@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.0.1';
+const CURRENT_APP_VERSION = 'v6.0.2';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -12,6 +12,14 @@ const STORAGE_SHOW_SYMBOLS_KEY = 'haushaltsbuch_show_symbols_enabled_v1';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden
+
+function getVaultApiHeaders(customHeaders = {}) {
+  const headers = Object.assign({}, customHeaders);
+  if (typeof window !== 'undefined' && window.__AUTH_TOKEN__) {
+    headers['X-Vault-Token'] = window.__AUTH_TOKEN__;
+  }
+  return headers;
+}
 
 const MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
@@ -2577,14 +2585,14 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v6.0.1'
+    AppVersion: 'v6.0.2'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
   try {
     fetch('http://127.0.0.1:' + port + '/api/send_feedback', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getVaultApiHeaders({ 'Content-Type': 'application/json' }),
       body: payload
     }).catch(() => {});
   } catch(e) {}
@@ -2742,7 +2750,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function startHeartbeat() {
   const port = window.__LOCAL_PORT__ || 48123;
   setInterval(() => {
-    fetch(`http://127.0.0.1:${port}/api/heartbeat`).catch(() => {});
+    fetch(`http://127.0.0.1:${port}/api/heartbeat`, { headers: getVaultApiHeaders() }).catch(() => {});
   }, 3000);
 }
 
@@ -5116,7 +5124,7 @@ async function checkVaultStatus() {
   // 2. Abfrage an lokalen C# Server (liest Datei im EXE-Ordner)
   const port = window.__LOCAL_PORT__ || 48123;
   try {
-    const r = await fetch(`http://127.0.0.1:${port}/api/get_vault`);
+    const r = await fetch(`http://127.0.0.1:${port}/api/get_vault`, { headers: getVaultApiHeaders() });
     const data = await r.json();
     if (data && data.vault && data.salt) {
       savedVault = data.vault;
@@ -5197,7 +5205,7 @@ async function resetVaultSetup() {
     window.__DISK_VAULT__ = null;
     
     const port = window.__LOCAL_PORT__ || 48123;
-    await fetch(`http://127.0.0.1:${port}/api/reset_vault`, { method: 'POST' }).catch(() => {});
+    await fetch(`http://127.0.0.1:${port}/api/reset_vault`, { method: 'POST', headers: getVaultApiHeaders() }).catch(() => {});
   } catch(e) {}
 
   announceNVDA('Tresor wurde zurückgesetzt. Bitte gib eine neue PIN ein.');
@@ -5330,7 +5338,7 @@ async function saveStateToEncryptedStorage() {
     try {
       await fetch(`http://127.0.0.1:${port}/api/save_vault`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getVaultApiHeaders({ 'Content-Type': 'application/json' }),
         body: payload,
         keepalive: true
       });
@@ -5424,7 +5432,7 @@ function resetAllAppData() {
     try {
       fetch(`http://127.0.0.1:${port}/api/save_vault`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getVaultApiHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({})
       }).catch(() => {});
     } catch(e) {}
@@ -5539,7 +5547,7 @@ async function importEncryptedBackup(event) {
         try {
           fetch(`http://127.0.0.1:${port}/api/save_vault`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getVaultApiHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ salt: normalizedSalt, vault: normalizedVault })
           }).catch(() => {});
         } catch(e) {}
@@ -5754,14 +5762,14 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v6.0.1'
+    AppVersion: 'v6.0.2'
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
   try {
     fetch('http://127.0.0.1:' + port + '/api/send_feedback', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getVaultApiHeaders({ 'Content-Type': 'application/json' }),
       body: payload
     }).catch(() => {});
   } catch(e) {}

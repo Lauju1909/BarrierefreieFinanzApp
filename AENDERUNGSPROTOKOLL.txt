@@ -3,7 +3,35 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 6.0.1 (Aktuelle Version)
+VERSION 6.0.2 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* KRYPTOGRAFISCHER TOKEN-SCHUTZ FUER DEN LOKALEN SERVER (CSRF-SCHUTZ):
+  - Der im Hintergrund laufende TCP-Server (Port 48123) wurde vollstaendig gegen
+    Angriffe von fremden Webseiten im Browser abgesichert.
+  - Bei jedem Start wird ein zufaelliger Session-Token erzeugt, der ausschliesslich
+    in der eigenen Haushaltsbuch-Instanz bekannt ist.
+  - Alle /api/ Anfragen (get_vault, save_vault, reset_vault, heartbeat) verlangen
+    zwingend den Header 'X-Vault-Token'. Unbefugte Anfragen werden mit HTTP 403
+    abgewiesen.
+  - CORS-Header (Access-Control-Allow-Origin) wurde strikt auf den lokalen Port
+    eingeschraenkt.
+
+* AUTOMATISCHE ROLLIERENDE BACKUPS (ORDNER 'Tresor_Sicherheitskopien'):
+  - Vor JEDEM Speichervorgang und vor JEDEM Programm-Update wird automatisch
+    eine zeitgestempelte Sicherheitskopie des Tresors angelegt.
+  - Die letzten 5 historischen Staende bleiben im Ordner 'Tresor_Sicherheitskopien'
+    gesichert. Ein Datenverlust durch versehentliches Ueberschreiben ist damit
+    technisch ausgeschlossen.
+
+* GARANTIERTE UPDATE-SICHERHEIT & ABWAERTSKOMPATIBILITAET:
+  - Keine veraenderten oder neuen Bedienelemente, die den Bedienfluss mit NVDA
+    beeintraechtigen.
+  - Der bestehende Tresor (Haushaltsbuch_Daten.vault) und die PIN bleiben zu 100%
+    erhalten und werden nahtlos weiterverwendet.
+
+--------------------------------------------------------------------------------
+VERSION 6.0.1
 --------------------------------------------------------------------------------
 
 * UMBUCHUNGS-DAUERAUFTRAEGE & SPARPLAENE REPARIERT (REITER 4):

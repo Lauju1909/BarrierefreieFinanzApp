@@ -1,8 +1,11 @@
 {
-  "version": "6.0.1",
+  "version": "6.0.2",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-03",
+  "buildDate": "2026-09-07",
   "features": [
+    "Sicherheits-Haertung: Lokaler TCP-Server mit kryptografischem Session-Token (X-Vault-Token) gegen fremde Webseiten geschuetzt",
+    "Automatischer Schutz vor Datenverlust: Rollierende Tresor-Sicherheitskopien (Ordner Tresor_Sicherheitskopien) vor jedem Speichern und jedem Update",
+    "Garantierte Update-Sicherheit: Volle Rueckwaertskompatibilitaet aller Tresordaten und nahtloses Weiterarbeiten ohne Datenverlust",
     "Dauerauftraege & Sparplaene bei Umbuchungen (Reiter 4) repariert (kein Blockieren durch versteckte Pflichtfelder)",
     "Neuer Bereich 'Umbuchungen & Sparplaene' in der Hauptuebersicht (Reiter 1) mit eigener Karte, Details und Von/Nach-Konten",
     "Super-Suche durchsucht auch Umbuchungen und klappt Trefferlisten automatisch auf",

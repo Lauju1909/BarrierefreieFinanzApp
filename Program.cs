@@ -18,8 +18,10 @@ namespace HaushaltsbuchApp
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
         private const int BASE_PORT = 48123;
+        private static readonly string _sessionToken = Guid.NewGuid().ToString("N");
 
         private static string _activeStorageDir;
+        private static string _backupDir;
         private static string _vaultPath;
         private static string _bakPath;
         private static string _htmlPath;
@@ -47,6 +49,7 @@ namespace HaushaltsbuchApp
 
                 // 1. SPEICHERORT: AUSSCHLIESSLICH IM ORDNER DER EXE
                 _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
+                _backupDir = Path.Combine(_activeStorageDir, "Tresor_Sicherheitskopien");
                 _profileDir = Path.Combine(_activeStorageDir, "Profile");
                 _htmlPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_App.html");
                 _versionPath = Path.Combine(_activeStorageDir, "version.json");
@@ -56,9 +59,13 @@ namespace HaushaltsbuchApp
                 try
                 {
                     if (!Directory.Exists(_activeStorageDir)) Directory.CreateDirectory(_activeStorageDir);
+                    if (!Directory.Exists(_backupDir)) Directory.CreateDirectory(_backupDir);
                     if (!Directory.Exists(_profileDir)) Directory.CreateDirectory(_profileDir);
                 }
                 catch { }
+
+                // Automatische Sicherheitskopie vor jedem Start
+                CreateRollingBackup(_vaultPath);
 
                 // 2. ENTPACKEN ODER SYNCHRONISIEREN DER HTML-DATEI
                 SyncEmbeddedApp(_htmlPath, _versionPath);
@@ -205,6 +212,32 @@ namespace HaushaltsbuchApp
             catch { }
         }
 
+        private static void CreateRollingBackup(string sourceFile)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(sourceFile) || !File.Exists(sourceFile)) return;
+                if (!Directory.Exists(_backupDir)) Directory.CreateDirectory(_backupDir);
+
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                string targetFile = Path.Combine(_backupDir, string.Format("vault_{0}.bak", timestamp));
+                File.Copy(sourceFile, targetFile, true);
+
+                // Max. 5 rollierende Sicherheitskopien aufbewahren
+                var dirInfo = new DirectoryInfo(_backupDir);
+                var files = dirInfo.GetFiles("vault_*.bak");
+                if (files.Length > 5)
+                {
+                    Array.Sort(files, (a, b) => b.CreationTime.CompareTo(a.CreationTime));
+                    for (int i = 5; i < files.Length; i++)
+                    {
+                        try { files[i].Delete(); } catch { }
+                    }
+                }
+            }
+            catch { }
+        }
+
         private static bool IsValidVaultJsonFile(string path)
         {
             try
@@ -323,6 +356,28 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        // Sicherheits-Token aus Header extrahieren
+                        string tokenHeader = null;
+                        foreach (string h in reqLines)
+                        {
+                            if (h.StartsWith("X-Vault-Token:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                tokenHeader = h.Substring(14).Trim();
+                                break;
+                            }
+                        }
+
+                        // Alle /api/ Endpunkte zwingend mit Session-Token absichern (Schutz vor fremden Webseiten)
+                        if (url.StartsWith("/api/"))
+                        {
+                            if (string.IsNullOrEmpty(_sessionToken) || !string.Equals(tokenHeader, _sessionToken, StringComparison.Ordinal))
+                            {
+                                byte[] forbidden = Encoding.UTF8.GetBytes("{\"error\":\"Forbidden: Invalid or missing security token\"}");
+                                SendHttpResponse(stream, 403, "application/json", forbidden);
+                                return;
+                            }
+                        }
+
                         if (url.StartsWith("/api/heartbeat"))
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -346,6 +401,21 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        if (url.StartsWith("/api/reset_vault") && method == "POST")
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            if (File.Exists(_vaultPath))
+                            {
+                                CreateRollingBackup(_vaultPath);
+                                try { File.Delete(_vaultPath); } catch { }
+                            }
+                            try { if (File.Exists(_bakPath)) File.Delete(_bakPath); } catch { }
+                            InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
+                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"reset\"}");
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
                         if (url.StartsWith("/api/send_feedback") && method == "POST")
                         {
                             _lastHeartbeat = DateTime.Now;
@@ -359,21 +429,7 @@ namespace HaushaltsbuchApp
                             }
                             catch { }
 
-                            // 2. Sofort-Benachrichtigung an ntfy.sh (100% ohne Konto, ohne Anmeldung)
-                            try
-                            {
-                                using (var wbNtfy = new System.Net.WebClient())
-                                {
-                                    wbNtfy.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
-                                    wbNtfy.Encoding = Encoding.UTF8;
-                                    string cleanBody = body.Replace("\"", "'").Replace("\r", "").Replace("\n", " ");
-                                    string ntfyPayload = "{\"topic\":\"lauju_haushaltsbuch_feedback\",\"title\":\"💡 Neues Haushaltsbuch Feedback\",\"message\":\"" + cleanBody + "\",\"priority\":4,\"tags\":[\"bulb\",\"moneybag\"]}";
-                                    wbNtfy.UploadString("https://ntfy.sh", ntfyPayload);
-                                }
-                            }
-                            catch { }
-
-                            // 3. E-Mail Versand an lauju1909@gmail.com
+                            // 2. E-Mail Versand an lauju1909@gmail.com
                             try
                             {
                                 using (var wbMail = new System.Net.WebClient())
@@ -399,6 +455,9 @@ namespace HaushaltsbuchApp
                             {
                                 body = body.Trim('\ufeff', '\u200b', '\r', '\n', ' ');
                                 
+                                // Rollierendes Sicherheits-Backup vor jedem Speichervorgang
+                                CreateRollingBackup(_vaultPath);
+
                                 string tmpPath = _vaultPath + ".tmp";
                                 File.WriteAllText(tmpPath, body, Encoding.UTF8);
 
@@ -414,6 +473,7 @@ namespace HaushaltsbuchApp
                             }
                             else if (!string.IsNullOrEmpty(body) && body.Trim() == "{}")
                             {
+                                CreateRollingBackup(_vaultPath);
                                 try { if (File.Exists(_vaultPath)) File.Delete(_vaultPath); } catch { }
                                 try { if (File.Exists(_bakPath)) File.Delete(_bakPath); } catch { }
                                 InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
@@ -443,12 +503,12 @@ namespace HaushaltsbuchApp
         {
             try
             {
-                string statusText = statusCode == 200 ? "OK" : (statusCode == 404 ? "Not Found" : "Error");
+                string statusText = statusCode == 200 ? "OK" : (statusCode == 403 ? "Forbidden" : (statusCode == 404 ? "Not Found" : "Error"));
                 StringBuilder sb = new StringBuilder();
                 sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
-                sb.Append("Access-Control-Allow-Origin: *\r\n");
+                sb.Append(string.Format("Access-Control-Allow-Origin: http://127.0.0.1:{0}\r\n", _activePort));
                 sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
-                sb.Append("Access-Control-Allow-Headers: Content-Type\r\n");
+                sb.Append("Access-Control-Allow-Headers: Content-Type, X-Vault-Token\r\n");
                 sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
                 sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));
                 sb.Append("Connection: close\r\n\r\n");
@@ -478,7 +538,7 @@ namespace HaushaltsbuchApp
                 }
 
                 string html = File.ReadAllText(htmlPath, Encoding.UTF8);
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__LOCAL_PORT__ = " + _activePort + ";</script>";
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {
@@ -695,6 +755,7 @@ namespace HaushaltsbuchApp
                             client.DownloadFile(appUrlWithBuster, tmpHtml);
                             if (File.Exists(tmpHtml) && new FileInfo(tmpHtml).Length > 1000)
                             {
+                                CreateRollingBackup(_vaultPath);
                                 File.Copy(tmpHtml, targetHtml, true);
                                 File.Delete(tmpHtml);
                                 File.WriteAllText(localVersionFile, remoteVerJson, Encoding.UTF8);
