@@ -5157,6 +5157,7 @@ async function checkVaultStatus() {
 }
 
 function updateLockScreenUI(isFirstTime) {
+  setTimeout(() => { if (typeof initLockScreenSync === 'function') initLockScreenSync(); }, 100);
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
   const lockInstructions = document.getElementById('lock-instructions');
@@ -6449,35 +6450,74 @@ function setSyncMode(mode) {
   }
 }
 
+function initLockScreenSync() {
+  if (typeof SyncEngine === 'undefined') return;
+
+  const myDevice = SyncEngine.getDeviceName();
+  const myCode = SyncEngine.getPairingCode();
+
+  const devEl = document.getElementById('lock-sync-device-name');
+  const codeEl = document.getElementById('lock-sync-code');
+  const statusEl = document.getElementById('lock-sync-status');
+
+  if (devEl) devEl.textContent = myDevice;
+  if (codeEl) codeEl.textContent = myCode;
+
+  const mainNameEl = document.getElementById('sync-my-device-name');
+  const mainCodeEl = document.getElementById('sync-my-code');
+  if (mainNameEl) mainNameEl.textContent = myDevice;
+  if (mainCodeEl) mainCodeEl.textContent = myCode;
+
+  restartSyncListener();
+}
+
 function initSyncView() {
   setSyncMode(getSyncMode());
 }
 
 function restartSyncListener() {
+  if (typeof SyncEngine === 'undefined') return;
   const statusEl = document.getElementById('sync-receiver-status');
+  const lockStatusEl = document.getElementById('lock-sync-status');
+
   SyncEngine.stopListening();
   SyncEngine.startListening((state, msg) => {
     if (statusEl) {
       statusEl.textContent = msg;
       if (state === 'success') {
         statusEl.style.color = '#15803d';
-        announceNVDA(msg);
       } else if (state === 'error') {
         statusEl.style.color = '#b91c1c';
-        announceNVDA(msg);
       } else {
         statusEl.style.color = 'inherit';
       }
     }
+    if (lockStatusEl) {
+      lockStatusEl.textContent = msg;
+      if (state === 'success') {
+        lockStatusEl.style.color = '#15803d';
+        lockStatusEl.style.background = 'rgba(76, 175, 80, 0.15)';
+      } else if (state === 'error') {
+        lockStatusEl.style.color = '#b91c1c';
+        lockStatusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      } else {
+        lockStatusEl.style.color = '#1565C0';
+        lockStatusEl.style.background = 'rgba(255, 255, 255, 0.8)';
+      }
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(msg);
   });
 }
 
 function generateNewSyncCode() {
+  if (typeof SyncEngine === 'undefined') return;
   const newCode = SyncEngine.generateNewPairingCode();
   const codeEl = document.getElementById('sync-my-code');
   if (codeEl) codeEl.textContent = newCode;
+  const lockCodeEl = document.getElementById('lock-sync-code');
+  if (lockCodeEl) lockCodeEl.textContent = newCode;
   restartSyncListener();
-  announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`);
+  if (typeof announceNVDA === 'function') announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`);
 }
 
 async function handleStartSync(e) {

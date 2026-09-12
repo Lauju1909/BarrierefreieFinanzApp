@@ -374,6 +374,30 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </button>
 </div>
 </form>
+<div id="lock-sync-section" class="lock-sync-box" style="margin-top: 16px; background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 10px; padding: 14px; text-align: center;">
+  <div style="font-size: 15px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
+    ðŸ“± Daten vom Computer Ã¼bertragen (Smartphone-Sync)
+  </div>
+  <p style="font-size: 13px; color: var(--text-muted, #555); margin: 0 0 10px 0;">
+    Ãœbertrage deine Finanzdaten direkt vom PC auf dieses Smartphone â€“ auch ohne vorherige PIN-Einrichtung!
+  </p>
+  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
+    <div style="background: #fff; border: 1px solid #90CAF9; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
+      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">GERÃ„TENAME:</span>
+      <strong id="lock-sync-device-name" style="font-size: 20px; color: #0D47A1; letter-spacing: 2px; font-family: monospace;">---</strong>
+    </div>
+    <div style="background: #fff; border: 1px solid #A5D6A7; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
+      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">KOPPLUNGSCODE:</span>
+      <strong id="lock-sync-code" style="font-size: 22px; color: #1B5E20; letter-spacing: 3px; font-family: monospace;">--- ---</strong>
+    </div>
+  </div>
+  <div id="lock-sync-status" style="font-size: 13px; font-weight: bold; color: #1565C0; margin-bottom: 8px; padding: 6px 10px; background: rgba(255,255,255,0.8); border-radius: 4px;">
+    ðŸŸ¢ Warte auf Signal vom Computer...
+  </div>
+  <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 12px; padding: 6px 12px;">
+    ðŸ”„ Neuer Kopplungscode
+  </button>
+</div>
 
 <div class="lock-restore-action" style="margin-top: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px;">
 <label class="btn btn-secondary" style="width: 100%; cursor: pointer; display: block; box-sizing: border-box;">

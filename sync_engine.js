@@ -18,7 +18,10 @@ const SyncEngine = {
       for (let i = 0; i < 4; i++) {
         suffix += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      name = (window.__IS_ANDROID__ ? 'Handy-' : 'PC-') + suffix;
+      const isAndroid = !!window.__IS_ANDROID__ || 
+                        (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      name = (isAndroid ? 'Handy-' : 'PC-') + suffix;
       localStorage.setItem('haushaltsbuch_sync_devicename', name);
     }
     return name;
@@ -124,7 +127,7 @@ const SyncEngine = {
     return 'hb_sync_' + hash.substring(0, 16);
   },
 
-  // 5. HANDY: AUF SYNCHRONISATION LAUSCHEN (RECEIVER)
+  // 5. HANDY / RECEIVER: AUF SYNCHRONISATION LAUSCHEN
   async startListening(onStatusUpdate) {
     this.isListening = true;
     const myDevice = this.getDeviceName();
@@ -151,7 +154,7 @@ const SyncEngine = {
                   // Entschlüsseln versuchen
                   const decrypted = await this.decrypt(payload, myCode);
                   if (decrypted && decrypted.type === 'SYNC_REQUEST') {
-                    if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Anfrage vom PC empfangen. Verschlüssle Tresordaten...');
+                    if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Anfrage vom PC empfangen. Verschlüssle Daten...');
                     await this.handleIncomingSyncRequest(decrypted, topic, myCode, onStatusUpdate);
                     break;
                   }
@@ -180,7 +183,7 @@ const SyncEngine = {
     try {
       // 1. Lokale Tresordaten auslesen
       const vaultData = await this.exportCurrentVaultData();
-      
+
       // 2. Antwortpaket verschlüsseln
       const responsePayload = {
         type: 'SYNC_RESPONSE',
@@ -198,8 +201,8 @@ const SyncEngine = {
       });
 
       // 4. Falls PC neuere Daten mitgeschickt hat, diese übernehmen
-      if (request.vault && request.vault.transactions) {
-        await this.importSyncedVaultData(request.vault);
+      if (request.vault) {
+        await this.importSyncedVaultData(request.vault, onStatusUpdate);
       }
 
       this.lastSyncTime = new Date();
@@ -208,12 +211,13 @@ const SyncEngine = {
         onStatusUpdate('success', `✅ Erfolgreich mit PC synchronisiert um ${timeStr}!`);
       }
 
-      // Audio & Vibration
+      // Vibration
       if (window.navigator && window.navigator.vibrate) {
         try { window.navigator.vibrate([40, 30, 50]); } catch(e) {}
       }
     } catch (e) {
-      if (onStatusUpdate) onStatusUpdate('error', 'Fehler beim Abgleich: ' + e.message);
+      console.error('[SyncEngine] handleIncomingSyncRequest error:', e);
+      if (onStatusUpdate) onStatusUpdate('error', '❌ Fehler beim Abgleich: ' + e.message);
     }
   },
 
@@ -224,7 +228,7 @@ const SyncEngine = {
     }
 
     const topic = await this.getTopicForDevice(targetDeviceName);
-    if (onStatusUpdate) onStatusUpdate('connecting', 'Verbinde mit Smartphone (' + targetDeviceName + ')...');
+    if (onStatusUpdate) onStatusUpdate('connecting', '🔗 Verbinde mit Smartphone (' + targetDeviceName + ')...');
 
     // 1. Eigene Tresordaten vorbereiten
     const localVault = await this.exportCurrentVaultData();
@@ -246,16 +250,16 @@ const SyncEngine = {
     });
 
     if (!sendRes.ok) {
-      throw new Error('Verbindung zum Übertragungskanal fehlgeschlagen.');
+      throw new Error('Verbindung zum Übertragungskanal fehlgeschlagen (HTTP ' + sendRes.status + ').');
     }
 
-    if (onStatusUpdate) onStatusUpdate('waiting_reply', 'Signal gesendet. Warte auf verschlüsselte Antwort vom Smartphone...');
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Signal gesendet. Warte auf verschlüsselte Antwort vom Smartphone...');
 
-    // 3. Bis zu 25 Sekunden auf Antwort lauschen
+    // 3. Bis zu 30 Sekunden auf Antwort lauschen
     const startTime = Date.now();
     const sinceParam = Math.floor((startTime - 10000) / 1000);
 
-    while (Date.now() - startTime < 25000) {
+    while (Date.now() - startTime < 30000) {
       await new Promise(r => setTimeout(r, 2000));
       try {
         const resp = await fetch(`https://ntfy.sh/${topic}_resp/json?poll=1&since=${sinceParam}`);
@@ -271,17 +275,17 @@ const SyncEngine = {
                   // Entschlüsseln mit dem Kopplungscode
                   const decrypted = await this.decrypt(payload, pairingCode);
                   if (decrypted && decrypted.type === 'SYNC_RESPONSE') {
-                    if (onStatusUpdate) onStatusUpdate('merging', 'Antwort empfangen! Führe Tresor-Abgleich durch...');
-                    
+                    if (onStatusUpdate) onStatusUpdate('merging', '🔄 Antwort empfangen! Führe Tresor-Abgleich durch...');
+
                     // Tresordaten übernehmen
                     if (decrypted.vault) {
-                      await this.importSyncedVaultData(decrypted.vault);
+                      await this.importSyncedVaultData(decrypted.vault, onStatusUpdate);
                     }
 
                     this.lastSyncTime = new Date();
                     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
                     if (onStatusUpdate) onStatusUpdate('success', `🎉 Synchronisation erfolgreich abgeschlossen (${timeStr})!`);
-                    
+
                     if (window.navigator && window.navigator.vibrate) {
                       try { window.navigator.vibrate([50, 40, 60]); } catch(e) {}
                     }
@@ -289,18 +293,32 @@ const SyncEngine = {
                   }
                 }
               }
-            } catch (decErr) {}
+            } catch (decErr) {
+              // Falscher Code oder nicht für uns
+            }
           }
         }
       } catch (e) {}
     }
 
-    throw new Error('Zeitüberschreitung: Das Smartphone hat nicht geantwortet. Ist die App auf dem Handy geöffnet und der Bereich "Smartphone-Sync" aktiv?');
+    throw new Error('Zeitüberschreitung (30s): Das Smartphone hat nicht geantwortet. Ist die App auf dem Handy geöffnet und der Bereich "Smartphone-Sync" aktiv?');
   },
 
-  // 7. TRESORDATEN EXPORTIEREN & IMPORTIEREN
+  // 7. TRESORDATEN EXPORTIEREN — Kompatibel mit appState-Modell
   async exportCurrentVaultData() {
-    let data = {
+    if (typeof appState !== 'undefined' && appState !== null) {
+      return {
+        exportedAt: Date.now(),
+        appState: JSON.parse(JSON.stringify(appState)),
+        transactions: appState.transactions || [],
+        accounts: appState.accounts || [],
+        wishlist: appState.wishlist || [],
+        recurring: appState.recurring || []
+      };
+    }
+
+    // Fallback ältere Version
+    return {
       exportedAt: Date.now(),
       transactions: (typeof transactions !== 'undefined') ? transactions : [],
       recurringRules: (typeof recurringRules !== 'undefined') ? recurringRules : [],
@@ -310,56 +328,155 @@ const SyncEngine = {
       currentProfile: (typeof currentProfile !== 'undefined') ? currentProfile : 'Standard',
       wishlist: (typeof wishlistItems !== 'undefined') ? wishlistItems : []
     };
-    return data;
   },
 
-  async importSyncedVaultData(incomingData) {
+  // 8. TRESORDATEN IMPORTIEREN — Funktioniert immer (auch ohne PIN / bei Erststart!)
+  async importSyncedVaultData(incomingData, onStatusUpdate) {
     if (!incomingData) return;
 
-    // Transaktionen zusammenführen (anhand von ID)
-    if (incomingData.transactions && Array.isArray(incomingData.transactions) && typeof transactions !== 'undefined') {
-      const existingIds = new Set(transactions.map(t => t.id));
-      let added = 0;
-      for (const t of incomingData.transactions) {
-        if (!existingIds.has(t.id)) {
-          transactions.push(t);
-          added++;
+    try {
+      const incoming = incomingData.appState || incomingData;
+
+      // Prüfe ob die App entsperrt ist (cryptoKey vorhanden)
+      const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
+      const hasVaultOnDisk = !!(localStorage.getItem('haushaltsbuch_vault_data') || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
+
+      // FALL 1: ERSTSTART (Kein Tresor auf Gerät, keine PIN eingegeben)
+      if (!isUnlocked && !hasVaultOnDisk) {
+        if (onStatusUpdate) onStatusUpdate('syncing', '📦 Erstelle neuen Tresor aus den Computer-Daten...');
+
+        const pinInputEl = document.getElementById('pin-input');
+        const chosenPin = (pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234';
+
+        // Baue neuen appState zusammen
+        const newAppState = {
+          accounts: (incoming.accounts && incoming.accounts.length) ? incoming.accounts : [
+            { id: 'bank', name: 'Girokonto (Bank)', type: 'giro', initialBalance: 0, isDefault: true },
+            { id: 'cash', name: 'Bargeld (Geldbeutel)', type: 'cash', initialBalance: 0, isDefault: false },
+            { id: 'savings', name: 'Tagesgeld / Sparkonto', type: 'savings', initialBalance: 0, isDefault: false },
+            { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', initialBalance: 0, isDefault: false }
+          ],
+          initialBalances: incoming.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
+          transactions: incoming.transactions || incomingData.transactions || [],
+          recurring: incoming.recurring || incomingData.recurring || [],
+          budgets: incoming.budgets || {},
+          customCategories: incoming.customCategories || { exp: {}, inc: {}, trf: {} },
+          wishlist: incoming.wishlist || incomingData.wishlist || []
+        };
+
+        if (typeof deriveKey === 'function' && typeof arrayBufferToBase64 === 'function') {
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const saltBase64 = arrayBufferToBase64(salt.buffer);
+          currentSaltBase64 = saltBase64;
+          localStorage.setItem('haushaltsbuch_vault_salt', saltBase64);
+
+          cryptoKey = await deriveKey(chosenPin, salt);
+          appState = newAppState;
+
+          if (typeof saveStateToEncryptedStorage === 'function') {
+            await saveStateToEncryptedStorage();
+          }
+
+          if (typeof unlockApp === 'function') {
+            unlockApp();
+          }
+
+          const txCount = appState.transactions ? appState.transactions.length : 0;
+          const msg = `Synchronisation erfolgreich! ${txCount} Buchungen geladen.`;
+          if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+          if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
+
+          if (!pinInputEl || !pinInputEl.value.trim()) {
+            setTimeout(() => {
+              alert(`🎉 Synchronisation erfolgreich!\n\n${txCount} Buchungen vom Computer geladen.\n\nDeine Start-PIN lautet: 1234\n(Kann jederzeit in den Einstellungen geändert werden)`);
+            }, 300);
+          }
+          return;
         }
       }
-      transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
 
-    // Spartöpfe zusammenführen
-    if (incomingData.spartoepfe && Array.isArray(incomingData.spartoepfe) && typeof spartoepfe !== 'undefined') {
-      const existingPotIds = new Set(spartoepfe.map(p => p.id));
-      for (const p of incomingData.spartoepfe) {
-        if (!existingPotIds.has(p.id)) {
-          spartoepfe.push(p);
+      // FALL 2: GERÄT IST GESPERRT, ABER HAT BEREITS EINEN TRESOR (Warte auf PIN-Eingabe)
+      if (!isUnlocked && hasVaultOnDisk) {
+        window.__PENDING_SYNC_DATA__ = incomingData;
+        const msg = 'Daten empfangen! Bitte gib oben deine PIN ein, um die App zu öffnen.';
+        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+        if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
+        const lockStatusEl = document.getElementById('lock-sync-status');
+        if (lockStatusEl) lockStatusEl.textContent = '✅ ' + msg;
+        return;
+      }
+
+      // FALL 3: GERÄT IST ENTSPERRT -> DATEN DIREKT INTEGRIEREN
+      if (typeof appState !== 'undefined' && appState !== null) {
+        if (!Array.isArray(appState.transactions)) appState.transactions = [];
+        const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
+        let addedTx = 0;
+
+        const incomingTx = incoming.transactions || incomingData.transactions || [];
+        for (const t of incomingTx) {
+          if (t && t.id && !existingTxIds.has(String(t.id))) {
+            appState.transactions.push(t);
+            existingTxIds.add(String(t.id));
+            addedTx++;
+          }
+        }
+        if (addedTx > 0) {
+          appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        }
+
+        // Konten
+        if (!Array.isArray(appState.accounts)) appState.accounts = [];
+        const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
+        const incomingAcc = incoming.accounts || incomingData.accounts || [];
+        for (const a of incomingAcc) {
+          if (a && a.id && !existingAccIds.has(String(a.id))) {
+            appState.accounts.push(a);
+            existingAccIds.add(String(a.id));
+          }
+        }
+
+        // Wunschliste
+        if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
+        const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
+        const incomingWish = incoming.wishlist || incomingData.wishlist || [];
+        for (const w of incomingWish) {
+          if (w && w.id && !existingWishIds.has(String(w.id))) {
+            appState.wishlist.push(w);
+            existingWishIds.add(String(w.id));
+          }
+        }
+
+        // Daueraufträge
+        if (!Array.isArray(appState.recurring)) appState.recurring = [];
+        const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
+        const incomingRec = incoming.recurring || incomingData.recurring || [];
+        for (const r of incomingRec) {
+          if (r && r.id && !existingRecIds.has(String(r.id))) {
+            appState.recurring.push(r);
+            existingRecIds.add(String(r.id));
+          }
+        }
+
+        // Speichern
+        if (typeof saveStateToEncryptedStorage === 'function') {
+          await saveStateToEncryptedStorage();
+        }
+
+        // UI aktualisieren
+        if (typeof updateOverview === 'function') {
+          updateOverview();
+        }
+        if (typeof renderAccountsViewList === 'function') {
+          renderAccountsViewList();
+        }
+        if (typeof renderOverviewCreditAccordion === 'function') {
+          renderOverviewCreditAccordion();
         }
       }
-    }
 
-    // Konten zusammenführen
-    if (incomingData.accounts && Array.isArray(incomingData.accounts) && typeof accounts !== 'undefined') {
-      const existingAccIds = new Set(accounts.map(a => a.id));
-      for (const a of incomingData.accounts) {
-        if (!existingAccIds.has(a.id)) {
-          accounts.push(a);
-        }
-      }
-    }
-
-    // UI aktualisieren & speichern
-    if (typeof saveEverything === 'function') {
-      await saveEverything();
-    } else if (typeof idbSaveVault === 'function') {
-      await idbSaveVault();
-    }
-
-    if (typeof renderAll === 'function') {
-      renderAll();
-    } else if (typeof renderOverview === 'function') {
-      renderOverview();
+    } catch (err) {
+      console.error('[SyncEngine] importSyncedVaultData error:', err);
+      throw new Error('Abgleich fehlgeschlagen: ' + err.message);
     }
   }
 };
