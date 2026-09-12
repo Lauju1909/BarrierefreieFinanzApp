@@ -484,6 +484,25 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        string relPath = url.TrimStart('/').Split('?')[0];
+                        string filePath = Path.Combine(_activeStorageDir, relPath);
+                        if (!string.IsNullOrEmpty(relPath) && File.Exists(filePath) && !string.Equals(filePath, _vaultPath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                            string mime = "application/octet-stream";
+                            if (ext == ".js") mime = "application/javascript";
+                            else if (ext == ".css") mime = "text/css";
+                            else if (ext == ".html" || ext == ".htm") mime = "text/html";
+                            else if (ext == ".json") mime = "application/json";
+                            else if (ext == ".png") mime = "image/png";
+                            else if (ext == ".svg") mime = "image/svg+xml";
+
+                            byte[] fileBytes = File.ReadAllBytes(filePath);
+                            SendHttpResponse(stream, 200, mime, fileBytes);
+                            return;
+                        }
+
                         if (File.Exists(_htmlPath))
                         {
                             _lastHeartbeat = DateTime.Now;
