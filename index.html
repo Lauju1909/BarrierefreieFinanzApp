@@ -380,27 +380,59 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </form>
 <div id="lock-sync-section" class="lock-sync-box" style="margin-top: 16px; background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 10px; padding: 14px; text-align: center;">
-  <div style="font-size: 15px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
-    ðŸ“± Daten vom Computer Ã¼bertragen (Smartphone-Sync)
+  <div style="font-size: 16px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
+    📱 Daten vom Computer übertragen (Smartphone-Sync)
   </div>
-  <p style="font-size: 13px; color: var(--text-muted, #555); margin: 0 0 10px 0;">
-    Ãœbertrage deine Finanzdaten direkt vom PC auf dieses Smartphone â€“ auch ohne vorherige PIN-Einrichtung!
+  <p style="font-size: 13px; color: var(--text-muted, #555); margin: 0 0 12px 0;">
+    Übertrage deine Finanzdaten direkt vom PC auf dieses Smartphone – auch ohne vorherige PIN-Einrichtung!
   </p>
-  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
-    <div style="background: #fff; border: 1px solid #90CAF9; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
-      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">GERÃ„TENAME:</span>
-      <strong id="lock-sync-device-name" style="font-size: 20px; color: #0D47A1; letter-spacing: 2px; font-family: monospace;">---</strong>
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
+    <!-- GERÄTENAME -->
+    <div style="background: #fff; border: 2px solid #90CAF9; border-radius: 8px; padding: 10px 12px; text-align: left;">
+      <label for="lock-sync-device-name" style="font-size: 12px; color: #555; font-weight: bold; display: block; margin-bottom: 4px;">
+        1. GERÄTENAME (am PC eingeben):
+      </label>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="lock-sync-device-name" readonly value="---"
+               aria-label="Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+               style="font-size: 20px; font-weight: bold; color: #0D47A1; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #BBDEFB; border-radius: 4px; background: #E3F2FD; cursor: pointer;"
+               onclick="this.select()" />
+        <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('lock-sync-device-name').value, 'Gerätename')"
+                aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          🔊 <strong>Buchstabieren</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('lock-sync-device-name').value, 'Gerätename')"
+                aria-label="Gerätename kopieren" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          📋 <strong>Kopieren</strong>
+        </button>
+      </div>
     </div>
-    <div style="background: #fff; border: 1px solid #A5D6A7; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
-      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">KOPPLUNGSCODE:</span>
-      <strong id="lock-sync-code" style="font-size: 22px; color: #1B5E20; letter-spacing: 3px; font-family: monospace;">--- ---</strong>
+    <!-- KOPPLUNGSCODE -->
+    <div style="background: #fff; border: 2px solid #A5D6A7; border-radius: 8px; padding: 10px 12px; text-align: left;">
+      <label for="lock-sync-code" style="font-size: 12px; color: #555; font-weight: bold; display: block; margin-bottom: 4px;">
+        2. KOPPLUNGSCODE (am PC eingeben):
+      </label>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="lock-sync-code" readonly value="--- ---"
+               aria-label="Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+               style="font-size: 22px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; font-family: monospace; flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #C8E6C9; border-radius: 4px; background: #E8F5E9; cursor: pointer;"
+               onclick="this.select()" />
+        <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('lock-sync-code').value, 'Kopplungscode')"
+                aria-label="Kopplungscode Ziffer für Ziffer vorlesen" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          🔊 <strong>Buchstabieren</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('lock-sync-code').value, 'Kopplungscode')"
+                aria-label="Kopplungscode kopieren" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          📋 <strong>Kopieren</strong>
+        </button>
+      </div>
     </div>
   </div>
-  <div id="lock-sync-status" style="font-size: 13px; font-weight: bold; color: #1565C0; margin-bottom: 8px; padding: 6px 10px; background: rgba(255,255,255,0.8); border-radius: 4px;">
-    ðŸŸ¢ Warte auf Signal vom Computer...
+  <div id="lock-sync-status" aria-live="polite" style="font-size: 13px; font-weight: bold; color: #1565C0; margin-bottom: 8px; padding: 8px 12px; background: rgba(255,255,255,0.9); border-radius: 4px; border: 1px solid #BBDEFB;">
+    🟢 Warte auf Signal vom Computer...
   </div>
-  <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 12px; padding: 6px 12px;">
-    ðŸ”„ Neuer Kopplungscode
+  <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 13px; padding: 8px 14px; width: 100%;">
+    🔄 <strong>Neuen Kopplungscode erzeugen</strong>
   </button>
 </div>
 
@@ -2317,13 +2349,43 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
     <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
       <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
-        <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-Gerätename:</span>
-        <div id="sync-my-device-name" style="font-size: 26px; font-weight: bold; color: #1976D2; letter-spacing: 2px; margin-top: 4px;">Wird generiert...</div>
+        <label for="sync-my-device-name" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
+          1. Dein Smartphone-Gerätename (am PC eingeben):
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="sync-my-device-name" readonly value="Wird generiert..."
+                 aria-label="Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+                 style="font-size: 24px; font-weight: bold; color: #1976D2; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid #90CAF9; border-radius: 6px; background: #E3F2FD; cursor: pointer;"
+                 onclick="this.select()" />
+          <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('sync-my-device-name').value, 'Gerätename')"
+                  aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 14px; padding: 8px 14px;">
+            🔊 <strong>Buchstabieren</strong>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('sync-my-device-name').value, 'Gerätename')"
+                  aria-label="Gerätename kopieren" style="font-size: 14px; padding: 8px 14px;">
+            📋 <strong>Kopieren</strong>
+          </button>
+        </div>
       </div>
 
       <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
-        <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein einmaliger Kopplungscode:</span>
-        <div id="sync-my-code" style="font-size: 32px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; margin-top: 4px;">--- ---</div>
+        <label for="sync-my-code" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
+          2. Dein einmaliger Kopplungscode (am PC eingeben):
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="sync-my-code" readonly value="--- ---"
+                 aria-label="Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+                 style="font-size: 28px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; font-family: monospace; flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid #A5D6A7; border-radius: 6px; background: #E8F5E9; cursor: pointer;"
+                 onclick="this.select()" />
+          <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('sync-my-code').value, 'Kopplungscode')"
+                  aria-label="Kopplungscode Ziffer für Ziffer vorlesen" style="font-size: 14px; padding: 8px 14px;">
+            🔊 <strong>Buchstabieren</strong>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('sync-my-code').value, 'Kopplungscode')"
+                  aria-label="Kopplungscode kopieren" style="font-size: 14px; padding: 8px 14px;">
+            📋 <strong>Kopieren</strong>
+          </button>
+        </div>
       </div>
     </div>
 

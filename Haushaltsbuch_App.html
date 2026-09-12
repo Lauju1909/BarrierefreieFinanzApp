@@ -946,27 +946,59 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </form>
 <div id="lock-sync-section" class="lock-sync-box" style="margin-top: 16px; background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 10px; padding: 14px; text-align: center;">
-  <div style="font-size: 15px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
-    ðŸ“± Daten vom Computer Ã¼bertragen (Smartphone-Sync)
+  <div style="font-size: 16px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
+    📱 Daten vom Computer übertragen (Smartphone-Sync)
   </div>
-  <p style="font-size: 13px; color: var(--text-muted, #555); margin: 0 0 10px 0;">
-    Ãœbertrage deine Finanzdaten direkt vom PC auf dieses Smartphone â€“ auch ohne vorherige PIN-Einrichtung!
+  <p style="font-size: 13px; color: var(--text-muted, #555); margin: 0 0 12px 0;">
+    Übertrage deine Finanzdaten direkt vom PC auf dieses Smartphone – auch ohne vorherige PIN-Einrichtung!
   </p>
-  <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-bottom: 10px;">
-    <div style="background: #fff; border: 1px solid #90CAF9; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
-      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">GERÃ„TENAME:</span>
-      <strong id="lock-sync-device-name" style="font-size: 20px; color: #0D47A1; letter-spacing: 2px; font-family: monospace;">---</strong>
+  <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px;">
+    <!-- GERÄTENAME -->
+    <div style="background: #fff; border: 2px solid #90CAF9; border-radius: 8px; padding: 10px 12px; text-align: left;">
+      <label for="lock-sync-device-name" style="font-size: 12px; color: #555; font-weight: bold; display: block; margin-bottom: 4px;">
+        1. GERÄTENAME (am PC eingeben):
+      </label>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="lock-sync-device-name" readonly value="---"
+               aria-label="Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+               style="font-size: 20px; font-weight: bold; color: #0D47A1; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #BBDEFB; border-radius: 4px; background: #E3F2FD; cursor: pointer;"
+               onclick="this.select()" />
+        <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('lock-sync-device-name').value, 'Gerätename')"
+                aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          🔊 <strong>Buchstabieren</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('lock-sync-device-name').value, 'Gerätename')"
+                aria-label="Gerätename kopieren" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          📋 <strong>Kopieren</strong>
+        </button>
+      </div>
     </div>
-    <div style="background: #fff; border: 1px solid #A5D6A7; border-radius: 6px; padding: 8px 12px; min-width: 130px;">
-      <span style="font-size: 11px; color: #666; font-weight: bold; display: block;">KOPPLUNGSCODE:</span>
-      <strong id="lock-sync-code" style="font-size: 22px; color: #1B5E20; letter-spacing: 3px; font-family: monospace;">--- ---</strong>
+    <!-- KOPPLUNGSCODE -->
+    <div style="background: #fff; border: 2px solid #A5D6A7; border-radius: 8px; padding: 10px 12px; text-align: left;">
+      <label for="lock-sync-code" style="font-size: 12px; color: #555; font-weight: bold; display: block; margin-bottom: 4px;">
+        2. KOPPLUNGSCODE (am PC eingeben):
+      </label>
+      <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="lock-sync-code" readonly value="--- ---"
+               aria-label="Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+               style="font-size: 22px; font-weight: bold; color: #1B5E20; letter-spacing: 3px; font-family: monospace; flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #C8E6C9; border-radius: 4px; background: #E8F5E9; cursor: pointer;"
+               onclick="this.select()" />
+        <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('lock-sync-code').value, 'Kopplungscode')"
+                aria-label="Kopplungscode Ziffer für Ziffer vorlesen" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          🔊 <strong>Buchstabieren</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('lock-sync-code').value, 'Kopplungscode')"
+                aria-label="Kopplungscode kopieren" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
+          📋 <strong>Kopieren</strong>
+        </button>
+      </div>
     </div>
   </div>
-  <div id="lock-sync-status" style="font-size: 13px; font-weight: bold; color: #1565C0; margin-bottom: 8px; padding: 6px 10px; background: rgba(255,255,255,0.8); border-radius: 4px;">
-    ðŸŸ¢ Warte auf Signal vom Computer...
+  <div id="lock-sync-status" aria-live="polite" style="font-size: 13px; font-weight: bold; color: #1565C0; margin-bottom: 8px; padding: 8px 12px; background: rgba(255,255,255,0.9); border-radius: 4px; border: 1px solid #BBDEFB;">
+    🟢 Warte auf Signal vom Computer...
   </div>
-  <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 12px; padding: 6px 12px;">
-    ðŸ”„ Neuer Kopplungscode
+  <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 13px; padding: 8px 14px; width: 100%;">
+    🔄 <strong>Neuen Kopplungscode erzeugen</strong>
   </button>
 </div>
 
@@ -2858,29 +2890,29 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- ========== REITER 8: SMARTPHONE SYNC (E2EE) ========== -->
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="form-container" style="max-width: 780px;">
-    <h2 class="view-heading" tabindex="-1" id="heading-sync-view" data-emoji="ðŸ“±" style="margin-bottom: 4px;">ðŸ“± Smartphone &amp; Desktop Live-Synchronisation</h2>
-    <p class="view-sub" style="margin: 0 0 20px 0;">Ãœbertrage deine Finanzdaten Ã¼ber eine militÃ¤risch gesicherte Ende-zu-Ende-VerschlÃ¼sselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide GerÃ¤te aktiv sind.</p>
+    <h2 class="view-heading" tabindex="-1" id="heading-sync-view" data-emoji="📱" style="margin-bottom: 4px;">📱 Smartphone &amp; Desktop Live-Synchronisation</h2>
+    <p class="view-sub" style="margin: 0 0 20px 0;">Übertrage deine Finanzdaten über eine militärisch gesicherte Ende-zu-Ende-Verschlüsselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide Geräte aktiv sind.</p>
 
     <!-- MODUS WECHSELN -->
     <div style="display: flex; gap: 10px; margin-bottom: 16px;">
       <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-        ðŸ“² Smartphone (Empfangen)
+        📲 Smartphone (Empfangen)
       </button>
       <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-        ðŸ’» Computer (Senden)
+        💻 Computer (Senden)
       </button>
     </div>
 
-    <!-- BEREICH FÃœR SMARTPHONE (EMPFÃ„NGER) -->
+    <!-- BEREICH FÜR SMARTPHONE (EMPFÄNGER) -->
     <div id="sync-mobile-box" class="settings-box" style="display: none; border-left: 8px solid #1976D2;">
       <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #1976D2;">ðŸ“² Dieses GerÃ¤t ist bereit zur Verbindung</h3>
-        <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlÃ¼sselte Live-Synchronisation zu starten:</p>
+        <h3 style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät ist bereit zur Verbindung</h3>
+        <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlüsselte Live-Synchronisation zu starten:</p>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
         <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
-          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-GerÃ¤tename:</span>
+          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-Gerätename:</span>
           <div id="sync-my-device-name" style="font-size: 26px; font-weight: bold; color: #1976D2; letter-spacing: 2px; margin-top: 4px;">Wird generiert...</div>
         </div>
 
@@ -2892,7 +2924,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
       <div style="margin-bottom: 16px;">
         <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="width: 100%;">
-          <span>ðŸ”„ Neuen Kopplungscode erzeugen</span>
+          <span>🔄 Neuen Kopplungscode erzeugen</span>
         </button>
       </div>
 
@@ -2901,16 +2933,16 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </div>
     </div>
 
-    <!-- BEREICH FÃœR DESKTOP (SENDER) -->
+    <!-- BEREICH FÜR DESKTOP (SENDER) -->
     <div id="sync-desktop-box" class="settings-box" style="display: none; border-left: 8px solid #388E3C;">
       <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">ðŸ’» Synchronisation mit Smartphone starten</h3>
-        <p style="margin: 0; font-size: 15px;">Ã–ffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
+        <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
       </div>
 
       <form onsubmit="handleStartSync(event)" class="accessible-form">
         <div class="form-group">
-          <label for="input-target-device" class="field-label"><strong>1. Smartphone-GerÃ¤tename:</strong><span class="required-star">*</span></label>
+          <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
           <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
         </div>
 
@@ -2930,7 +2962,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </div>
     </div>
 
-    <p class="field-hint" style="margin-top: 16px; text-align: center;">ðŸ”’ <strong>AES-256-GCM</strong> Ende-zu-Ende VerschlÃ¼sselung. Der Relay-Server sieht nur verschlÃ¼sselte Daten.</p>
+    <p class="field-hint" style="margin-top: 16px; text-align: center;">🔒 <strong>AES-256-GCM</strong> Ende-zu-Ende Verschlüsselung. Der Relay-Server sieht nur verschlüsselte Daten.</p>
   </div>
 </div>
 <!-- ========== ENDE REITER 8: SMARTPHONE SYNC ========== -->

@@ -6465,15 +6465,24 @@ function initLockScreenSync() {
 
   const devEl = document.getElementById('lock-sync-device-name');
   const codeEl = document.getElementById('lock-sync-code');
-  const statusEl = document.getElementById('lock-sync-status');
 
-  if (devEl) devEl.textContent = myDevice;
-  if (codeEl) codeEl.textContent = myCode;
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(devEl, myDevice, 'Gerätename');
+    setAccessibleCodeValue(codeEl, myCode, 'Kopplungscode');
+  } else {
+    if (devEl) { if (devEl.tagName === 'INPUT') devEl.value = myDevice; else devEl.textContent = myDevice; }
+    if (codeEl) { if (codeEl.tagName === 'INPUT') codeEl.value = myCode; else codeEl.textContent = myCode; }
+  }
 
   const mainNameEl = document.getElementById('sync-my-device-name');
   const mainCodeEl = document.getElementById('sync-my-code');
-  if (mainNameEl) mainNameEl.textContent = myDevice;
-  if (mainCodeEl) mainCodeEl.textContent = myCode;
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(mainNameEl, myDevice, 'Gerätename');
+    setAccessibleCodeValue(mainCodeEl, myCode, 'Kopplungscode');
+  } else {
+    if (mainNameEl) { if (mainNameEl.tagName === 'INPUT') mainNameEl.value = myDevice; else mainNameEl.textContent = myDevice; }
+    if (mainCodeEl) { if (mainCodeEl.tagName === 'INPUT') mainCodeEl.value = myCode; else mainCodeEl.textContent = myCode; }
+  }
 
   restartSyncListener();
 }
@@ -6520,11 +6529,16 @@ function generateNewSyncCode() {
   if (typeof SyncEngine === 'undefined') return;
   const newCode = SyncEngine.generateNewPairingCode();
   const codeEl = document.getElementById('sync-my-code');
-  if (codeEl) codeEl.textContent = newCode;
   const lockCodeEl = document.getElementById('lock-sync-code');
-  if (lockCodeEl) lockCodeEl.textContent = newCode;
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(codeEl, newCode, 'Kopplungscode');
+    setAccessibleCodeValue(lockCodeEl, newCode, 'Kopplungscode');
+  } else {
+    if (codeEl) { if (codeEl.tagName === 'INPUT') codeEl.value = newCode; else codeEl.textContent = newCode; }
+    if (lockCodeEl) { if (lockCodeEl.tagName === 'INPUT') lockCodeEl.value = newCode; else lockCodeEl.textContent = newCode; }
+  }
   restartSyncListener();
-  if (typeof announceNVDA === 'function') announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`);
+  if (typeof announceNVDA === 'function') announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
 }
 
 async function handleStartSync(e) {
@@ -6737,4 +6751,94 @@ async function handleBiometricToggle(enable) {
   } else {
     BiometricAuth.disable();
   }
+}
+
+
+// =========================================================================
+// BARRIEREFREIES BUCHSTABIEREN & KOPIEREN FÜR TALKBACK & SCREENREADER
+// =========================================================================
+window.spellOutText = function(text, label) {
+  if (!text || text === '---' || text === '--- ---') {
+    if (typeof announceNVDA === 'function') announceNVDA('Kein Code vorhanden.');
+    return;
+  }
+
+  const phoneticMap = {
+    'A': 'A wie Anton', 'B': 'B wie Berta', 'C': 'C wie Cäsar', 'D': 'D wie Dora',
+    'E': 'E wie Emil', 'F': 'F wie Friedrich', 'G': 'G wie Gustav', 'H': 'H wie Heinrich',
+    'I': 'I wie Ida', 'J': 'J wie Julius', 'K': 'K wie Kaufmann', 'L': 'L wie Ludwig',
+    'M': 'M wie Martha', 'N': 'N wie Nordpol', 'O': 'O wie Otto', 'P': 'P wie Paula',
+    'Q': 'Q wie Quelle', 'R': 'R wie Richard', 'S': 'S wie Siegfried', 'T': 'T wie Theodor',
+    'U': 'U wie Ulrich', 'V': 'V wie Viktor', 'W': 'W wie Wilhelm', 'X': 'X wie Xanthippe',
+    'Y': 'Y wie Ypsilon', 'Z': 'Z wie Zeppelin', '-': 'Bindestrich'
+  };
+
+  const letters = text.trim().split('').map(c => {
+    const up = c.toUpperCase();
+    if (phoneticMap[up]) return phoneticMap[up];
+    if (c >= '0' && c <= '9') return c;
+    if (c === ' ') return 'Leerzeichen';
+    return c;
+  });
+
+  const spelled = letters.join('. ');
+  const announcement = `${label} buchstabiert: ${spelled}.`;
+
+  // 1. NVDA / TalkBack Live Region
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(announcement, true);
+  }
+
+  // 2. Web Speech API (TalkBack Sprachausgabe)
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(announcement);
+      utter.lang = 'de-DE';
+      utter.rate = 0.85;
+      window.speechSynthesis.speak(utter);
+    } catch(e) {}
+  }
+
+  // 3. Taktiles Feedback
+  if (window.navigator && window.navigator.vibrate) {
+    try { window.navigator.vibrate([30, 20, 30]); } catch(e) {}
+  }
+};
+
+window.copyToClipboard = function(text, label) {
+  if (!text || text === '---' || text === '--- ---') return;
+  const finishMsg = `${label} ${text} in die Zwischenablage kopiert.`;
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (typeof announceNVDA === 'function') announceNVDA(finishMsg, true);
+      if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
+    }).catch(() => fallbackCopy(text, finishMsg));
+  } else {
+    fallbackCopy(text, finishMsg);
+  }
+};
+
+function fallbackCopy(text, msg) {
+  try {
+    const t = document.createElement('textarea');
+    t.value = text;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+    if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
+  } catch(e) {}
+}
+
+function setAccessibleCodeValue(el, val, label) {
+  if (!el) return;
+  if (el.tagName === 'INPUT') {
+    el.value = val;
+  } else {
+    el.textContent = val;
+  }
+  el.setAttribute('aria-label', `${label}: ${val}. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder Buchstabier-Button drücken.`);
 }
