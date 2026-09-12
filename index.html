@@ -434,6 +434,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="font-size: 13px; padding: 8px 14px; width: 100%;">
     🔄 <strong>Neuen Kopplungscode erzeugen</strong>
   </button>
+  <div style="margin-top: 8px;">
+    <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="font-size: 14px; padding: 10px 14px; width: 100%; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+      📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+    </button>
+  </div>
 </div>
 
 <div class="lock-restore-action" style="margin-top: 14px; text-align: center; display: flex; flex-direction: column; gap: 8px;">
@@ -2398,6 +2403,26 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
       Warte auf Synchronisation vom Computer...
     </div>
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="width: 100%; font-size: 15px; padding: 12px; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+        📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+      </button>
+    </div>
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="width: 100%; font-size: 15px; padding: 12px; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+        📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+      </button>
+    </div>
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="width: 100%; font-size: 15px; padding: 12px; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+        📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+      </button>
+    </div>
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="width: 100%; font-size: 15px; padding: 12px; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+        📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+      </button>
+    </div>
   </div>
 
   <!-- BEREICH FÜR DESKTOP (SENDER) -->
@@ -2426,6 +2451,20 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </form>
 
     <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+    </div>
+    
+    <div style="background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 8px; padding: 14px; margin-top: 18px;">
+      <h4 style="margin: 0 0 6px 0; color: #1565C0; font-size: 16px;">✉️ Alternative: Per E-Mail-Link oder Zwischenablage übertragen</h4>
+      <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.4;">Ideal, wenn das Smartphone keine direkte Netzwerkverbindung hat oder du die Daten per E-Mail, WhatsApp oder Notiz an dich selbst senden möchtest:</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="shareSyncViaEmail()" style="flex: 1; min-width: 180px; padding: 12px; background: #1976D2; font-weight: bold;">
+          ✉️ <strong>Per E-Mail senden</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyMagicSyncLink()" style="flex: 1; min-width: 180px; padding: 12px; font-weight: bold;">
+          📋 <strong>Sync-Link kopieren</strong>
+        </button>
+      </div>
+      <div id="sync-email-status" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 14px; font-weight: bold;"></div>
     </div>
   </div>
 </div>

@@ -132,6 +132,44 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .privacy-guarantee-box { margin-top: 20px; padding: 14px; background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 15px; color: var(--text-secondary); text-align: left; }
 .pin-hint-box { margin-top: 14px; padding: 12px; background-color: var(--bg-surface-elevated); border-radius: var(--radius-md); font-size: 15px; color: var(--text-muted); }
 
+/* WCAG 2.2 Schnellnavigationslinks (Skip Links) - unsichtbar bis Fokus */
+.skip-links {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+}
+
+.skip-link {
+  position: absolute;
+  left: 10px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 12px 20px;
+  font-weight: bold;
+  font-size: 18px;
+  text-decoration: none;
+  border: 3px solid var(--border-color);
+  border-radius: var(--radius-md);
+  z-index: 99999;
+}
+
+.skip-link:not(:focus) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip-link:focus {
+  top: 10px;
+}
+
 .app-header { background-color: var(--bg-surface); border-bottom: 3px solid var(--border-color); padding: 16px 20px; }
 .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 12px; }

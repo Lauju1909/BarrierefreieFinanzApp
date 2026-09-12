@@ -6842,3 +6842,216 @@ function setAccessibleCodeValue(el, val, label) {
   }
   el.setAttribute('aria-label', `${label}: ${val}. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder Buchstabier-Button drücken.`);
 }
+
+
+// =============================================================================
+// MAGISCHER SYNC-LINK (E-MAIL, LINK & ZWISCHENABLAGE)
+// =============================================================================
+async function shareSyncViaEmail() {
+  const statusBox = document.getElementById('sync-email-status');
+  if (statusBox) {
+    statusBox.style.display = 'block';
+    statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
+    statusBox.style.color = '#0284c7';
+    statusBox.textContent = '⏳ Erzeuge verschlüsselten Sync-Link...';
+  }
+  if (typeof announceNVDA === 'function') announceNVDA('Erzeuge verschlüsselten Sync-Link für E-Mail...', true);
+
+  try {
+    const pairCode = SyncEngine.getPairingCode();
+    const bundle = await SyncEngine.generateMagicSyncBundle(pairCode);
+
+    const subject = encodeURIComponent('Barrierefreie FinanzApp - Synchronisations-Link');
+    const body = encodeURIComponent(
+`Hallo!
+
+Hier ist dein persönlicher, hochsicher verschlüsselter Synchronisations-Link für das Barrierefreie Haushaltsbuch:
+
+1) Wenn du die App auf deinem Smartphone installiert hast, tippe einfach auf diesen Link:
+${bundle.syncUrl}
+
+2) Falls der Link sich nicht automatisch öffnet:
+Kopiere diesen gesamten Textblock, öffne die App auf deinem Smartphone und wähle "Aus Zwischenablage / E-Mail-Link importieren":
+
+${bundle.syncBlock}
+
+Dein Kopplungscode lautet: ${bundle.code}
+`
+    );
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(bundle.syncUrl);
+      }
+    } catch(e) {}
+
+    const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
+    window.location.href = mailtoUrl;
+
+    if (statusBox) {
+      statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
+      statusBox.style.color = '#15803d';
+      statusBox.textContent = '✅ E-Mail-Entwurf geöffnet & Sync-Link in Zwischenablage kopiert! Kopplungscode: ' + bundle.code;
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA(`E-Mail-Entwurf geöffnet und Sync-Link in die Zwischenablage kopiert. Dein Kopplungscode lautet: ${bundle.code}.`, true);
+    }
+  } catch (err) {
+    if (statusBox) {
+      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusBox.style.color = '#b91c1c';
+      statusBox.textContent = '❌ Fehler: ' + err.message;
+    }
+    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Erzeugen des Sync-Links: ' + err.message);
+  }
+}
+
+async function copyMagicSyncLink() {
+  const statusBox = document.getElementById('sync-email-status');
+  try {
+    const pairCode = SyncEngine.getPairingCode();
+    const bundle = await SyncEngine.generateMagicSyncBundle(pairCode);
+
+    if (typeof copyToClipboard === 'function') {
+      copyToClipboard(bundle.syncUrl, 'Sync-Link');
+    } else if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(bundle.syncUrl);
+    }
+
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
+      statusBox.style.color = '#15803d';
+      statusBox.textContent = '📋 Sync-Link in Zwischenablage kopiert! Kopplungscode: ' + bundle.code;
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA(`Sync-Link in die Zwischenablage kopiert. Kopplungscode lautet ${bundle.code}.`, true);
+    }
+  } catch (err) {
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusBox.style.color = '#b91c1c';
+      statusBox.textContent = '❌ Fehler beim Kopieren: ' + err.message;
+    }
+    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Kopieren: ' + err.message);
+  }
+}
+
+async function importFromClipboardOrPrompt() {
+  let clipboardText = '';
+  try {
+    if (navigator.clipboard && navigator.clipboard.readText) {
+      clipboardText = await navigator.clipboard.readText();
+    }
+  } catch(e) {
+    // Clipboard reading restricted
+  }
+
+  if (clipboardText && (clipboardText.includes('finanzapp://') || clipboardText.includes('FINANZAPP-SYNC:') || (clipboardText.includes('code=') && clipboardText.includes('data=')))) {
+    executeMagicSyncImport(clipboardText);
+    return;
+  }
+
+  openSyncPasteModal(clipboardText);
+}
+
+function openSyncPasteModal(prefillText) {
+  const modal = document.getElementById('sync-paste-modal');
+  const textarea = document.getElementById('sync-paste-input');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (textarea) {
+      textarea.value = prefillText || '';
+      setTimeout(() => textarea.focus(), 150);
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Dialog zum Einfügen des Sync-Links geöffnet. Bitte Link oder Textblock einfügen und Bestätigen drücken.', true);
+    }
+  }
+}
+
+function closeSyncPasteModal() {
+  const modal = document.getElementById('sync-paste-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleSyncPasteSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const textarea = document.getElementById('sync-paste-input');
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text) {
+    if (typeof announceNVDA === 'function') announceNVDA('Bitte zuerst den Sync-Link oder Textblock einfügen.');
+    return;
+  }
+  closeSyncPasteModal();
+  executeMagicSyncImport(text);
+}
+
+async function executeMagicSyncImport(text) {
+  if (typeof announceNVDA === 'function') announceNVDA('Verarbeite Synchronisations-Daten...', true);
+  const statusEl = document.getElementById('lock-sync-status') || document.getElementById('sync-receiver-status');
+  if (statusEl) {
+    statusEl.textContent = '⏳ Importiere Daten...';
+    statusEl.style.color = '#0284c7';
+    statusEl.style.background = 'rgba(33, 150, 243, 0.15)';
+  }
+
+  try {
+    const res = await SyncEngine.parseAndImportMagicSync(text, (state, msg) => {
+      if (statusEl) statusEl.textContent = msg;
+      if (typeof announceNVDA === 'function') announceNVDA(msg);
+    });
+
+    const msg = `🎉 Synchronisation erfolgreich! ${res.txCount} Buchungen aus dem Link übernommen.`;
+    if (statusEl) {
+      statusEl.textContent = '✅ ' + msg;
+      statusEl.style.color = '#15803d';
+      statusEl.style.background = 'rgba(76, 175, 80, 0.15)';
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+  } catch (err) {
+    const errMsg = 'Fehler beim Importieren: ' + err.message;
+    if (statusEl) {
+      statusEl.textContent = '❌ ' + errMsg;
+      statusEl.style.color = '#b91c1c';
+      statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(errMsg);
+  }
+}
+
+function initDeepLinkSyncHandler() {
+  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    try {
+      window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
+        if (data && data.url) {
+          executeMagicSyncImport(data.url);
+        }
+      });
+      window.Capacitor.Plugins.App.getLaunchUrl().then((res) => {
+        if (res && res.url) {
+          executeMagicSyncImport(res.url);
+        }
+      });
+    } catch(e) {
+      console.warn('[DeepLink] Capacitor App listener error:', e);
+    }
+  }
+
+  const checkCurrentUrl = () => {
+    const href = window.location.href;
+    if (href.includes('finanzapp://') || (href.includes('#') && href.includes('code=') && href.includes('data='))) {
+      executeMagicSyncImport(href);
+    }
+  };
+
+  window.addEventListener('hashchange', checkCurrentUrl);
+  setTimeout(checkCurrentUrl, 500);
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initDeepLinkSyncHandler);
+} else {
+  initDeepLinkSyncHandler();
+}
