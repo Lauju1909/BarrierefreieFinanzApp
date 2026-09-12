@@ -2,12 +2,24 @@
  * HOCHSICHERE ENDE-ZU-ENDE VERSCHLÜSSELTE SYNCHRONISATION (E2EE)
  * Barrierefreie FinanzApp (Desktop <-> Android)
  * Standard: AES-256-GCM, PBKDF2-HMAC-SHA256 (100.000 Runden), Zero-Knowledge
+ * Relay: Hochverfügbarer ntfy-Cluster (ntfy.envs.net) ohne IP-Rate-Limits
  */
 
 const SyncEngine = {
   activeListener: null,
   isListening: false,
   lastSyncTime: null,
+  processedMessageIds: new Set(),
+
+  // Primärer Relay-Server (stabil, ohne 429-Rate-Limits) & Fallbacks
+  RELAYS: [
+    'https://ntfy.envs.net',
+    'https://ntfy.org'
+  ],
+
+  getPrimaryRelay() {
+    return this.RELAYS[0];
+  },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
   getDeviceName() {
@@ -58,7 +70,8 @@ const SyncEngine = {
   },
 
   async deriveKey(pairingCode, saltBytes) {
-    const cleanCode = pairingCode.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    // Vollständige Bereinigung: Nur Ziffern und Buchstaben, Großbuchstaben
+    const cleanCode = (pairingCode || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
       'raw',
@@ -121,8 +134,9 @@ const SyncEngine = {
   },
 
   // 4. TOPIC FÜR GERÄT BERECHNEN (Zero-Knowledge: SHA-256 Hash)
+  // Wichtig: Robuste Normalisierung (Leerzeichen, Bindestriche, Groß-/Kleinschreibung ignorieren)
   async getTopicForDevice(deviceName) {
-    const clean = deviceName.trim().toUpperCase();
+    const clean = (deviceName || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const hash = await this.sha256Hex('finanz_sync_' + clean);
     return 'hb_sync_' + hash.substring(0, 16);
   },
@@ -130,45 +144,56 @@ const SyncEngine = {
   // 5. HANDY / RECEIVER: AUF SYNCHRONISATION LAUSCHEN
   async startListening(onStatusUpdate) {
     this.isListening = true;
+    this.processedMessageIds.clear();
     const myDevice = this.getDeviceName();
     const myCode = this.getPairingCode();
     const topic = await this.getTopicForDevice(myDevice);
+    const relay = this.getPrimaryRelay();
 
-    if (onStatusUpdate) onStatusUpdate('waiting', '🟢 Warte auf Synchronisations-Anfrage vom PC...');
+    if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Warte auf Signal vom PC (Gerät: ${myDevice})...`);
 
-    // Polling Loop alle 2.5 Sekunden
     const pollMessages = async () => {
       if (!this.isListening) return;
       try {
-        const sinceParam = Math.floor((Date.now() - 60000) / 1000); // letzte 60s
-        const res = await fetch(`https://ntfy.sh/${topic}/json?poll=1&since=${sinceParam}`);
+        // Fragt die letzten Meldungen der letzten 5 Minuten ab
+        const res = await fetch(`${relay}/${topic}/json?poll=1&since=5m`);
         if (res.ok) {
           const text = await res.text();
           const lines = text.trim().split('\n').filter(Boolean);
           for (const line of lines) {
             try {
               const msgObj = JSON.parse(line);
-              if (msgObj.event === 'message' && msgObj.message) {
-                const payload = JSON.parse(msgObj.message);
+              if (msgObj.event === 'message' && msgObj.message && msgObj.id) {
+                if (this.processedMessageIds.has(msgObj.id)) {
+                  continue; // bereits verarbeitet
+                }
+
+                let payload;
+                try { payload = JSON.parse(msgObj.message); } catch(e) {}
                 if (payload && payload.ct && payload.iv && payload.salt) {
-                  // Entschlüsseln versuchen
+                  // Entschlüsseln mit dem Pairing-Code
                   const decrypted = await this.decrypt(payload, myCode);
                   if (decrypted && decrypted.type === 'SYNC_REQUEST') {
-                    if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Anfrage vom PC empfangen. Verschlüssle Daten...');
-                    await this.handleIncomingSyncRequest(decrypted, topic, myCode, onStatusUpdate);
+                    this.processedMessageIds.add(msgObj.id);
+                    if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Signal vom Computer empfangen! Sende Antwort...');
+                    if (typeof announceNVDA === 'function') announceNVDA('Signal vom Computer empfangen! Synchronisiere Daten...', true);
+
+                    await this.handleIncomingSyncRequest(decrypted, topic, myCode, relay, onStatusUpdate);
                     break;
                   }
                 }
               }
             } catch (e) {
-              // Fehlgeschlagene Entschlüsselung = nicht für uns oder falscher Code
+              // Falscher Code oder nicht für uns
             }
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        console.warn('[SyncEngine] Poll network error:', e.message);
+      }
 
       if (this.isListening) {
-        setTimeout(pollMessages, 2500);
+        setTimeout(pollMessages, 2000);
       }
     };
 
@@ -179,7 +204,7 @@ const SyncEngine = {
     this.isListening = false;
   },
 
-  async handleIncomingSyncRequest(request, topic, myCode, onStatusUpdate) {
+  async handleIncomingSyncRequest(request, topic, myCode, relay, onStatusUpdate) {
     try {
       // 1. Lokale Tresordaten auslesen
       const vaultData = await this.exportCurrentVaultData();
@@ -194,11 +219,15 @@ const SyncEngine = {
       const encrypted = await this.encrypt(responsePayload, myCode);
 
       // 3. Antwort an Response-Topic senden
-      await fetch(`https://ntfy.sh/${topic}_resp`, {
+      const respRes = await fetch(`${relay}/${topic}_resp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(encrypted)
       });
+
+      if (!respRes.ok) {
+        console.warn('[SyncEngine] Failed to post response to relay:', respRes.status);
+      }
 
       // 4. Falls PC neuere Daten mitgeschickt hat, diese übernehmen
       if (request.vault) {
@@ -210,10 +239,13 @@ const SyncEngine = {
         const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
         onStatusUpdate('success', `✅ Erfolgreich mit PC synchronisiert um ${timeStr}!`);
       }
+      if (typeof announceNVDA === 'function') {
+        announceNVDA('Synchronisation mit Computer erfolgreich abgeschlossen!', true);
+      }
 
       // Vibration
       if (window.navigator && window.navigator.vibrate) {
-        try { window.navigator.vibrate([40, 30, 50]); } catch(e) {}
+        try { window.navigator.vibrate([50, 40, 60]); } catch(e) {}
       }
     } catch (e) {
       console.error('[SyncEngine] handleIncomingSyncRequest error:', e);
@@ -228,7 +260,10 @@ const SyncEngine = {
     }
 
     const topic = await this.getTopicForDevice(targetDeviceName);
-    if (onStatusUpdate) onStatusUpdate('connecting', '🔗 Verbinde mit Smartphone (' + targetDeviceName + ')...');
+    const relay = this.getPrimaryRelay();
+
+    if (onStatusUpdate) onStatusUpdate('connecting', `🔗 Verbinde mit Smartphone (${targetDeviceName.trim()})...`);
+    if (typeof announceNVDA === 'function') announceNVDA(`Verbinde mit Smartphone ${targetDeviceName.trim()}...`, true);
 
     // 1. Eigene Tresordaten vorbereiten
     const localVault = await this.exportCurrentVaultData();
@@ -243,7 +278,7 @@ const SyncEngine = {
 
     const encrypted = await this.encrypt(requestPayload, pairingCode);
 
-    const sendRes = await fetch(`https://ntfy.sh/${topic}`, {
+    const sendRes = await fetch(`${relay}/${topic}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(encrypted)
@@ -253,29 +288,35 @@ const SyncEngine = {
       throw new Error('Verbindung zum Übertragungskanal fehlgeschlagen (HTTP ' + sendRes.status + ').');
     }
 
-    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Signal gesendet. Warte auf verschlüsselte Antwort vom Smartphone...');
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Signal an Smartphone gesendet. Warte auf verschlüsselte Antwort...');
+    if (typeof announceNVDA === 'function') announceNVDA('Signal an Smartphone gesendet. Warte auf Antwort...', true);
 
-    // 3. Bis zu 30 Sekunden auf Antwort lauschen
+    // 3. Bis zu 35 Sekunden auf Antwort lauschen
     const startTime = Date.now();
-    const sinceParam = Math.floor((startTime - 10000) / 1000);
+    const seenResponseIds = new Set();
 
-    while (Date.now() - startTime < 30000) {
-      await new Promise(r => setTimeout(r, 2000));
+    while (Date.now() - startTime < 35000) {
+      await new Promise(r => setTimeout(r, 1500));
       try {
-        const resp = await fetch(`https://ntfy.sh/${topic}_resp/json?poll=1&since=${sinceParam}`);
+        const resp = await fetch(`${relay}/${topic}_resp/json?poll=1&since=5m`);
         if (resp.ok) {
           const text = await resp.text();
           const lines = text.trim().split('\n').filter(Boolean);
           for (const line of lines) {
             try {
               const msg = JSON.parse(line);
-              if (msg.event === 'message' && msg.message) {
-                const payload = JSON.parse(msg.message);
+              if (msg.event === 'message' && msg.message && msg.id) {
+                if (seenResponseIds.has(msg.id)) continue;
+                seenResponseIds.add(msg.id);
+
+                let payload;
+                try { payload = JSON.parse(msg.message); } catch(e) {}
                 if (payload && payload.ct && payload.iv && payload.salt) {
                   // Entschlüsseln mit dem Kopplungscode
                   const decrypted = await this.decrypt(payload, pairingCode);
                   if (decrypted && decrypted.type === 'SYNC_RESPONSE') {
-                    if (onStatusUpdate) onStatusUpdate('merging', '🔄 Antwort empfangen! Führe Tresor-Abgleich durch...');
+                    if (onStatusUpdate) onStatusUpdate('merging', '🔄 Antwort vom Smartphone empfangen! Führe Datenabgleich durch...');
+                    if (typeof announceNVDA === 'function') announceNVDA('Antwort vom Smartphone empfangen! Führe Datenabgleich durch...', true);
 
                     // Tresordaten übernehmen
                     if (decrypted.vault) {
@@ -284,7 +325,9 @@ const SyncEngine = {
 
                     this.lastSyncTime = new Date();
                     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
-                    if (onStatusUpdate) onStatusUpdate('success', `🎉 Synchronisation erfolgreich abgeschlossen (${timeStr})!`);
+                    const finishMsg = `🎉 Synchronisation erfolgreich abgeschlossen um ${timeStr}!`;
+                    if (onStatusUpdate) onStatusUpdate('success', finishMsg);
+                    if (typeof announceNVDA === 'function') announceNVDA(finishMsg, true);
 
                     if (window.navigator && window.navigator.vibrate) {
                       try { window.navigator.vibrate([50, 40, 60]); } catch(e) {}
@@ -294,17 +337,17 @@ const SyncEngine = {
                 }
               }
             } catch (decErr) {
-              // Falscher Code oder nicht für uns
+              // Falscher Code oder fremde Nachricht
             }
           }
         }
       } catch (e) {}
     }
 
-    throw new Error('Zeitüberschreitung (30s): Das Smartphone hat nicht geantwortet. Ist die App auf dem Handy geöffnet und der Bereich "Smartphone-Sync" aktiv?');
+    throw new Error('Zeitüberschreitung (35s): Das Smartphone hat nicht geantwortet. Bitte stelle sicher, dass die App auf dem Handy geöffnet ist und der Gerätename sowie der Kopplungscode exakt übereinstimmen.');
   },
 
-  // 7. TRESORDATEN EXPORTIEREN — Kompatibel mit appState-Modell
+  // 7. TRESORDATEN EXPORTIEREN
   async exportCurrentVaultData() {
     if (typeof appState !== 'undefined' && appState !== null) {
       return {
@@ -317,7 +360,6 @@ const SyncEngine = {
       };
     }
 
-    // Fallback ältere Version
     return {
       exportedAt: Date.now(),
       transactions: (typeof transactions !== 'undefined') ? transactions : [],
@@ -337,18 +379,16 @@ const SyncEngine = {
     try {
       const incoming = incomingData.appState || incomingData;
 
-      // Prüfe ob die App entsperrt ist (cryptoKey vorhanden)
       const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
       const hasVaultOnDisk = !!(localStorage.getItem('haushaltsbuch_vault_data') || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
 
-      // FALL 1: ERSTSTART (Kein Tresor auf Gerät, keine PIN eingegeben)
+      // FALL 1: ERSTSTART (Kein Tresor auf Gerät, noch keine PIN eingerichtet)
       if (!isUnlocked && !hasVaultOnDisk) {
         if (onStatusUpdate) onStatusUpdate('syncing', '📦 Erstelle neuen Tresor aus den Computer-Daten...');
 
         const pinInputEl = document.getElementById('pin-input');
         const chosenPin = (pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234';
 
-        // Baue neuen appState zusammen
         const newAppState = {
           accounts: (incoming.accounts && incoming.accounts.length) ? incoming.accounts : [
             { id: 'bank', name: 'Girokonto (Bank)', type: 'giro', initialBalance: 0, isDefault: true },
@@ -406,7 +446,7 @@ const SyncEngine = {
         return;
       }
 
-      // FALL 3: GERÄT IST ENTSPERRT -> DATEN DIREKT INTEGRIEREN
+      // FALL 3: GERÄT IST ENTSPERRT -> DATEN DIREKT MERGEN
       if (typeof appState !== 'undefined' && appState !== null) {
         if (!Array.isArray(appState.transactions)) appState.transactions = [];
         const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
@@ -463,15 +503,9 @@ const SyncEngine = {
         }
 
         // UI aktualisieren
-        if (typeof updateOverview === 'function') {
-          updateOverview();
-        }
-        if (typeof renderAccountsViewList === 'function') {
-          renderAccountsViewList();
-        }
-        if (typeof renderOverviewCreditAccordion === 'function') {
-          renderOverviewCreditAccordion();
-        }
+        if (typeof updateOverview === 'function') updateOverview();
+        if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+        if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
       }
 
     } catch (err) {
