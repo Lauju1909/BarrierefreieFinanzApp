@@ -3,7 +3,28 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
-VERSION 6.0.2 (Aktuelle Version)
+VERSION 6.2.0 (Aktuelle Version)
+--------------------------------------------------------------------------------
+
+* MAGISCHER SYNC-LINK (E-MAIL, DEEP LINK & ZWISCHENABLAGE):
+  - Finanzdaten (Konten, Buchungen, Spartoepfe, Wunschliste) koennen ab sofort
+    per Klick als verschluesselter Link per E-Mail versendet oder in die
+    Zwischenablage kopiert werden.
+  - Funktioniert zuverlaessig ueber alle Kommunikationswege (E-Mail, WhatsApp, Notizen).
+  - Hochgradige Datenkomprimierung (Deflate-Algorithmus, ueber 90% kleiner).
+  - Militaerische Ende-zu-Ende-Verschluesselung mit AES-256-GCM und Kopplungscode.
+
+* NEUER BARRIEREFREIER EINFUEGE-DIALOG & ANDROID DEEP-LINKING:
+  - Neuer Button "Aus Zwischenablage / E-Mail-Link importieren" direkt auf dem
+    Sperrbildschirm und im Reiter 8 (Smartphone-Sync).
+  - Automatisches Starten und Einlesen bei Klick auf finanzapp:// Links auf Android.
+  - Barrierefreier Einfuege-Dialog fuer TalkBack und NVDA Screenreader, falls
+    Betriebssysteme das direkte Auslesen der Zwischenablage einschraenken.
+  - Vollstaendige Beseitigung blockierender alert()-Popups zu Gunsten barrierefreier
+    Live-Statusansagen und akustischem Feedback.
+
+--------------------------------------------------------------------------------
+VERSION 6.0.2
 --------------------------------------------------------------------------------
 
 * KRYPTOGRAFISCHER TOKEN-SCHUTZ FUER DEN LOKALEN SERVER (CSRF-SCHUTZ):

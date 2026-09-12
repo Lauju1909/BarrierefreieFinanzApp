@@ -1,8 +1,12 @@
 {
-  "version": "6.0.2",
+  "version": "6.2.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-07",
+  "buildDate": "2026-09-12",
   "features": [
+    "Magischer Sync-Link: Synchronisation per E-Mail, direkter Link (finanzapp://sync) und Zwischenablage",
+    "Deflate-Datenkomprimierung: Ueber 90% kleinere Datenpakete fuer blitzschnellen Austausch",
+    "Barrierefreier Einfuege-Dialog fuer TalkBack und NVDA Screenreader",
+    "Vollstaendige Beseitigung blockierender alert()-Popups zu Gunsten barrierefreier Live-Regionen",
     "Sicherheits-Haertung: Lokaler TCP-Server mit kryptografischem Session-Token (X-Vault-Token) gegen fremde Webseiten geschuetzt",
     "Automatischer Schutz vor Datenverlust: Rollierende Tresor-Sicherheitskopien (Ordner Tresor_Sicherheitskopien) vor jedem Speichern und jedem Update",
     "Garantierte Update-Sicherheit: Volle Rueckwaertskompatibilitaet aller Tresordaten und nahtloses Weiterarbeiten ohne Datenverlust",
