@@ -2,24 +2,247 @@
  * HOCHSICHERE ENDE-ZU-ENDE VERSCHLÜSSELTE SYNCHRONISATION (E2EE)
  * Barrierefreie FinanzApp (Desktop <-> Android)
  * Standard: AES-256-GCM, PBKDF2-HMAC-SHA256 (100.000 Runden), Zero-Knowledge
- * Relay: Hochverfügbarer ntfy-Cluster (ntfy.envs.net) ohne IP-Rate-Limits
+ * Transport: Hochperformantes MQTT über WebSockets (WSS) mit Ausfallsicherung
+ * Broker: wss://broker.emqx.io:8084/mqtt (Fallback: wss://test.mosquitto.org:8081)
  */
 
+// =============================================================================
+// MINIMALER PURE-JS MQTT 3.1.1 ÜBER WEBSOCKETS (KEINE EXTERNEN ABHÄNGIGKEITEN)
+// =============================================================================
+class MiniMqttClient {
+  constructor(brokerUrls) {
+    this.brokerUrls = Array.isArray(brokerUrls) ? brokerUrls : [brokerUrls];
+    this.currentBrokerIndex = 0;
+    this.ws = null;
+    this.connected = false;
+    this.msgId = 1;
+    this.subscriptions = new Map();
+    this.pingTimer = null;
+    this.clientId = 'client_' + Math.random().toString(36).substring(2, 9);
+    this.shouldReconnect = false;
+    this.reconnectTimer = null;
+  }
+
+  async connect(clientId) {
+    if (clientId) this.clientId = clientId;
+    this.shouldReconnect = true;
+
+    for (let attempt = 0; attempt < this.brokerUrls.length; attempt++) {
+      const url = this.brokerUrls[this.currentBrokerIndex];
+      try {
+        await this._connectSingle(url);
+        return; // Erfolgreich verbunden!
+      } catch (err) {
+        console.warn(`[SyncEngine/Mqtt] Verbindung zu ${url} fehlgeschlagen:`, err.message);
+        this.currentBrokerIndex = (this.currentBrokerIndex + 1) % this.brokerUrls.length;
+      }
+    }
+    throw new Error('Keiner der Synchronisations-Server konnte erreicht werden.');
+  }
+
+  _connectSingle(url) {
+    return new Promise((resolve, reject) => {
+      try {
+        if (this.ws) {
+          try { this.ws.close(); } catch(e) {}
+        }
+
+        const ws = new WebSocket(url, ['mqtt']);
+        ws.binaryType = 'arraybuffer';
+        this.ws = ws;
+
+        const connTimer = setTimeout(() => {
+          if (!this.connected) {
+            try { ws.close(); } catch(e) {}
+            reject(new Error('Timeout bei Broker-Verbindung'));
+          }
+        }, 5000);
+
+        ws.onopen = () => {
+          // MQTT CONNECT Packet senden (QoS 0, Clean Session)
+          const cidBytes = new TextEncoder().encode(this.clientId);
+          const protoName = [0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x04, 0x02, 0x00, 0x3c]; // "MQTT", Lv4, Clean, Keepalive 60s
+          const payload = [
+            (cidBytes.length >> 8) & 0xff,
+            cidBytes.length & 0xff,
+            ...cidBytes
+          ];
+          const remainingLength = protoName.length + payload.length;
+          const packet = new Uint8Array([0x10, remainingLength, ...protoName, ...payload]);
+          ws.send(packet);
+        };
+
+        ws.onmessage = (event) => {
+          const data = new Uint8Array(event.data);
+          const packetType = data[0] >> 4;
+
+          // 2 = CONNACK
+          if (packetType === 2) {
+            clearTimeout(connTimer);
+            if (data[3] === 0) {
+              this.connected = true;
+              this._startPing();
+              // Alle bestehenden Subscriptions erneut abonnieren (z. B. nach Reconnect)
+              for (const [topic, cb] of this.subscriptions.entries()) {
+                this._sendSubscribePacket(topic);
+              }
+              resolve();
+            } else {
+              reject(new Error('MQTT Verbindung abgelehnt mit Code: ' + data[3]));
+            }
+          }
+
+          // 3 = PUBLISH
+          if (packetType === 3) {
+            let offset = 1;
+            let multiplier = 1;
+            let remainingLen = 0;
+            let byte;
+            do {
+              byte = data[offset++];
+              remainingLen += (byte & 0x7f) * multiplier;
+              multiplier *= 128;
+            } while ((byte & 0x80) !== 0);
+
+            const topicLen = (data[offset] << 8) | data[offset + 1];
+            offset += 2;
+            const topic = new TextDecoder().decode(data.slice(offset, offset + topicLen));
+            offset += topicLen;
+            const payload = new TextDecoder().decode(data.slice(offset));
+
+            if (this.subscriptions.has(topic)) {
+              this.subscriptions.get(topic)(topic, payload);
+            }
+          }
+        };
+
+        ws.onerror = (e) => {
+          clearTimeout(connTimer);
+          if (!this.connected) {
+            reject(new Error('WebSocket Netzwerkfehler'));
+          }
+        };
+
+        ws.onclose = () => {
+          this.connected = false;
+          clearInterval(this.pingTimer);
+
+          if (this.shouldReconnect) {
+            clearTimeout(this.reconnectTimer);
+            this.reconnectTimer = setTimeout(() => {
+              if (this.shouldReconnect) {
+                this.connect().catch(() => {});
+              }
+            }, 3000);
+          }
+        };
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  _startPing() {
+    clearInterval(this.pingTimer);
+    this.pingTimer = setInterval(() => {
+      if (this.connected && this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(new Uint8Array([0xc0, 0x00])); // PINGREQ
+      }
+    }, 25000);
+  }
+
+  _sendSubscribePacket(topic) {
+    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    const topicBytes = new TextEncoder().encode(topic);
+    const packetId = this.msgId++;
+    const varHeader = [(packetId >> 8) & 0xff, packetId & 0xff];
+    const payload = [
+      (topicBytes.length >> 8) & 0xff,
+      topicBytes.length & 0xff,
+      ...topicBytes,
+      0x00 // QoS 0
+    ];
+    const remainingLength = varHeader.length + payload.length;
+    const packet = new Uint8Array([0x82, remainingLength, ...varHeader, ...payload]);
+    this.ws.send(packet);
+  }
+
+  subscribe(topic, callback) {
+    this.subscriptions.set(topic, callback);
+    this._sendSubscribePacket(topic);
+  }
+
+  unsubscribe(topic) {
+    this.subscriptions.delete(topic);
+    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    const topicBytes = new TextEncoder().encode(topic);
+    const packetId = this.msgId++;
+    const varHeader = [(packetId >> 8) & 0xff, packetId & 0xff];
+    const payload = [
+      (topicBytes.length >> 8) & 0xff,
+      topicBytes.length & 0xff,
+      ...topicBytes
+    ];
+    const remainingLength = varHeader.length + payload.length;
+    const packet = new Uint8Array([0xa2, remainingLength, ...varHeader, ...payload]);
+    this.ws.send(packet);
+  }
+
+  publish(topic, message) {
+    if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      throw new Error('Nicht mit dem Synchronisations-Server verbunden.');
+    }
+    const topicBytes = new TextEncoder().encode(topic);
+    const msgBytes = new TextEncoder().encode(message);
+    const remainingLength = 2 + topicBytes.length + msgBytes.length;
+
+    const lenBytes = [];
+    let x = remainingLength;
+    do {
+      let encodedByte = x % 128;
+      x = Math.floor(x / 128);
+      if (x > 0) encodedByte = encodedByte | 128;
+      lenBytes.push(encodedByte);
+    } while (x > 0);
+
+    const header = [
+      0x30, // PUBLISH QoS 0
+      ...lenBytes,
+      (topicBytes.length >> 8) & 0xff,
+      topicBytes.length & 0xff,
+      ...topicBytes
+    ];
+    const packet = new Uint8Array([...header, ...msgBytes]);
+    this.ws.send(packet);
+  }
+
+  close() {
+    this.shouldReconnect = false;
+    clearTimeout(this.reconnectTimer);
+    clearInterval(this.pingTimer);
+    if (this.ws) {
+      try { this.ws.close(); } catch(e) {}
+    }
+    this.connected = false;
+    this.subscriptions.clear();
+  }
+}
+
+// =============================================================================
+// HAUPT-SYNCHRONISATIONS-ENGINE (E2EE + WEBSOCKET MQTT)
+// =============================================================================
 const SyncEngine = {
   activeListener: null,
   isListening: false,
   lastSyncTime: null,
   processedMessageIds: new Set(),
+  mqttClient: null,
 
-  // Primärer Relay-Server (stabil, ohne 429-Rate-Limits) & Fallbacks
-  RELAYS: [
-    'https://ntfy.envs.net',
-    'https://ntfy.org'
+  // Ausfallsichere Broker-Liste über WebSockets (Standard-WSS Ports)
+  BROKERS: [
+    'wss://broker.emqx.io:8084/mqtt',
+    'wss://test.mosquitto.org:8081'
   ],
-
-  getPrimaryRelay() {
-    return this.RELAYS[0];
-  },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
   getDeviceName() {
@@ -70,7 +293,6 @@ const SyncEngine = {
   },
 
   async deriveKey(pairingCode, saltBytes) {
-    // Vollständige Bereinigung: Nur Ziffern und Buchstaben, Großbuchstaben
     const cleanCode = (pairingCode || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const enc = new TextEncoder();
     const baseKey = await crypto.subtle.importKey(
@@ -134,77 +356,70 @@ const SyncEngine = {
   },
 
   // 4. TOPIC FÜR GERÄT BERECHNEN (Zero-Knowledge: SHA-256 Hash)
-  // Wichtig: Robuste Normalisierung (Leerzeichen, Bindestriche, Groß-/Kleinschreibung ignorieren)
   async getTopicForDevice(deviceName) {
     const clean = (deviceName || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
     const hash = await this.sha256Hex('finanz_sync_' + clean);
-    return 'hb_sync_' + hash.substring(0, 16);
+    return 'finanzapp/v2/' + hash.substring(0, 16);
   },
 
   // 5. HANDY / RECEIVER: AUF SYNCHRONISATION LAUSCHEN
   async startListening(onStatusUpdate) {
     this.isListening = true;
     this.processedMessageIds.clear();
+
     const myDevice = this.getDeviceName();
     const myCode = this.getPairingCode();
-    const topic = await this.getTopicForDevice(myDevice);
-    const relay = this.getPrimaryRelay();
+    const topicReq = await this.getTopicForDevice(myDevice);
+    const topicResp = topicReq + '_resp';
 
     if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Warte auf Signal vom PC (Gerät: ${myDevice})...`);
 
-    const pollMessages = async () => {
-      if (!this.isListening) return;
-      try {
-        // Fragt die letzten Meldungen der letzten 5 Minuten ab
-        const res = await fetch(`${relay}/${topic}/json?poll=1&since=5m`);
-        if (res.ok) {
-          const text = await res.text();
-          const lines = text.trim().split('\n').filter(Boolean);
-          for (const line of lines) {
-            try {
-              const msgObj = JSON.parse(line);
-              if (msgObj.event === 'message' && msgObj.message && msgObj.id) {
-                if (this.processedMessageIds.has(msgObj.id)) {
-                  continue; // bereits verarbeitet
-                }
+    try {
+      if (this.mqttClient) {
+        this.mqttClient.close();
+      }
 
-                let payload;
-                try { payload = JSON.parse(msgObj.message); } catch(e) {}
-                if (payload && payload.ct && payload.iv && payload.salt) {
-                  // Entschlüsseln mit dem Pairing-Code
-                  const decrypted = await this.decrypt(payload, myCode);
-                  if (decrypted && decrypted.type === 'SYNC_REQUEST') {
-                    this.processedMessageIds.add(msgObj.id);
-                    if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Signal vom Computer empfangen! Sende Antwort...');
-                    if (typeof announceNVDA === 'function') announceNVDA('Signal vom Computer empfangen! Synchronisiere Daten...', true);
+      this.mqttClient = new MiniMqttClient(this.BROKERS);
+      await this.mqttClient.connect('dev_' + myDevice.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6));
 
-                    await this.handleIncomingSyncRequest(decrypted, topic, myCode, relay, onStatusUpdate);
-                    break;
-                  }
-                }
-              }
-            } catch (e) {
-              // Falscher Code oder nicht für uns
+      this.mqttClient.subscribe(topicReq, async (topic, msgStr) => {
+        try {
+          const payload = JSON.parse(msgStr);
+          if (payload && payload.ct && payload.iv && payload.salt) {
+            // Mit Pairing-Code entschlüsseln
+            const decrypted = await this.decrypt(payload, myCode);
+            if (decrypted && decrypted.type === 'SYNC_REQUEST') {
+              const msgId = decrypted.timestamp + '_' + decrypted.sender;
+              if (this.processedMessageIds.has(msgId)) return;
+              this.processedMessageIds.add(msgId);
+
+              if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Signal vom Computer empfangen! Sende Antwort...');
+              if (typeof announceNVDA === 'function') announceNVDA('Signal vom Computer empfangen! Synchronisiere...', true);
+
+              await this.handleIncomingSyncRequest(decrypted, topicResp, myCode, onStatusUpdate);
             }
           }
+        } catch (e) {
+          // Falscher Code oder nicht für dieses Gerät bestimmtes Paket
         }
-      } catch (e) {
-        console.warn('[SyncEngine] Poll network error:', e.message);
-      }
+      });
 
-      if (this.isListening) {
-        setTimeout(pollMessages, 2000);
-      }
-    };
-
-    pollMessages();
+      if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Bereit für Synchronisation (Gerät: ${myDevice})`);
+    } catch (err) {
+      console.warn('[SyncEngine] startListening Verbindungsfehler:', err.message);
+      if (onStatusUpdate) onStatusUpdate('error', '⚠️ Verbindung wird aufgebaut... (Offline-Modus aktiv)');
+    }
   },
 
   stopListening() {
     this.isListening = false;
+    if (this.mqttClient) {
+      this.mqttClient.close();
+      this.mqttClient = null;
+    }
   },
 
-  async handleIncomingSyncRequest(request, topic, myCode, relay, onStatusUpdate) {
+  async handleIncomingSyncRequest(request, topicResp, myCode, onStatusUpdate) {
     try {
       // 1. Lokale Tresordaten auslesen
       const vaultData = await this.exportCurrentVaultData();
@@ -218,15 +433,9 @@ const SyncEngine = {
       };
       const encrypted = await this.encrypt(responsePayload, myCode);
 
-      // 3. Antwort an Response-Topic senden
-      const respRes = await fetch(`${relay}/${topic}_resp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(encrypted)
-      });
-
-      if (!respRes.ok) {
-        console.warn('[SyncEngine] Failed to post response to relay:', respRes.status);
+      // 3. Antwort an Response-Topic senden (in Echtzeit via WebSocket)
+      if (this.mqttClient && this.mqttClient.connected) {
+        this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
       }
 
       // 4. Falls PC neuere Daten mitgeschickt hat, diese übernehmen
@@ -243,7 +452,7 @@ const SyncEngine = {
         announceNVDA('Synchronisation mit Computer erfolgreich abgeschlossen!', true);
       }
 
-      // Vibration
+      // Vibration (Haptisches Feedback auf dem Smartphone)
       if (window.navigator && window.navigator.vibrate) {
         try { window.navigator.vibrate([50, 40, 60]); } catch(e) {}
       }
@@ -259,16 +468,55 @@ const SyncEngine = {
       throw new Error('Bitte Gerätename und Kopplungscode angeben!');
     }
 
-    const topic = await this.getTopicForDevice(targetDeviceName);
-    const relay = this.getPrimaryRelay();
+    const cleanTargetName = targetDeviceName.trim();
+    const cleanPairCode = pairingCode.trim();
+    const topicReq = await this.getTopicForDevice(cleanTargetName);
+    const topicResp = topicReq + '_resp';
 
-    if (onStatusUpdate) onStatusUpdate('connecting', `🔗 Verbinde mit Smartphone (${targetDeviceName.trim()})...`);
-    if (typeof announceNVDA === 'function') announceNVDA(`Verbinde mit Smartphone ${targetDeviceName.trim()}...`, true);
+    if (onStatusUpdate) onStatusUpdate('connecting', `🔗 Verbinde mit Smartphone (${cleanTargetName})...`);
+    if (typeof announceNVDA === 'function') announceNVDA(`Verbinde mit Smartphone ${cleanTargetName}...`, true);
 
-    // 1. Eigene Tresordaten vorbereiten
+    // 1. Temporären Initiator-Client verbinden
+    const client = new MiniMqttClient(this.BROKERS);
+    await client.connect('pc_init_' + Math.random().toString(36).substring(2, 7));
+
+    // 2. Auf Antwort vorbereiten
+    let responseReceived = false;
+
+    const responsePromise = new Promise((resolve, reject) => {
+      // 15 Sekunden Timeout
+      const timer = setTimeout(() => {
+        if (!responseReceived) {
+          client.close();
+          reject(new Error('Das Smartphone hat nicht geantwortet. Bitte stelle sicher, dass die App auf dem Smartphone geöffnet ist und Gerätename & Code übereinstimmen.'));
+        }
+      }, 15000);
+
+      client.subscribe(topicResp, async (topic, msgStr) => {
+        try {
+          const payload = JSON.parse(msgStr);
+          if (payload && payload.ct && payload.iv && payload.salt) {
+            const decrypted = await this.decrypt(payload, cleanPairCode);
+            if (decrypted && decrypted.type === 'SYNC_RESPONSE') {
+              responseReceived = true;
+              clearTimeout(timer);
+              resolve(decrypted);
+            }
+          }
+        } catch (e) {
+          // Falsches Paket oder Entschlüsselungsfehler
+        }
+      });
+    });
+
+    // Kurz warten, bis Subscription beim Broker registriert ist (~200ms)
+    await new Promise(r => setTimeout(r, 250));
+
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Sende verschlüsselte Daten an Smartphone...');
+    if (typeof announceNVDA === 'function') announceNVDA('Sende Daten an Smartphone. Warte auf Antwort...', true);
+
+    // 3. Eigene Tresordaten exportieren und Anfrage senden
     const localVault = await this.exportCurrentVaultData();
-
-    // 2. Verschlüsselte Anfrage senden
     const requestPayload = {
       type: 'SYNC_REQUEST',
       timestamp: Date.now(),
@@ -276,75 +524,31 @@ const SyncEngine = {
       vault: localVault
     };
 
-    const encrypted = await this.encrypt(requestPayload, pairingCode);
+    const encryptedReq = await this.encrypt(requestPayload, cleanPairCode);
+    client.publish(topicReq, JSON.stringify(encryptedReq));
 
-    const sendRes = await fetch(`${relay}/${topic}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(encrypted)
-    });
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', '⚡ Signal übertragen. Warte auf Bestätigung vom Smartphone...');
 
-    if (!sendRes.ok) {
-      throw new Error('Verbindung zum Übertragungskanal fehlgeschlagen (HTTP ' + sendRes.status + ').');
+    // 4. Antwort abwarten
+    const response = await responsePromise;
+    client.close(); // Temporären Client schließen
+
+    if (onStatusUpdate) onStatusUpdate('syncing', '📦 Antwort empfangen. Aktualisiere lokale Daten...');
+
+    // 5. Empfangene Daten in lokalen Tresor mergen
+    if (response.vault) {
+      await this.importSyncedVaultData(response.vault, onStatusUpdate);
     }
 
-    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Signal an Smartphone gesendet. Warte auf verschlüsselte Antwort...');
-    if (typeof announceNVDA === 'function') announceNVDA('Signal an Smartphone gesendet. Warte auf Antwort...', true);
+    this.lastSyncTime = new Date();
+    const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
+    if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
+    if (typeof announceNVDA === 'function') announceNVDA('Synchronisation mit Smartphone erfolgreich abgeschlossen!', true);
 
-    // 3. Bis zu 35 Sekunden auf Antwort lauschen
-    const startTime = Date.now();
-    const seenResponseIds = new Set();
-
-    while (Date.now() - startTime < 35000) {
-      await new Promise(r => setTimeout(r, 1500));
-      try {
-        const resp = await fetch(`${relay}/${topic}_resp/json?poll=1&since=5m`);
-        if (resp.ok) {
-          const text = await resp.text();
-          const lines = text.trim().split('\n').filter(Boolean);
-          for (const line of lines) {
-            try {
-              const msg = JSON.parse(line);
-              if (msg.event === 'message' && msg.message && msg.id) {
-                if (seenResponseIds.has(msg.id)) continue;
-                seenResponseIds.add(msg.id);
-
-                let payload;
-                try { payload = JSON.parse(msg.message); } catch(e) {}
-                if (payload && payload.ct && payload.iv && payload.salt) {
-                  // Entschlüsseln mit dem Kopplungscode
-                  const decrypted = await this.decrypt(payload, pairingCode);
-                  if (decrypted && decrypted.type === 'SYNC_RESPONSE') {
-                    if (onStatusUpdate) onStatusUpdate('merging', '🔄 Antwort vom Smartphone empfangen! Führe Datenabgleich durch...');
-                    if (typeof announceNVDA === 'function') announceNVDA('Antwort vom Smartphone empfangen! Führe Datenabgleich durch...', true);
-
-                    // Tresordaten übernehmen
-                    if (decrypted.vault) {
-                      await this.importSyncedVaultData(decrypted.vault, onStatusUpdate);
-                    }
-
-                    this.lastSyncTime = new Date();
-                    const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
-                    const finishMsg = `🎉 Synchronisation erfolgreich abgeschlossen um ${timeStr}!`;
-                    if (onStatusUpdate) onStatusUpdate('success', finishMsg);
-                    if (typeof announceNVDA === 'function') announceNVDA(finishMsg, true);
-
-                    if (window.navigator && window.navigator.vibrate) {
-                      try { window.navigator.vibrate([50, 40, 60]); } catch(e) {}
-                    }
-                    return true;
-                  }
-                }
-              }
-            } catch (decErr) {
-              // Falscher Code oder fremde Nachricht
-            }
-          }
-        }
-      } catch (e) {}
+    // Vibration / Feedback
+    if (window.navigator && window.navigator.vibrate) {
+      try { window.navigator.vibrate([40, 30, 60]); } catch(e) {}
     }
-
-    throw new Error('Zeitüberschreitung (35s): Das Smartphone hat nicht geantwortet. Bitte stelle sicher, dass die App auf dem Handy geöffnet ist und der Gerätename sowie der Kopplungscode exakt übereinstimmen.');
   },
 
   // 7. TRESORDATEN EXPORTIEREN
@@ -427,9 +631,14 @@ const SyncEngine = {
           if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
 
           if (!pinInputEl || !pinInputEl.value.trim()) {
-            setTimeout(() => {
-              alert(`🎉 Synchronisation erfolgreich!\n\n${txCount} Buchungen vom Computer geladen.\n\nDeine Start-PIN lautet: 1234\n(Kann jederzeit in den Einstellungen geändert werden)`);
-            }, 300);
+            const successNotice = `🎉 Synchronisation erfolgreich! ${txCount} Buchungen vom Computer geladen. Deine Start-PIN lautet 1234.`;
+            if (typeof announceNVDA === 'function') announceNVDA(successNotice, true);
+            const banner = document.getElementById('lock-sync-status');
+            if (banner) {
+              banner.textContent = '✅ ' + successNotice;
+              banner.style.color = '#15803d';
+              banner.style.background = 'rgba(76, 175, 80, 0.15)';
+            }
           }
           return;
         }
@@ -514,3 +723,8 @@ const SyncEngine = {
     }
   }
 };
+
+// Global bereitstellen
+if (typeof window !== 'undefined') {
+  window.SyncEngine = SyncEngine;
+}
