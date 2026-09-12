@@ -2810,11 +2810,91 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+
+<!-- ========== REITER 8: SMARTPHONE SYNC (E2EE) ========== -->
+<div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
+  <div class="form-container" style="max-width: 780px;">
+    <h2 class="view-heading" tabindex="-1" id="heading-sync-view" data-emoji="ðŸ“±" style="margin-bottom: 4px;">ðŸ“± Smartphone &amp; Desktop Live-Synchronisation</h2>
+    <p class="view-sub" style="margin: 0 0 20px 0;">Ãœbertrage deine Finanzdaten Ã¼ber eine militÃ¤risch gesicherte Ende-zu-Ende-VerschlÃ¼sselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide GerÃ¤te aktiv sind.</p>
+
+    <!-- MODUS WECHSELN -->
+    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+      <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+        ðŸ“² Smartphone (Empfangen)
+      </button>
+      <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+        ðŸ’» Computer (Senden)
+      </button>
+    </div>
+
+    <!-- BEREICH FÃœR SMARTPHONE (EMPFÃ„NGER) -->
+    <div id="sync-mobile-box" class="settings-box" style="display: none; border-left: 8px solid #1976D2;">
+      <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 8px 0; color: #1976D2;">ðŸ“² Dieses GerÃ¤t ist bereit zur Verbindung</h3>
+        <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlÃ¼sselte Live-Synchronisation zu starten:</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+        <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-GerÃ¤tename:</span>
+          <div id="sync-my-device-name" style="font-size: 26px; font-weight: bold; color: #1976D2; letter-spacing: 2px; margin-top: 4px;">Wird generiert...</div>
+        </div>
+
+        <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein einmaliger Kopplungscode:</span>
+          <div id="sync-my-code" style="font-size: 32px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; margin-top: 4px;">--- ---</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 16px;">
+        <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="width: 100%;">
+          <span>ðŸ”„ Neuen Kopplungscode erzeugen</span>
+        </button>
+      </div>
+
+      <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
+        Warte auf Synchronisation vom Computer...
+      </div>
+    </div>
+
+    <!-- BEREICH FÃœR DESKTOP (SENDER) -->
+    <div id="sync-desktop-box" class="settings-box" style="display: none; border-left: 8px solid #388E3C;">
+      <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">ðŸ’» Synchronisation mit Smartphone starten</h3>
+        <p style="margin: 0; font-size: 15px;">Ã–ffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+      </div>
+
+      <form onsubmit="handleStartSync(event)" class="accessible-form">
+        <div class="form-group">
+          <label for="input-target-device" class="field-label"><strong>1. Smartphone-GerÃ¤tename:</strong><span class="required-star">*</span></label>
+          <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+        </div>
+
+        <div class="form-group">
+          <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
+          <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+        </div>
+
+        <div class="form-actions" style="margin-top: 20px;">
+          <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
+            <span>âš¡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+          </button>
+        </div>
+      </form>
+
+      <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+      </div>
+    </div>
+
+    <p class="field-hint" style="margin-top: 16px; text-align: center;">ðŸ”’ <strong>AES-256-GCM</strong> Ende-zu-Ende VerschlÃ¼sselung. Der Relay-Server sieht nur verschlÃ¼sselte Daten.</p>
+  </div>
+</div>
+<!-- ========== ENDE REITER 8: SMARTPHONE SYNC ========== -->
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.0.2</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.1.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
