@@ -373,6 +373,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span id="btn-unlock-text">🔓<strong>Entschlüsseln & Öffnen</strong>(Enter)</span>
 </button>
 </div>
+<div style="margin-top: 10px;">
+  <button type="button" id="btn-biometric-unlock" class="btn btn-secondary" onclick="BiometricAuth.authenticateAndUnlock()" style="width: 100%; font-size: 16px; padding: 12px; background: rgba(76, 175, 80, 0.12); border: 2px solid #2E7D32; color: #1B5E20; display: none; font-weight: bold;">
+    <span>👆 <strong>Mit Fingerabdruck / Biometrie entsperren</strong></span>
+  </button>
+</div>
 </form>
 <div id="lock-sync-section" class="lock-sync-box" style="margin-top: 16px; background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 10px; padding: 14px; text-align: center;">
   <div style="font-size: 15px; font-weight: bold; color: #1976D2; margin-bottom: 4px;">
@@ -1984,6 +1989,21 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <button type="submit" class="btn btn-secondary"><strong>Neue PIN speichern & Daten neu verschlüsseln</strong></button>
 </form>
 </section>
+
+<!-- 5b. BIOMETRIE / FINGERABDRUCK -->
+<section id="settings-biometric-section" class="settings-box" aria-labelledby="set-bio-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
+  <h3 id="set-bio-heading" data-emoji="👆">👆 Fingerabdruck &amp; Biometrie (Android)</h3>
+  <p class="field-hint">Entsperre deine Finanz-App bequem per Fingerabdrucksensor deines Geräts, ohne jedes Mal deine PIN eintippen zu müssen:</p>
+
+  <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px;">
+    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 17px; font-weight: bold;">
+      <input type="checkbox" id="setting-biometric-toggle" onchange="handleBiometricToggle(this.checked)" style="width: 22px; height: 22px;">
+      <span>Mit Fingerabdruck / Biometrie entsperren</span>
+    </label>
+    <div id="bio-status-hint" class="field-hint" style="font-weight: bold; color: #2E7D32;"></div>
+  </div>
+</section>
+
 
 <!-- 6. ÄNDERUNGSPROTOKOLL EINSTELLUNG -->
 <section class="settings-box" aria-labelledby="changelog-settings-heading" style="border-left: 8px solid #009688; margin-top: 18px;">

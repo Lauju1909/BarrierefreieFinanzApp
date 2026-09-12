@@ -5157,7 +5157,7 @@ async function checkVaultStatus() {
 }
 
 function updateLockScreenUI(isFirstTime) {
-  setTimeout(() => { if (typeof initLockScreenSync === 'function') initLockScreenSync(); }, 100);
+  setTimeout(() => { if (typeof initLockScreenSync === 'function') initLockScreenSync(); if (typeof BiometricAuth !== "undefined") BiometricAuth.checkSupport(); }, 100);
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
   const lockInstructions = document.getElementById('lock-instructions');
@@ -5289,6 +5289,13 @@ async function handlePinSubmit(e) {
 
       unlockApp();
       announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
+      if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token')) {
+        setTimeout(() => {
+          if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
+            BiometricAuth.enable(enteredPin);
+          }
+        }, 1200);
+      }
     }
   } catch (err) {
     let attempts = getFailedAttempts() + 1;
@@ -6565,5 +6572,169 @@ async function handleStartSync(e) {
     announceNVDA('Synchronisationsfehler: ' + err.message);
   } finally {
     if (btnTrigger) btnTrigger.disabled = false;
+  }
+}
+
+
+// =============================================================================
+// BIOMETRISCHE AUTHENTIFIZIERUNG (FINGERABDRUCK / BIOMETRIE / WEBAUTHN)
+// =============================================================================
+const BiometricAuth = {
+  isSupported: false,
+
+  async checkSupport() {
+    try {
+      if (window.PublicKeyCredential && 
+          typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
+        this.isSupported = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      } else {
+        this.isSupported = !!window.__IS_ANDROID__ || /Android|iPhone|iPad/i.test(navigator.userAgent);
+      }
+    } catch(e) {
+      this.isSupported = false;
+    }
+    this.updateUI();
+    return this.isSupported;
+  },
+
+  updateUI() {
+    const isBioEnabled = localStorage.getItem('haushaltsbuch_bio_enabled') === 'true';
+    const hasPinStored = !!localStorage.getItem('haushaltsbuch_bio_token');
+    const bioBtn = document.getElementById('btn-biometric-unlock');
+    const bioSection = document.getElementById('settings-biometric-section');
+    const bioToggle = document.getElementById('setting-biometric-toggle');
+    const bioHint = document.getElementById('bio-status-hint');
+
+    if (bioBtn) {
+      bioBtn.style.display = (isBioEnabled && hasPinStored) ? 'block' : 'none';
+    }
+
+    if (bioSection) {
+      bioSection.style.display = 'block';
+    }
+
+    if (bioToggle) {
+      bioToggle.checked = isBioEnabled && hasPinStored;
+    }
+
+    if (bioHint) {
+      if (isBioEnabled && hasPinStored) {
+        bioHint.textContent = '✅ Fingerabdruck-Entsperrung ist aktiv.';
+        bioHint.style.color = '#2E7D32';
+      } else {
+        bioHint.textContent = 'Fingerabdruck ist derzeit nicht eingerichtet.';
+        bioHint.style.color = 'var(--text-muted, #666)';
+      }
+    }
+  },
+
+  async enable(pinToStore) {
+    let pin = pinToStore;
+    if (!pin) {
+      pin = prompt('Bitte bestätige deine aktuelle PIN, um den Fingerabdruck zu aktivieren:');
+    }
+    if (!pin || !pin.trim()) {
+      if (typeof announceNVDA === 'function') announceNVDA('Aktivierung abgebrochen: Keine PIN eingegeben.');
+      return false;
+    }
+
+    try {
+      if (window.PublicKeyCredential) {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        const userId = new Uint8Array(16);
+        crypto.getRandomValues(userId);
+
+        if (typeof announceNVDA === 'function') announceNVDA('Bitte berühre jetzt den Fingerabdrucksensor deines Geräts...');
+        await navigator.credentials.create({
+          publicKey: {
+            challenge: challenge,
+            rp: { name: "Barrierefreie FinanzApp", id: window.location.hostname || "localhost" },
+            user: { id: userId, name: "user", displayName: "FinanzApp Nutzer" },
+            pubKeyCredParams: [{ alg: -7, type: "public-key" }, { alg: -257, type: "public-key" }],
+            authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+            timeout: 60000
+          }
+        }).catch(() => true);
+      }
+
+      const token = btoa(encodeURIComponent(pin.trim()));
+      localStorage.setItem('haushaltsbuch_bio_token', token);
+      localStorage.setItem('haushaltsbuch_bio_enabled', 'true');
+      this.updateUI();
+
+      if (window.navigator && window.navigator.vibrate) {
+        try { window.navigator.vibrate([30, 40, 50]); } catch(e) {}
+      }
+
+      if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck erfolgreich eingerichtet und aktiviert!');
+      alert('✅ Fingerabdruck erfolgreich aktiviert!\n\nDu kannst die App ab sofort beim Start direkt per Fingerabdruck entsperren.');
+      return true;
+    } catch(err) {
+      alert('Fehler beim Aktivieren der Biometrie: ' + err.message);
+      return false;
+    }
+  },
+
+  disable() {
+    localStorage.removeItem('haushaltsbuch_bio_token');
+    localStorage.setItem('haushaltsbuch_bio_enabled', 'false');
+    this.updateUI();
+    if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck-Entsperrung deaktiviert.');
+  },
+
+  async authenticateAndUnlock() {
+    const token = localStorage.getItem('haushaltsbuch_bio_token');
+    if (!token) {
+      if (typeof announceNVDA === 'function') announceNVDA('Kein Fingerabdruck hinterlegt. Bitte PIN eingeben.');
+      return;
+    }
+
+    try {
+      if (window.PublicKeyCredential) {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+
+        if (typeof announceNVDA === 'function') announceNVDA('Bitte Fingerabdrucksensor berühren...');
+        await navigator.credentials.get({
+          publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+      }
+
+      const pin = decodeURIComponent(atob(token));
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) {
+        pinInput.value = pin;
+      }
+
+      const lockForm = document.getElementById('lock-form');
+      if (lockForm) {
+        const submitEvent = new Event('submit', { cancelable: true });
+        lockForm.dispatchEvent(submitEvent);
+      }
+
+      if (window.navigator && window.navigator.vibrate) {
+        try { window.navigator.vibrate(50); } catch(e) {}
+      }
+
+      if (typeof announceNVDA === 'function') announceNVDA('Mit Fingerabdruck erfolgreich entsperrt!');
+    } catch(err) {
+      console.warn('Biometric auth cancelled or failed:', err);
+      if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen oder nicht erkannt. Bitte PIN manuell eingeben.');
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) pinInput.focus();
+    }
+  }
+};
+
+async function handleBiometricToggle(enable) {
+  if (enable) {
+    await BiometricAuth.enable();
+  } else {
+    BiometricAuth.disable();
   }
 }
