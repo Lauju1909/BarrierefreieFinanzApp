@@ -542,3 +542,20 @@ body.show-symbols .symbol-icon {
     page-break-before: always;
   }
 }
+
+/* RESPONSIVE MODAL DIALOGS FOR MOBILE PHONE SCREENS */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 8px;
+  }
+  .modal-dialog-box, .lock-card {
+    width: 96% !important;
+    max-width: 96% !important;
+    margin: auto !important;
+    padding: 16px 14px !important;
+    box-sizing: border-box !important;
+  }
+  .changelog-content {
+    max-height: 48vh !important;
+  }
+}

@@ -2808,6 +2808,7 @@ function setupGlobalKeyboardShortcuts() {
     else if (e.key === '5') { e.preventDefault(); switchView('settings'); }
     else if (e.key === '6') { e.preventDefault(); switchView('accounts'); }
     else if (e.key === '7') { e.preventDefault(); switchView('wishlist'); }
+    else if (e.key === '8') { e.preventDefault(); switchView('sync'); }
     else if (e.key === 't' || e.key === 'T') {
       e.preventDefault();
       setDayToToday();
@@ -4911,7 +4912,7 @@ function initTheme() {
 function switchView(viewName) {
   currentActiveView = viewName;
 
-  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist'];
+  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist', 'sync'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     const tab = document.getElementById(`tab-${v}`);
@@ -4969,6 +4970,8 @@ function switchView(viewName) {
     const newNameInput = document.getElementById('new-acc-name');
     if (newNameInput) newNameInput.focus();
     announceNVDA('Konto-Optionen und Konten verwalten (Reiter 6) geöffnet.');
+    } else if (viewName === 'sync') {
+    initSyncView();
   } else if (viewName === 'wishlist') {
     populateWishlistAccountDropdown();
     renderWishlist();
@@ -6391,5 +6394,136 @@ function setQuickRecDay(type, dayVal) {
     input.focus();
     const label = dayVal === 28 ? 'Monatsende (28.)' : `${dayVal}. des Monats`;
     announceNVDA(`Fälligkeitstag auf ${label} gesetzt.`);
+  }
+}
+
+
+// =============================================================================
+// SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION CONTROLLER (E2EE)
+// =============================================================================
+function getSyncMode() {
+  const isAndroid = !!window.__IS_ANDROID__ || 
+                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return isAndroid ? 'mobile' : 'desktop';
+}
+
+function setSyncMode(mode) {
+  const mobileBox = document.getElementById('sync-mobile-box');
+  const desktopBox = document.getElementById('sync-desktop-box');
+  const btnMob = document.getElementById('btn-sync-mode-mobile');
+  const btnDesk = document.getElementById('btn-sync-mode-desktop');
+
+  if (btnMob) {
+    btnMob.style.background = mode === 'mobile' ? 'var(--primary, #1976D2)' : '';
+    btnMob.style.color = mode === 'mobile' ? '#fff' : '';
+  }
+  if (btnDesk) {
+    btnDesk.style.background = mode === 'desktop' ? 'var(--primary, #1976D2)' : '';
+    btnDesk.style.color = mode === 'desktop' ? '#fff' : '';
+  }
+
+  if (mode === 'mobile') {
+    if (mobileBox) mobileBox.style.display = 'block';
+    if (desktopBox) desktopBox.style.display = 'none';
+
+    const myName = SyncEngine.getDeviceName();
+    const myCode = SyncEngine.getPairingCode();
+
+    const nameEl = document.getElementById('sync-my-device-name');
+    const codeEl = document.getElementById('sync-my-code');
+    if (nameEl) nameEl.textContent = myName;
+    if (codeEl) codeEl.textContent = myCode;
+
+    restartSyncListener();
+    announceNVDA(`Smartphone-Synchronisation bereit. Gerätename: ${myName}. Kopplungscode: ${myCode}. Warte auf PC.`);
+  } else {
+    if (mobileBox) mobileBox.style.display = 'none';
+    if (desktopBox) desktopBox.style.display = 'block';
+
+    const targetDevInput = document.getElementById('input-target-device');
+    if (targetDevInput) {
+      targetDevInput.focus();
+    }
+    announceNVDA('Smartphone-Synchronisation geöffnet. Bitte Gerätename und Kopplungscode vom Smartphone eingeben.');
+  }
+}
+
+function initSyncView() {
+  setSyncMode(getSyncMode());
+}
+
+function restartSyncListener() {
+  const statusEl = document.getElementById('sync-receiver-status');
+  SyncEngine.stopListening();
+  SyncEngine.startListening((state, msg) => {
+    if (statusEl) {
+      statusEl.textContent = msg;
+      if (state === 'success') {
+        statusEl.style.color = '#15803d';
+        announceNVDA(msg);
+      } else if (state === 'error') {
+        statusEl.style.color = '#b91c1c';
+        announceNVDA(msg);
+      } else {
+        statusEl.style.color = 'inherit';
+      }
+    }
+  });
+}
+
+function generateNewSyncCode() {
+  const newCode = SyncEngine.generateNewPairingCode();
+  const codeEl = document.getElementById('sync-my-code');
+  if (codeEl) codeEl.textContent = newCode;
+  restartSyncListener();
+  announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`);
+}
+
+async function handleStartSync(e) {
+  if (e && e.preventDefault) e.preventDefault();
+
+  const devInput = document.getElementById('input-target-device');
+  const codeInput = document.getElementById('input-target-code');
+  const statusBox = document.getElementById('sync-sender-status');
+  const btnTrigger = document.getElementById('btn-trigger-sync');
+
+  const targetName = devInput ? devInput.value.trim() : '';
+  const targetCode = codeInput ? codeInput.value.trim() : '';
+
+  if (!targetName || !targetCode) {
+    alert('Bitte gib den Smartphone-Namen und den Kopplungscode ein!');
+    return;
+  }
+
+  if (statusBox) {
+    statusBox.style.display = 'block';
+    statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
+    statusBox.style.color = '#0284c7';
+    statusBox.textContent = '🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung...';
+  }
+
+  if (btnTrigger) btnTrigger.disabled = true;
+
+  try {
+    await SyncEngine.syncWithSmartphone(targetName, targetCode, (state, msg) => {
+      if (statusBox) {
+        statusBox.textContent = msg;
+        if (state === 'success') {
+          statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
+          statusBox.style.color = '#15803d';
+        }
+      }
+      announceNVDA(msg);
+    });
+  } catch(err) {
+    if (statusBox) {
+      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusBox.style.color = '#b91c1c';
+      statusBox.textContent = '❌ ' + err.message;
+    }
+    announceNVDA('Synchronisationsfehler: ' + err.message);
+  } finally {
+    if (btnTrigger) btnTrigger.disabled = false;
   }
 }

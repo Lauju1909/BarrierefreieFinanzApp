@@ -827,6 +827,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span class="tab-key-hint" aria-hidden="true">7</span>
 <span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>
 </button>
+<button id="tab-sync" data-emoji="📱" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-sync" onclick="switchView('sync')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">8</span>
+<span>📱<strong>Smartphone-Sync (E2E)</strong></span>
+</button>
 </div>
 </nav>
 
@@ -2241,6 +2245,84 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+
+<!-- =========================================================================
+     8. SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION (E2EE)
+     ========================================================================= -->
+<div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
+  <div class="view-header">
+    <h2>📱 Smartphone &amp; Desktop Live-Synchronisation</h2>
+    <p class="view-desc">Übertrage deine Finanzdaten über eine militärisch gesicherte Ende-zu-Ende-Verschlüsselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide Geräte aktiv sind.</p>
+  </div>
+
+  <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+    <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+      📲 Smartphone (Empfangen)
+    </button>
+    <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+      💻 Computer (Senden)
+    </button>
+  </div>
+
+  <!-- BEREICH FÜR SMARTPHONE (EMPFÄNGER) -->
+  <div id="sync-mobile-box" class="section-card" style="display: none;">
+    <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät ist bereit zur Verbindung</h3>
+      <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlüsselte Live-Synchronisation zu starten:</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+      <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+        <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-Gerätename:</span>
+        <div id="sync-my-device-name" style="font-size: 26px; font-weight: bold; color: #1976D2; letter-spacing: 2px; margin-top: 4px;">Wird generiert...</div>
+      </div>
+
+      <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+        <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein einmaliger Kopplungscode:</span>
+        <div id="sync-my-code" style="font-size: 32px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; margin-top: 4px;">--- ---</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="width: 100%;">
+        <span>🔄 Neuen Kopplungscode erzeugen</span>
+      </button>
+    </div>
+
+    <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
+      Warte auf Synchronisation vom Computer...
+    </div>
+  </div>
+
+  <!-- BEREICH FÜR DESKTOP (SENDER) -->
+  <div id="sync-desktop-box" class="section-card" style="display: none;">
+    <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
+      <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+    </div>
+
+    <form onsubmit="handleStartSync(event)" class="accessible-form">
+      <div class="form-group">
+        <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+      </div>
+
+      <div class="form-group">
+        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+      </div>
+
+      <div class="form-actions" style="margin-top: 20px;">
+        <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
+          <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+        </button>
+      </div>
+    </form>
+
+    <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+    </div>
+  </div>
+</div>
 </main>
 
 <!-- Fußzeile -->
@@ -2251,6 +2333,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 </div>
 
+<script src="sync_engine.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
