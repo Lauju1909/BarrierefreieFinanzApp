@@ -622,12 +622,30 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.0.2)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.2.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #1565C0; font-size: 20px;">🚀 Neu in Version 6.2.0 (Magischer Sync per E-Mail, Deep-Link &amp; Zwischenablage)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>✉️ Synchronisation per E-Mail &amp; Direkt-Link:</strong><br>
+Mit nur einem Klick auf <em>„Per E-Mail senden“</em> oder <em>„Sync-Link kopieren“</em> kannst du deine verschlüsselten Daten an dich selbst senden und auf jedem Smartphone oder Computer mit einem Klick öffnen.
+</li>
+<li>
+<strong>⚡ Komprimierte Blitz-Übertragung (Deflate):</strong><br>
+Datenpakete werden um über 90% komprimiert und passen problemlos in E-Mails, Messenger und Links.
+</li>
+<li>
+<strong>📥 Barrierefreier Import-Dialog:</strong><br>
+Unterstützt Zwischenablage und manuelles Einfügen, vollständig für NVDA und TalkBack optimiert.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">🛡️ Neu in Version 6.0.2 (Sicherheits-Härtung, Rollierende Backups &amp; Update-Schutz)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -1427,6 +1445,39 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+
+
+<!-- =========================================================================
+ 3b. MODAL: SYNC-LINK ODER ZWISCHENABLAGE EINFÜGEN
+ ========================================================================= -->
+<div id="sync-paste-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="sync-paste-heading" style="display: none; z-index: 100000;">
+  <div class="modal-dialog-box" style="max-width: 620px;">
+    <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+      <span style="font-size: 32px;" aria-hidden="true">📥</span>
+      <div>
+        <h2 id="sync-paste-heading" tabindex="-1" style="margin: 0; font-size: 22px;">Sync-Link oder E-Mail einfügen</h2>
+        <span style="font-size: 14px; color: var(--sub-text);">Daten aus Smartphone-Sync oder Zwischenablage übernehmen</span>
+      </div>
+    </div>
+    <form onsubmit="handleSyncPasteSubmit(event)">
+      <p style="margin: 0 0 12px 0; font-size: 15px; line-height: 1.4;">
+        Füge hier den aus deiner E-Mail kopierten <strong>Sync-Link</strong> oder den gesamten Textblock der Synchronisations-Mail ein:
+      </p>
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label for="sync-paste-input" class="field-label"><strong>Sync-Link oder Mail-Inhalt einfügen:</strong><span class="required-star">*</span></label>
+        <textarea id="sync-paste-input" rows="5" class="large-input" placeholder="finanzapp://sync?code=... oder gesamten Text hier einfügen" required style="width: 100%; box-sizing: border-box; font-family: monospace; font-size: 14px; padding: 10px; border-radius: 6px;"></textarea>
+      </div>
+      <div class="form-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeSyncPasteModal()" style="min-width: 120px;">
+          ❌ Abbrechen
+        </button>
+        <button type="submit" class="btn btn-primary" style="min-width: 160px; background: #2E7D32; font-weight: bold;">
+          ⚡ Jetzt importieren
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- =========================================================================
  4. HAUPTANWENDUNG
