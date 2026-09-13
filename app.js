@@ -5257,7 +5257,7 @@ async function handlePinSubmit(e) {
       
       setFailedAttempts(0);
       setLockoutEndTime(0);
-
+      window.__ACTIVE_PIN__ = enteredPin;
       unlockApp();
       announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
     } else {
@@ -5286,7 +5286,7 @@ async function handlePinSubmit(e) {
 
       setFailedAttempts(0);
       setLockoutEndTime(0);
-
+      window.__ACTIVE_PIN__ = enteredPin;
       unlockApp();
       announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
       if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token')) {
@@ -5381,6 +5381,7 @@ function unlockApp() {
 
 function lockApp() {
   cryptoKey = null;
+  window.__ACTIVE_PIN__ = null;
   const lockScreen = document.getElementById('lock-screen');
   const appWrapper = document.getElementById('app-wrapper');
   const pinInput = document.getElementById('pin-input');
@@ -5421,6 +5422,8 @@ async function handleChangePin(e) {
     const newKey = await deriveKey(newPin, newSalt);
 
     cryptoKey = newKey;
+    window.__ACTIVE_PIN__ = newPin;
+    if (localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') { try { localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(newPin))); } catch(e) {} }
     localStorage.setItem(STORAGE_SALT_KEY, newSaltBase64);
     await saveStateToEncryptedStorage();
 
@@ -6457,8 +6460,71 @@ function setSyncMode(mode) {
   }
 }
 
+function isSyncConnected() {
+  return localStorage.getItem('haushaltsbuch_sync_connected') === 'true';
+}
+
+function getConnectedDevice() {
+  return localStorage.getItem('haushaltsbuch_sync_connected_device') || 'Computer';
+}
+
+function getConnectedTime() {
+  return localStorage.getItem('haushaltsbuch_sync_connected_time') || 'Heute';
+}
+
+function disconnectSyncPairing() {
+  localStorage.removeItem('haushaltsbuch_sync_connected');
+  localStorage.removeItem('haushaltsbuch_sync_connected_device');
+  localStorage.removeItem('haushaltsbuch_sync_connected_time');
+  if (typeof SyncEngine !== 'undefined') {
+    SyncEngine.generateNewPairingCode();
+  }
+  updateSyncConnectedUI();
+  if (typeof initLockScreenSync === 'function') {
+    initLockScreenSync();
+  }
+  if (typeof announceNVDA === 'function') {
+    announceNVDA('Verbindung getrennt. Gerätename und neuer Kopplungscode werden wieder angezeigt.');
+  }
+}
+
+function updateSyncConnectedUI() {
+  const connected = isSyncConnected();
+  const devName = getConnectedDevice();
+  const syncTime = getConnectedTime();
+
+  // Lockscreen
+  const lockConnectedBox = document.getElementById('lock-sync-connected');
+  const lockUnconnectedBox = document.getElementById('lock-sync-unconnected');
+  const lockDevSpan = document.getElementById('lock-sync-connected-dev');
+  const lockTimeSpan = document.getElementById('lock-sync-connected-time');
+
+  if (lockConnectedBox) lockConnectedBox.style.display = connected ? 'block' : 'none';
+  if (lockUnconnectedBox) lockUnconnectedBox.style.display = connected ? 'none' : 'block';
+  if (lockDevSpan) lockDevSpan.textContent = devName;
+  if (lockTimeSpan) lockTimeSpan.textContent = syncTime;
+
+  // Reiter 8
+  const mainConnectedBox = document.getElementById('sync-mobile-connected');
+  const mainUnconnectedBox = document.getElementById('sync-mobile-unconnected');
+  const mainDevSpan = document.getElementById('sync-mobile-connected-dev');
+  const mainTimeSpan = document.getElementById('sync-mobile-connected-time');
+
+  if (mainConnectedBox) mainConnectedBox.style.display = connected ? 'block' : 'none';
+  if (mainUnconnectedBox) mainUnconnectedBox.style.display = connected ? 'none' : 'block';
+  if (mainDevSpan) mainDevSpan.textContent = devName;
+  if (mainTimeSpan) mainTimeSpan.textContent = syncTime;
+}
+
 function initLockScreenSync() {
   if (typeof SyncEngine === 'undefined') return;
+
+  // Wenn noch nicht mit dem Computer verbunden: Bei JEDEM App-Start einen neuen Kopplungscode generieren
+  if (!isSyncConnected()) {
+    SyncEngine.generateNewPairingCode();
+  }
+
+  updateSyncConnectedUI();
 
   const myDevice = SyncEngine.getDeviceName();
   const myCode = SyncEngine.getPairingCode();
@@ -6485,10 +6551,20 @@ function initLockScreenSync() {
   }
 
   restartSyncListener();
+
+  // Regelmäßige Erneuerung des Kopplungscodes (alle 10 Minuten), solange noch nicht gekoppelt
+  if (!window.__sync_rotate_timer__) {
+    window.__sync_rotate_timer__ = setInterval(() => {
+      if (!isSyncConnected() && typeof SyncEngine !== 'undefined') {
+        generateNewSyncCode(true); // leise ohne Ton/Alert
+      }
+    }, 10 * 60 * 1000);
+  }
 }
 
 function initSyncView() {
   setSyncMode(getSyncMode());
+  updateSyncConnectedUI();
 }
 
 function restartSyncListener() {
@@ -6525,7 +6601,7 @@ function restartSyncListener() {
   });
 }
 
-function generateNewSyncCode() {
+function generateNewSyncCode(silent = false) {
   if (typeof SyncEngine === 'undefined') return;
   const newCode = SyncEngine.generateNewPairingCode();
   const codeEl = document.getElementById('sync-my-code');
@@ -6538,7 +6614,9 @@ function generateNewSyncCode() {
     if (lockCodeEl) { if (lockCodeEl.tagName === 'INPUT') lockCodeEl.value = newCode; else lockCodeEl.textContent = newCode; }
   }
   restartSyncListener();
-  if (typeof announceNVDA === 'function') announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
+  if (!silent && typeof announceNVDA === 'function') {
+    announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
+  }
 }
 
 async function handleStartSync(e) {
@@ -6644,6 +6722,9 @@ const BiometricAuth = {
 
   async enable(pinToStore) {
     let pin = pinToStore;
+    if (!pin && typeof window !== 'undefined' && window.__ACTIVE_PIN__) {
+      pin = window.__ACTIVE_PIN__;
+    }
     if (!pin) {
       pin = prompt('Bitte bestätige deine aktuelle PIN, um den Fingerabdruck zu aktivieren:');
     }
@@ -6681,11 +6762,22 @@ const BiometricAuth = {
         try { window.navigator.vibrate([30, 40, 50]); } catch(e) {}
       }
 
-      if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck erfolgreich eingerichtet und aktiviert!');
-      alert('✅ Fingerabdruck erfolgreich aktiviert!\n\nDu kannst die App ab sofort beim Start direkt per Fingerabdruck entsperren.');
+      const successMsg = 'Fingerabdruck erfolgreich eingerichtet und aktiviert! Du kannst die App ab sofort beim Start direkt per Fingerabdruck entsperren.';
+      if (typeof announceNVDA === 'function') announceNVDA(successMsg, true);
+      const bioHint = document.getElementById('bio-status-hint');
+      if (bioHint) {
+        bioHint.textContent = '✅ Fingerabdruck-Entsperrung ist aktiv.';
+        bioHint.style.color = '#2E7D32';
+      }
       return true;
     } catch(err) {
-      alert('Fehler beim Aktivieren der Biometrie: ' + err.message);
+      const errMsg = 'Fehler beim Aktivieren der Biometrie: ' + (err.message || 'Unbekannter Fehler');
+      if (typeof announceNVDA === 'function') announceNVDA(errMsg, true);
+      const bioHint = document.getElementById('bio-status-hint');
+      if (bioHint) {
+        bioHint.textContent = '❌ ' + errMsg;
+        bioHint.style.color = '#C62828';
+      }
       return false;
     }
   },
@@ -6694,7 +6786,53 @@ const BiometricAuth = {
     localStorage.removeItem('haushaltsbuch_bio_token');
     localStorage.setItem('haushaltsbuch_bio_enabled', 'false');
     this.updateUI();
+    const testResult = document.getElementById('bio-test-result');
+    if (testResult) testResult.textContent = '';
     if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck-Entsperrung deaktiviert.');
+  },
+
+  async testBiometricAuth() {
+    const testResult = document.getElementById('bio-test-result');
+    const updateResult = (msg, isSuccess) => {
+      if (testResult) {
+        testResult.textContent = msg;
+        testResult.style.color = isSuccess ? '#2E7D32' : '#C62828';
+      }
+      if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+    };
+
+    const isBioEnabled = localStorage.getItem('haushaltsbuch_bio_enabled') === 'true';
+    const hasPinStored = !!localStorage.getItem('haushaltsbuch_bio_token');
+
+    if (!isBioEnabled || !hasPinStored) {
+      updateResult('⚠️ Bitte aktiviere zuerst die Option "Mit Fingerabdruck / Biometrie entsperren" oben.', false);
+      return;
+    }
+
+    updateResult('👆 Bitte Fingerabdruck-Sensor jetzt berühren...', true);
+
+    try {
+      if (window.PublicKeyCredential) {
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+        await navigator.credentials.get({
+          publicKey: {
+            challenge: challenge,
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+      }
+
+      if (window.navigator && window.navigator.vibrate) {
+        try { window.navigator.vibrate(50); } catch(e) {}
+      }
+
+      updateResult('✅ Fingerabdruck-Test erfolgreich! Dein Sensor funktioniert einwandfrei.', true);
+    } catch(err) {
+      console.warn('Biometric test failed:', err);
+      updateResult('❌ Fingerabdruck nicht erkannt oder abgebrochen (' + (err.name || err.message || 'Abbruch') + ').', false);
+    }
   },
 
   async authenticateAndUnlock() {
@@ -6847,211 +6985,3 @@ function setAccessibleCodeValue(el, val, label) {
 // =============================================================================
 // MAGISCHER SYNC-LINK (E-MAIL, LINK & ZWISCHENABLAGE)
 // =============================================================================
-async function shareSyncViaEmail() {
-  const statusBox = document.getElementById('sync-email-status');
-  if (statusBox) {
-    statusBox.style.display = 'block';
-    statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
-    statusBox.style.color = '#0284c7';
-    statusBox.textContent = '⏳ Erzeuge verschlüsselten Sync-Link...';
-  }
-  if (typeof announceNVDA === 'function') announceNVDA('Erzeuge verschlüsselten Sync-Link für E-Mail...', true);
-
-  try {
-    const pairCode = SyncEngine.getPairingCode();
-    const bundle = await SyncEngine.generateMagicSyncBundle(pairCode);
-
-    const subject = encodeURIComponent('Barrierefreie FinanzApp - Synchronisations-Link');
-    const body = encodeURIComponent(
-`Hallo!
-
-Hier ist dein persönlicher, hochsicher verschlüsselter Synchronisations-Link für das Barrierefreie Haushaltsbuch:
-
-1) Wenn du die App auf deinem Smartphone installiert hast, tippe einfach auf diesen Link:
-${bundle.syncUrl}
-
-2) Falls der Link sich nicht automatisch öffnet:
-Kopiere diesen gesamten Textblock, öffne die App auf deinem Smartphone und wähle "Aus Zwischenablage / E-Mail-Link importieren":
-
-${bundle.syncBlock}
-
-Dein Kopplungscode lautet: ${bundle.code}
-`
-    );
-
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(bundle.syncUrl);
-      }
-    } catch(e) {}
-
-    const mailtoUrl = `mailto:?subject=${subject}&body=${body}`;
-    window.location.href = mailtoUrl;
-
-    if (statusBox) {
-      statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
-      statusBox.style.color = '#15803d';
-      statusBox.textContent = '✅ E-Mail-Entwurf geöffnet & Sync-Link in Zwischenablage kopiert! Kopplungscode: ' + bundle.code;
-    }
-    if (typeof announceNVDA === 'function') {
-      announceNVDA(`E-Mail-Entwurf geöffnet und Sync-Link in die Zwischenablage kopiert. Dein Kopplungscode lautet: ${bundle.code}.`, true);
-    }
-  } catch (err) {
-    if (statusBox) {
-      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-      statusBox.style.color = '#b91c1c';
-      statusBox.textContent = '❌ Fehler: ' + err.message;
-    }
-    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Erzeugen des Sync-Links: ' + err.message);
-  }
-}
-
-async function copyMagicSyncLink() {
-  const statusBox = document.getElementById('sync-email-status');
-  try {
-    const pairCode = SyncEngine.getPairingCode();
-    const bundle = await SyncEngine.generateMagicSyncBundle(pairCode);
-
-    if (typeof copyToClipboard === 'function') {
-      copyToClipboard(bundle.syncUrl, 'Sync-Link');
-    } else if (navigator.clipboard && navigator.clipboard.writeText) {
-      await navigator.clipboard.writeText(bundle.syncUrl);
-    }
-
-    if (statusBox) {
-      statusBox.style.display = 'block';
-      statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
-      statusBox.style.color = '#15803d';
-      statusBox.textContent = '📋 Sync-Link in Zwischenablage kopiert! Kopplungscode: ' + bundle.code;
-    }
-    if (typeof announceNVDA === 'function') {
-      announceNVDA(`Sync-Link in die Zwischenablage kopiert. Kopplungscode lautet ${bundle.code}.`, true);
-    }
-  } catch (err) {
-    if (statusBox) {
-      statusBox.style.display = 'block';
-      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-      statusBox.style.color = '#b91c1c';
-      statusBox.textContent = '❌ Fehler beim Kopieren: ' + err.message;
-    }
-    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Kopieren: ' + err.message);
-  }
-}
-
-async function importFromClipboardOrPrompt() {
-  let clipboardText = '';
-  try {
-    if (navigator.clipboard && navigator.clipboard.readText) {
-      clipboardText = await navigator.clipboard.readText();
-    }
-  } catch(e) {
-    // Clipboard reading restricted
-  }
-
-  if (clipboardText && (clipboardText.includes('finanzapp://') || clipboardText.includes('FINANZAPP-SYNC:') || (clipboardText.includes('code=') && clipboardText.includes('data=')))) {
-    executeMagicSyncImport(clipboardText);
-    return;
-  }
-
-  openSyncPasteModal(clipboardText);
-}
-
-function openSyncPasteModal(prefillText) {
-  const modal = document.getElementById('sync-paste-modal');
-  const textarea = document.getElementById('sync-paste-input');
-  if (modal) {
-    modal.style.display = 'flex';
-    if (textarea) {
-      textarea.value = prefillText || '';
-      setTimeout(() => textarea.focus(), 150);
-    }
-    if (typeof announceNVDA === 'function') {
-      announceNVDA('Dialog zum Einfügen des Sync-Links geöffnet. Bitte Link oder Textblock einfügen und Bestätigen drücken.', true);
-    }
-  }
-}
-
-function closeSyncPasteModal() {
-  const modal = document.getElementById('sync-paste-modal');
-  if (modal) modal.style.display = 'none';
-}
-
-async function handleSyncPasteSubmit(e) {
-  if (e && e.preventDefault) e.preventDefault();
-  const textarea = document.getElementById('sync-paste-input');
-  const text = textarea ? textarea.value.trim() : '';
-  if (!text) {
-    if (typeof announceNVDA === 'function') announceNVDA('Bitte zuerst den Sync-Link oder Textblock einfügen.');
-    return;
-  }
-  closeSyncPasteModal();
-  executeMagicSyncImport(text);
-}
-
-async function executeMagicSyncImport(text) {
-  if (typeof announceNVDA === 'function') announceNVDA('Verarbeite Synchronisations-Daten...', true);
-  const statusEl = document.getElementById('lock-sync-status') || document.getElementById('sync-receiver-status');
-  if (statusEl) {
-    statusEl.textContent = '⏳ Importiere Daten...';
-    statusEl.style.color = '#0284c7';
-    statusEl.style.background = 'rgba(33, 150, 243, 0.15)';
-  }
-
-  try {
-    const res = await SyncEngine.parseAndImportMagicSync(text, (state, msg) => {
-      if (statusEl) statusEl.textContent = msg;
-      if (typeof announceNVDA === 'function') announceNVDA(msg);
-    });
-
-    const msg = `🎉 Synchronisation erfolgreich! ${res.txCount} Buchungen aus dem Link übernommen.`;
-    if (statusEl) {
-      statusEl.textContent = '✅ ' + msg;
-      statusEl.style.color = '#15803d';
-      statusEl.style.background = 'rgba(76, 175, 80, 0.15)';
-    }
-    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
-  } catch (err) {
-    const errMsg = 'Fehler beim Importieren: ' + err.message;
-    if (statusEl) {
-      statusEl.textContent = '❌ ' + errMsg;
-      statusEl.style.color = '#b91c1c';
-      statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
-    }
-    if (typeof announceNVDA === 'function') announceNVDA(errMsg);
-  }
-}
-
-function initDeepLinkSyncHandler() {
-  if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-    try {
-      window.Capacitor.Plugins.App.addListener('appUrlOpen', (data) => {
-        if (data && data.url) {
-          executeMagicSyncImport(data.url);
-        }
-      });
-      window.Capacitor.Plugins.App.getLaunchUrl().then((res) => {
-        if (res && res.url) {
-          executeMagicSyncImport(res.url);
-        }
-      });
-    } catch(e) {
-      console.warn('[DeepLink] Capacitor App listener error:', e);
-    }
-  }
-
-  const checkCurrentUrl = () => {
-    const href = window.location.href;
-    if (href.includes('finanzapp://') || (href.includes('#') && href.includes('code=') && href.includes('data='))) {
-      executeMagicSyncImport(href);
-    }
-  };
-
-  window.addEventListener('hashchange', checkCurrentUrl);
-  setTimeout(checkCurrentUrl, 500);
-}
-
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initDeepLinkSyncHandler);
-} else {
-  initDeepLinkSyncHandler();
-}

@@ -444,6 +444,10 @@ const SyncEngine = {
       }
 
       this.lastSyncTime = new Date();
+      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+      localStorage.setItem('haushaltsbuch_sync_connected_device', request.sender || 'Computer');
+      localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+      if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
       if (onStatusUpdate) {
         const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
         onStatusUpdate('success', `✅ Erfolgreich mit PC synchronisiert um ${timeStr}!`);
@@ -541,6 +545,10 @@ const SyncEngine = {
     }
 
     this.lastSyncTime = new Date();
+    localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+    localStorage.setItem('haushaltsbuch_sync_connected_device', cleanTargetName);
+    localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+    if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
     if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
     if (typeof announceNVDA === 'function') announceNVDA('Synchronisation mit Smartphone erfolgreich abgeschlossen!', true);
@@ -723,7 +731,7 @@ const SyncEngine = {
     }
   },
 
-  // 9. MAGISCHER SYNC-LINK (E-MAIL, LINK & ZWISCHENABLAGE)
+  // 9. HILFSFUNKTIONEN (ARRAYBUFFER & BASE64)
   uint8ArrayToBase64(bytes) {
     let binary = '';
     const len = bytes.byteLength;
@@ -743,124 +751,6 @@ const SyncEngine = {
       bytes[i] = binary.charCodeAt(i);
     }
     return bytes;
-  },
-
-  async compressAndEncode(str) {
-    if (typeof CompressionStream !== 'undefined') {
-      try {
-        const stream = new Blob([new TextEncoder().encode(str)]).stream();
-        const compressedStream = stream.pipeThrough(new CompressionStream('deflate'));
-        const res = await new Response(compressedStream);
-        const buf = await res.arrayBuffer();
-        return 'Z:' + this.uint8ArrayToBase64(new Uint8Array(buf));
-      } catch(e) {
-        console.warn('[SyncEngine] Compression failed, using uncompressed:', e);
-      }
-    }
-    return 'R:' + btoa(unescape(encodeURIComponent(str)));
-  },
-
-  async decodeAndDecompress(str) {
-    if (str.startsWith('Z:')) {
-      const bytes = this.base64ToUint8Array(str.substring(2));
-      const stream = new Blob([bytes]).stream();
-      const decompressedStream = stream.pipeThrough(new DecompressionStream('deflate'));
-      const res = await new Response(decompressedStream);
-      return await res.text();
-    } else if (str.startsWith('R:')) {
-      return decodeURIComponent(escape(atob(str.substring(2))));
-    } else {
-      try {
-        return decodeURIComponent(escape(atob(str)));
-      } catch(e) {
-        return atob(str);
-      }
-    }
-  },
-
-  async generateMagicSyncBundle(pairingCode) {
-    const code = (pairingCode || this.getPairingCode()).trim();
-    const vault = await this.exportCurrentVaultData();
-    const payload = {
-      type: 'MAGIC_SYNC',
-      timestamp: Date.now(),
-      sender: this.getDeviceName(),
-      vault: vault
-    };
-
-    const encrypted = await this.encrypt(payload, code);
-    const jsonStr = JSON.stringify(encrypted);
-    const encodedData = await this.compressAndEncode(jsonStr);
-
-    const syncUrl = `finanzapp://sync?code=${encodeURIComponent(code)}&data=${encodeURIComponent(encodedData)}`;
-    const syncBlock = `FINANZAPP-SYNC:${code}:${encodedData}`;
-
-    return {
-      code,
-      encodedData,
-      syncUrl,
-      syncBlock
-    };
-  },
-
-  async parseAndImportMagicSync(rawInput, onStatusUpdate) {
-    if (!rawInput || typeof rawInput !== 'string') {
-      throw new Error('Kein Sync-Link oder Text übergeben.');
-    }
-    const input = rawInput.trim();
-
-    let code = '';
-    let encodedData = '';
-
-    // Variante A: URL mit Hash (#code=XXX&data=YYY) oder Query (?code=XXX&data=YYY)
-    if (input.includes('#') || input.includes('finanzapp://') || input.includes('code=')) {
-      const hashPart = input.includes('#') ? input.split('#')[1] : (input.includes('?') ? input.split('?')[1] : input);
-      const params = new URLSearchParams(hashPart);
-      code = params.get('code') || '';
-      encodedData = params.get('data') || '';
-    }
-
-    // Variante B: FINANZAPP-SYNC:XXX-XXX:DATA
-    if ((!code || !encodedData) && input.includes('FINANZAPP-SYNC:')) {
-      const parts = input.match(/FINANZAPP-SYNC:([^:\s]+):([A-Za-z0-9+/=_\-:]+)/);
-      if (parts) {
-        code = parts[1];
-        encodedData = parts[2];
-      }
-    }
-
-    // Variante C: Regex Fallback
-    if (!code || !encodedData) {
-      const codeMatch = input.match(/(?:code=|\bCode:\s*|\bKopplungscode:\s*)([0-9A-Za-z]{3,4}-[0-9A-Za-z]{3,4})/i);
-      const dataMatch = input.match(/(?:data=|FINANZAPP-SYNC:[^:\s]+:)([A-Za-z0-9+/=_\-:]+)/i);
-      if (codeMatch) code = codeMatch[1];
-      if (dataMatch) encodedData = dataMatch[1];
-    }
-
-    if (!code || !encodedData) {
-      throw new Error('Kein gültiger Sync-Link oder Sync-Textblock erkannt. Bitte prüfe den kopierten Text.');
-    }
-
-    if (onStatusUpdate) onStatusUpdate('decrypting', `🔓 Entschlüssele Daten mit Kopplungscode ${code}...`);
-
-    const jsonStr = await this.decodeAndDecompress(encodedData);
-    const encryptedPayload = JSON.parse(jsonStr);
-
-    const decrypted = await this.decrypt(encryptedPayload, code);
-    if (!decrypted || !decrypted.vault) {
-      throw new Error('Entschlüsselung fehlgeschlagen. Ist der Kopplungscode korrekt?');
-    }
-
-    if (onStatusUpdate) onStatusUpdate('importing', '📦 Importiere Finanzdaten...');
-    await this.importSyncedVaultData(decrypted.vault, onStatusUpdate);
-
-    const txCount = (decrypted.vault.transactions || (decrypted.vault.appState && decrypted.vault.appState.transactions) || []).length;
-    return {
-      success: true,
-      code,
-      sender: decrypted.sender || 'Computer',
-      txCount
-    };
   }
 };
 
