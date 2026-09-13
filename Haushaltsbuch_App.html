@@ -3047,28 +3047,48 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <!-- BEREICH FÜR DESKTOP (SENDER) -->
   <div id="sync-desktop-box" class="section-card" style="display: none;">
-    <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
-      <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
-    </div>
-
-    <form onsubmit="handleStartSync(event)" class="accessible-form">
-      <div class="form-group">
-        <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
-        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
-      </div>
-
-      <div class="form-group">
-        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
-        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
-      </div>
-
-      <div class="form-actions" style="margin-top: 20px;">
-        <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
-          <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+    <!-- BEREITS GEKOPPELTES SMARTPHONE (1-KLICK ABGLEICH) -->
+    <div id="sync-desktop-paired-card" style="display: none; background: rgba(76, 175, 80, 0.12); border: 2px solid #4CAF50; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+      <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 19px;">📱 Verbundenes Smartphone</h3>
+      <p style="margin: 0 0 14px 0; font-size: 16px; line-height: 1.6;">
+        Gerätename: <strong id="sync-desktop-paired-name">Smartphone</strong><br>
+        Kopplungscode: <strong id="sync-desktop-paired-code">--- ---</strong><br>
+        Letzter Abgleich: <span id="sync-desktop-paired-time">Bisher noch nicht</span>
+      </p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button type="button" id="btn-quick-sync-desktop" onclick="triggerQuickSyncWithPaired()" class="btn btn-primary" style="font-size: 16px; padding: 12px 20px; background-color: #2E7D32;">
+          ⚡ <strong>Jetzt 1-Klick Abgleich mit <span id="sync-quick-btn-devname">Smartphone</span></strong>
+        </button>
+        <button type="button" onclick="editSyncConnection()" class="btn btn-secondary" style="font-size: 15px; padding: 12px 18px;">
+          ✏️ Code / Gerätename ändern
         </button>
       </div>
-    </form>
+    </div>
+
+    <div id="sync-desktop-form-box">
+      <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Smartphone-Verbindung einrichten</h3>
+        <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+      </div>
+
+      <form id="sync-desktop-form" onsubmit="handleStartSync(event)" class="accessible-form">
+        <div class="form-group">
+          <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
+          <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+        </div>
+
+        <div class="form-group">
+          <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
+          <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+        </div>
+
+        <div class="form-actions" style="margin-top: 20px;">
+          <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
+            <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+          </button>
+        </div>
+      </form>
+    </div>
 
     <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
     </div>
@@ -3634,7 +3654,24 @@ const SyncEngine = {
     this.lastSyncTime = new Date();
     localStorage.setItem('haushaltsbuch_sync_connected', 'true');
     localStorage.setItem('haushaltsbuch_sync_connected_device', cleanTargetName);
+    localStorage.setItem('haushaltsbuch_sync_connected_code', cleanPairCode);
     localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+    
+    // An den lokalen Desktop-Server senden zur dauerhaften Speicherung in Haushaltsbuch_Kopplung.json
+    try {
+      const port = window.__LOCAL_PORT__ || 48123;
+      const headers = (typeof getVaultApiHeaders === 'function') ? getVaultApiHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' };
+      fetch(`http://127.0.0.1:${port}/api/save_pairing`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          device: cleanTargetName,
+          code: cleanPairCode,
+          time: localStorage.getItem('haushaltsbuch_sync_connected_time')
+        })
+      }).catch(() => {});
+    } catch(e) {}
+
     if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
     if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
@@ -3679,14 +3716,89 @@ const SyncEngine = {
       const incoming = incomingData.appState || incomingData;
 
       const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
-      const hasVaultOnDisk = !!(localStorage.getItem('haushaltsbuch_vault_data') || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
+      const storedEnc = localStorage.getItem('barrierefreie_finanzen_enc_v1') || 
+                        localStorage.getItem('haushaltsbuch_vault_data') || 
+                        (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault);
+      const storedSalt = localStorage.getItem('barrierefreie_finanzen_salt_v1') || 
+                         localStorage.getItem('haushaltsbuch_vault_salt') || 
+                         (window.__DISK_VAULT__ && window.__DISK_VAULT__.salt);
+      const hasVaultOnDisk = !!(storedEnc && storedSalt);
 
-      // FALL 1: ERSTSTART (Kein Tresor auf Gerät, noch keine PIN eingerichtet)
+      // Bestimme eventuell vorhandene PIN (z.B. durch Biometrie oder aktive Sitzung)
+      let knownPin = null;
+      if (typeof window !== 'undefined' && window.__ACTIVE_PIN__) {
+        knownPin = window.__ACTIVE_PIN__;
+      } else {
+        const bioToken = localStorage.getItem('haushaltsbuch_bio_token');
+        if (bioToken) {
+          try {
+            knownPin = decodeURIComponent(atob(bioToken)).trim();
+          } catch(e) {}
+        }
+      }
+
+      // FALL 1: GERÄT IST AKTUELL BEREITS ENTSPERRT -> DIREKT MERGEN & SPEICHERN
+      if (isUnlocked && typeof appState !== 'undefined' && appState !== null) {
+        this.mergeIncomingIntoAppState(incoming);
+        if (typeof saveStateToEncryptedStorage === 'function') {
+          await saveStateToEncryptedStorage();
+        }
+        if (typeof updateOverview === 'function') updateOverview();
+        if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+        if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
+
+        const txCount = appState.transactions ? appState.transactions.length : 0;
+        const msg = `Synchronisation erfolgreich! ${txCount} Buchungen synchronisiert.`;
+        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+        if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
+        return;
+      }
+
+      // FALL 2: GERÄT IST GESPERRT, ABER WIR KÖNNEN MIT BEKANNTER PIN (Z.B. BIOMETRIE) AUTOMATISCH ENTSPERREN & MERGEN
+      if (!isUnlocked && hasVaultOnDisk && knownPin && typeof deriveKey === 'function' && typeof decryptData === 'function') {
+        try {
+          const saltBuffer = base64ToArrayBuffer(storedSalt);
+          const key = await deriveKey(knownPin, new Uint8Array(saltBuffer));
+          const decrypted = await decryptData(storedEnc, key);
+          if (decrypted) {
+            cryptoKey = key;
+            appState = decrypted;
+            window.__ACTIVE_PIN__ = knownPin;
+            this.mergeIncomingIntoAppState(incoming);
+            if (typeof saveStateToEncryptedStorage === 'function') {
+              await saveStateToEncryptedStorage();
+            }
+            if (typeof unlockApp === 'function') {
+              unlockApp();
+            }
+            const txCount = appState.transactions ? appState.transactions.length : 0;
+            const msg = `Synchronisation erfolgreich! ${txCount} Buchungen geladen und Tresor entsperrt.`;
+            if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+            if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
+            return;
+          }
+        } catch(e) {
+          console.warn('[SyncEngine] Konnte Tresor nicht mit bekannter PIN entschlüsseln, warte auf Entsperrung:', e);
+        }
+      }
+
+      // FALL 3: GERÄT IST GESPERRT UND HAT BEREITS EINEN TRESOR -> DATEN ZWISCHENSPEICHERN BIS PIN EINGEGEBEN WIRD
+      if (!isUnlocked && hasVaultOnDisk) {
+        window.__PENDING_SYNC_DATA__ = incomingData;
+        const msg = 'Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein.';
+        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+        if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
+        const lockStatusEl = document.getElementById('lock-sync-status');
+        if (lockStatusEl) lockStatusEl.textContent = '✅ ' + msg;
+        return;
+      }
+
+      // FALL 4: ERSTSTART (Kein Tresor auf Gerät, noch keine PIN eingerichtet)
       if (!isUnlocked && !hasVaultOnDisk) {
         if (onStatusUpdate) onStatusUpdate('syncing', '📦 Erstelle neuen Tresor aus den Computer-Daten...');
 
         const pinInputEl = document.getElementById('pin-input');
-        const chosenPin = (pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234';
+        const chosenPin = (knownPin) ? knownPin : ((pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234');
 
         const newAppState = {
           accounts: (incoming.accounts && incoming.accounts.length) ? incoming.accounts : [
@@ -3707,13 +3819,21 @@ const SyncEngine = {
           const salt = crypto.getRandomValues(new Uint8Array(16));
           const saltBase64 = arrayBufferToBase64(salt.buffer);
           currentSaltBase64 = saltBase64;
+          localStorage.setItem('barrierefreie_finanzen_salt_v1', saltBase64);
           localStorage.setItem('haushaltsbuch_vault_salt', saltBase64);
 
           cryptoKey = await deriveKey(chosenPin, salt);
           appState = newAppState;
+          window.__ACTIVE_PIN__ = chosenPin;
 
           if (typeof saveStateToEncryptedStorage === 'function') {
             await saveStateToEncryptedStorage();
+          }
+
+          if (localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
+            try {
+              localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(chosenPin)));
+            } catch(e) {}
           }
 
           if (typeof unlockApp === 'function') {
@@ -3726,7 +3846,7 @@ const SyncEngine = {
           if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
 
           if (!pinInputEl || !pinInputEl.value.trim()) {
-            const successNotice = `🎉 Synchronisation erfolgreich! ${txCount} Buchungen vom Computer geladen. Deine Start-PIN lautet 1234.`;
+            const successNotice = `🎉 Synchronisation erfolgreich! ${txCount} Buchungen vom Computer geladen. Deine Start-PIN lautet ${chosenPin}.`;
             if (typeof announceNVDA === 'function') announceNVDA(successNotice, true);
             const banner = document.getElementById('lock-sync-status');
             if (banner) {
@@ -3738,83 +3858,62 @@ const SyncEngine = {
           return;
         }
       }
-
-      // FALL 2: GERÄT IST GESPERRT, ABER HAT BEREITS EINEN TRESOR (Warte auf PIN-Eingabe)
-      if (!isUnlocked && hasVaultOnDisk) {
-        window.__PENDING_SYNC_DATA__ = incomingData;
-        const msg = 'Daten empfangen! Bitte gib oben deine PIN ein, um die App zu öffnen.';
-        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
-        if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
-        const lockStatusEl = document.getElementById('lock-sync-status');
-        if (lockStatusEl) lockStatusEl.textContent = '✅ ' + msg;
-        return;
-      }
-
-      // FALL 3: GERÄT IST ENTSPERRT -> DATEN DIREKT MERGEN
-      if (typeof appState !== 'undefined' && appState !== null) {
-        if (!Array.isArray(appState.transactions)) appState.transactions = [];
-        const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
-        let addedTx = 0;
-
-        const incomingTx = incoming.transactions || incomingData.transactions || [];
-        for (const t of incomingTx) {
-          if (t && t.id && !existingTxIds.has(String(t.id))) {
-            appState.transactions.push(t);
-            existingTxIds.add(String(t.id));
-            addedTx++;
-          }
-        }
-        if (addedTx > 0) {
-          appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        }
-
-        // Konten
-        if (!Array.isArray(appState.accounts)) appState.accounts = [];
-        const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
-        const incomingAcc = incoming.accounts || incomingData.accounts || [];
-        for (const a of incomingAcc) {
-          if (a && a.id && !existingAccIds.has(String(a.id))) {
-            appState.accounts.push(a);
-            existingAccIds.add(String(a.id));
-          }
-        }
-
-        // Wunschliste
-        if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
-        const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
-        const incomingWish = incoming.wishlist || incomingData.wishlist || [];
-        for (const w of incomingWish) {
-          if (w && w.id && !existingWishIds.has(String(w.id))) {
-            appState.wishlist.push(w);
-            existingWishIds.add(String(w.id));
-          }
-        }
-
-        // Daueraufträge
-        if (!Array.isArray(appState.recurring)) appState.recurring = [];
-        const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
-        const incomingRec = incoming.recurring || incomingData.recurring || [];
-        for (const r of incomingRec) {
-          if (r && r.id && !existingRecIds.has(String(r.id))) {
-            appState.recurring.push(r);
-            existingRecIds.add(String(r.id));
-          }
-        }
-
-        // Speichern
-        if (typeof saveStateToEncryptedStorage === 'function') {
-          await saveStateToEncryptedStorage();
-        }
-
-        // UI aktualisieren
-        if (typeof updateOverview === 'function') updateOverview();
-        if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
-        if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
-      }
-
     } catch (err) {
       console.error('[SyncEngine] importSyncedVaultData error:', err);
       throw new Error('Abgleich fehlgeschlagen: ' + err.message);
+    }
+  },
+
+  mergeIncomingIntoAppState(incoming) {
+    if (!appState || !incoming) return;
+
+    if (!Array.isArray(appState.transactions)) appState.transactions = [];
+    const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
+    let addedTx = 0;
+
+    const incomingTx = incoming.transactions || [];
+    for (const t of incomingTx) {
+      if (t && t.id && !existingTxIds.has(String(t.id))) {
+        appState.transactions.push(t);
+        existingTxIds.add(String(t.id));
+        addedTx++;
+      }
+    }
+    if (addedTx > 0) {
+      appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+
+    // Konten
+    if (!Array.isArray(appState.accounts)) appState.accounts = [];
+    const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
+    const incomingAcc = incoming.accounts || [];
+    for (const a of incomingAcc) {
+      if (a && a.id && !existingAccIds.has(String(a.id))) {
+        appState.accounts.push(a);
+        existingAccIds.add(String(a.id));
+      }
+    }
+
+    // Wunschliste
+    if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
+    const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
+    const incomingWish = incoming.wishlist || [];
+    for (const w of incomingWish) {
+      if (w && w.id && !existingWishIds.has(String(w.id))) {
+        appState.wishlist.push(w);
+        existingWishIds.add(String(w.id));
+      }
+    }
+
+    // Daueraufträge
+    if (!Array.isArray(appState.recurring)) appState.recurring = [];
+    const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
+    const incomingRec = incoming.recurring || [];
+    for (const r of incomingRec) {
+      if (r && r.id && !existingRecIds.has(String(r.id))) {
+        appState.recurring.push(r);
+        existingRecIds.add(String(r.id));
+      }
     }
   },
 
@@ -9079,19 +9178,16 @@ async function resetVaultSetup() {
   window.location.reload();
 }
 
-async function handlePinSubmit(e) {
-  e.preventDefault();
+async function unlockVaultWithPin(enteredPin, isFromBio = false) {
+  if (!enteredPin) return false;
 
   if (checkLockoutStatus()) {
     announceNVDA('Zugriff gesperrt wegen zu vieler Fehlversuche.', true);
-    return;
+    return false;
   }
 
   const pinInput = document.getElementById('pin-input');
   const errorMsg = document.getElementById('pin-error-msg');
-  const enteredPin = pinInput.value.trim();
-
-  if (!enteredPin) return;
 
   let storedData = localStorage.getItem(STORAGE_DATA_KEY);
   let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY) || currentSaltBase64;
@@ -9108,6 +9204,7 @@ async function handlePinSubmit(e) {
       saltBase64 = arrayBufferToBase64(salt.buffer);
       currentSaltBase64 = saltBase64;
       localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
+      localStorage.setItem('haushaltsbuch_vault_salt', saltBase64);
 
       cryptoKey = await deriveKey(enteredPin, salt);
       appState = {
@@ -9120,44 +9217,83 @@ async function handlePinSubmit(e) {
       setFailedAttempts(0);
       setLockoutEndTime(0);
       window.__ACTIVE_PIN__ = enteredPin;
+      if (isFromBio) {
+        localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
+      }
       unlockApp();
       announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
+      return true;
     } else {
       // Vorhandenen Datensafe entsperren
       currentSaltBase64 = saltBase64;
       const saltBuffer = base64ToArrayBuffer(saltBase64);
       const salt = new Uint8Array(saltBuffer);
-      const key = await deriveKey(enteredPin, salt);
+      
+      let decrypted = null;
+      let healedFrom1234 = false;
 
-      const decrypted = await decryptData(storedData, key);
-      cryptoKey = key;
+      try {
+        const key = await deriveKey(enteredPin, salt);
+        decrypted = await decryptData(storedData, key);
+        cryptoKey = key;
+      } catch (decryptErr) {
+        // AUTO-HEALING: Prüfen, ob der Tresor versehentlich mit '1234' verschlüsselt war
+        if (enteredPin !== '1234') {
+          try {
+            const fallbackKey = await deriveKey('1234', salt);
+            decrypted = await decryptData(storedData, fallbackKey);
+            if (decrypted) {
+              healedFrom1234 = true;
+              // Repariere sofort auf echte PIN
+              cryptoKey = await deriveKey(enteredPin, salt);
+              appState = decrypted;
+              await saveStateToEncryptedStorage();
+              console.log('[Auto-Healing] Tresor erfolgreich von 1234 auf Nutzer-PIN repariert!');
+            }
+          } catch(e2) {}
+        }
+        if (!decrypted) {
+          throw decryptErr;
+        }
+      }
+
       appState = decrypted;
-
       if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
-            if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
-            if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
-            mergeCustomCategoriesIntoDB();
-            populateCategoriesDropdowns();
-  populateAllAccountDropdowns();
-  populateBudgetCategoryDropdown();
-  populateShoppingDropdowns();
-  renderShoppingCart();
-  renderAccountsViewList();
+      if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+      if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
       if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
 
       setFailedAttempts(0);
       setLockoutEndTime(0);
       window.__ACTIVE_PIN__ = enteredPin;
+
+      if (isFromBio || localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
+        try {
+          localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
+        } catch(e) {}
+      }
+
+      if (pinInput) pinInput.value = '';
+      if (errorMsg) errorMsg.style.display = 'none';
+
       unlockApp();
-      announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
-      if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token')) {
+
+      if (healedFrom1234) {
+        const healMsg = 'Erfolgreich entsperrt! Dein Tresor wurde automatisch repariert und synchronisiert.';
+        announceNVDA(healMsg, true);
+      } else {
+        announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
+      }
+
+      if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token') && !isFromBio) {
         setTimeout(() => {
           if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
             BiometricAuth.enable(enteredPin);
           }
         }, 1200);
       }
+      return true;
     }
   } catch (err) {
     let attempts = getFailedAttempts() + 1;
@@ -9174,11 +9310,21 @@ async function handlePinSubmit(e) {
         errorMsg.textContent = `❌ Falsche PIN oder Passwort! Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
         errorMsg.style.display = 'block';
       }
-      pinInput.value = '';
-      pinInput.focus();
+      if (pinInput) {
+        pinInput.value = '';
+        pinInput.focus();
+      }
       announceNVDA(`Falsche PIN. Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
     }
+    return false;
   }
+}
+
+async function handlePinSubmit(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const pinInput = document.getElementById('pin-input');
+  const enteredPin = pinInput ? pinInput.value.trim() : '';
+  await unlockVaultWithPin(enteredPin, false);
 }
 
 async function saveStateToEncryptedStorage() {
@@ -9239,6 +9385,14 @@ function unlockApp() {
 
   switchView('overview');
   resetInactivityTimer();
+
+  if (window.__PENDING_SYNC_DATA__ && typeof SyncEngine !== 'undefined') {
+    const pending = window.__PENDING_SYNC_DATA__;
+    window.__PENDING_SYNC_DATA__ = null;
+    setTimeout(() => {
+      SyncEngine.importSyncedVaultData(pending);
+    }, 200);
+  }
 }
 
 function lockApp() {
@@ -10351,8 +10505,23 @@ function disconnectSyncPairing() {
 }
 
 function updateSyncConnectedUI() {
+  // Falls window.__PAIRED_DEVICE__ vom C# Server bereitsteht, in LocalStorage übernehmen
+  if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device) {
+    if (!localStorage.getItem('haushaltsbuch_sync_connected_device')) {
+      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+      localStorage.setItem('haushaltsbuch_sync_connected_device', window.__PAIRED_DEVICE__.device);
+      if (window.__PAIRED_DEVICE__.code) {
+        localStorage.setItem('haushaltsbuch_sync_connected_code', window.__PAIRED_DEVICE__.code);
+      }
+      if (window.__PAIRED_DEVICE__.time) {
+        localStorage.setItem('haushaltsbuch_sync_connected_time', window.__PAIRED_DEVICE__.time);
+      }
+    }
+  }
+
   const connected = isSyncConnected();
   const devName = getConnectedDevice();
+  const pairedCode = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || '';
   const syncTime = getConnectedTime();
 
   // Lockscreen
@@ -10366,7 +10535,7 @@ function updateSyncConnectedUI() {
   if (lockDevSpan) lockDevSpan.textContent = devName;
   if (lockTimeSpan) lockTimeSpan.textContent = syncTime;
 
-  // Reiter 8
+  // Reiter 8 (Smartphone-Ansicht)
   const mainConnectedBox = document.getElementById('sync-mobile-connected');
   const mainUnconnectedBox = document.getElementById('sync-mobile-unconnected');
   const mainDevSpan = document.getElementById('sync-mobile-connected-dev');
@@ -10376,6 +10545,57 @@ function updateSyncConnectedUI() {
   if (mainUnconnectedBox) mainUnconnectedBox.style.display = connected ? 'none' : 'block';
   if (mainDevSpan) mainDevSpan.textContent = devName;
   if (mainTimeSpan) mainTimeSpan.textContent = syncTime;
+
+  // Reiter 8 (Desktop-Ansicht): Gespeichertes Smartphone & 1-Klick-Abgleich
+  const pairedCard = document.getElementById('sync-desktop-paired-card');
+  const manualForm = document.getElementById('sync-desktop-form');
+  const pairedDevSpan = document.getElementById('sync-desktop-paired-name');
+  const pairedCodeSpan = document.getElementById('sync-desktop-paired-code');
+  const pairedTimeSpan = document.getElementById('sync-desktop-paired-time');
+  const quickBtnDevName = document.getElementById('sync-quick-btn-devname');
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+
+  if (devName && devName !== 'Unbekanntes Gerät') {
+    if (targetDevInput && !targetDevInput.value) targetDevInput.value = devName;
+    if (targetCodeInput && !targetCodeInput.value && pairedCode) targetCodeInput.value = pairedCode;
+
+    if (pairedCard) pairedCard.style.display = 'block';
+    if (pairedDevSpan) pairedDevSpan.textContent = devName;
+    if (pairedCodeSpan) pairedCodeSpan.textContent = pairedCode || 'Gespeichert';
+    if (pairedTimeSpan) pairedTimeSpan.textContent = syncTime;
+    if (quickBtnDevName) quickBtnDevName.textContent = devName;
+    if (manualForm && !window.__MANUAL_SYNC_EDIT__) manualForm.style.display = 'none';
+  } else {
+    if (pairedCard) pairedCard.style.display = 'none';
+    if (manualForm) manualForm.style.display = 'block';
+  }
+}
+
+function triggerQuickSyncWithPaired() {
+  const devName = localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
+  const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
+
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+
+  if (targetDevInput && devName) targetDevInput.value = devName;
+  if (targetCodeInput && code) targetCodeInput.value = code;
+
+  handleStartSync();
+}
+
+function editSyncConnection() {
+  window.__MANUAL_SYNC_EDIT__ = true;
+  const manualForm = document.getElementById('sync-desktop-form');
+  if (manualForm) {
+    manualForm.style.display = 'block';
+    const input = document.getElementById('input-target-device');
+    if (input) input.focus();
+  }
+  if (typeof announceNVDA === 'function') {
+    announceNVDA('Eingabefelder für Smartphone-Name und Code eingeblendet.');
+  }
 }
 
 function initLockScreenSync() {
@@ -10858,17 +11078,11 @@ const BiometricAuth = {
         pinInput.value = pin;
       }
 
-      const lockForm = document.getElementById('lock-form');
-      if (lockForm) {
-        const submitEvent = new Event('submit', { cancelable: true });
-        lockForm.dispatchEvent(submitEvent);
-      }
-
       if (window.navigator && window.navigator.vibrate) {
         try { window.navigator.vibrate(50); } catch(e) {}
       }
 
-      if (typeof announceNVDA === 'function') announceNVDA('Mit Fingerabdruck erfolgreich entsperrt!');
+      unlockVaultWithPin(pin, true);
     } catch(e) {
       console.error('Error unpacking bio token:', e);
     }

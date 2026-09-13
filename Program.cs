@@ -81,16 +81,6 @@ namespace HaushaltsbuchApp
                 // 4. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
                 PurgeAllExternalStorageLocations(_activeStorageDir);
 
-                if (!File.Exists(_vaultPath))
-                {
-                    try
-                    {
-                        string lsDir = Path.Combine(_profileDir, @"Default\Local Storage");
-                        if (Directory.Exists(lsDir)) Directory.Delete(lsDir, true);
-                    }
-                    catch { }
-                }
-
                 // 5. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
 
@@ -484,6 +474,35 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
+                        if (url.StartsWith("/api/save_pairing") && method == "POST")
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            string pairingFile = Path.Combine(_activeStorageDir, "Haushaltsbuch_Kopplung.json");
+                            if (!string.IsNullOrEmpty(body) && body.Trim().StartsWith("{"))
+                            {
+                                File.WriteAllText(pairingFile, body, Encoding.UTF8);
+                            }
+                            else
+                            {
+                                try { if (File.Exists(pairingFile)) File.Delete(pairingFile); } catch { }
+                            }
+                            InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
+                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"saved\"}");
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
+                        if (url.StartsWith("/api/get_pairing") && method == "GET")
+                        {
+                            _lastHeartbeat = DateTime.Now;
+                            string pairingFile = Path.Combine(_activeStorageDir, "Haushaltsbuch_Kopplung.json");
+                            string content = File.Exists(pairingFile) ? File.ReadAllText(pairingFile, Encoding.UTF8).Trim() : "{}";
+                            if (string.IsNullOrEmpty(content) || !content.StartsWith("{")) content = "{}";
+                            byte[] data = Encoding.UTF8.GetBytes(content);
+                            SendHttpResponse(stream, 200, "application/json", data);
+                            return;
+                        }
+
                         string relPath = url.TrimStart('/').Split('?')[0];
                         string filePath = Path.Combine(_activeStorageDir, relPath);
                         if (!string.IsNullOrEmpty(relPath) && File.Exists(filePath) && !string.Equals(filePath, _vaultPath, StringComparison.OrdinalIgnoreCase))
@@ -525,9 +544,9 @@ namespace HaushaltsbuchApp
                 string statusText = statusCode == 200 ? "OK" : (statusCode == 403 ? "Forbidden" : (statusCode == 404 ? "Not Found" : "Error"));
                 StringBuilder sb = new StringBuilder();
                 sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
-                sb.Append(string.Format("Access-Control-Allow-Origin: http://127.0.0.1:{0}\r\n", _activePort));
+                sb.Append("Access-Control-Allow-Origin: *\r\n");
                 sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
-                sb.Append("Access-Control-Allow-Headers: Content-Type, X-Vault-Token\r\n");
+                sb.Append("Access-Control-Allow-Headers: Content-Type, X-Vault-Token, *\r\n");
                 sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
                 sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));
                 sb.Append("Connection: close\r\n\r\n");
@@ -556,8 +575,20 @@ namespace HaushaltsbuchApp
                     if (string.IsNullOrEmpty(vaultJson) || !vaultJson.Contains("salt")) vaultJson = "{}";
                 }
 
+                string pairingJson = "{}";
+                string pairingFile = Path.Combine(_activeStorageDir, "Haushaltsbuch_Kopplung.json");
+                if (File.Exists(pairingFile))
+                {
+                    try
+                    {
+                        pairingJson = File.ReadAllText(pairingFile, Encoding.UTF8).Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                        if (string.IsNullOrEmpty(pairingJson) || !pairingJson.StartsWith("{")) pairingJson = "{}";
+                    }
+                    catch { }
+                }
+
                 string html = File.ReadAllText(htmlPath, Encoding.UTF8);
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\";</script>";
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {

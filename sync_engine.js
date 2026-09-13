@@ -547,7 +547,24 @@ const SyncEngine = {
     this.lastSyncTime = new Date();
     localStorage.setItem('haushaltsbuch_sync_connected', 'true');
     localStorage.setItem('haushaltsbuch_sync_connected_device', cleanTargetName);
+    localStorage.setItem('haushaltsbuch_sync_connected_code', cleanPairCode);
     localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+    
+    // An den lokalen Desktop-Server senden zur dauerhaften Speicherung in Haushaltsbuch_Kopplung.json
+    try {
+      const port = window.__LOCAL_PORT__ || 48123;
+      const headers = (typeof getVaultApiHeaders === 'function') ? getVaultApiHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' };
+      fetch(`http://127.0.0.1:${port}/api/save_pairing`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({
+          device: cleanTargetName,
+          code: cleanPairCode,
+          time: localStorage.getItem('haushaltsbuch_sync_connected_time')
+        })
+      }).catch(() => {});
+    } catch(e) {}
+
     if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
     if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
@@ -592,14 +609,89 @@ const SyncEngine = {
       const incoming = incomingData.appState || incomingData;
 
       const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
-      const hasVaultOnDisk = !!(localStorage.getItem('haushaltsbuch_vault_data') || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
+      const storedEnc = localStorage.getItem('barrierefreie_finanzen_enc_v1') || 
+                        localStorage.getItem('haushaltsbuch_vault_data') || 
+                        (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault);
+      const storedSalt = localStorage.getItem('barrierefreie_finanzen_salt_v1') || 
+                         localStorage.getItem('haushaltsbuch_vault_salt') || 
+                         (window.__DISK_VAULT__ && window.__DISK_VAULT__.salt);
+      const hasVaultOnDisk = !!(storedEnc && storedSalt);
 
-      // FALL 1: ERSTSTART (Kein Tresor auf Gerät, noch keine PIN eingerichtet)
+      // Bestimme eventuell vorhandene PIN (z.B. durch Biometrie oder aktive Sitzung)
+      let knownPin = null;
+      if (typeof window !== 'undefined' && window.__ACTIVE_PIN__) {
+        knownPin = window.__ACTIVE_PIN__;
+      } else {
+        const bioToken = localStorage.getItem('haushaltsbuch_bio_token');
+        if (bioToken) {
+          try {
+            knownPin = decodeURIComponent(atob(bioToken)).trim();
+          } catch(e) {}
+        }
+      }
+
+      // FALL 1: GERÄT IST AKTUELL BEREITS ENTSPERRT -> DIREKT MERGEN & SPEICHERN
+      if (isUnlocked && typeof appState !== 'undefined' && appState !== null) {
+        this.mergeIncomingIntoAppState(incoming);
+        if (typeof saveStateToEncryptedStorage === 'function') {
+          await saveStateToEncryptedStorage();
+        }
+        if (typeof updateOverview === 'function') updateOverview();
+        if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+        if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
+
+        const txCount = appState.transactions ? appState.transactions.length : 0;
+        const msg = `Synchronisation erfolgreich! ${txCount} Buchungen synchronisiert.`;
+        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+        if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
+        return;
+      }
+
+      // FALL 2: GERÄT IST GESPERRT, ABER WIR KÖNNEN MIT BEKANNTER PIN (Z.B. BIOMETRIE) AUTOMATISCH ENTSPERREN & MERGEN
+      if (!isUnlocked && hasVaultOnDisk && knownPin && typeof deriveKey === 'function' && typeof decryptData === 'function') {
+        try {
+          const saltBuffer = base64ToArrayBuffer(storedSalt);
+          const key = await deriveKey(knownPin, new Uint8Array(saltBuffer));
+          const decrypted = await decryptData(storedEnc, key);
+          if (decrypted) {
+            cryptoKey = key;
+            appState = decrypted;
+            window.__ACTIVE_PIN__ = knownPin;
+            this.mergeIncomingIntoAppState(incoming);
+            if (typeof saveStateToEncryptedStorage === 'function') {
+              await saveStateToEncryptedStorage();
+            }
+            if (typeof unlockApp === 'function') {
+              unlockApp();
+            }
+            const txCount = appState.transactions ? appState.transactions.length : 0;
+            const msg = `Synchronisation erfolgreich! ${txCount} Buchungen geladen und Tresor entsperrt.`;
+            if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+            if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
+            return;
+          }
+        } catch(e) {
+          console.warn('[SyncEngine] Konnte Tresor nicht mit bekannter PIN entschlüsseln, warte auf Entsperrung:', e);
+        }
+      }
+
+      // FALL 3: GERÄT IST GESPERRT UND HAT BEREITS EINEN TRESOR -> DATEN ZWISCHENSPEICHERN BIS PIN EINGEGEBEN WIRD
+      if (!isUnlocked && hasVaultOnDisk) {
+        window.__PENDING_SYNC_DATA__ = incomingData;
+        const msg = 'Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein.';
+        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+        if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
+        const lockStatusEl = document.getElementById('lock-sync-status');
+        if (lockStatusEl) lockStatusEl.textContent = '✅ ' + msg;
+        return;
+      }
+
+      // FALL 4: ERSTSTART (Kein Tresor auf Gerät, noch keine PIN eingerichtet)
       if (!isUnlocked && !hasVaultOnDisk) {
         if (onStatusUpdate) onStatusUpdate('syncing', '📦 Erstelle neuen Tresor aus den Computer-Daten...');
 
         const pinInputEl = document.getElementById('pin-input');
-        const chosenPin = (pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234';
+        const chosenPin = (knownPin) ? knownPin : ((pinInputEl && pinInputEl.value.trim()) ? pinInputEl.value.trim() : '1234');
 
         const newAppState = {
           accounts: (incoming.accounts && incoming.accounts.length) ? incoming.accounts : [
@@ -620,13 +712,21 @@ const SyncEngine = {
           const salt = crypto.getRandomValues(new Uint8Array(16));
           const saltBase64 = arrayBufferToBase64(salt.buffer);
           currentSaltBase64 = saltBase64;
+          localStorage.setItem('barrierefreie_finanzen_salt_v1', saltBase64);
           localStorage.setItem('haushaltsbuch_vault_salt', saltBase64);
 
           cryptoKey = await deriveKey(chosenPin, salt);
           appState = newAppState;
+          window.__ACTIVE_PIN__ = chosenPin;
 
           if (typeof saveStateToEncryptedStorage === 'function') {
             await saveStateToEncryptedStorage();
+          }
+
+          if (localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
+            try {
+              localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(chosenPin)));
+            } catch(e) {}
           }
 
           if (typeof unlockApp === 'function') {
@@ -639,7 +739,7 @@ const SyncEngine = {
           if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
 
           if (!pinInputEl || !pinInputEl.value.trim()) {
-            const successNotice = `🎉 Synchronisation erfolgreich! ${txCount} Buchungen vom Computer geladen. Deine Start-PIN lautet 1234.`;
+            const successNotice = `🎉 Synchronisation erfolgreich! ${txCount} Buchungen vom Computer geladen. Deine Start-PIN lautet ${chosenPin}.`;
             if (typeof announceNVDA === 'function') announceNVDA(successNotice, true);
             const banner = document.getElementById('lock-sync-status');
             if (banner) {
@@ -651,83 +751,62 @@ const SyncEngine = {
           return;
         }
       }
-
-      // FALL 2: GERÄT IST GESPERRT, ABER HAT BEREITS EINEN TRESOR (Warte auf PIN-Eingabe)
-      if (!isUnlocked && hasVaultOnDisk) {
-        window.__PENDING_SYNC_DATA__ = incomingData;
-        const msg = 'Daten empfangen! Bitte gib oben deine PIN ein, um die App zu öffnen.';
-        if (typeof announceNVDA === 'function') announceNVDA(msg, true);
-        if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
-        const lockStatusEl = document.getElementById('lock-sync-status');
-        if (lockStatusEl) lockStatusEl.textContent = '✅ ' + msg;
-        return;
-      }
-
-      // FALL 3: GERÄT IST ENTSPERRT -> DATEN DIREKT MERGEN
-      if (typeof appState !== 'undefined' && appState !== null) {
-        if (!Array.isArray(appState.transactions)) appState.transactions = [];
-        const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
-        let addedTx = 0;
-
-        const incomingTx = incoming.transactions || incomingData.transactions || [];
-        for (const t of incomingTx) {
-          if (t && t.id && !existingTxIds.has(String(t.id))) {
-            appState.transactions.push(t);
-            existingTxIds.add(String(t.id));
-            addedTx++;
-          }
-        }
-        if (addedTx > 0) {
-          appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-        }
-
-        // Konten
-        if (!Array.isArray(appState.accounts)) appState.accounts = [];
-        const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
-        const incomingAcc = incoming.accounts || incomingData.accounts || [];
-        for (const a of incomingAcc) {
-          if (a && a.id && !existingAccIds.has(String(a.id))) {
-            appState.accounts.push(a);
-            existingAccIds.add(String(a.id));
-          }
-        }
-
-        // Wunschliste
-        if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
-        const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
-        const incomingWish = incoming.wishlist || incomingData.wishlist || [];
-        for (const w of incomingWish) {
-          if (w && w.id && !existingWishIds.has(String(w.id))) {
-            appState.wishlist.push(w);
-            existingWishIds.add(String(w.id));
-          }
-        }
-
-        // Daueraufträge
-        if (!Array.isArray(appState.recurring)) appState.recurring = [];
-        const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
-        const incomingRec = incoming.recurring || incomingData.recurring || [];
-        for (const r of incomingRec) {
-          if (r && r.id && !existingRecIds.has(String(r.id))) {
-            appState.recurring.push(r);
-            existingRecIds.add(String(r.id));
-          }
-        }
-
-        // Speichern
-        if (typeof saveStateToEncryptedStorage === 'function') {
-          await saveStateToEncryptedStorage();
-        }
-
-        // UI aktualisieren
-        if (typeof updateOverview === 'function') updateOverview();
-        if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
-        if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
-      }
-
     } catch (err) {
       console.error('[SyncEngine] importSyncedVaultData error:', err);
       throw new Error('Abgleich fehlgeschlagen: ' + err.message);
+    }
+  },
+
+  mergeIncomingIntoAppState(incoming) {
+    if (!appState || !incoming) return;
+
+    if (!Array.isArray(appState.transactions)) appState.transactions = [];
+    const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
+    let addedTx = 0;
+
+    const incomingTx = incoming.transactions || [];
+    for (const t of incomingTx) {
+      if (t && t.id && !existingTxIds.has(String(t.id))) {
+        appState.transactions.push(t);
+        existingTxIds.add(String(t.id));
+        addedTx++;
+      }
+    }
+    if (addedTx > 0) {
+      appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    }
+
+    // Konten
+    if (!Array.isArray(appState.accounts)) appState.accounts = [];
+    const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
+    const incomingAcc = incoming.accounts || [];
+    for (const a of incomingAcc) {
+      if (a && a.id && !existingAccIds.has(String(a.id))) {
+        appState.accounts.push(a);
+        existingAccIds.add(String(a.id));
+      }
+    }
+
+    // Wunschliste
+    if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
+    const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
+    const incomingWish = incoming.wishlist || [];
+    for (const w of incomingWish) {
+      if (w && w.id && !existingWishIds.has(String(w.id))) {
+        appState.wishlist.push(w);
+        existingWishIds.add(String(w.id));
+      }
+    }
+
+    // Daueraufträge
+    if (!Array.isArray(appState.recurring)) appState.recurring = [];
+    const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
+    const incomingRec = incoming.recurring || [];
+    for (const r of incomingRec) {
+      if (r && r.id && !existingRecIds.has(String(r.id))) {
+        appState.recurring.push(r);
+        existingRecIds.add(String(r.id));
+      }
     }
   },
 
