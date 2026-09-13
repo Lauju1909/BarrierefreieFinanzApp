@@ -622,12 +622,26 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.2.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.2.1)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.2.1 (Fehlerbereinigung &amp; Permanente Desktop-Kopplung)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>💻 Permanente Smartphone-Kopplung &amp; 1-Klick-Abgleich auf dem PC:</strong><br>
+Die Desktop-App merkt sich nun gekoppelte Smartphones dauerhaft. In Reiter 8 gibt es eine neue Karte mit dem Namen des verbundenen Smartphones und dem Schnellabgleich-Button <code>[⚡ 1-Klick-Abgleich]</code>.
+</li>
+<li>
+<strong>🛡️ Fehlerbereinigung &amp; Versionskonsistenz:</strong><br>
+Alle internen Versionsangaben und Feedback-Meldungen wurden auf die neueste Version synchronisiert. Sämtliche Skripte und Stile sind direkt in die portable Standalone-App eingebunden.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">🛡️ Neu in Version 6.0.2 (Sicherheits-Härtung, Rollierende Backups &amp; Update-Schutz)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -2460,7 +2474,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.2.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.2.1</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3047,48 +3061,54 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <!-- BEREICH FÜR DESKTOP (SENDER) -->
   <div id="sync-desktop-box" class="section-card" style="display: none;">
-    <!-- BEREITS GEKOPPELTES SMARTPHONE (1-KLICK ABGLEICH) -->
-    <div id="sync-desktop-paired-card" style="display: none; background: rgba(76, 175, 80, 0.12); border: 2px solid #4CAF50; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
-      <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 19px;">📱 Verbundenes Smartphone</h3>
-      <p style="margin: 0 0 14px 0; font-size: 16px; line-height: 1.6;">
-        Gerätename: <strong id="sync-desktop-paired-name">Smartphone</strong><br>
-        Kopplungscode: <strong id="sync-desktop-paired-code">--- ---</strong><br>
-        Letzter Abgleich: <span id="sync-desktop-paired-time">Bisher noch nicht</span>
-      </p>
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <button type="button" id="btn-quick-sync-desktop" onclick="triggerQuickSyncWithPaired()" class="btn btn-primary" style="font-size: 16px; padding: 12px 20px; background-color: #2E7D32;">
-          ⚡ <strong>Jetzt 1-Klick Abgleich mit <span id="sync-quick-btn-devname">Smartphone</span></strong>
-        </button>
-        <button type="button" onclick="editSyncConnection()" class="btn btn-secondary" style="font-size: 15px; padding: 12px 18px;">
-          ✏️ Code / Gerätename ändern
-        </button>
-      </div>
+    <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
+      <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
     </div>
 
-    <div id="sync-desktop-form-box">
-      <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Smartphone-Verbindung einrichten</h3>
-        <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
-      </div>
-
-      <form id="sync-desktop-form" onsubmit="handleStartSync(event)" class="accessible-form">
-        <div class="form-group">
-          <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
-          <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
-        </div>
-
-        <div class="form-group">
-          <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
-          <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
-        </div>
-
-        <div class="form-actions" style="margin-top: 20px;">
-          <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
-            <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+    <!-- STATUS WENN BEREITS MIT SMARTPHONE GEKOPPELT (1-KLICK-ABGLEICH) -->
+    <div id="sync-desktop-paired-card" style="display: none; background: rgba(76, 175, 80, 0.12); border: 2px solid #2E7D32; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+      <h3 style="font-size: 20px; font-weight: bold; color: #1B5E20; margin: 0 0 8px 0;">
+        🟢 Gekoppeltes Smartphone: <span id="sync-desktop-paired-name">Handy</span>
+      </h3>
+      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 6px 0;">
+        Kopplungscode: <strong id="sync-desktop-paired-code">Gespeichert</strong>
+      </p>
+      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 16px 0;">
+        Zuletzt synchronisiert: <strong id="sync-desktop-paired-time">Heute</strong>
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithPaired()" style="width: 100%; font-size: 18px; padding: 14px 20px; background-color: #2E7D32;">
+          <span>⚡ <strong>1-Klick-Abgleich mit <span id="sync-quick-btn-devname">Smartphone</span></strong></span>
+        </button>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-secondary" onclick="editSyncConnection()" style="flex: 1; font-size: 14px; padding: 10px 14px;">
+            ✏️ <strong>Anderes Smartphone / Code eingeben</strong>
+          </button>
+          <button type="button" class="btn btn-danger" onclick="disconnectSyncPairing()" style="flex: 1; font-size: 14px; padding: 10px 14px;">
+            ❌ <strong>Kopplung aufheben</strong>
           </button>
         </div>
-      </form>
+      </div>
     </div>
+
+    <form id="sync-desktop-form" onsubmit="handleStartSync(event)" class="accessible-form">
+      <div class="form-group">
+        <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+      </div>
+
+      <div class="form-group">
+        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+      </div>
+
+      <div class="form-actions" style="margin-top: 20px;">
+        <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
+          <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+        </button>
+      </div>
+    </form>
 
     <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
     </div>
@@ -3098,7 +3118,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.2.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.2.1</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -3949,11 +3969,12 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 </script>
+<script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>
 <script>
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.2.0';
+const CURRENT_APP_VERSION = 'v6.2.1';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -6537,7 +6558,7 @@ async function handleAddCustomCategory(e) {
     Hauptkategorie: mainCatName,
     Unterkategorie_Geschaeft: subCatName,
     Datum: new Date().toLocaleString('de-DE'),
-    AppVersion: 'v6.0.2'
+    AppVersion: CURRENT_APP_VERSION
   });
 
   const port = window.__LOCAL_PORT__ || 48123;
@@ -9792,7 +9813,7 @@ async function submitFeatureFeedback(e) {
     Absender: author,
     Nachricht: message,
     Datum: now,
-    AppVersion: 'v6.0.2'
+    AppVersion: CURRENT_APP_VERSION
   });
 
   const port = window.__LOCAL_PORT__ || 48123;

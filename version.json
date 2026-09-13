@@ -1,8 +1,13 @@
 {
-  "version": "6.2.0",
+  "version": "6.2.1",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-13",
   "features": [
+    "Desktop 1-Klick-Abgleich & Permanente Smartphone-Kopplung: Gekoppeltes Smartphone bleibt auf dem PC dauerhaft gespeichert und kann mit 1 Klick abgeglichen werden",
+    "Fehlerbereinigung Kopplungskarte: Desktop-Kopplungskarte (sync-desktop-paired-card) und manuelle Eingabeform nahtlos in die Benutzeroberfläche integriert",
+    "Versionskonsistenz: Automatische Übernahme der aktuellen App-Version v6.2.1 in allen Formularen und Feedback-Payloads",
+    "Magischer Sync-Link & E-Mail-Übertragung: 1-Klick-Kopplung via E-Mail, Deep Link und Zwischenablage",
+    "Nativer Android Fingerabdruck-Dialog (BiometricPrompt) mit Abbruch-Schutz und Sensor-Test in Einstellungen",
     "Echtzeit-Synchronisation: Direkte Ende-zu-Ende verschlüsselte Live-Synchronisation (AES-256-GCM) zwischen Computer und Smartphone",
     "Intelligenter Verbindungs-Status: Zeigt aktiven Rechner nach erfolgreicher Kopplung an; blendet Gerätename und Kopplungscode automatisch aus",
     "Dynamische Kopplungscodes: Automatisches Generieren frischer Kopplungscodes bei jedem App-Start und periodische Rotation im ungekoppelten Zustand",

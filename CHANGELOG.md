@@ -3,6 +3,42 @@
 
 ---
 
+## ⚡ Version 6.2.1 (Fehlerbereinigung & Permanente Desktop-Kopplung)
+*Datum: 13. September 2026*
+
+### 💻 1. Permanente Smartphone-Kopplung & 1-Klick-Abgleich auf dem PC
+- **Gekoppeltes Smartphone dauerhaft merken:** Wurde der PC einmal erfolgreich mit dem Smartphone synchronisiert, merkt sich die App Gerätename und Kopplungscode.
+- **Neue 1-Klick-Kopplungskarte:** In Reiter 8 (Smartphone-Sync) auf dem PC wird eine übersichtliche Karte mit dem Namen des verbundenen Smartphones, dem letzten Abgleichsdatum und dem Button `[⚡ 1-Klick-Abgleich]` angezeigt.
+- **Fehlerbehebung Benutzeroberfläche:** Fehlende Kopplungskarten-Elemente im HTML wurden ergänzt und vollständig an Screenreader (NVDA) angebunden.
+
+### 🛡️ 2. Fehlerbereinigung & Versionskonsistenz
+- **Dynamische Versionen:** In allen Feedback-Meldungen und Kategorie-Vorschlägen wird nun stets die korrekte, aktuelle Versionsnummer (`v6.2.1`) übertragen statt veralteter Vorgängerversionen.
+- **Stand-alone-Build synchronisiert:** Alle Skripte und Stile wurden in die portable Standalone-App `Haushaltsbuch_App.html` und `Haushaltsbuch.exe` eingebunden.
+
+---
+
+## 📲 Version 6.2.0 (Magischer Sync-Link, E-Mail-Übertragung & Biometrie-Härtung)
+*Datum: 12. September 2026*
+
+### 🔗 1. Magischer Sync-Link & E-Mail-Übertragung
+- **1-Klick-Kopplung:** Generiere einen magischen Kopplungs-Link (`haushaltsbuch://sync?...`) und versende ihn direkt per E-Mail an dich selbst oder kopiere ihn in die Zwischenablage.
+- **Automatischer Intent-Filter (Android):** Ein Klick auf den Link im E-Mail-Programm auf dem Smartphone öffnet die App und trägt die Verbindungsdaten automatisch ein.
+
+### 👆 2. Nativer Android Fingerabdruck-Dialog (BiometricPrompt) & Sensor-Test
+- **Nativer BiometricPrompt:** Volle Unterstützung der AndroidX-Biometrie mit modernem System-Dialog.
+- **Abbruch-Schutz & Sensor-Test:** Robuster Schnelltest in den Einstellungen (Reiter 5) zur Prüfung der Fingerabdruck-Erkennung mit klarer NVDA-/TalkBack-Sprachmeldung.
+
+---
+
+## ⚡ Version 6.1.0 (Ende-zu-Ende verschlüsselte Live-Synchronisation)
+*Datum: 12. September 2026*
+
+### 🔒 1. E2EE Echtzeit-Synchronisation zwischen PC und Smartphone
+- **100% Ende-zu-Ende-Verschlüsselung (AES-256-GCM):** Alle Daten werden vor dem Absenden auf dem Gerät verschlüsselt. Der Übertragungs-Broker sieht ausschließlich verschlüsseltes Rauschen.
+- **Reiter 8 (Smartphone-Sync):** Dedizierter Bereich mit barrierefreier Buchstabier- und Kopierfunktion für Gerätename und Kopplungscode.
+
+---
+
 ## 🛡️ Version 6.0.2 (Sicherheits-Härtung & Update-Schutz)
 *Datum: 07. September 2026*
 
