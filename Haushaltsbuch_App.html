@@ -140,6 +140,44 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 .privacy-guarantee-box { margin-top: 20px; padding: 14px; background-color: var(--bg-surface-elevated); border: 2px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 15px; color: var(--text-secondary); text-align: left; }
 .pin-hint-box { margin-top: 14px; padding: 12px; background-color: var(--bg-surface-elevated); border-radius: var(--radius-md); font-size: 15px; color: var(--text-muted); }
 
+/* WCAG 2.2 Schnellnavigationslinks (Skip Links) - unsichtbar bis Fokus */
+.skip-links {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+}
+
+.skip-link {
+  position: absolute;
+  left: 10px;
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  padding: 12px 20px;
+  font-weight: bold;
+  font-size: 18px;
+  text-decoration: none;
+  border: 3px solid var(--border-color);
+  border-radius: var(--radius-md);
+  z-index: 99999;
+}
+
+.skip-link:not(:focus) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.skip-link:focus {
+  top: 10px;
+}
+
 .app-header { background-color: var(--bg-surface); border-bottom: 3px solid var(--border-color); padding: 16px 20px; }
 .header-content { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .brand { display: flex; align-items: center; gap: 12px; }
@@ -554,15 +592,12 @@ body.show-symbols .symbol-icon {
 /* RESPONSIVE MODAL DIALOGS FOR MOBILE PHONE SCREENS */
 @media (max-width: 600px) {
   .modal-overlay {
-    padding: 10px;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    padding: 8px;
   }
   .modal-dialog-box, .lock-card {
     width: 96% !important;
     max-width: 96% !important;
-    margin: 0 auto !important;
+    margin: auto !important;
     padding: 16px 14px !important;
     box-sizing: border-box !important;
   }
@@ -1458,6 +1493,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <button id="tab-wishlist" data-emoji="🎁" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-wishlist" onclick="switchView('wishlist')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">7</span>
 <span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>
+</button>
 <button id="tab-sync" data-emoji="📱" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-sync" onclick="switchView('sync')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">8</span>
 <span>📱<strong>Smartphone-Sync (E2E)</strong></span>
@@ -2411,7 +2447,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.0.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.2.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -2892,90 +2928,137 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 
-<!-- ========== REITER 8: SMARTPHONE SYNC (E2EE) ========== -->
+<!-- =========================================================================
+     8. SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION (E2EE)
+     ========================================================================= -->
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
-  <div class="form-container" style="max-width: 780px;">
-    <h2 class="view-heading" tabindex="-1" id="heading-sync-view" data-emoji="📱" style="margin-bottom: 4px;">📱 Smartphone &amp; Desktop Live-Synchronisation</h2>
-    <p class="view-sub" style="margin: 0 0 20px 0;">Übertrage deine Finanzdaten über eine militärisch gesicherte Ende-zu-Ende-Verschlüsselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide Geräte aktiv sind.</p>
+  <div class="view-header">
+    <h2>📱 Smartphone &amp; Desktop Live-Synchronisation</h2>
+    <p class="view-desc">Übertrage deine Finanzdaten über eine militärisch gesicherte Ende-zu-Ende-Verschlüsselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide Geräte aktiv sind.</p>
+  </div>
 
-    <!-- MODUS WECHSELN -->
-    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-      <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-        📲 Smartphone (Empfangen)
-      </button>
-      <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-        💻 Computer (Senden)
-      </button>
+  <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+    <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+      📲 Smartphone (Empfangen)
+    </button>
+    <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
+      💻 Computer (Senden)
+    </button>
+  </div>
+
+  <!-- BEREICH FÜR SMARTPHONE (EMPFÄNGER) -->
+  <div id="sync-mobile-box" class="section-card" style="display: none;">
+    <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät ist bereit zur Verbindung</h3>
+      <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlüsselte Live-Synchronisation zu starten:</p>
     </div>
 
-    <!-- BEREICH FÜR SMARTPHONE (EMPFÄNGER) -->
-    <div id="sync-mobile-box" class="settings-box" style="display: none; border-left: 8px solid #1976D2;">
-      <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät ist bereit zur Verbindung</h3>
-        <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlüsselte Live-Synchronisation zu starten:</p>
-      </div>
-
-      <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
-        <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
-          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein Smartphone-Gerätename:</span>
-          <div id="sync-my-device-name" style="font-size: 26px; font-weight: bold; color: #1976D2; letter-spacing: 2px; margin-top: 4px;">Wird generiert...</div>
-        </div>
-
-        <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
-          <span style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold;">Dein einmaliger Kopplungscode:</span>
-          <div id="sync-my-code" style="font-size: 32px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; margin-top: 4px;">--- ---</div>
-        </div>
-      </div>
-
-      <div style="margin-bottom: 16px;">
-        <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="width: 100%;">
-          <span>🔄 Neuen Kopplungscode erzeugen</span>
-        </button>
-      </div>
-
-      <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
-        Warte auf Synchronisation vom Computer...
-      </div>
-    </div>
-
-    <!-- BEREICH FÜR DESKTOP (SENDER) -->
-    <div id="sync-desktop-box" class="settings-box" style="display: none; border-left: 8px solid #388E3C;">
-      <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
-        <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
-      </div>
-
-      <form onsubmit="handleStartSync(event)" class="accessible-form">
-        <div class="form-group">
-          <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
-          <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
-        </div>
-
-        <div class="form-group">
-          <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
-          <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
-        </div>
-
-        <div class="form-actions" style="margin-top: 20px;">
-          <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
-            <span>âš¡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+    <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
+      <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+        <label for="sync-my-device-name" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
+          1. Dein Smartphone-Gerätename (am PC eingeben):
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="sync-my-device-name" readonly value="Wird generiert..."
+                 aria-label="Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+                 style="font-size: 24px; font-weight: bold; color: #1976D2; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid #90CAF9; border-radius: 6px; background: #E3F2FD; cursor: pointer;"
+                 onclick="this.select()" />
+          <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('sync-my-device-name').value, 'Gerätename')"
+                  aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 14px; padding: 8px 14px;">
+            🔊 <strong>Buchstabieren</strong>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('sync-my-device-name').value, 'Gerätename')"
+                  aria-label="Gerätename kopieren" style="font-size: 14px; padding: 8px 14px;">
+            📋 <strong>Kopieren</strong>
           </button>
         </div>
-      </form>
+      </div>
 
-      <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+      <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
+        <label for="sync-my-code" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
+          2. Dein einmaliger Kopplungscode (am PC eingeben):
+        </label>
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="sync-my-code" readonly value="--- ---"
+                 aria-label="Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
+                 style="font-size: 28px; font-weight: bold; color: #2E7D32; letter-spacing: 4px; font-family: monospace; flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid #A5D6A7; border-radius: 6px; background: #E8F5E9; cursor: pointer;"
+                 onclick="this.select()" />
+          <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('sync-my-code').value, 'Kopplungscode')"
+                  aria-label="Kopplungscode Ziffer für Ziffer vorlesen" style="font-size: 14px; padding: 8px 14px;">
+            🔊 <strong>Buchstabieren</strong>
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="copyToClipboard(document.getElementById('sync-my-code').value, 'Kopplungscode')"
+                  aria-label="Kopplungscode kopieren" style="font-size: 14px; padding: 8px 14px;">
+            📋 <strong>Kopieren</strong>
+          </button>
+        </div>
       </div>
     </div>
 
-    <p class="field-hint" style="margin-top: 16px; text-align: center;">🔒 <strong>AES-256-GCM</strong> Ende-zu-Ende Verschlüsselung. Der Relay-Server sieht nur verschlüsselte Daten.</p>
+    <div style="margin-bottom: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="generateNewSyncCode()" style="width: 100%;">
+        <span>🔄 Neuen Kopplungscode erzeugen</span>
+      </button>
+    </div>
+
+    <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
+      Warte auf Synchronisation vom Computer...
+    </div>
+    <div style="margin-top: 12px;">
+      <button type="button" class="btn btn-primary" onclick="importFromClipboardOrPrompt()" aria-label="Aus Zwischenablage oder E-Mail-Link importieren" style="width: 100%; font-size: 15px; padding: 12px; background: #1565C0; color: #fff; font-weight: bold; border-radius: 6px;">
+        📥 <strong>Aus Zwischenablage / E-Mail-Link importieren</strong>
+      </button>
+    </div>
+</div>
+
+  <!-- BEREICH FÜR DESKTOP (SENDER) -->
+  <div id="sync-desktop-box" class="section-card" style="display: none;">
+    <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
+      <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+    </div>
+
+    <form onsubmit="handleStartSync(event)" class="accessible-form">
+      <div class="form-group">
+        <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+      </div>
+
+      <div class="form-group">
+        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+      </div>
+
+      <div class="form-actions" style="margin-top: 20px;">
+        <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
+          <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+        </button>
+      </div>
+    </form>
+
+    <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+    </div>
+    
+    <div style="background: rgba(33, 150, 243, 0.08); border: 2px solid #2196F3; border-radius: 8px; padding: 14px; margin-top: 18px;">
+      <h4 style="margin: 0 0 6px 0; color: #1565C0; font-size: 16px;">✉️ Alternative: Per E-Mail-Link oder Zwischenablage übertragen</h4>
+      <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.4;">Ideal, wenn das Smartphone keine direkte Netzwerkverbindung hat oder du die Daten per E-Mail, WhatsApp oder Notiz an dich selbst senden möchtest:</p>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="shareSyncViaEmail()" style="flex: 1; min-width: 180px; padding: 12px; background: #1976D2; font-weight: bold;">
+          ✉️ <strong>Per E-Mail senden</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="copyMagicSyncLink()" style="flex: 1; min-width: 180px; padding: 12px; font-weight: bold;">
+          📋 <strong>Sync-Link kopieren</strong>
+        </button>
+      </div>
+      <div id="sync-email-status" style="display: none; margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 14px; font-weight: bold;"></div>
+    </div>
   </div>
 </div>
-<!-- ========== ENDE REITER 8: SMARTPHONE SYNC ========== -->
 </main>
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.1.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.2.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -3857,9 +3940,10 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 
+// ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.1.0';
+const CURRENT_APP_VERSION = 'v6.2.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -9147,6 +9231,13 @@ async function handlePinSubmit(e) {
 
       unlockApp();
       announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
+      if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token')) {
+        setTimeout(() => {
+          if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
+            BiometricAuth.enable(enteredPin);
+          }
+        }, 1200);
+      }
     }
   } catch (err) {
     let attempts = getFailedAttempts() + 1;
@@ -10260,12 +10351,29 @@ function setQuickRecDay(type, dayVal) {
 // =============================================================================
 // SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION CONTROLLER (E2EE)
 // =============================================================================
-function initSyncView() {
-  const isAndroid = !!window.__IS_ANDROID__;
+function getSyncMode() {
+  const isAndroid = !!window.__IS_ANDROID__ || 
+                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  return isAndroid ? 'mobile' : 'desktop';
+}
+
+function setSyncMode(mode) {
   const mobileBox = document.getElementById('sync-mobile-box');
   const desktopBox = document.getElementById('sync-desktop-box');
+  const btnMob = document.getElementById('btn-sync-mode-mobile');
+  const btnDesk = document.getElementById('btn-sync-mode-desktop');
 
-  if (isAndroid) {
+  if (btnMob) {
+    btnMob.style.background = mode === 'mobile' ? 'var(--primary, #1976D2)' : '';
+    btnMob.style.color = mode === 'mobile' ? '#fff' : '';
+  }
+  if (btnDesk) {
+    btnDesk.style.background = mode === 'desktop' ? 'var(--primary, #1976D2)' : '';
+    btnDesk.style.color = mode === 'desktop' ? '#fff' : '';
+  }
+
+  if (mode === 'mobile') {
     if (mobileBox) mobileBox.style.display = 'block';
     if (desktopBox) desktopBox.style.display = 'none';
 
@@ -10291,31 +10399,88 @@ function initSyncView() {
   }
 }
 
+function initLockScreenSync() {
+  if (typeof SyncEngine === 'undefined') return;
+
+  const myDevice = SyncEngine.getDeviceName();
+  const myCode = SyncEngine.getPairingCode();
+
+  const devEl = document.getElementById('lock-sync-device-name');
+  const codeEl = document.getElementById('lock-sync-code');
+
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(devEl, myDevice, 'Gerätename');
+    setAccessibleCodeValue(codeEl, myCode, 'Kopplungscode');
+  } else {
+    if (devEl) { if (devEl.tagName === 'INPUT') devEl.value = myDevice; else devEl.textContent = myDevice; }
+    if (codeEl) { if (codeEl.tagName === 'INPUT') codeEl.value = myCode; else codeEl.textContent = myCode; }
+  }
+
+  const mainNameEl = document.getElementById('sync-my-device-name');
+  const mainCodeEl = document.getElementById('sync-my-code');
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(mainNameEl, myDevice, 'Gerätename');
+    setAccessibleCodeValue(mainCodeEl, myCode, 'Kopplungscode');
+  } else {
+    if (mainNameEl) { if (mainNameEl.tagName === 'INPUT') mainNameEl.value = myDevice; else mainNameEl.textContent = myDevice; }
+    if (mainCodeEl) { if (mainCodeEl.tagName === 'INPUT') mainCodeEl.value = myCode; else mainCodeEl.textContent = myCode; }
+  }
+
+  restartSyncListener();
+}
+
+function initSyncView() {
+  setSyncMode(getSyncMode());
+}
+
 function restartSyncListener() {
+  if (typeof SyncEngine === 'undefined') return;
   const statusEl = document.getElementById('sync-receiver-status');
+  const lockStatusEl = document.getElementById('lock-sync-status');
+
   SyncEngine.stopListening();
   SyncEngine.startListening((state, msg) => {
     if (statusEl) {
       statusEl.textContent = msg;
       if (state === 'success') {
         statusEl.style.color = '#15803d';
-        announceNVDA(msg);
       } else if (state === 'error') {
         statusEl.style.color = '#b91c1c';
-        announceNVDA(msg);
       } else {
         statusEl.style.color = 'inherit';
       }
     }
+    if (lockStatusEl) {
+      lockStatusEl.textContent = msg;
+      if (state === 'success') {
+        lockStatusEl.style.color = '#15803d';
+        lockStatusEl.style.background = 'rgba(76, 175, 80, 0.15)';
+      } else if (state === 'error') {
+        lockStatusEl.style.color = '#b91c1c';
+        lockStatusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      } else {
+        lockStatusEl.style.color = '#1565C0';
+        lockStatusEl.style.background = 'rgba(255, 255, 255, 0.8)';
+      }
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(msg);
   });
 }
 
 function generateNewSyncCode() {
+  if (typeof SyncEngine === 'undefined') return;
   const newCode = SyncEngine.generateNewPairingCode();
   const codeEl = document.getElementById('sync-my-code');
-  if (codeEl) codeEl.textContent = newCode;
+  const lockCodeEl = document.getElementById('lock-sync-code');
+  if (typeof setAccessibleCodeValue === 'function') {
+    setAccessibleCodeValue(codeEl, newCode, 'Kopplungscode');
+    setAccessibleCodeValue(lockCodeEl, newCode, 'Kopplungscode');
+  } else {
+    if (codeEl) { if (codeEl.tagName === 'INPUT') codeEl.value = newCode; else codeEl.textContent = newCode; }
+    if (lockCodeEl) { if (lockCodeEl.tagName === 'INPUT') lockCodeEl.value = newCode; else lockCodeEl.textContent = newCode; }
+  }
   restartSyncListener();
-  announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`);
+  if (typeof announceNVDA === 'function') announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
 }
 
 async function handleStartSync(e) {
@@ -10365,7 +10530,6 @@ async function handleStartSync(e) {
     if (btnTrigger) btnTrigger.disabled = false;
   }
 }
-
 
 
 // =============================================================================
@@ -10532,6 +10696,95 @@ async function handleBiometricToggle(enable) {
 }
 
 
+// =========================================================================
+// BARRIEREFREIES BUCHSTABIEREN & KOPIEREN FÜR TALKBACK & SCREENREADER
+// =========================================================================
+window.spellOutText = function(text, label) {
+  if (!text || text === '---' || text === '--- ---') {
+    if (typeof announceNVDA === 'function') announceNVDA('Kein Code vorhanden.');
+    return;
+  }
+
+  const phoneticMap = {
+    'A': 'A wie Anton', 'B': 'B wie Berta', 'C': 'C wie Cäsar', 'D': 'D wie Dora',
+    'E': 'E wie Emil', 'F': 'F wie Friedrich', 'G': 'G wie Gustav', 'H': 'H wie Heinrich',
+    'I': 'I wie Ida', 'J': 'J wie Julius', 'K': 'K wie Kaufmann', 'L': 'L wie Ludwig',
+    'M': 'M wie Martha', 'N': 'N wie Nordpol', 'O': 'O wie Otto', 'P': 'P wie Paula',
+    'Q': 'Q wie Quelle', 'R': 'R wie Richard', 'S': 'S wie Siegfried', 'T': 'T wie Theodor',
+    'U': 'U wie Ulrich', 'V': 'V wie Viktor', 'W': 'W wie Wilhelm', 'X': 'X wie Xanthippe',
+    'Y': 'Y wie Ypsilon', 'Z': 'Z wie Zeppelin', '-': 'Bindestrich'
+  };
+
+  const letters = text.trim().split('').map(c => {
+    const up = c.toUpperCase();
+    if (phoneticMap[up]) return phoneticMap[up];
+    if (c >= '0' && c <= '9') return c;
+    if (c === ' ') return 'Leerzeichen';
+    return c;
+  });
+
+  const spelled = letters.join('. ');
+  const announcement = `${label} buchstabiert: ${spelled}.`;
+
+  // 1. NVDA / TalkBack Live Region
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(announcement, true);
+  }
+
+  // 2. Web Speech API (TalkBack Sprachausgabe)
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(announcement);
+      utter.lang = 'de-DE';
+      utter.rate = 0.85;
+      window.speechSynthesis.speak(utter);
+    } catch(e) {}
+  }
+
+  // 3. Taktiles Feedback
+  if (window.navigator && window.navigator.vibrate) {
+    try { window.navigator.vibrate([30, 20, 30]); } catch(e) {}
+  }
+};
+
+window.copyToClipboard = function(text, label) {
+  if (!text || text === '---' || text === '--- ---') return;
+  const finishMsg = `${label} ${text} in die Zwischenablage kopiert.`;
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      if (typeof announceNVDA === 'function') announceNVDA(finishMsg, true);
+      if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
+    }).catch(() => fallbackCopy(text, finishMsg));
+  } else {
+    fallbackCopy(text, finishMsg);
+  }
+};
+
+function fallbackCopy(text, msg) {
+  try {
+    const t = document.createElement('textarea');
+    t.value = text;
+    document.body.appendChild(t);
+    t.select();
+    document.execCommand('copy');
+    document.body.removeChild(t);
+    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+    if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
+  } catch(e) {}
+}
+
+function setAccessibleCodeValue(el, val, label) {
+  if (!el) return;
+  if (el.tagName === 'INPUT') {
+    el.value = val;
+  } else {
+    el.textContent = val;
+  }
+  el.setAttribute('aria-label', `${label}: ${val}. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder Buchstabier-Button drücken.`);
+}
+
 
 // =============================================================================
 // MAGISCHER SYNC-LINK (E-MAIL, LINK & ZWISCHENABLAGE)
@@ -10616,9 +10869,14 @@ async function copyMagicSyncLink() {
     if (typeof announceNVDA === 'function') {
       announceNVDA(`Sync-Link in die Zwischenablage kopiert. Kopplungscode lautet ${bundle.code}.`, true);
     }
-    alert(`📋 Sync-Link erfolgreich kopiert!\n\nKopplungscode: ${bundle.code}\n\nDu kannst den Link jetzt in eine Nachricht oder E-Mail einfügen.`);
   } catch (err) {
-    alert('Fehler beim Kopieren: ' + err.message);
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusBox.style.color = '#b91c1c';
+      statusBox.textContent = '❌ Fehler beim Kopieren: ' + err.message;
+    }
+    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Kopieren: ' + err.message);
   }
 }
 
@@ -10665,7 +10923,7 @@ async function handleSyncPasteSubmit(e) {
   const textarea = document.getElementById('sync-paste-input');
   const text = textarea ? textarea.value.trim() : '';
   if (!text) {
-    alert('Bitte füge deinen Sync-Link oder Textblock ein!');
+    if (typeof announceNVDA === 'function') announceNVDA('Bitte zuerst den Sync-Link oder Textblock einfügen.');
     return;
   }
   closeSyncPasteModal();
@@ -10678,6 +10936,7 @@ async function executeMagicSyncImport(text) {
   if (statusEl) {
     statusEl.textContent = '⏳ Importiere Daten...';
     statusEl.style.color = '#0284c7';
+    statusEl.style.background = 'rgba(33, 150, 243, 0.15)';
   }
 
   try {
@@ -10690,17 +10949,17 @@ async function executeMagicSyncImport(text) {
     if (statusEl) {
       statusEl.textContent = '✅ ' + msg;
       statusEl.style.color = '#15803d';
+      statusEl.style.background = 'rgba(76, 175, 80, 0.15)';
     }
     if (typeof announceNVDA === 'function') announceNVDA(msg, true);
-    alert(msg);
   } catch (err) {
     const errMsg = 'Fehler beim Importieren: ' + err.message;
     if (statusEl) {
       statusEl.textContent = '❌ ' + errMsg;
       statusEl.style.color = '#b91c1c';
+      statusEl.style.background = 'rgba(239, 68, 68, 0.15)';
     }
     if (typeof announceNVDA === 'function') announceNVDA(errMsg);
-    alert(errMsg);
   }
 }
 
