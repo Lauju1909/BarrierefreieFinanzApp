@@ -17,6 +17,8 @@ namespace HaushaltsbuchApp
         private const string GITHUB_RAW_BASE = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main";
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
         private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
+        private const string SYNC_ENGINE_URL = GITHUB_RAW_BASE + "/sync_engine.js";
+        private const string STYLE_CSS_URL = GITHUB_RAW_BASE + "/style.css";
         private const int BASE_PORT = 48123;
         private static readonly string _sessionToken = Guid.NewGuid().ToString("N");
 
@@ -778,6 +780,43 @@ namespace HaushaltsbuchApp
                                 File.Copy(tmpHtml, targetHtml, true);
                                 File.Delete(tmpHtml);
                                 File.WriteAllText(localVersionFile, remoteVerJson, Encoding.UTF8);
+                            }
+                        }
+
+                        // Auch Begleitdateien (sync_engine.js und style.css) herunterladen / aktuell halten
+                        string targetDir = Path.GetDirectoryName(targetHtml);
+                        if (!string.IsNullOrEmpty(targetDir))
+                        {
+                            string syncEnginePath = Path.Combine(targetDir, "sync_engine.js");
+                            if (IsNewerVersion(remoteVer, localVer) || !File.Exists(syncEnginePath))
+                            {
+                                try
+                                {
+                                    string tmpSync = syncEnginePath + ".tmp";
+                                    client.DownloadFile(SYNC_ENGINE_URL + "?t=" + ticks, tmpSync);
+                                    if (File.Exists(tmpSync) && new FileInfo(tmpSync).Length > 100)
+                                    {
+                                        File.Copy(tmpSync, syncEnginePath, true);
+                                        File.Delete(tmpSync);
+                                    }
+                                }
+                                catch { }
+                            }
+
+                            string styleCssPath = Path.Combine(targetDir, "style.css");
+                            if (IsNewerVersion(remoteVer, localVer) || !File.Exists(styleCssPath))
+                            {
+                                try
+                                {
+                                    string tmpCss = styleCssPath + ".tmp";
+                                    client.DownloadFile(STYLE_CSS_URL + "?t=" + ticks, tmpCss);
+                                    if (File.Exists(tmpCss) && new FileInfo(tmpCss).Length > 100)
+                                    {
+                                        File.Copy(tmpCss, styleCssPath, true);
+                                        File.Delete(tmpCss);
+                                    }
+                                }
+                                catch { }
                             }
                         }
                     }
