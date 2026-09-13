@@ -5157,7 +5157,16 @@ async function checkVaultStatus() {
 }
 
 function updateLockScreenUI(isFirstTime) {
-  setTimeout(() => { if (typeof initLockScreenSync === 'function') initLockScreenSync(); if (typeof BiometricAuth !== "undefined") BiometricAuth.checkSupport(); }, 100);
+  setTimeout(() => {
+    if (typeof initLockScreenSync === 'function') initLockScreenSync();
+    if (typeof BiometricAuth !== "undefined") {
+      BiometricAuth.checkSupport().then(() => {
+        if (!isFirstTime) {
+          BiometricAuth.checkAutoUnlock();
+        }
+      });
+    }
+  }, 100);
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
   const lockInstructions = document.getElementById('lock-instructions');
@@ -6673,14 +6682,28 @@ async function handleStartSync(e) {
 // =============================================================================
 const BiometricAuth = {
   isSupported: false,
+  isCancelledForSession: false,
+  isPrompting: false,
+
+  isMobile() {
+    return !!window.AndroidBiometrics || 
+           !!window.__IS_ANDROID__ || 
+           (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+           /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  },
 
   async checkSupport() {
     try {
-      if (window.PublicKeyCredential && 
+      // 1. NATIVES ANDROID SYSTEM (BiometricPrompt via AndroidBiometrics)
+      if (window.AndroidBiometrics && typeof window.AndroidBiometrics.isAvailable === 'function') {
+        this.isSupported = window.AndroidBiometrics.isAvailable();
+      }
+      // 2. WEBAUTHN (Nur auf Mobilgeräten)
+      else if (this.isMobile() && window.PublicKeyCredential && 
           typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         this.isSupported = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
       } else {
-        this.isSupported = !!window.__IS_ANDROID__ || /Android|iPhone|iPad/i.test(navigator.userAgent);
+        this.isSupported = false;
       }
     } catch(e) {
       this.isSupported = false;
@@ -6697,8 +6720,9 @@ const BiometricAuth = {
     const bioToggle = document.getElementById('setting-biometric-toggle');
     const bioHint = document.getElementById('bio-status-hint');
 
+    // Button auf Sperrbildschirm nur anzeigen, wenn es ein Mobilgeraet ist und Fingerabdruck eingerichtet ist
     if (bioBtn) {
-      bioBtn.style.display = (isBioEnabled && hasPinStored) ? 'block' : 'none';
+      bioBtn.style.display = (this.isMobile() && isBioEnabled && hasPinStored) ? 'block' : 'none';
     }
 
     if (bioSection) {
@@ -6720,6 +6744,31 @@ const BiometricAuth = {
     }
   },
 
+  // AUTOMATISCHER FINGERABDRUCK-START BEIM ÖFFNEN DER APP
+  async checkAutoUnlock() {
+    // 1. NIEMALS auf dem Desktop-Computer abfragen!
+    if (!this.isMobile()) return;
+
+    // 2. Wenn in dieser Sitzung bereits auf "Abbrechen" geklickt wurde, NICHT mehr abfragen!
+    if (this.isCancelledForSession || sessionStorage.getItem('haushaltsbuch_bio_dismissed') === 'true') {
+      return;
+    }
+
+    // 3. Nur wenn ein Datenspeicherstand existiert und Fingerabdruck aktiv ist
+    const hasVault = !!(localStorage.getItem(STORAGE_DATA_KEY) || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
+    const isBioEnabled = localStorage.getItem('haushaltsbuch_bio_enabled') === 'true';
+    const hasPinStored = !!localStorage.getItem('haushaltsbuch_bio_token');
+    const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
+
+    if (hasVault && isBioEnabled && hasPinStored && !isUnlocked && !this.isPrompting) {
+      setTimeout(() => {
+        if (!cryptoKey && !this.isCancelledForSession && sessionStorage.getItem('haushaltsbuch_bio_dismissed') !== 'true') {
+          this.authenticateAndUnlock(true);
+        }
+      }, 350);
+    }
+  },
+
   async enable(pinToStore) {
     let pin = pinToStore;
     if (!pin && typeof window !== 'undefined' && window.__ACTIVE_PIN__) {
@@ -6734,7 +6783,12 @@ const BiometricAuth = {
     }
 
     try {
-      if (window.PublicKeyCredential) {
+      if (window.AndroidBiometrics && typeof window.AndroidBiometrics.isAvailable === 'function') {
+        if (!window.AndroidBiometrics.isAvailable()) {
+          alert('Auf diesem Smartphone ist kein Fingerabdruck in den Android-Einstellungen eingerichtet.');
+          return false;
+        }
+      } else if (window.PublicKeyCredential) {
         const challenge = new Uint8Array(32);
         crypto.getRandomValues(challenge);
         const userId = new Uint8Array(16);
@@ -6756,13 +6810,15 @@ const BiometricAuth = {
       const token = btoa(encodeURIComponent(pin.trim()));
       localStorage.setItem('haushaltsbuch_bio_token', token);
       localStorage.setItem('haushaltsbuch_bio_enabled', 'true');
+      this.isCancelledForSession = false;
+      sessionStorage.removeItem('haushaltsbuch_bio_dismissed');
       this.updateUI();
 
       if (window.navigator && window.navigator.vibrate) {
         try { window.navigator.vibrate([30, 40, 50]); } catch(e) {}
       }
 
-      const successMsg = 'Fingerabdruck erfolgreich eingerichtet und aktiviert! Du kannst die App ab sofort beim Start direkt per Fingerabdruck entsperren.';
+      const successMsg = 'Fingerabdruck erfolgreich eingerichtet und aktiviert! Die App öffnet sich künftig auf dem Smartphone direkt per Fingerabdruck.';
       if (typeof announceNVDA === 'function') announceNVDA(successMsg, true);
       const bioHint = document.getElementById('bio-status-hint');
       if (bioHint) {
@@ -6785,6 +6841,8 @@ const BiometricAuth = {
   disable() {
     localStorage.removeItem('haushaltsbuch_bio_token');
     localStorage.setItem('haushaltsbuch_bio_enabled', 'false');
+    this.isCancelledForSession = false;
+    sessionStorage.removeItem('haushaltsbuch_bio_dismissed');
     this.updateUI();
     const testResult = document.getElementById('bio-test-result');
     if (testResult) testResult.textContent = '';
@@ -6811,6 +6869,33 @@ const BiometricAuth = {
 
     updateResult('👆 Bitte Fingerabdruck-Sensor jetzt berühren...', true);
 
+    // A. NATIVES ANDROID SYSTEM (BiometricPrompt)
+    if (window.AndroidBiometrics && typeof window.AndroidBiometrics.authenticate === 'function') {
+      window.onAndroidBiometricSuccess = () => {
+        if (window.navigator && window.navigator.vibrate) {
+          try { window.navigator.vibrate(50); } catch(e) {}
+        }
+        updateResult('✅ Fingerabdruck-Test erfolgreich! Das native System vom Smartphone funktioniert einwandfrei.', true);
+      };
+
+      window.onAndroidBiometricError = (code, msg) => {
+        console.log('[AndroidBiometrics Test] Error code:', code, msg);
+        updateResult('❌ Fingerabdruck-Test abgebrochen oder nicht erkannt (' + (msg || 'Code ' + code) + ').', false);
+      };
+
+      window.onAndroidBiometricFailed = () => {
+        updateResult('⚠️ Fingerabdruck nicht erkannt, bitte erneut versuchen.', false);
+      };
+
+      try {
+        window.AndroidBiometrics.authenticate('Fingerabdruck-Test', 'Sensor zur Überprüfung berühren');
+        return;
+      } catch(e) {
+        console.warn('Native test error, fallback to webauthn:', e);
+      }
+    }
+
+    // B. WEBAUTHN FALLBACK
     try {
       if (window.PublicKeyCredential) {
         const challenge = new Uint8Array(32);
@@ -6835,13 +6920,54 @@ const BiometricAuth = {
     }
   },
 
-  async authenticateAndUnlock() {
-    const token = localStorage.getItem('haushaltsbuch_bio_token');
-    if (!token) {
-      if (typeof announceNVDA === 'function') announceNVDA('Kein Fingerabdruck hinterlegt. Bitte PIN eingeben.');
+  async authenticateAndUnlock(isAuto = false) {
+    if (this.isPrompting) return;
+
+    // Wenn abgebrochen und automatischer Aufruf -> abbrechen!
+    if (isAuto && (this.isCancelledForSession || sessionStorage.getItem('haushaltsbuch_bio_dismissed') === 'true')) {
       return;
     }
 
+    const token = localStorage.getItem('haushaltsbuch_bio_token');
+    if (!token) {
+      if (!isAuto && typeof announceNVDA === 'function') announceNVDA('Kein Fingerabdruck hinterlegt. Bitte PIN eingeben.');
+      return;
+    }
+
+    this.isPrompting = true;
+
+    // A. NATIVES ANDROID SYSTEM VOM HANDY (BiometricPrompt)
+    if (window.AndroidBiometrics && typeof window.AndroidBiometrics.authenticate === 'function') {
+      window.onAndroidBiometricSuccess = () => {
+        this.isPrompting = false;
+        this.finishUnlockWithToken(token);
+      };
+
+      window.onAndroidBiometricError = (code, msg) => {
+        this.isPrompting = false;
+        console.log('[AndroidBiometrics] Error/Cancel code:', code, msg);
+        // Code 10 = ERROR_USER_CANCELED, Code 13 = ERROR_NEGATIVE_BUTTON ("Abbrechen")
+        this.isCancelledForSession = true;
+        sessionStorage.setItem('haushaltsbuch_bio_dismissed', 'true');
+        if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen. Bitte PIN manuell eingeben.');
+        const pinInput = document.getElementById('pin-input');
+        if (pinInput) pinInput.focus();
+      };
+
+      window.onAndroidBiometricFailed = () => {
+        if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck nicht erkannt, bitte erneut berühren.');
+      };
+
+      try {
+        window.AndroidBiometrics.authenticate('Haushaltsbuch Barrierefrei', 'Bitte Fingerabdrucksensor berühren');
+        return;
+      } catch(e) {
+        console.warn('Native biometric call failed, falling back:', e);
+        this.isPrompting = false;
+      }
+    }
+
+    // B. WEBAUTHN FALLBACK (FÜR BROWSER / PWA)
     try {
       if (window.PublicKeyCredential) {
         const challenge = new Uint8Array(32);
@@ -6857,6 +6983,22 @@ const BiometricAuth = {
         });
       }
 
+      this.finishUnlockWithToken(token);
+    } catch(err) {
+      console.warn('Biometric auth cancelled or failed:', err);
+      // Wenn abgebrochen oder Fehler: In dieser Session nicht mehr automatisch abfragen!
+      this.isCancelledForSession = true;
+      sessionStorage.setItem('haushaltsbuch_bio_dismissed', 'true');
+      if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen. Bitte PIN manuell eingeben.');
+      const pinInput = document.getElementById('pin-input');
+      if (pinInput) pinInput.focus();
+    } finally {
+      this.isPrompting = false;
+    }
+  },
+
+  finishUnlockWithToken(token) {
+    try {
       const pin = decodeURIComponent(atob(token));
       const pinInput = document.getElementById('pin-input');
       if (pinInput) {
@@ -6874,11 +7016,8 @@ const BiometricAuth = {
       }
 
       if (typeof announceNVDA === 'function') announceNVDA('Mit Fingerabdruck erfolgreich entsperrt!');
-    } catch(err) {
-      console.warn('Biometric auth cancelled or failed:', err);
-      if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen oder nicht erkannt. Bitte PIN manuell eingeben.');
-      const pinInput = document.getElementById('pin-input');
-      if (pinInput) pinInput.focus();
+    } catch(e) {
+      console.error('Error unpacking bio token:', e);
     }
   }
 };
