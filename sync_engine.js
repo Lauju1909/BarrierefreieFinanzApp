@@ -278,9 +278,14 @@ const SyncEngine = {
   },
 
   generateNewPairingCode() {
-    const p1 = Math.floor(100 + Math.random() * 900);
-    const p2 = Math.floor(100 + Math.random() * 900);
-    const code = `${p1}-${p2}`;
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    let raw = '';
+    for (let i = 0; i < 12; i++) {
+      raw += chars[buf[i] % chars.length];
+    }
+    const code = `${raw.substring(0, 4)}-${raw.substring(4, 8)}-${raw.substring(8, 12)}`;
     localStorage.setItem('haushaltsbuch_sync_code', code);
     return code;
   },

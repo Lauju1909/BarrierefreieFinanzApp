@@ -1,6 +1,22 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.3.0 (Dauerauftrag Startmonat & Split-Zahlung bei Ausgaben)
+*Datum: 29. September 2026*
+
+### 📅 1. Startmonat-Auswahl für Daueraufträge & Sparpläne
+- **Freie Startmonat-Wahl:** Beim Erstellen und Bearbeiten von Daueraufträgen (Ausgaben, Einnahmen, Umbuchungen) kann nun der Startmonat und das Startjahr (`startMonth` / `startYear`) individuell festgelegt werden.
+- **Schnelltasten für Screenreader:** Zusätzliche Schnellschaltflächen `[Diesen Monat]` und `[Nächsten Monat]` erlauben die blitzschnelle Belegung mit Tastatur und Screenreader.
+- **Keine rückwirkende Fälligkeit:** Alle Übersichts- und Saldenberechnungen berücksichtigen den Startmonat strikt. Daueraufträge, die z. B. ab November gelten, belasten Vormonate wie September oder Oktober nicht mehr.
+- **Nachträgliches Anpassen:** Im Bearbeiten-Dialog (`Dauerauftrag bearbeiten`) kann der Startmonat jederzeit nachträglich geändert werden.
+
+### 💳 2. Optionale Split-Zahlung bei Ausgaben
+- **Ausgaben auf mehrere Konten aufteilen:** Unter dem Konto-Auswahlfeld in Reiter 2 gibt es nun eine Checkbox `[ ] Ausgabe auf mehrere Konten aufteilen (Split-Zahlung)`.
+- **Vollkommen optional:** Wer wie gewohnt von einem einzelnen Konto zahlen möchte, lässt das Kontrollkästchen einfach deaktiviert.
+- **Intelligente Restbetragsberechnung:** Bei 2 Konten (z. B. Girokonto + Bargeld) berechnet die App den zweiten Teilbetrag automatisch mit, sobald der erste eingegeben wird.
+- **Dynamische Zeilen & Validierung:** Es können beliebig viele Konten hinzugefügt werden. Die App prüft in Echtzeit, ob die Summe der Teilbeträge exakt dem Gesamtausgabebetrag entspricht und ob das gewählte Konto ausreichend gedeckt ist.
+- **Separate Buchungen im Tresor:** Jeder Teilbetrag wird mit eigener `splitId` sauber auf dem jeweiligen Konto verbucht, sodass alle Kontosalden exakt stimmen.
+
 ---
 
 ## ⚡ Version 6.2.1 (Fehlerbereinigung & Permanente Desktop-Kopplung)

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.2.1';
+const CURRENT_APP_VERSION = 'v6.3.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -3918,9 +3918,24 @@ function toggleExpenseFrequencyFields() {
 }
 
 function handleMainExpenseAmountInput() {
+  const mainAmountInput = document.getElementById('exp-amount');
   const freq = document.getElementById('exp-frequency') ? document.getElementById('exp-frequency').value : 'once';
   if (freq === 'installment') {
     handleInstallmentCalculation();
+  }
+  const splitToggle = document.getElementById('exp-split-toggle');
+  if (splitToggle && splitToggle.checked) {
+    const totalAmt = parseFloat(mainAmountInput.value) || 0;
+    if (expenseSplitRows && expenseSplitRows.length === 2 && expenseSplitRows[0].amount !== '') {
+      const amt0 = parseFloat(expenseSplitRows[0].amount) || 0;
+      if (totalAmt >= amt0) {
+        const remainder = Math.round((totalAmt - amt0) * 100) / 100;
+        expenseSplitRows[1].amount = remainder;
+        const secondInput = document.getElementById('exp-split-amt-1');
+        if (secondInput) secondInput.value = remainder;
+      }
+    }
+    updateExpenseSplitSummary();
   }
 }
 
@@ -4054,11 +4069,195 @@ function toggleTransferFrequencyFields() {
   if (document.getElementById('trf-month-day-group')) document.getElementById('trf-month-day-group').style.display = isWeekly ? 'none' : 'block';
 }
 
+function setQuickStartMonth(type, offset) {
+  const input = document.getElementById(`${type}-start-month`);
+  if (!input) return;
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  input.value = `${y}-${m}`;
+  const label = offset === 0 ? 'Diesen Monat' : 'Nächsten Monat';
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Startmonat auf ${label} (${MONTH_NAMES[d.getMonth()]} ${y}) gesetzt.`);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// OPTIONALE SPLIT-ZAHLUNG FÜR AUSGABEN
+// ----------------------------------------------------------------------------
+let expenseSplitRows = [];
+
+function getExpenseSplitAccountOptionsHtml(selectedAccId) {
+  ensureAccountsInitialized();
+  return appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    const sel = (acc.id === selectedAccId) ? 'selected' : '';
+    return `<option value="${escapeHTML(acc.id)}" ${sel}>${escapeHTML(acc.name)}</option>`;
+  }).join('');
+}
+
+function toggleExpenseSplitPayment() {
+  const toggle = document.getElementById('exp-split-toggle');
+  const splitSec = document.getElementById('exp-split-section');
+  const accGroup = document.getElementById('exp-account-group');
+  const singleAcc = document.getElementById('exp-account');
+  const isSplit = toggle && toggle.checked;
+
+  if (splitSec) splitSec.style.display = isSplit ? 'block' : 'none';
+  if (accGroup) accGroup.style.display = isSplit ? 'none' : 'block';
+  if (singleAcc) singleAcc.required = !isSplit;
+
+  if (isSplit) {
+    if (!expenseSplitRows || expenseSplitRows.length === 0) {
+      initExpenseSplitRows();
+    } else {
+      renderExpenseSplitRows();
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Split-Zahlung aktiviert. Du kannst den Betrag nun auf mehrere Konten aufteilen.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Split-Zahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
+    }
+  }
+}
+
+function initExpenseSplitRows() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
+  const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
+  const acc2 = appState.accounts[1] ? appState.accounts[1].id : (appState.accounts[0] ? appState.accounts[0].id : 'cash');
+
+  const half = Math.round((totalAmt / 2) * 100) / 100;
+  const rest = Math.round((totalAmt - half) * 100) / 100;
+
+  expenseSplitRows = [
+    { account: acc1, amount: half > 0 ? half : '' },
+    { account: acc2, amount: rest > 0 ? rest : '' }
+  ];
+  renderExpenseSplitRows();
+}
+
+function renderExpenseSplitRows() {
+  const container = document.getElementById('exp-split-rows-container');
+  if (!container) return;
+
+  container.innerHTML = expenseSplitRows.map((row, idx) => {
+    const canRemove = expenseSplitRows.length > 2;
+    return `
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 160px;">
+          <label for="exp-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Konto ${idx + 1}:</strong>
+          </label>
+          <select id="exp-split-acc-${idx}" class="large-select" onchange="onExpenseSplitAccountChange(${idx}, this.value)">
+            ${getExpenseSplitAccountOptionsHtml(row.account)}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 120px;">
+          <label for="exp-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teilbetrag (€):</strong>
+          </label>
+          <input type="number" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
+        </div>
+        ${canRemove ? `
+          <button type="button" class="btn btn-secondary" onclick="removeExpenseSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Konto ${idx + 1} entfernen">
+            🗑️
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  updateExpenseSplitSummary();
+}
+
+function addExpenseSplitRow() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
+  const currentSum = expenseSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const diff = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
+
+  const usedAccs = expenseSplitRows.map(r => r.account);
+  const unusedAcc = appState.accounts.find(a => !usedAccs.includes(a.id));
+  const newAccId = unusedAcc ? unusedAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
+
+  expenseSplitRows.push({
+    account: newAccId,
+    amount: diff > 0 ? diff : ''
+  });
+
+  renderExpenseSplitRows();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Konto ${expenseSplitRows.length} hinzugefügt.`);
+  }
+}
+
+function removeExpenseSplitRow(idx) {
+  if (expenseSplitRows.length <= 2) return;
+  expenseSplitRows.splice(idx, 1);
+  renderExpenseSplitRows();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Konto entfernt. Verbleibend: ${expenseSplitRows.length} Konten.`);
+  }
+}
+
+function onExpenseSplitAccountChange(idx, newAcc) {
+  if (expenseSplitRows[idx]) {
+    expenseSplitRows[idx].account = newAcc;
+  }
+}
+
+function onExpenseSplitAmountInput(idx, val) {
+  const amt = parseFloat(val);
+  if (expenseSplitRows[idx]) {
+    expenseSplitRows[idx].amount = isNaN(amt) ? '' : amt;
+  }
+
+  const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
+  if (expenseSplitRows.length === 2 && idx === 0 && !isNaN(amt) && totalAmt > amt) {
+    const remainder = Math.round((totalAmt - amt) * 100) / 100;
+    expenseSplitRows[1].amount = remainder;
+    const secondInput = document.getElementById('exp-split-amt-1');
+    if (secondInput) secondInput.value = remainder;
+  }
+
+  updateExpenseSplitSummary();
+}
+
+function updateExpenseSplitSummary() {
+  const summaryEl = document.getElementById('exp-split-summary');
+  if (!summaryEl) return;
+
+  const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
+  const currentSum = expenseSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const diff = Math.round((totalAmt - currentSum) * 100) / 100;
+
+  if (Math.abs(diff) < 0.005 && totalAmt > 0) {
+    summaryEl.style.borderColor = '#2E7D32';
+    summaryEl.style.color = '#1B5E20';
+    summaryEl.style.background = 'rgba(76, 175, 80, 0.1)';
+    summaryEl.innerHTML = `🟢 <strong>Vollständig aufgeteilt:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (Rest: 0,00 €)`;
+  } else if (diff > 0) {
+    summaryEl.style.borderColor = '#F57C00';
+    summaryEl.style.color = '#E65100';
+    summaryEl.style.background = 'rgba(255, 152, 0, 0.1)';
+    summaryEl.innerHTML = `🟡 <strong>Aufgeteilt:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (Noch offen: ${formatCurrency(diff)})`;
+  } else {
+    summaryEl.style.borderColor = '#D32F2F';
+    summaryEl.style.color = '#B71C1C';
+    summaryEl.style.background = 'rgba(244, 67, 54, 0.1)';
+    summaryEl.innerHTML = `🔴 <strong>Überhang:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (${formatCurrency(Math.abs(diff))} zu viel)`;
+  }
+}
+
 async function handleAddExpense(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('exp-amount').value);
   const freq = document.getElementById('exp-frequency').value;
-  const account = document.getElementById('exp-account').value;
+  const account = document.getElementById('exp-account') ? document.getElementById('exp-account').value : 'bank';
   const category = document.getElementById('exp-category').value;
   const subcategory = document.getElementById('exp-subcategory') ? document.getElementById('exp-subcategory').value : '';
   const date = document.getElementById('exp-date').value;
@@ -4069,6 +4268,37 @@ async function handleAddExpense(e) {
   const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
+
+  // Split-Zahlung prüfen
+  const splitToggle = document.getElementById('exp-split-toggle');
+  const isSplit = splitToggle && splitToggle.checked;
+  let splitRowsValid = [];
+
+  if (isSplit) {
+    splitRowsValid = expenseSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    if (splitRowsValid.length < 2) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Zahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.', true);
+      alert('⚠️ Bitte gib mindestens 2 Konten mit Beträgen für die Aufteilung an.');
+      return;
+    }
+    const splitSum = Math.round(splitRowsValid.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
+    const expectedTotal = Math.round(amount * 100) / 100;
+    if (Math.abs(splitSum - expectedTotal) > 0.01) {
+      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Kaufbetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
+      alert(`⚠️ Die Summe der aufgeteilten Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamtkaufpreis (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
+      return;
+    }
+  }
+
+  // Startmonat für Daueraufträge
+  let recStartYear = selectedYear;
+  let recStartMonth = selectedMonth;
+  const expStartMonthEl = document.getElementById('exp-start-month');
+  if (expStartMonthEl && expStartMonthEl.value && expStartMonthEl.value.includes('-')) {
+    const parts = expStartMonthEl.value.split('-');
+    recStartYear = parseInt(parts[0], 10);
+    recStartMonth = parseInt(parts[1], 10) - 1;
+  }
 
   if (freq === 'installment') {
     const totalInput = document.getElementById('exp-installment-total');
@@ -4177,8 +4407,8 @@ async function handleAddExpense(e) {
       name: desc ? `${desc} (${provLabel})` : `${provLabel} ${category}`,
       interval: recInterval,
       day: day,
-      startYear: selectedYear,
-      startMonth: selectedMonth,
+      startYear: recStartYear,
+      startMonth: recStartMonth,
       isInstallment: true,
       installmentType: instType,
       installmentProvider: provider,
@@ -4201,40 +4431,103 @@ async function handleAddExpense(e) {
     const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
     const weekday = document.getElementById('exp-rec-weekday') ? parseInt(document.getElementById('exp-rec-weekday').value, 10) : 5;
     
-    appState.recurring.push({
-      id: `rec_${Date.now()}`,
-      type: 'expense',
-      account: account,
-      amount: amount,
-      category: category,
-      subcategory: subcategory,
-      name: desc || (subcategory ? `${category} (${subcategory})` : category),
-      interval: freq,
-      day: day,
-      weekday: weekday,
-      startYear: selectedYear,
-      startMonth: selectedMonth,
-      active: true
-    });
-    announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
+    if (isSplit) {
+      const splitId = `split_rec_${Date.now()}`;
+      splitRowsValid.forEach((row, idx) => {
+        const rowAmt = parseFloat(row.amount);
+        const accName = formatAccountName(row.account);
+        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+        const recName = desc ? `${desc} ${partText}` : `${category} ${partText}`;
+
+        appState.recurring.push({
+          id: `rec_${Date.now()}_${idx}`,
+          splitId: splitId,
+          splitIndex: idx + 1,
+          splitTotalCount: splitRowsValid.length,
+          splitTotalAmount: amount,
+          type: 'expense',
+          account: row.account,
+          amount: rowAmt,
+          category: category,
+          subcategory: subcategory,
+          name: recName,
+          interval: freq,
+          day: day,
+          weekday: weekday,
+          startYear: recStartYear,
+          startMonth: recStartMonth,
+          active: true
+        });
+      });
+      announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten gespeichert!`);
+    } else {
+      appState.recurring.push({
+        id: `rec_${Date.now()}`,
+        type: 'expense',
+        account: account,
+        amount: amount,
+        category: category,
+        subcategory: subcategory,
+        name: desc || (subcategory ? `${category} (${subcategory})` : category),
+        interval: freq,
+        day: day,
+        weekday: weekday,
+        startYear: recStartYear,
+        startMonth: recStartMonth,
+        active: true
+      });
+      announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
+    }
   } else {
-    appState.transactions.push({
-      id: `tx_${Date.now()}`,
-      type: 'expense',
-      account: account,
-      amount: amount,
-      category: category,
-      subcategory: subcategory,
-      description: desc,
-      isPlanned: isPlanned,
-      date: date
-    });
-    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    if (isSplit) {
+      const splitId = `split_${Date.now()}`;
+      splitRowsValid.forEach((row, idx) => {
+        const rowAmt = parseFloat(row.amount);
+        const accName = formatAccountName(row.account);
+        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+        const finalDesc = desc ? `${desc} ${partText}` : `Split-Zahlung ${partText}`;
+
+        appState.transactions.push({
+          id: `tx_${Date.now()}_${idx}`,
+          splitId: splitId,
+          splitIndex: idx + 1,
+          splitTotalCount: splitRowsValid.length,
+          splitTotalAmount: amount,
+          type: 'expense',
+          account: row.account,
+          amount: rowAmt,
+          category: category,
+          subcategory: subcategory,
+          description: finalDesc,
+          isPlanned: isPlanned,
+          date: date
+        });
+      });
+      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    } else {
+      appState.transactions.push({
+        id: `tx_${Date.now()}`,
+        type: 'expense',
+        account: account,
+        amount: amount,
+        category: category,
+        subcategory: subcategory,
+        description: desc,
+        isPlanned: isPlanned,
+        date: date
+      });
+      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    }
   }
 
   await saveStateToEncryptedStorage();
   document.getElementById('form-add-expense').reset();
   document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  const splitToggleReset = document.getElementById('exp-split-toggle');
+  if (splitToggleReset && splitToggleReset.checked) {
+    splitToggleReset.checked = false;
+    toggleExpenseSplitPayment();
+  }
   toggleExpenseFrequencyFields();
   updateOverview();
   switchView('overview');
@@ -4260,6 +4553,15 @@ async function handleAddIncome(e) {
     const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
     const weekday = document.getElementById('inc-rec-weekday') ? parseInt(document.getElementById('inc-rec-weekday').value, 10) : 5;
     
+    let recStartYear = selectedYear;
+    let recStartMonth = selectedMonth;
+    const incStartMonthEl = document.getElementById('inc-start-month');
+    if (incStartMonthEl && incStartMonthEl.value && incStartMonthEl.value.includes('-')) {
+      const parts = incStartMonthEl.value.split('-');
+      recStartYear = parseInt(parts[0], 10);
+      recStartMonth = parseInt(parts[1], 10) - 1;
+    }
+
     appState.recurring.push({
       id: `rec_${Date.now()}`,
       type: 'income',
@@ -4271,8 +4573,8 @@ async function handleAddIncome(e) {
       interval: freq,
       day: day,
       weekday: weekday,
-      startYear: selectedYear,
-      startMonth: selectedMonth,
+      startYear: recStartYear,
+      startMonth: recStartMonth,
       active: true
     });
     announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
@@ -4352,6 +4654,15 @@ async function handleAddTransfer(e) {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
     const weekday = document.getElementById('trf-rec-weekday') ? parseInt(document.getElementById('trf-rec-weekday').value, 10) : 5;
     
+    let recStartYear = curDate.getFullYear();
+    let recStartMonth = curDate.getMonth();
+    const trfStartMonthEl = document.getElementById('trf-start-month');
+    if (trfStartMonthEl && trfStartMonthEl.value && trfStartMonthEl.value.includes('-')) {
+      const parts = trfStartMonthEl.value.split('-');
+      recStartYear = parseInt(parts[0], 10);
+      recStartMonth = parseInt(parts[1], 10) - 1;
+    }
+
     appState.recurring.push({
       id: `rec_${Date.now()}`,
       type: 'transfer',
@@ -4363,8 +4674,8 @@ async function handleAddTransfer(e) {
       interval: freq,
       day: day,
       weekday: weekday,
-      startYear: curDate.getFullYear(),
-      startMonth: curDate.getMonth(),
+      startYear: recStartYear,
+      startMonth: recStartMonth,
       targetPotId: toPotId || '',
       sourcePotId: fromPotId || '',
       active: true
@@ -4674,6 +4985,12 @@ function openEditRecModal(recId) {
   if (document.getElementById('edit-rec-weekday')) document.getElementById('edit-rec-weekday').value = rec.weekday !== undefined ? rec.weekday : 5;
   if (document.getElementById('edit-rec-yearly-month')) document.getElementById('edit-rec-yearly-month').value = rec.yearlyMonth !== undefined ? rec.yearlyMonth : 0;
 
+  const sy = rec.startYear !== undefined ? rec.startYear : new Date().getFullYear();
+  const sm = rec.startMonth !== undefined ? rec.startMonth : new Date().getMonth();
+  const smStr = String(sm + 1).padStart(2, '0');
+  const editStartMonth = document.getElementById('edit-rec-start-month');
+  if (editStartMonth) editStartMonth.value = `${sy}-${smStr}`;
+
   if (rec.type === 'transfer') {
     document.getElementById('edit-rec-from').value = rec.fromAccount || 'bank';
     document.getElementById('edit-rec-to').value = rec.toAccount || 'savings';
@@ -4714,6 +5031,13 @@ async function saveEditedRecurring(e) {
   rec.day = parseInt(document.getElementById('edit-rec-day').value, 10) || 1;
   rec.weekday = parseInt(document.getElementById('edit-rec-weekday').value, 10) || 5;
   rec.yearlyMonth = parseInt(document.getElementById('edit-rec-yearly-month').value, 10) || 0;
+
+  const editStartMonth = document.getElementById('edit-rec-start-month');
+  if (editStartMonth && editStartMonth.value && editStartMonth.value.includes('-')) {
+    const parts = editStartMonth.value.split('-');
+    rec.startYear = parseInt(parts[0], 10);
+    rec.startMonth = parseInt(parts[1], 10) - 1;
+  }
 
   if (type === 'transfer') {
     rec.fromAccount = document.getElementById('edit-rec-from').value;

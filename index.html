@@ -21,12 +21,26 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.2.1)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.3.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.3.0 (Dauerauftrag Startmonat &amp; Split-Zahlung bei Ausgaben)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>📅 Startmonat für Daueraufträge &amp; Sparpläne:</strong><br>
+Beim Anlegen oder Bearbeiten von Daueraufträgen (Ausgaben, Einnahmen, Umbuchungen) kann ab sofort der Startmonat und das Startjahr frei gewählt werden (mit Schnelltasten <code>[Diesen Monat]</code> und <code>[Nächsten Monat]</code>). Frühere Monate werden nicht mehr fällig gestellt.
+</li>
+<li>
+<strong>💳 Optionale Split-Zahlung bei Ausgaben:</strong><br>
+Eine Ausgabe kann nun auf Wunsch auf mehrere Konten aufgeteilt werden (z. B. teils in bar, teils vom Girokonto). Mit automatischer Restbetragsberechnung, Kontostandsprüfung und vollständiger Sprachausgabe für NVDA/TalkBack.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.2.1 (Fehlerbereinigung &amp; Permanente Desktop-Kopplung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -648,9 +662,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
-<div id="edit-rec-day-group" class="form-group">
-  <label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31):</strong></label>
-  <input type="number" min="1" max="31" id="edit-rec-day" class="large-input" value="1">
+<div class="form-row-2">
+  <div id="edit-rec-day-group" class="form-group">
+    <label for="edit-rec-day" class="field-label"><strong>Tag im Monat (1 - 31):</strong></label>
+    <input type="number" min="1" max="31" id="edit-rec-day" class="large-input" value="1">
+  </div>
+  <div id="edit-rec-start-month-group" class="form-group">
+    <label for="edit-rec-start-month" class="field-label"><strong>Start ab welchem Monat? (Beginn):</strong></label>
+    <input type="month" id="edit-rec-start-month" class="large-input" aria-label="Startmonat des Dauerauftrags">
+  </div>
 </div>
 
 <div id="edit-rec-weekday-group" class="form-group" style="display: none;">
@@ -1397,6 +1417,34 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 
+<!-- OPTIONALE SPLIT-ZAHLUNG: AUSGABE AUF MEHRERE KONTEN AUFTEILEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-split-toggle" onchange="toggleExpenseSplitPayment()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="exp-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: var(--text-primary);">
+      🔀 Betrag auf mehrere Konten aufteilen (Split-Zahlung, z. B. Teil Bar &amp; Teil Girokonto)
+    </label>
+  </div>
+</div>
+
+<div id="exp-split-section" class="settings-box" style="display: none; border-left: 8px solid #1976D2; background: rgba(33, 150, 243, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung auf Konten</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege fest, wie viel Euro von welchem Konto bezahlt werden. Die Summe aller Konten muss genau dem Gesamtkaufpreis entsprechen:</p>
+
+  <div id="exp-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
+    <!-- Wird dynamisch befüllt -->
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+    <button type="button" id="exp-split-add-btn" class="btn btn-secondary" onclick="addExpenseSplitRow()" style="font-size: 13px; padding: 6px 12px;">
+      ➕ <strong>Weiteres Konto hinzufügen</strong>
+    </button>
+    <div id="exp-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #90CAF9; color: #0D47A1;">
+      Aufgeteilt: 0,00 € von 0,00 €
+    </div>
+  </div>
+</div>
+
 <div class="form-group">
 <label for="exp-cat-search" class="field-label">
 <span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>
@@ -1483,6 +1531,18 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
   </div>
   <input type="number" min="1" max="31" id="exp-rec-day" class="large-input" value="1" aria-label="Fälligkeitstag im Monat als Zahl von 1 bis 31">
+</div>
+<div class="form-group" id="exp-start-month-group">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="exp-start-month" class="field-label" style="margin: 0;">
+      <strong>📅 Start ab welchem Monat? (Beginn):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('exp', 0)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf aktuellen Monat setzen">Dieser Monat</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('exp', 1)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf nächsten Monat setzen">Nächster Monat</button>
+    </div>
+  </div>
+  <input type="month" id="exp-start-month" class="large-input" aria-label="Startmonat des Dauerauftrags (Jahr und Monat)">
 </div>
 <div class="form-group" id="exp-weekday-group" style="display: none;">
 <label for="exp-rec-weekday" class="field-label">
@@ -1650,6 +1710,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div id="inc-recurring-details" style="display: none;">
+<div class="form-row-2">
 <div class="form-group" id="inc-month-day-group">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
     <label for="inc-rec-day" class="field-label" style="margin: 0;">
@@ -1662,6 +1723,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
   </div>
   <input type="number" min="1" max="31" id="inc-rec-day" class="large-input" value="1" aria-label="Tag des Geldeingangs im Monat als Zahl von 1 bis 31">
+</div>
+<div class="form-group" id="inc-start-month-group">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="inc-start-month" class="field-label" style="margin: 0;">
+      <strong>📅 Start ab welchem Monat? (Beginn):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('inc', 0)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf aktuellen Monat setzen">Dieser Monat</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('inc', 1)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf nächsten Monat setzen">Nächster Monat</button>
+    </div>
+  </div>
+  <input type="month" id="inc-start-month" class="large-input" aria-label="Startmonat der dauerhaften Einnahme">
+</div>
 </div>
 <div class="form-group" id="inc-weekday-group" style="display: none;">
 <label for="inc-rec-weekday" class="field-label">
@@ -1780,6 +1854,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <div id="trf-recurring-details" style="display: none;">
+<div class="form-row-2">
 <div class="form-group" id="trf-month-day-group">
   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
     <label for="trf-rec-day" class="field-label" style="margin: 0;">
@@ -1792,6 +1867,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
   </div>
   <input type="number" min="1" max="31" id="trf-rec-day" class="large-input" value="1" aria-label="Ausführungstag im Monat als Zahl von 1 bis 31">
+</div>
+<div class="form-group" id="trf-start-month-group">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+    <label for="trf-start-month" class="field-label" style="margin: 0;">
+      <strong>📅 Start ab welchem Monat? (Beginn):</strong>
+    </label>
+    <div style="display: flex; gap: 4px;">
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('trf', 0)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf aktuellen Monat setzen">Dieser Monat</button>
+      <button type="button" class="btn btn-secondary" onclick="setQuickStartMonth('trf', 1)" style="padding: 2px 6px; font-size: 11px;" aria-label="Startmonat auf nächsten Monat setzen">Nächster Monat</button>
+    </div>
+  </div>
+  <input type="month" id="trf-start-month" class="large-input" aria-label="Startmonat des Sparplans">
+</div>
 </div>
 <div class="form-group" id="trf-weekday-group" style="display: none;">
 <label for="trf-rec-weekday" class="field-label">
@@ -1873,7 +1961,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.2.1</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.3.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -2517,7 +2605,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.2.1</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.3.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

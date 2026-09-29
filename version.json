@@ -1,8 +1,10 @@
 {
-  "version": "6.2.1",
+  "version": "6.3.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-13",
+  "buildDate": "2026-09-29",
   "features": [
+    "Dauerauftrag Startmonat-Auswahl: Startmonat und Startjahr können bei jedem Dauerauftrag und Sparplan (Ausgaben, Einnahmen, Umbuchungen) flexibel festgelegt werden, inklusive Schnelltasten [Diesen Monat] und [Nächsten Monat]",
+    "Optionale Split-Zahlung bei Ausgaben: Ausgaben können flexibel auf mehrere Konten aufgeteilt werden (z. B. teils Bar, teils Girokonto) mit automatischer Restbetragsberechnung und Kontostandsprüfung",
     "Desktop 1-Klick-Abgleich & Permanente Smartphone-Kopplung: Gekoppeltes Smartphone bleibt auf dem PC dauerhaft gespeichert und kann mit 1 Klick abgeglichen werden",
     "Fehlerbereinigung Kopplungskarte: Desktop-Kopplungskarte (sync-desktop-paired-card) und manuelle Eingabeform nahtlos in die Benutzeroberfläche integriert",
     "Versionskonsistenz: Automatische Übernahme der aktuellen App-Version v6.2.1 in allen Formularen und Feedback-Payloads",
