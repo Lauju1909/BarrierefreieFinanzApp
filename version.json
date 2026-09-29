@@ -1,8 +1,15 @@
 {
-  "version": "6.3.0",
+  "version": "6.4.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-09-29",
   "features": [
+    "Vertrags- & Kündigungs-Manager: Hinterlege Kundennummern, Mindestlaufzeiten, Kündigungsfristen, Hotline-Nummern und Kennwörter sicher verschlüsselt direkt am Dauerauftrag",
+    "Flexibler Gratis-Zeitraum (Probe-Abos): Kostenlose Testphasen nach Tagen, Wochen oder Monaten mit automatischer 0,00 €-Belastung und rechtzeitigem Kündigungs-Wecker vor dem ersten Zahltag",
+    "Zukünftige Preiserhöhungen / Preisänderungen: Vormerken neuer Beträge ab einem Zukunftsmonat mit Historien-Garantie (alte Monate behalten exakt den bisherigen Preis)",
+    "Kombi-Verträge & Rabatt-Phasen: Festlegen von vergünstigten Einstiegspreisen mit automatischer Umstellung auf den Normalpreis und Wechsel-Erinnerung",
+    "Sommerpause & Abo-Pausieren: Daueraufträge für beliebig viele Monate vorübergehend aussetzen ohne Datenverlust",
+    "Dauerauftrag beenden mit Historien-Schutz: Daueraufträge können ab sofort zum Monatsende beendet werden, sodass alle vergangenen Monate zu 100% in allen Statistiken erhalten bleiben",
+    "Kontodeckungs- & Vertrags-Erinnerungen: Automatische Warnungen bei drohender Unterdeckung und bei ablaufenden Testphasen oder Kündigungsfristen in der Hauptübersicht",
     "Dauerauftrag Startmonat-Auswahl: Startmonat und Startjahr können bei jedem Dauerauftrag und Sparplan (Ausgaben, Einnahmen, Umbuchungen) flexibel festgelegt werden, inklusive Schnelltasten [Diesen Monat] und [Nächsten Monat]",
     "Optionale Split-Zahlung bei Ausgaben: Ausgaben können flexibel auf mehrere Konten aufgeteilt werden (z. B. teils Bar, teils Girokonto) mit automatischer Restbetragsberechnung und Kontostandsprüfung",
     "Desktop 1-Klick-Abgleich & Permanente Smartphone-Kopplung: Gekoppeltes Smartphone bleibt auf dem PC dauerhaft gespeichert und kann mit 1 Klick abgeglichen werden",

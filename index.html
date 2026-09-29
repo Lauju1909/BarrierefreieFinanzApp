@@ -21,12 +21,42 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.3.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.4.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.4.0 (Vertrags-Manager, Probe-Abos, Preiserhöhungen &amp; Historien-Schutz)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🎁 Kostenlose Testphasen &amp; Probe-Abos:</strong><br>
+Flexibel nach Tagen, Wochen oder Monaten mit 0,00 €-Belastung während der Testphase und rechtzeitigem Kündigungs-Wecker vor dem ersten regulären Zahltag.
+</li>
+<li>
+<strong>📈 Zukünftige Preisänderung mit Historien-Garantie:</strong><br>
+Neue Beträge können ab einem gewählten Zukunftsmonat vorgemerkt werden – alte Monate behalten exakt den ursprünglichen Betrag.
+</li>
+<li>
+<strong>🏷️ Kombi-Verträge &amp; Rabatt-Phasen:</strong><br>
+Vergünstigte Tarife (z. B. 12 Monate für 19,99 €) mit automatischer Umstellung auf den Normalpreis und Wechsel-Erinnerung.
+</li>
+<li>
+<strong>⏸️ Sommerpause &amp; Dauerauftrag pausieren:</strong><br>
+Daueraufträge für beliebig viele Monate vorübergehend aussetzen, ohne dass Buchungen gelöscht werden müssen.
+</li>
+<li>
+<strong>🛡️ Dauerauftrag beenden mit Historien-Schutz:</strong><br>
+Beim Beenden eines Dauerauftrags bleiben alle vergangenen Monate zu 100% in allen Kontoständen und Statistiken erhalten.
+</li>
+<li>
+<strong>📝 Vertragsdetails &amp; Kündigungsinfos:</strong><br>
+Kundennummern, Mindestlaufzeiten, Kündigungsfristen und Hotline-Kontakte sicher verschlüsselt direkt am Dauerauftrag hinterlegen.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.3.0 (Dauerauftrag Startmonat &amp; Split-Zahlung bei Ausgaben)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -750,6 +780,186 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
+<!-- A) ZUKÜNFTIGE PREISÄNDERUNG / PREISERHÖHUNG -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-future-price-toggle" onchange="toggleEditFuturePriceSection()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-future-price-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      📈 Zukünftige Preisänderung / Preiserhöhung vormerken (z. B. ab Zukunftsmonat)
+    </label>
+  </div>
+</div>
+<div id="edit-rec-future-price-section" class="settings-box" style="display: none; border-left: 6px solid #4CAF50; background: rgba(76, 175, 80, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #2E7D32; font-size: 15px;">📈 Neuer Preis mit Historien-Garantie</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Vor diesem Monat bleibt der alte Preis in deinen Statistiken unverändert erhalten. Ab dem gewählten Monat greift der neue Preis:</p>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-future-amount" class="field-label" style="font-size: 13px;"><strong>Neuer Betrag in Euro (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="edit-rec-future-amount" class="large-input" placeholder="z. B. 17.99">
+    </div>
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <label for="edit-rec-future-month" class="field-label" style="font-size: 13px; margin: 0;"><strong>Gültig ab Monat:</strong></label>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="setQuickFutureMonth(1)" style="padding: 2px 6px; font-size: 11px;">Nächster Monat</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickFutureMonth(3)" style="padding: 2px 6px; font-size: 11px;">In 3 Mon.</button>
+        </div>
+      </div>
+      <input type="month" id="edit-rec-future-month" class="large-input">
+    </div>
+  </div>
+</div>
+
+<!-- B) VORÜBERGEHEND PAUSIEREN -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-pause-toggle" onchange="toggleEditPauseSection()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-pause-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      ⏸️ Dauerauftrag vorübergehend pausieren (Sommerpause / Aussetzen)
+    </label>
+  </div>
+</div>
+<div id="edit-rec-pause-section" class="settings-box" style="display: none; border-left: 6px solid #FFC107; background: rgba(255, 193, 7, 0.08); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #F57F17; font-size: 15px;">⏸️ Pause-Zeitraum festlegen</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">In diesem Zeitraum wird 0,00 € abgebucht. Danach läuft der Dauerauftrag automatisch wieder normal weiter:</p>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-pause-start-month" class="field-label" style="font-size: 13px;"><strong>Pause ab Monat:</strong></label>
+      <input type="month" id="edit-rec-pause-start-month" class="large-input">
+    </div>
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <label for="edit-rec-pause-end-month" class="field-label" style="font-size: 13px; margin: 0;"><strong>Pause bis einschließlich:</strong></label>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="setQuickPause(1)" style="padding: 2px 6px; font-size: 11px;">1 Mon.</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickPause(2)" style="padding: 2px 6px; font-size: 11px;">2 Mon.</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickPause(3)" style="padding: 2px 6px; font-size: 11px;">3 Mon.</button>
+        </div>
+      </div>
+      <input type="month" id="edit-rec-pause-end-month" class="large-input">
+    </div>
+  </div>
+</div>
+
+<!-- C) GRATIS-ZEITRAUM / PROBE-ABO -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-trial-toggle" onchange="toggleTrialSection('edit-rec')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-trial-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      🎁 Kostenloser Testzeitraum (Probe-Abo / Gratis-Phase)
+    </label>
+  </div>
+</div>
+<div id="edit-rec-trial-section" class="settings-box" style="display: none; border-left: 6px solid #9C27B0; background: rgba(156, 39, 176, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #7B1FA2; font-size: 15px;">🎁 Kostenlose Testphase einstellen</h4>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-trial-unit" class="field-label" style="font-size: 13px;"><strong>Zeiteinheit:</strong></label>
+      <select id="edit-rec-trial-unit" class="large-select" onchange="updateTrialEndDate('edit-rec')">
+        <option value="days">Tage</option>
+        <option value="weeks">Wochen</option>
+        <option value="months">Monate</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="edit-rec-trial-duration" class="field-label" style="font-size: 13px;"><strong>Dauer:</strong></label>
+      <input type="number" id="edit-rec-trial-duration" class="large-input" value="14" min="1" oninput="updateTrialEndDate('edit-rec')">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="edit-rec-trial-end" class="field-label" style="font-size: 13px;"><strong>Kostenlos bis einschließlich (Datum):</strong></label>
+    <input type="date" id="edit-rec-trial-end" class="large-input">
+  </div>
+</div>
+
+<!-- D) RABATT-VERTRAG MIT SPÄTEREM NORMALPREIS -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-discount-toggle" onchange="toggleDiscountSection('edit-rec')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-discount-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      🏷️ Rabatt-Vertrag mit späterem Normalpreis
+    </label>
+  </div>
+</div>
+<div id="edit-rec-discount-section" class="settings-box" style="display: none; border-left: 6px solid #FF9800; background: rgba(255, 152, 0, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #E65100; font-size: 15px;">🏷️ Rabattpreis &amp; Normalpreis einstellen</h4>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-discount-amount" class="field-label" style="font-size: 13px;"><strong>Vergünstigter Preis (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="edit-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
+    </div>
+    <div class="form-group">
+      <label for="edit-rec-discount-end-month" class="field-label" style="font-size: 13px;"><strong>Rabatt gültig bis Monat:</strong></label>
+      <input type="month" id="edit-rec-discount-end-month" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="edit-rec-discount-regular" class="field-label" style="font-size: 13px;"><strong>Regulärer Preis danach (€):</strong></label>
+    <input type="number" step="0.01" min="0" id="edit-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
+  </div>
+</div>
+
+<!-- E) VERTRAGS- & KÜNDIGUNGSDETAILS -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-contract-toggle" onchange="toggleContractSection('edit-rec')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-contract-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      📝 Vertrags- und Kündigungsdetails (Kundennummer, Fristen, Hotline)
+    </label>
+  </div>
+</div>
+<div id="edit-rec-contract-section" class="settings-box" style="display: none; border-left: 6px solid #2196F3; background: rgba(33, 150, 243, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #1565C0; font-size: 15px;">📝 Vertragsdaten im Tresor</h4>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-rec-contract-number" class="field-label" style="font-size: 13px;"><strong>Kundennummer / Vertragsnummer:</strong></label>
+      <input type="text" id="edit-rec-contract-number" class="large-input" placeholder="z. B. KD-881234">
+    </div>
+    <div class="form-group">
+      <label for="edit-rec-min-term" class="field-label" style="font-size: 13px;"><strong>Mindestlaufzeit bis:</strong></label>
+      <input type="date" id="edit-rec-min-term" class="large-input">
+    </div>
+  </div>
+  <div class="form-row-2" style="margin-top: 6px;">
+    <div class="form-group">
+      <label for="edit-rec-notice-period" class="field-label" style="font-size: 13px;"><strong>Kündigungsfrist:</strong></label>
+      <input type="text" id="edit-rec-notice-period" class="large-input" placeholder="z. B. 1 Monat zum Monatsende">
+    </div>
+    <div class="form-group">
+      <label for="edit-rec-hotline" class="field-label" style="font-size: 13px;"><strong>Hotline / Telefonnummer:</strong></label>
+      <input type="text" id="edit-rec-hotline" class="large-input" placeholder="z. B. 0800-111222">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="edit-rec-notes" class="field-label" style="font-size: 13px;"><strong>Notizen / Kundenkennwort:</strong></label>
+    <input type="text" id="edit-rec-notes" class="large-input" placeholder="z. B. Kennwort: MeinWort, Login: email@test.de">
+  </div>
+</div>
+
+<!-- F) VERTRAG BEENDEN / AUSLAUFEN ZUM STICHTAG (HISTORIEN-SCHUTZ) -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="edit-rec-end-toggle" onchange="toggleEditEndSection()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-rec-end-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: #D32F2F;">
+      🔴 Dauerauftrag beenden / auslaufen lassen (Historie alter Monate behalten)
+    </label>
+  </div>
+</div>
+<div id="edit-rec-end-section" class="settings-box" style="display: none; border-left: 6px solid #D32F2F; background: rgba(244, 67, 54, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #C62828; font-size: 15px;">🔴 Beendigungsmonat festlegen</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Alle Monate vor und bis zu diesem Monat bleiben vollständig erhalten. Ab dem Folgemonat stoppt der Dauerauftrag automatisch:</p>
+  <div class="form-group">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <label for="edit-rec-end-month" class="field-label" style="font-size: 13px; margin: 0;"><strong>Letzter aktiver Monat (Beendet zum):</strong></label>
+      <div style="display: flex; gap: 4px;">
+        <button type="button" class="btn btn-secondary" onclick="setQuickEndMonth(0)" style="padding: 2px 6px; font-size: 11px;">Diesen Monat</button>
+        <button type="button" class="btn btn-secondary" onclick="setQuickEndMonth(1)" style="padding: 2px 6px; font-size: 11px;">Nächsten Monat</button>
+      </div>
+    </div>
+    <input type="month" id="edit-rec-end-month" class="large-input">
+  </div>
+</div>
+
 <div class="form-actions" style="margin-top: 14px;">
   <button type="submit" class="btn btn-primary">
     <span><strong>Dauerauftrag speichern</strong> (Enter)</span>
@@ -760,6 +970,49 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </form>
 </div>
+</div>
+
+<!-- =========================================================================
+     MODAL DIALOG: DAUERAUFTRAG BEENDEN ODER LÖSCHEN (HISTORIEN-SCHUTZ)
+     ========================================================================= -->
+<div id="end-or-delete-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="end-or-delete-rec-heading" style="display: none;">
+  <div class="modal-dialog-box" style="max-width: 580px; border-top: 8px solid #1976D2;">
+    <h2 id="end-or-delete-rec-heading" tabindex="-1" style="margin: 0 0 8px 0; color: #0D47A1; font-size: 22px;">
+      Dauerauftrag beenden oder löschen
+    </h2>
+    <p id="end-or-delete-rec-sub" style="font-size: 15px; color: var(--text-primary); margin: 0 0 16px 0;">
+      Wie möchtest du mit diesem Dauerauftrag verfahren?
+    </p>
+    <input type="hidden" id="end-or-delete-rec-id">
+
+    <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+      <div style="background: rgba(76, 175, 80, 0.08); border-left: 5px solid #4CAF50; padding: 12px 16px; border-radius: 6px;">
+        <strong style="color: #2E7D32; display: block; margin-bottom: 4px;">Option 1 (Empfohlen): Ab jetzt beenden &amp; Historie behalten</strong>
+        <span style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 8px;">
+          Alle alten Monate bleiben unverändert in deinen Statistiken und Kontoständen erhalten. Der Dauerauftrag stoppt einfach für alle zukünftigen Monate.
+        </span>
+        <button type="button" class="btn btn-primary" onclick="confirmEndRecurring()" style="background-color: #2E7D32; border-color: #1B5E20; width: 100%; font-size: 14px; padding: 10px;">
+          📅 <strong>Dauerauftrag ab jetzt beenden (Vergangenheit behalten)</strong>
+        </button>
+      </div>
+
+      <div style="background: rgba(244, 67, 54, 0.08); border-left: 5px solid #F44336; padding: 12px 16px; border-radius: 6px;">
+        <strong style="color: #C62828; display: block; margin-bottom: 4px;">Option 2: Komplett überall löschen (auch in alten Monaten)</strong>
+        <span style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 8px;">
+          Entfernt den Dauerauftrag restlos aus allen vergangenen und zukünftigen Monaten. Nur verwenden, falls der Eintrag versehentlich falsch angelegt wurde.
+        </span>
+        <button type="button" class="btn btn-secondary" onclick="confirmHardDeleteRecurring()" style="color: #C62828; border-color: #EF9A9A; width: 100%; font-size: 14px; padding: 10px;">
+          🗑️ <strong>Komplett überall löschen (auch in der Vergangenheit)</strong>
+        </button>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="button" class="btn btn-secondary" onclick="closeEndOrDeleteRecModal()" style="padding: 8px 18px;">
+        Abbrechen
+      </button>
+    </div>
+  </div>
 </div>
 
 <!-- =========================================================================
@@ -987,6 +1240,9 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- LIQUIDITÄTS- & KONTODECKUNGS-WARNUNG -->
 <div id="overview-liquidity-alert" style="display: none;"></div>
+
+<!-- VERTRAGS- & KÜNDIGUNGS-ERINNERUNGEN -->
+<div id="overview-contract-alerts" style="display: none; flex-direction: column; gap: 8px; margin-bottom: 16px;"></div>
 
 <!-- 1. ZUERST: KONTOSTÄNDE -->
 <section class="overview-section" aria-labelledby="section-accounts-heading">
@@ -1578,6 +1834,117 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 </div>
+
+<!-- 1. OPTION: GRATIS-ZEITRAUM (PROBE-ABO) -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-rec-trial-toggle" onchange="toggleTrialSection('exp')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="exp-rec-trial-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      🎁 Kostenloser Testzeitraum (Probe-Abo / Gratis-Phase)
+    </label>
+  </div>
+</div>
+<div id="exp-rec-trial-section" class="settings-box" style="display: none; border-left: 6px solid #9C27B0; background: rgba(156, 39, 176, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #7B1FA2; font-size: 15px;">🎁 Kostenlose Testphase einstellen</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Während der Testphase wird dein Konto mit 0,00 € belastet. Die App warnt dich rechtzeitig vor dem ersten Zahltag:</p>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="exp-rec-trial-unit" class="field-label" style="font-size: 13px;"><strong>Zeiteinheit:</strong></label>
+      <select id="exp-rec-trial-unit" class="large-select" onchange="updateTrialEndDate('exp')">
+        <option value="days">Tage</option>
+        <option value="weeks">Wochen</option>
+        <option value="months">Monate</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <label for="exp-rec-trial-duration" class="field-label" style="font-size: 13px; margin: 0;"><strong>Dauer:</strong></label>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="setQuickTrial('exp', 'days', 7)" style="padding: 2px 6px; font-size: 11px;">7 Tage</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickTrial('exp', 'days', 14)" style="padding: 2px 6px; font-size: 11px;">14 Tage</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickTrial('exp', 'days', 30)" style="padding: 2px 6px; font-size: 11px;">30 Tage</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickTrial('exp', 'months', 3)" style="padding: 2px 6px; font-size: 11px;">3 Monate</button>
+        </div>
+      </div>
+      <input type="number" id="exp-rec-trial-duration" class="large-input" value="14" min="1" oninput="updateTrialEndDate('exp')">
+    </div>
+  </div>
+  <div id="exp-rec-trial-summary" aria-live="polite" style="font-size: 13px; font-weight: bold; color: #6A1B9A; padding: 6px 10px; background: rgba(156, 39, 176, 0.1); border-radius: 6px; margin-top: 4px;">
+    Kostenlos bis zum: wird berechnet...
+  </div>
+</div>
+
+<!-- 2. OPTION: RABATT-VERTRAG MIT SPÄTEREM NORMALPREIS -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-rec-discount-toggle" onchange="toggleDiscountSection('exp')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="exp-rec-discount-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      🏷️ Rabatt-Vertrag mit späterem Normalpreis (z. B. 12 Monate günstiger)
+    </label>
+  </div>
+</div>
+<div id="exp-rec-discount-section" class="settings-box" style="display: none; border-left: 6px solid #FF9800; background: rgba(255, 152, 0, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #E65100; font-size: 15px;">🏷️ Rabatt-Phase &amp; Normalpreis einstellen</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">Typisch für Handy-, Internet- oder Stromtarife. Die App erinnert dich rechtzeitig vor dem Preissprung:</p>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="exp-rec-discount-amount" class="field-label" style="font-size: 13px;"><strong>Vergünstigter Preis (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="exp-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
+    </div>
+    <div class="form-group">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <label for="exp-rec-discount-months" class="field-label" style="font-size: 13px; margin: 0;"><strong>Rabatt-Dauer (Monate):</strong></label>
+        <div style="display: flex; gap: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="setQuickDiscountMonths('exp', 6)" style="padding: 2px 6px; font-size: 11px;">6 Mon.</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickDiscountMonths('exp', 12)" style="padding: 2px 6px; font-size: 11px;">12 Mon.</button>
+          <button type="button" class="btn btn-secondary" onclick="setQuickDiscountMonths('exp', 24)" style="padding: 2px 6px; font-size: 11px;">24 Mon.</button>
+        </div>
+      </div>
+      <input type="number" id="exp-rec-discount-months" class="large-input" value="12" min="1">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="exp-rec-discount-regular" class="field-label" style="font-size: 13px;"><strong>Regulärer Preis danach (€):</strong></label>
+    <input type="number" step="0.01" min="0" id="exp-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
+  </div>
+</div>
+
+<!-- 3. OPTION: VERTRAGS- & KÜNDIGUNGSDETAILS -->
+<div class="form-group" style="margin-top: 8px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-rec-contract-toggle" onchange="toggleContractSection('exp')" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="exp-rec-contract-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      📝 Vertrags- und Kündigungsdetails hinterlegen (Kundennr., Fristen, Hotline)
+    </label>
+  </div>
+</div>
+<div id="exp-rec-contract-section" class="settings-box" style="display: none; border-left: 6px solid #2196F3; background: rgba(33, 150, 243, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #1565C0; font-size: 15px;">📝 Vertragsdaten (100% verschlüsselt im Tresor)</h4>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="exp-rec-contract-number" class="field-label" style="font-size: 13px;"><strong>Kundennummer / Vertragsnummer:</strong></label>
+      <input type="text" id="exp-rec-contract-number" class="large-input" placeholder="z. B. KD-881234">
+    </div>
+    <div class="form-group">
+      <label for="exp-rec-min-term" class="field-label" style="font-size: 13px;"><strong>Mindestlaufzeit bis:</strong></label>
+      <input type="date" id="exp-rec-min-term" class="large-input">
+    </div>
+  </div>
+  <div class="form-row-2" style="margin-top: 6px;">
+    <div class="form-group">
+      <label for="exp-rec-notice-period" class="field-label" style="font-size: 13px;"><strong>Kündigungsfrist:</strong></label>
+      <input type="text" id="exp-rec-notice-period" class="large-input" placeholder="z. B. 1 Monat zum Monatsende">
+    </div>
+    <div class="form-group">
+      <label for="exp-rec-hotline" class="field-label" style="font-size: 13px;"><strong>Hotline / Telefonnummer:</strong></label>
+      <input type="text" id="exp-rec-hotline" class="large-input" placeholder="z. B. 0800-111222">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="exp-rec-notes" class="field-label" style="font-size: 13px;"><strong>Notizen / Kundenkennwort:</strong></label>
+    <input type="text" id="exp-rec-notes" class="large-input" placeholder="z. B. Kennwort: MeinWort, Login: email@test.de">
+  </div>
+</div>
 </div>
 
 <div class="form-group">
@@ -1961,7 +2328,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.3.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.4.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -2605,7 +2972,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.3.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

@@ -1,6 +1,35 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.4.0 (Vertrags-Manager, Probe-Abos, Preiserhöhungen & Historien-Schutz)
+*Datum: 29. September 2026*
+
+### 🎁 1. Kostenlose Testphasen & Probe-Abos (Tage, Wochen & Monate)
+- **Flexible Testphasen:** Bei jedem Dauerauftrag kann ein kostenloser Testzeitraum hinterlegt werden – wählbar nach Tagen (z. B. 7, 14, 30 Tage), Wochen oder Monaten.
+- **Null Euro Belastung:** Während der Testphase wird das Konto mit 0,00 € belastet.
+- **Kündigungs-Wecker:** Rechtzeitig vor dem ersten Zahltag warnt die App mit NVDA und in der Übersicht, damit keine unerwünschten Kosten entstehen.
+
+### 📈 2. Zukünftige Preisänderung mit Historien-Garantie
+- **Preiserhöhungen vormerken:** Neue Beträge können ab einem frei gewählten Zukunftsmonat hinterlegt werden.
+- **Voller Vergangenheits-Schutz:** Alle Monate vor dem Stichtag behalten exakt den ursprünglichen Preis in allen Statistiken.
+
+### 🏷️ 3. Kombi-Verträge & Rabatt-Phasen
+- **Einstiegspreise festlegen:** Z. B. 12 Monate für 19,99 €, danach regulär 39,99 €. Die App stellt nach Ablauf der Rabatt-Dauer automatisch auf den Normalpreis um und erinnert an den Tarifwechsel.
+
+### ⏸️ 4. Sommerpause & Dauerauftrag pausieren
+- **Aussetzen ohne Löschen:** Daueraufträge können für 1, 2, 3 oder mehr Monate pausiert werden und laufen danach automatisch wieder regulär an.
+
+### 🛡️ 5. Dauerauftrag beenden mit Historien-Schutz
+- **Alte Monate bleiben sicher:** Beim Klick auf Beenden / Löschen kann gewählt werden: *„Ab jetzt beenden (Vergangenheit behalten)“* oder *„Komplett löschen“*. Bei Option 1 bleiben alle alten Monate zu 100% erhalten.
+
+### 📝 6. Vertrags- & Kündigungsdetails
+- **Sicher im Tresor:** Kundennummer, Mindestlaufzeit, Kündigungsfrist, Hotline und Notizen können direkt am Dauerauftrag hinterlegt werden.
+
+### ⚠️ 7. Kontodeckungs- & Vertrags-Erinnerungen
+- **Übersichts-Warnungen:** Automatische Hinweise bei drohender Unterdeckung durch anstehende Daueraufträge sowie Kündigungsfristen direkt in Reiter 1.
+
+---
+
 ## ⚡ Version 6.3.0 (Dauerauftrag Startmonat & Split-Zahlung bei Ausgaben)
 *Datum: 29. September 2026*
 

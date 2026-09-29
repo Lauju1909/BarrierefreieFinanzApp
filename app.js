@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.3.0';
+const CURRENT_APP_VERSION = 'v6.4.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -824,6 +824,86 @@ function checkLiquidityWarning(currentBalances) {
     `;
   } else {
     alertBox.style.display = 'none';
+  }
+
+  checkContractReminders();
+}
+
+function checkContractReminders() {
+  const container = document.getElementById('overview-contract-alerts');
+  if (!container) return;
+
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const alerts = [];
+
+  (appState.recurring || []).forEach(rec => {
+    if (rec.active === false) return;
+
+    // 1. Gratis-Zeitraum (Probe-Abo)
+    if (rec.trialActive && rec.trialEndDate) {
+      const endD = new Date(rec.trialEndDate + 'T00:00:00');
+      const diffDays = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+      const warnThreshold = (rec.trialUnit === 'months') ? 7 : 3;
+      if (diffDays >= 0 && diffDays <= warnThreshold) {
+        alerts.push({
+          type: 'trial',
+          icon: '🎁',
+          bg: 'rgba(156, 39, 176, 0.1)',
+          border: '#9C27B0',
+          title: `Probe-Abo läuft aus: ${escapeHTML(rec.name || rec.category)}`,
+          msg: `Die kostenlose Testphase endet am <strong>${formatDateGerman(rec.trialEndDate)}</strong> (${diffDays === 0 ? 'heute!' : `in ${diffDays} Tag(en)`}). Wenn du nicht kündigst, werden danach regulär <strong>${formatCurrency(rec.amount)}</strong> abgebucht.`
+        });
+      }
+    }
+
+    // 2. Rabatt-Phase läuft aus
+    if (rec.discountActive && rec.discountEndYear !== undefined && rec.discountEndMonth !== undefined) {
+      const curVal = today.getFullYear() * 12 + today.getMonth();
+      const discVal = rec.discountEndYear * 12 + rec.discountEndMonth;
+      if (discVal - curVal === 0 || discVal - curVal === 1) {
+        alerts.push({
+          type: 'discount',
+          icon: '🏷️',
+          bg: 'rgba(255, 152, 0, 0.1)',
+          border: '#FF9800',
+          title: `Rabattpreis endet bald: ${escapeHTML(rec.name || rec.category)}`,
+          msg: `Der vergünstigte Preis von <strong>${formatCurrency(rec.discountAmount)}</strong> gilt nur noch bis <strong>${MONTH_NAMES[rec.discountEndMonth]} ${rec.discountEndYear}</strong>. Danach steigt der Betrag auf <strong>${formatCurrency(rec.regularAmount || rec.amount)}</strong>.`
+        });
+      }
+    }
+
+    // 3. Kündigungsfrist / Mindestlaufzeit
+    if (rec.hasContractDetails && rec.minTermDate) {
+      const minD = new Date(rec.minTermDate + 'T00:00:00');
+      const diffDays = Math.ceil((minD - today) / (1000 * 60 * 60 * 24));
+      if (diffDays >= 0 && diffDays <= 30) {
+        alerts.push({
+          type: 'contract',
+          icon: '📝',
+          bg: 'rgba(33, 150, 243, 0.1)',
+          border: '#2196F3',
+          title: `Vertragslaufzeit prüfen: ${escapeHTML(rec.name || rec.category)}`,
+          msg: `Die Mindestlaufzeit endet am <strong>${formatDateGerman(rec.minTermDate)}</strong> (${diffDays === 0 ? 'heute!' : `in ${diffDays} Tag(en)`}). Kündigungsfrist: <em>${escapeHTML(rec.noticePeriod || 'Standard')}</em>${rec.contractNumber ? ` | Kd-Nr: <strong>${escapeHTML(rec.contractNumber)}</strong>` : ''}.`
+        });
+      }
+    }
+  });
+
+  if (alerts.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  } else {
+    container.style.display = 'flex';
+    container.innerHTML = alerts.map(a => `
+      <div class="liquidity-alert-box" style="background: ${a.bg}; border-left-color: ${a.border};">
+        <span style="font-size: 24px;" aria-hidden="true">${a.icon}</span>
+        <div>
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 2px;">${a.title}</strong>
+          <span style="font-size: 14px;">${a.msg}</span>
+        </div>
+      </div>
+    `).join('');
   }
 }
 
@@ -3296,7 +3376,25 @@ function isRecurringDueInMonth(rec, year, month) {
   const startY = rec.startYear !== undefined ? rec.startYear : 2025;
   const startM = rec.startMonth !== undefined ? rec.startMonth : 0;
 
+  // 1. Startmonat-Schutz: Vor Startdatum nicht fällig
   if (year < startY || (year === startY && month < startM)) return false;
+
+  // 2. Historien-Schutz (Endmonat / Beendet zum): Nach Endmonat nicht mehr fällig
+  if (rec.endYear !== undefined && rec.endMonth !== undefined) {
+    if (year > rec.endYear || (year === rec.endYear && month > rec.endMonth)) {
+      return false;
+    }
+  }
+
+  // 3. Pause-Schutz: Im Pausenzeitraum aussetzen (nicht fällig)
+  if (rec.pauseActive && rec.pauseStartYear !== undefined && rec.pauseEndYear !== undefined) {
+    const curVal = year * 12 + month;
+    const startVal = rec.pauseStartYear * 12 + rec.pauseStartMonth;
+    const endVal = rec.pauseEndYear * 12 + rec.pauseEndMonth;
+    if (curVal >= startVal && curVal <= endVal) {
+      return false;
+    }
+  }
 
   if (rec.interval === 'weekly' || rec.interval === 'monthly') return true;
   if (rec.interval === 'yearly') return parseInt(rec.yearlyMonth !== undefined ? rec.yearlyMonth : startM, 10) === month;
@@ -3309,6 +3407,50 @@ function isRecurringDueInMonth(rec, year, month) {
     return (month % 6) === startMOffset;
   }
   return true;
+}
+
+function getRecurringAmountAndInfo(rec, year, month, dateStr) {
+  // A) Gratis-Phase / Probe-Abo
+  if (rec.trialActive && rec.trialEndDate && dateStr <= rec.trialEndDate) {
+    return {
+      amount: 0.00,
+      suffix: ` (🎁 Kostenlose Testphase bis ${formatDateGerman(rec.trialEndDate)})`
+    };
+  }
+
+  const curVal = year * 12 + month;
+
+  // B) Zukünftige Preisänderung / Preiserhöhung
+  if (rec.futurePriceActive && rec.futureStartYear !== undefined && rec.futureStartMonth !== undefined) {
+    const futureVal = rec.futureStartYear * 12 + rec.futureStartMonth;
+    if (curVal >= futureVal) {
+      return {
+        amount: Number(rec.futureAmount || 0),
+        suffix: ` (📈 Neuer Preis: ${formatCurrency(rec.futureAmount)})`
+      };
+    }
+  }
+
+  // C) Rabatt-Phase mit späterem Normalpreis
+  if (rec.discountActive && rec.discountEndYear !== undefined && rec.discountEndMonth !== undefined) {
+    const discountEndVal = rec.discountEndYear * 12 + rec.discountEndMonth;
+    if (curVal <= discountEndVal) {
+      return {
+        amount: Number(rec.discountAmount || 0),
+        suffix: ` (🏷️ Rabatt-Phase: ${formatCurrency(rec.discountAmount)})`
+      };
+    } else {
+      return {
+        amount: Number(rec.regularAmount || rec.amount || 0),
+        suffix: ''
+      };
+    }
+  }
+
+  return {
+    amount: Number(rec.amount || 0),
+    suffix: ''
+  };
 }
 
 function getRecurringTransactionsForMonth(year, month) {
@@ -3325,6 +3467,7 @@ function getRecurringTransactionsForMonth(year, month) {
             const dayFormatted = String(d).padStart(2, '0');
             const mFormatted = String(month + 1).padStart(2, '0');
             const dateStr = `${year}-${mFormatted}-${dayFormatted}`;
+            const calc = getRecurringAmountAndInfo(rec, year, month, dateStr);
 
             list.push({
               id: `rec_instance_${rec.id}_${year}_${month}_${d}`,
@@ -3334,10 +3477,10 @@ function getRecurringTransactionsForMonth(year, month) {
               account: rec.account,
               fromAccount: rec.fromAccount,
               toAccount: rec.toAccount,
-              amount: Number(rec.amount),
+              amount: calc.amount,
               category: rec.category,
               subcategory: rec.subcategory || '',
-              description: `${rec.name} (Wöchentlich)`,
+              description: `${rec.name}${calc.suffix} (Wöchentlich)`,
               costType: 'fixed',
               date: dateStr
             });
@@ -3348,6 +3491,7 @@ function getRecurringTransactionsForMonth(year, month) {
         const dayFormatted = String(day).padStart(2, '0');
         const mFormatted = String(month + 1).padStart(2, '0');
         const dateStr = `${year}-${mFormatted}-${dayFormatted}`;
+        const calc = getRecurringAmountAndInfo(rec, year, month, dateStr);
 
         list.push({
           id: `rec_instance_${rec.id}_${year}_${month}`,
@@ -3357,10 +3501,10 @@ function getRecurringTransactionsForMonth(year, month) {
           account: rec.account,
           fromAccount: rec.fromAccount,
           toAccount: rec.toAccount,
-          amount: Number(rec.amount),
+          amount: calc.amount,
           category: rec.category,
           subcategory: rec.subcategory || '',
-          description: `${rec.name} (Dauerauftrag / Sparplan)`,
+          description: `${rec.name}${calc.suffix} (Dauerauftrag / Sparplan)`,
           costType: 'fixed',
           date: dateStr
         });
@@ -3822,7 +3966,7 @@ function renderTransactionList(list, containerId, emptyText) {
       : `<button type="button" class="btn-edit-tx" onclick="openEditModal('${tx.id}')" title="Buchung bearbeiten" aria-label="Buchung ${tx.category || ''} bearbeiten">✏️ Bearbeiten</button>`;
 
     const deleteBtn = tx.isRecurring
-      ? `<button type="button" class="btn-delete-tx" onclick="deleteRecurring('${tx.recurringId}')" title="Dauerauftrag / Sparplan löschen" aria-label="Dauerauftrag ${tx.category || tx.name || ''} löschen">🗑️ Löschen</button>`
+      ? `<button type="button" class="btn-delete-tx" onclick="openEndOrDeleteRecModal('${tx.recurringId}')" title="Dauerauftrag / Sparplan beenden oder löschen" aria-label="Dauerauftrag ${tx.category || tx.name || ''} beenden oder löschen">🗑️ Beenden / Löschen</button>`
       : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category || ''} löschen">🗑️ Löschen</button>`;
 
     const hasSub = tx.subcategory && tx.subcategory !== 'Gesamt / Allgemein' && tx.subcategory !== tx.category;
@@ -4081,6 +4225,253 @@ function setQuickStartMonth(type, offset) {
   if (typeof announceNVDA === 'function') {
     announceNVDA(`Startmonat auf ${label} (${MONTH_NAMES[d.getMonth()]} ${y}) gesetzt.`);
   }
+}
+
+// ----------------------------------------------------------------------------
+// VERTRAGS-, TESTPHASEN-, RABATT- & PAUSEN-FUNKTIONEN (v6.4.0)
+// ----------------------------------------------------------------------------
+function toggleTrialSection(prefix) {
+  const toggle = document.getElementById(`${prefix}-rec-trial-toggle`);
+  const section = document.getElementById(`${prefix}-rec-trial-section`);
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked) {
+    updateTrialEndDate(prefix);
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Testphasen-Optionen eingeblendet.');
+    }
+  }
+}
+
+function calculateTrialEndDate(unit, duration, baseDateStr) {
+  const d = baseDateStr ? new Date(baseDateStr + 'T00:00:00') : new Date();
+  if (unit === 'days') {
+    d.setDate(d.getDate() + duration);
+  } else if (unit === 'weeks') {
+    d.setDate(d.getDate() + (duration * 7));
+  } else if (unit === 'months') {
+    d.setMonth(d.getMonth() + duration);
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function updateTrialEndDate(prefix) {
+  const unitEl = document.getElementById(`${prefix}-rec-trial-unit`);
+  const durEl = document.getElementById(`${prefix}-rec-trial-duration`);
+  const sumEl = document.getElementById(`${prefix}-rec-trial-summary`);
+  const endInput = document.getElementById(`${prefix}-rec-trial-end`);
+  if (!unitEl || !durEl) return;
+
+  const unit = unitEl.value || 'days';
+  const dur = parseInt(durEl.value, 10) || 14;
+  const endDStr = calculateTrialEndDate(unit, dur);
+  const endDFormatted = formatDateGerman(endDStr);
+
+  if (sumEl) sumEl.textContent = `Kostenlos bis zum: ${endDFormatted}`;
+  if (endInput) endInput.value = endDStr;
+}
+
+function setQuickTrial(prefix, unit, duration) {
+  const unitEl = document.getElementById(`${prefix}-rec-trial-unit`);
+  const durEl = document.getElementById(`${prefix}-rec-trial-duration`);
+  if (unitEl) unitEl.value = unit;
+  if (durEl) durEl.value = duration;
+  updateTrialEndDate(prefix);
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Testphase auf ${duration} ${unit === 'days' ? 'Tage' : (unit === 'weeks' ? 'Wochen' : 'Monate')} gesetzt.`);
+  }
+}
+
+function toggleDiscountSection(prefix) {
+  const toggle = document.getElementById(`${prefix}-rec-discount-toggle`);
+  const section = document.getElementById(`${prefix}-rec-discount-section`);
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked && typeof announceNVDA === 'function') {
+    announceNVDA('Rabattphasen-Optionen eingeblendet.');
+  }
+}
+
+function setQuickDiscountMonths(prefix, months) {
+  const el = document.getElementById(`${prefix}-rec-discount-months`);
+  if (el) el.value = months;
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Rabatt-Dauer auf ${months} Monate gesetzt.`);
+  }
+}
+
+function toggleContractSection(prefix) {
+  const toggle = document.getElementById(`${prefix}-rec-contract-toggle`);
+  const section = document.getElementById(`${prefix}-rec-contract-section`);
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked && typeof announceNVDA === 'function') {
+    announceNVDA('Vertragsdetails-Felder eingeblendet.');
+  }
+}
+
+function toggleEditFuturePriceSection() {
+  const toggle = document.getElementById('edit-rec-future-price-toggle');
+  const section = document.getElementById('edit-rec-future-price-section');
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked) {
+    if (!document.getElementById('edit-rec-future-month').value) {
+      setQuickFutureMonth(1);
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Zukünftige Preisänderung eingeblendet.');
+    }
+  }
+}
+
+function setQuickFutureMonth(offsetMonths) {
+  const el = document.getElementById('edit-rec-future-month');
+  if (!el) return;
+  const d = new Date();
+  d.setMonth(d.getMonth() + offsetMonths);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  el.value = `${y}-${m}`;
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Preiserhöhung gültig ab ${MONTH_NAMES[d.getMonth()]} ${y}.`);
+  }
+}
+
+function toggleEditPauseSection() {
+  const toggle = document.getElementById('edit-rec-pause-toggle');
+  const section = document.getElementById('edit-rec-pause-section');
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked) {
+    if (!document.getElementById('edit-rec-pause-start-month').value) {
+      setQuickPause(1);
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Pause-Optionen eingeblendet.');
+    }
+  }
+}
+
+function setQuickPause(months) {
+  const startEl = document.getElementById('edit-rec-pause-start-month');
+  const endEl = document.getElementById('edit-rec-pause-end-month');
+  if (!startEl || !endEl) return;
+  const d1 = new Date();
+  const y1 = d1.getFullYear();
+  const m1 = String(d1.getMonth() + 1).padStart(2, '0');
+  startEl.value = `${y1}-${m1}`;
+
+  const d2 = new Date();
+  d2.setMonth(d2.getMonth() + (months - 1));
+  const y2 = d2.getFullYear();
+  const m2 = String(d2.getMonth() + 1).padStart(2, '0');
+  endEl.value = `${y2}-${m2}`;
+
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Pause für ${months} Monat(e) eingestellt (bis ${MONTH_NAMES[d2.getMonth()]} ${y2}).`);
+  }
+}
+
+function toggleEditEndSection() {
+  const toggle = document.getElementById('edit-rec-end-toggle');
+  const section = document.getElementById('edit-rec-end-section');
+  if (!section) return;
+  const isChecked = toggle ? toggle.checked : false;
+  section.style.display = isChecked ? 'block' : 'none';
+  if (isChecked) {
+    if (!document.getElementById('edit-rec-end-month').value) {
+      setQuickEndMonth(0);
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Beendigungsmonat eingeblendet.');
+    }
+  }
+}
+
+function setQuickEndMonth(offset) {
+  const el = document.getElementById('edit-rec-end-month');
+  if (!el) return;
+  const d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  el.value = `${y}-${m}`;
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Beendet zum ${MONTH_NAMES[d.getMonth()]} ${y}.`);
+  }
+}
+
+function addMonthsToYearMonth(year, month, addM) {
+  const totalM = month + addM;
+  const y = year + Math.floor(totalM / 12);
+  const m = ((totalM % 12) + 12) % 12;
+  return { year: y, month: m };
+}
+
+// ----------------------------------------------------------------------------
+// MODAL: DAUERAUFTRAG BEENDEN ODER LÖSCHEN (HISTORIEN-SCHUTZ)
+// ----------------------------------------------------------------------------
+function openEndOrDeleteRecModal(recId) {
+  const rec = (appState.recurring || []).find(r => r.id === recId);
+  if (!rec) return;
+
+  const idInput = document.getElementById('end-or-delete-rec-id');
+  const subText = document.getElementById('end-or-delete-rec-sub');
+  if (idInput) idInput.value = recId;
+  if (subText) {
+    subText.innerHTML = `Wie möchtest du mit dem Dauerauftrag <strong>"${escapeHTML(rec.name || rec.category)}"</strong> (${formatCurrency(rec.amount)}) verfahren?`;
+  }
+
+  const modal = document.getElementById('end-or-delete-rec-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    if (typeof announceNVDA === 'function') {
+      announceNVDA(`Dauerauftrag ${rec.name || rec.category} beenden oder löschen geöffnet.`);
+    }
+  }
+}
+
+function closeEndOrDeleteRecModal() {
+  const modal = document.getElementById('end-or-delete-rec-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function confirmEndRecurring() {
+  const idInput = document.getElementById('end-or-delete-rec-id');
+  if (!idInput) return;
+  const recId = idInput.value;
+  const rec = (appState.recurring || []).find(r => r.id === recId);
+  if (!rec) return;
+
+  const today = new Date();
+  rec.endYear = today.getFullYear();
+  rec.endMonth = today.getMonth();
+
+  await saveStateToEncryptedStorage();
+  closeEndOrDeleteRecModal();
+  renderSettingsRecurringList();
+  updateOverview();
+
+  const msg = `Dauerauftrag "${rec.name || rec.category}" zum Monatsende beendet! Alle vergangenen Monate bleiben unverändert erhalten.`;
+  if (typeof announceNVDA === 'function') announceNVDA(msg);
+  alert(msg);
+}
+
+async function confirmHardDeleteRecurring() {
+  const idInput = document.getElementById('end-or-delete-rec-id');
+  if (!idInput) return;
+  const recId = idInput.value;
+  closeEndOrDeleteRecModal();
+  await deleteRecurring(recId);
 }
 
 // ----------------------------------------------------------------------------
@@ -4430,6 +4821,57 @@ async function handleAddExpense(e) {
   } else if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('exp-rec-day').value, 10) || 1;
     const weekday = document.getElementById('exp-rec-weekday') ? parseInt(document.getElementById('exp-rec-weekday').value, 10) : 5;
+
+    // Vertrags-, Testphasen- & Rabatt-Daten erfassen
+    const trialToggle = document.getElementById('exp-rec-trial-toggle');
+    const isTrial = trialToggle ? trialToggle.checked : false;
+    let trialData = {};
+    if (isTrial) {
+      const u = document.getElementById('exp-rec-trial-unit').value || 'days';
+      const dur = parseInt(document.getElementById('exp-rec-trial-duration').value, 10) || 14;
+      const endD = calculateTrialEndDate(u, dur);
+      trialData = {
+        trialActive: true,
+        trialUnit: u,
+        trialDuration: dur,
+        trialStartDate: new Date().toISOString().split('T')[0],
+        trialEndDate: endD
+      };
+    }
+
+    const discountToggle = document.getElementById('exp-rec-discount-toggle');
+    const isDiscount = discountToggle ? discountToggle.checked : false;
+    let discountData = {};
+    if (isDiscount) {
+      const discAmt = parseFloat(document.getElementById('exp-rec-discount-amount').value) || 0;
+      const discMonths = parseInt(document.getElementById('exp-rec-discount-months').value, 10) || 12;
+      const regAmt = parseFloat(document.getElementById('exp-rec-discount-regular').value) || amount;
+      const startY = recStartYear !== undefined ? recStartYear : new Date().getFullYear();
+      const startM = recStartMonth !== undefined ? recStartMonth : new Date().getMonth();
+      const endObj = addMonthsToYearMonth(startY, startM, discMonths - 1);
+      discountData = {
+        discountActive: true,
+        discountAmount: discAmt,
+        discountMonths: discMonths,
+        discountEndYear: endObj.year,
+        discountEndMonth: endObj.month,
+        regularAmount: regAmt
+      };
+    }
+
+    const contractToggle = document.getElementById('exp-rec-contract-toggle');
+    const hasContract = contractToggle ? contractToggle.checked : false;
+    let contractData = {};
+    if (hasContract) {
+      contractData = {
+        hasContractDetails: true,
+        contractNumber: (document.getElementById('exp-rec-contract-number').value || '').trim(),
+        minTermDate: document.getElementById('exp-rec-min-term').value || '',
+        noticePeriod: (document.getElementById('exp-rec-notice-period').value || '').trim(),
+        hotline: (document.getElementById('exp-rec-hotline').value || '').trim(),
+        contractNotes: (document.getElementById('exp-rec-notes').value || '').trim()
+      };
+    }
     
     if (isSplit) {
       const splitId = `split_rec_${Date.now()}`;
@@ -4456,7 +4898,10 @@ async function handleAddExpense(e) {
           weekday: weekday,
           startYear: recStartYear,
           startMonth: recStartMonth,
-          active: true
+          active: true,
+          ...trialData,
+          ...discountData,
+          ...contractData
         });
       });
       announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten gespeichert!`);
@@ -4474,7 +4919,10 @@ async function handleAddExpense(e) {
         weekday: weekday,
         startYear: recStartYear,
         startMonth: recStartMonth,
-        active: true
+        active: true,
+        ...trialData,
+        ...discountData,
+        ...contractData
       });
       announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
     }
@@ -4527,6 +4975,21 @@ async function handleAddExpense(e) {
   if (splitToggleReset && splitToggleReset.checked) {
     splitToggleReset.checked = false;
     toggleExpenseSplitPayment();
+  }
+  const trialReset = document.getElementById('exp-rec-trial-toggle');
+  if (trialReset && trialReset.checked) {
+    trialReset.checked = false;
+    toggleTrialSection('exp');
+  }
+  const discountReset = document.getElementById('exp-rec-discount-toggle');
+  if (discountReset && discountReset.checked) {
+    discountReset.checked = false;
+    toggleDiscountSection('exp');
+  }
+  const contractReset = document.getElementById('exp-rec-contract-toggle');
+  if (contractReset && contractReset.checked) {
+    contractReset.checked = false;
+    toggleContractSection('exp');
   }
   toggleExpenseFrequencyFields();
   updateOverview();
@@ -5005,6 +5468,80 @@ function openEditRecModal(recId) {
     populateEditRecCategories(rec.type, rec.category, rec.subcategory);
   }
 
+  // Vertrags-, Testphasen- & Pausenfelder vorbefüllen
+  const futureToggle = document.getElementById('edit-rec-future-price-toggle');
+  if (futureToggle) {
+    futureToggle.checked = !!rec.futurePriceActive;
+    toggleEditFuturePriceSection();
+    if (rec.futurePriceActive) {
+      document.getElementById('edit-rec-future-amount').value = rec.futureAmount || '';
+      if (rec.futureStartYear !== undefined && rec.futureStartMonth !== undefined) {
+        document.getElementById('edit-rec-future-month').value = `${rec.futureStartYear}-${String(rec.futureStartMonth + 1).padStart(2, '0')}`;
+      }
+    }
+  }
+
+  const pauseToggle = document.getElementById('edit-rec-pause-toggle');
+  if (pauseToggle) {
+    pauseToggle.checked = !!rec.pauseActive;
+    toggleEditPauseSection();
+    if (rec.pauseActive) {
+      if (rec.pauseStartYear !== undefined && rec.pauseStartMonth !== undefined) {
+        document.getElementById('edit-rec-pause-start-month').value = `${rec.pauseStartYear}-${String(rec.pauseStartMonth + 1).padStart(2, '0')}`;
+      }
+      if (rec.pauseEndYear !== undefined && rec.pauseEndMonth !== undefined) {
+        document.getElementById('edit-rec-pause-end-month').value = `${rec.pauseEndYear}-${String(rec.pauseEndMonth + 1).padStart(2, '0')}`;
+      }
+    }
+  }
+
+  const trialToggle = document.getElementById('edit-rec-trial-toggle');
+  if (trialToggle) {
+    trialToggle.checked = !!rec.trialActive;
+    toggleTrialSection('edit-rec');
+    if (rec.trialActive) {
+      document.getElementById('edit-rec-trial-unit').value = rec.trialUnit || 'days';
+      document.getElementById('edit-rec-trial-duration').value = rec.trialDuration || 14;
+      document.getElementById('edit-rec-trial-end').value = rec.trialEndDate || '';
+    }
+  }
+
+  const discToggle = document.getElementById('edit-rec-discount-toggle');
+  if (discToggle) {
+    discToggle.checked = !!rec.discountActive;
+    toggleDiscountSection('edit-rec');
+    if (rec.discountActive) {
+      document.getElementById('edit-rec-discount-amount').value = rec.discountAmount || '';
+      if (rec.discountEndYear !== undefined && rec.discountEndMonth !== undefined) {
+        document.getElementById('edit-rec-discount-end-month').value = `${rec.discountEndYear}-${String(rec.discountEndMonth + 1).padStart(2, '0')}`;
+      }
+      document.getElementById('edit-rec-discount-regular').value = rec.regularAmount || rec.amount || '';
+    }
+  }
+
+  const contractToggle = document.getElementById('edit-rec-contract-toggle');
+  if (contractToggle) {
+    contractToggle.checked = !!rec.hasContractDetails;
+    toggleContractSection('edit-rec');
+    if (rec.hasContractDetails) {
+      document.getElementById('edit-rec-contract-number').value = rec.contractNumber || '';
+      document.getElementById('edit-rec-min-term').value = rec.minTermDate || '';
+      document.getElementById('edit-rec-notice-period').value = rec.noticePeriod || '';
+      document.getElementById('edit-rec-hotline').value = rec.hotline || '';
+      document.getElementById('edit-rec-notes').value = rec.contractNotes || '';
+    }
+  }
+
+  const endToggle = document.getElementById('edit-rec-end-toggle');
+  if (endToggle) {
+    const hasEnd = rec.endYear !== undefined && rec.endMonth !== undefined;
+    endToggle.checked = hasEnd;
+    toggleEditEndSection();
+    if (hasEnd) {
+      document.getElementById('edit-rec-end-month').value = `${rec.endYear}-${String(rec.endMonth + 1).padStart(2, '0')}`;
+    }
+  }
+
   const modal = document.getElementById('edit-rec-modal');
   modal.style.display = 'flex';
   document.getElementById('edit-rec-amount').focus();
@@ -5037,6 +5574,93 @@ async function saveEditedRecurring(e) {
     const parts = editStartMonth.value.split('-');
     rec.startYear = parseInt(parts[0], 10);
     rec.startMonth = parseInt(parts[1], 10) - 1;
+  }
+
+  // Preiserhöhung
+  const futureToggle = document.getElementById('edit-rec-future-price-toggle');
+  if (futureToggle && futureToggle.checked) {
+    rec.futurePriceActive = true;
+    rec.futureAmount = parseFloat(document.getElementById('edit-rec-future-amount').value) || rec.amount;
+    const fVal = document.getElementById('edit-rec-future-month').value;
+    if (fVal && fVal.includes('-')) {
+      const parts = fVal.split('-');
+      rec.futureStartYear = parseInt(parts[0], 10);
+      rec.futureStartMonth = parseInt(parts[1], 10) - 1;
+    }
+  } else {
+    rec.futurePriceActive = false;
+  }
+
+  // Pausieren
+  const pauseToggle = document.getElementById('edit-rec-pause-toggle');
+  if (pauseToggle && pauseToggle.checked) {
+    rec.pauseActive = true;
+    const psVal = document.getElementById('edit-rec-pause-start-month').value;
+    const peVal = document.getElementById('edit-rec-pause-end-month').value;
+    if (psVal && psVal.includes('-') && peVal && peVal.includes('-')) {
+      const [psy, psm] = psVal.split('-');
+      const [pey, pem] = peVal.split('-');
+      rec.pauseStartYear = parseInt(psy, 10);
+      rec.pauseStartMonth = parseInt(psm, 10) - 1;
+      rec.pauseEndYear = parseInt(pey, 10);
+      rec.pauseEndMonth = parseInt(pem, 10) - 1;
+    }
+  } else {
+    rec.pauseActive = false;
+  }
+
+  // Gratis-Phase
+  const trialToggle = document.getElementById('edit-rec-trial-toggle');
+  if (trialToggle && trialToggle.checked) {
+    rec.trialActive = true;
+    rec.trialUnit = document.getElementById('edit-rec-trial-unit').value || 'days';
+    rec.trialDuration = parseInt(document.getElementById('edit-rec-trial-duration').value, 10) || 14;
+    rec.trialEndDate = document.getElementById('edit-rec-trial-end').value || '';
+  } else {
+    rec.trialActive = false;
+  }
+
+  // Rabatt-Phase
+  const discToggle = document.getElementById('edit-rec-discount-toggle');
+  if (discToggle && discToggle.checked) {
+    rec.discountActive = true;
+    rec.discountAmount = parseFloat(document.getElementById('edit-rec-discount-amount').value) || 0;
+    const deVal = document.getElementById('edit-rec-discount-end-month').value;
+    if (deVal && deVal.includes('-')) {
+      const [dey, dem] = deVal.split('-');
+      rec.discountEndYear = parseInt(dey, 10);
+      rec.discountEndMonth = parseInt(dem, 10) - 1;
+    }
+    rec.regularAmount = parseFloat(document.getElementById('edit-rec-discount-regular').value) || rec.amount;
+  } else {
+    rec.discountActive = false;
+  }
+
+  // Vertragsdaten
+  const contractToggle = document.getElementById('edit-rec-contract-toggle');
+  if (contractToggle && contractToggle.checked) {
+    rec.hasContractDetails = true;
+    rec.contractNumber = (document.getElementById('edit-rec-contract-number').value || '').trim();
+    rec.minTermDate = document.getElementById('edit-rec-min-term').value || '';
+    rec.noticePeriod = (document.getElementById('edit-rec-notice-period').value || '').trim();
+    rec.hotline = (document.getElementById('edit-rec-hotline').value || '').trim();
+    rec.contractNotes = (document.getElementById('edit-rec-notes').value || '').trim();
+  } else {
+    rec.hasContractDetails = false;
+  }
+
+  // Beenden / Auslaufen
+  const endToggle = document.getElementById('edit-rec-end-toggle');
+  if (endToggle && endToggle.checked) {
+    const endVal = document.getElementById('edit-rec-end-month').value;
+    if (endVal && endVal.includes('-')) {
+      const [ey, em] = endVal.split('-');
+      rec.endYear = parseInt(ey, 10);
+      rec.endMonth = parseInt(em, 10) - 1;
+    }
+  } else {
+    rec.endYear = undefined;
+    rec.endMonth = undefined;
   }
 
   if (type === 'transfer') {
@@ -5165,19 +5789,48 @@ function renderSettingsRecurringList() {
     else if (rec.interval === 'yearly') freqLabel = `Jährlich im ${MONTH_NAMES[parseInt(rec.yearlyMonth || 0, 10)]}`;
     else if (rec.interval === 'quarterly') freqLabel = 'Alle 3 Monate';
 
+    let statusBadge = '<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(76, 175, 80, 0.15); color: #2E7D32; margin-left: 6px;">🟢 Aktiv</span>';
+    if (rec.endYear !== undefined && rec.endMonth !== undefined) {
+      statusBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(244, 67, 54, 0.15); color: #C62828; margin-left: 6px;">🔴 Gekündigt zum ${MONTH_NAMES[rec.endMonth]} ${rec.endYear}</span>`;
+    } else if (rec.pauseActive && rec.pauseEndYear !== undefined && rec.pauseEndMonth !== undefined) {
+      statusBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(255, 193, 7, 0.2); color: #F57F17; margin-left: 6px;">⏸️ Pausiert bis ${MONTH_NAMES[rec.pauseEndMonth]} ${rec.pauseEndYear}</span>`;
+    } else if (rec.trialActive && rec.trialEndDate) {
+      statusBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(156, 39, 176, 0.15); color: #7B1FA2; margin-left: 6px;">🎁 Testphase bis ${formatDateGerman(rec.trialEndDate)}</span>`;
+    } else if (rec.discountActive && rec.discountEndYear !== undefined && rec.discountEndMonth !== undefined) {
+      statusBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(255, 152, 0, 0.2); color: #E65100; margin-left: 6px;">🏷️ Rabatt ${formatCurrency(rec.discountAmount)} bis ${MONTH_NAMES[rec.discountEndMonth]} ${rec.discountEndYear}</span>`;
+    } else if (rec.futurePriceActive && rec.futureStartYear !== undefined && rec.futureStartMonth !== undefined) {
+      statusBadge = `<span style="display: inline-block; padding: 2px 6px; font-size: 11px; font-weight: bold; border-radius: 4px; background: rgba(33, 150, 243, 0.15); color: #1565C0; margin-left: 6px;">📈 Ab ${MONTH_NAMES[rec.futureStartMonth]} ${rec.futureStartYear}: ${formatCurrency(rec.futureAmount)}</span>`;
+    }
+
+    let contractSub = '';
+    if (rec.hasContractDetails) {
+      const parts = [];
+      if (rec.contractNumber) parts.push(`Kd-Nr: ${escapeHTML(rec.contractNumber)}`);
+      if (rec.minTermDate) parts.push(`Mindestlaufzeit: ${formatDateGerman(rec.minTermDate)}`);
+      if (rec.noticePeriod) parts.push(`Frist: ${escapeHTML(rec.noticePeriod)}`);
+      if (rec.hotline) parts.push(`Hotline: ${escapeHTML(rec.hotline)}`);
+      if (parts.length > 0) {
+        contractSub = `<div style="font-size: 12px; color: var(--text-muted, #666); margin-top: 3px;">📝 ${parts.join(' | ')}</div>`;
+      }
+    }
+
     html += `
       <li class="tx-item" tabindex="0">
         <div class="tx-info">
           <span class="tx-icon" aria-hidden="true">🔁</span>
           <div class="tx-details">
-            <span class="tx-cat-name">${rec.name || rec.category}</span>
+            <div style="display: flex; align-items: center; flex-wrap: wrap;">
+              <span class="tx-cat-name">${rec.name || rec.category}</span>
+              ${statusBadge}
+            </div>
             <span class="tx-account-badge">${freqLabel} | Am ${rec.day}. des Monats | ${formatAccountName(rec.account || rec.fromAccount)}</span>
+            ${contractSub}
           </div>
         </div>
         <div class="tx-amount-col">
           <span class="tx-sum ${rec.type}">${rec.type === 'income' ? '+' : '-'} ${formatCurrency(rec.amount)}</span>
           <button type="button" class="btn-edit-tx" onclick="openEditRecModal('${rec.id}')">✏️ Bearbeiten</button>
-          <button type="button" class="btn-delete-tx" onclick="deleteRecurring('${rec.id}')">🗑️ Löschen</button>
+          <button type="button" class="btn-delete-tx" onclick="openEndOrDeleteRecModal('${rec.id}')">🗑️ Beenden / Löschen</button>
         </div>
       </li>
     `;
