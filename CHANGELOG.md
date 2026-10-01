@@ -1,6 +1,17 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.6.0 (Split-Einzahlung auf mehrere Konten)
+*Datum: 01. Oktober 2026*
+
+### 🔀 1. Split-Einzahlung & Einnahmen-Aufteilung auf mehrere Konten
+- **Geldeingänge flexibel verteilen:** Einnahmen (z. B. Gehalt, Lohn, Boni, Geschenke oder Verkäufe) können nun direkt auf beliebig viele Konten gleichzeitig aufgeteilt werden (z. B. 1.200 € aufs Girokonto und 300 € direkt aufs Sparkonto).
+- **Einmalig & Dauerhaft:** Funktioniert sowohl bei einmaligen Geldeingängen als auch bei regelmäßigen Daueraufträgen.
+- **Automatische Restbetragsberechnung:** Sobald der Betrag für das erste Konto eingetragen wird, füllt die App den restlichen Betrag automatisch für das zweite Konto aus.
+- **Cent-genaue Validierung & Barrierefreiheit:** Farbkodierte Zusammenfassung (Aufgeteilt: X,XX € von Y,YY €) und Screenreader-Ansagen für NVDA verhindern Rundungsfehler und Fehlbuchungen.
+
+---
+
 ## ⚡ Version 6.5.0 (Auto-Deckungskonto wie PayPal, Bargeld-Zählhelfer & Kontodetails)
 *Datum: 01. Oktober 2026*
 

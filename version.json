@@ -1,8 +1,9 @@
 {
-  "version": "6.5.0",
+  "version": "6.6.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-10-01",
   "features": [
+    "Optionale Split-Einzahlung bei Einnahmen: Einnahmen können ab sofort auf beliebig viele Konten gleichzeitig aufgeteilt werden (z. B. Gehalt oder Geldgeschenk teils aufs Girokonto und teils aufs Sparkonto) mit automatischer Restbetragsberechnung und NVDA-Unterstützung",
     "Automatischer Deckungsausgleich (wie bei PayPal): Hinterlege bei jedem Konto ein Deckungskonto. Bei unzureichendem Guthaben wird die fehlende Differenz automatisch ausgeglichen – aber nur dann, wenn das Guthaben wirklich nicht ausreicht",
     "Bargeld-Zählhelfer (Münz- & Scheinezähler): Bequemes Zählen von Portemonnaie und Spardose mit Plus/Minus-Tasten UND direkten Eingabefeldern für alle Scheine (200€ bis 5€) und Münzen (2€ bis 1ct) mit Live-Summe und 1-Klick-Übernahme",
     "Erweiterte Kontoinformationen & Bankdaten: Sichere Hinterlegung von Bankname, IBAN mit 4er-Block-Formatierung, BIC, Kontoinhaber, Kundennummer, Dispolimit und Notizen",

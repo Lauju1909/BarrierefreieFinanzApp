@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.5.0';
+const CURRENT_APP_VERSION = 'v6.6.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -2316,6 +2316,15 @@ function populateAllAccountDropdowns() {
 
     applySymbolsToOptions(sel);
   });
+
+  const expSplitToggle = document.getElementById('exp-split-toggle');
+  if (expSplitToggle && expSplitToggle.checked && typeof renderExpenseSplitRows === 'function') {
+    renderExpenseSplitRows();
+  }
+  const incSplitToggle = document.getElementById('inc-split-toggle');
+  if (incSplitToggle && incSplitToggle.checked && typeof renderIncomeSplitRows === 'function') {
+    renderIncomeSplitRows();
+  }
 }
 
 function renderSettingsAccountsList() {
@@ -2748,6 +2757,7 @@ async function applyCashCounterTotal() {
     const incInput = document.getElementById('inc-amount');
     if (incInput) {
       incInput.value = total.toFixed(2);
+      if (typeof handleMainIncomeAmountInput === 'function') handleMainIncomeAmountInput();
     }
     const incAccountSelect = document.getElementById('inc-account');
     if (incAccountSelect) {
@@ -2760,6 +2770,7 @@ async function applyCashCounterTotal() {
     const expInput = document.getElementById('exp-amount');
     if (expInput) {
       expInput.value = total.toFixed(2);
+      if (typeof handleMainExpenseAmountInput === 'function') handleMainExpenseAmountInput();
     }
     const expAccountSelect = document.getElementById('exp-account');
     if (expAccountSelect) {
@@ -4485,6 +4496,24 @@ function handleMainExpenseAmountInput() {
   }
 }
 
+function handleMainIncomeAmountInput() {
+  const mainAmountInput = document.getElementById('inc-amount');
+  const splitToggle = document.getElementById('inc-split-toggle');
+  if (splitToggle && splitToggle.checked) {
+    const totalAmt = parseFloat(mainAmountInput.value) || 0;
+    if (incomeSplitRows && incomeSplitRows.length === 2 && incomeSplitRows[0].amount !== '') {
+      const amt0 = parseFloat(incomeSplitRows[0].amount) || 0;
+      if (totalAmt >= amt0) {
+        const remainder = Math.round((totalAmt - amt0) * 100) / 100;
+        incomeSplitRows[1].amount = remainder;
+        const secondInput = document.getElementById('inc-split-amt-1');
+        if (secondInput) secondInput.value = remainder;
+      }
+    }
+    updateIncomeSplitSummary();
+  }
+}
+
 function handleInstallmentTypeChange() {
   const type = document.getElementById('exp-installment-type') ? document.getElementById('exp-installment-type').value : 'ratenkauf';
   const interestGroup = document.getElementById('group-installment-interest');
@@ -5425,11 +5454,181 @@ async function handleAddExpense(e) {
   switchView('overview');
 }
 
+// ----------------------------------------------------------------------------
+// OPTIONALE SPLIT-EINZAHLUNG FÜR EINNAHMEN
+// ----------------------------------------------------------------------------
+let incomeSplitRows = [];
+
+function getIncomeSplitAccountOptionsHtml(selectedAccId) {
+  ensureAccountsInitialized();
+  return appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    const sel = (acc.id === selectedAccId) ? 'selected' : '';
+    return `<option value="${escapeHTML(acc.id)}" ${sel}>${escapeHTML(acc.name)}</option>`;
+  }).join('');
+}
+
+function toggleIncomeSplitPayment() {
+  const toggle = document.getElementById('inc-split-toggle');
+  const splitSec = document.getElementById('inc-split-section');
+  const accGroup = document.getElementById('inc-account-group');
+  const singleAcc = document.getElementById('inc-account');
+  const isSplit = toggle && toggle.checked;
+
+  if (splitSec) splitSec.style.display = isSplit ? 'block' : 'none';
+  if (accGroup) accGroup.style.display = isSplit ? 'none' : 'block';
+  if (singleAcc) singleAcc.required = !isSplit;
+
+  if (isSplit) {
+    if (!incomeSplitRows || incomeSplitRows.length === 0) {
+      initIncomeSplitRows();
+    } else {
+      renderIncomeSplitRows();
+    }
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Split-Einzahlung aktiviert. Du kannst den Betrag nun auf mehrere Konten aufteilen.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Split-Einzahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
+    }
+  }
+}
+
+function initIncomeSplitRows() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('inc-amount').value) || 0;
+  const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
+  const acc2 = appState.accounts[1] ? appState.accounts[1].id : (appState.accounts[0] ? appState.accounts[0].id : 'cash');
+
+  const half = Math.round((totalAmt / 2) * 100) / 100;
+  const rest = Math.round((totalAmt - half) * 100) / 100;
+
+  incomeSplitRows = [
+    { account: acc1, amount: half > 0 ? half : '' },
+    { account: acc2, amount: rest > 0 ? rest : '' }
+  ];
+  renderIncomeSplitRows();
+}
+
+function renderIncomeSplitRows() {
+  const container = document.getElementById('inc-split-rows-container');
+  if (!container) return;
+
+  container.innerHTML = incomeSplitRows.map((row, idx) => {
+    const canRemove = incomeSplitRows.length > 2;
+    return `
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 160px;">
+          <label for="inc-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Ziel-Konto ${idx + 1}:</strong>
+          </label>
+          <select id="inc-split-acc-${idx}" class="large-select" onchange="onIncomeSplitAccountChange(${idx}, this.value)">
+            ${getIncomeSplitAccountOptionsHtml(row.account)}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 120px;">
+          <label for="inc-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teilbetrag (€):</strong>
+          </label>
+          <input type="number" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
+        </div>
+        ${canRemove ? `
+          <button type="button" class="btn btn-secondary" onclick="removeIncomeSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Ziel-Konto ${idx + 1} entfernen">
+            🗑️
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  updateIncomeSplitSummary();
+}
+
+function addIncomeSplitRow() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('inc-amount').value) || 0;
+  const currentSum = incomeSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const diff = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
+
+  const usedAccs = incomeSplitRows.map(r => r.account);
+  const unusedAcc = appState.accounts.find(a => !usedAccs.includes(a.id));
+  const newAccId = unusedAcc ? unusedAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
+
+  incomeSplitRows.push({
+    account: newAccId,
+    amount: diff > 0 ? diff : ''
+  });
+
+  renderIncomeSplitRows();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Ziel-Konto ${incomeSplitRows.length} hinzugefügt.`);
+  }
+}
+
+function removeIncomeSplitRow(idx) {
+  if (incomeSplitRows.length <= 2) return;
+  incomeSplitRows.splice(idx, 1);
+  renderIncomeSplitRows();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Konto entfernt. Verbleibend: ${incomeSplitRows.length} Konten.`);
+  }
+}
+
+function onIncomeSplitAccountChange(idx, newAcc) {
+  if (incomeSplitRows[idx]) {
+    incomeSplitRows[idx].account = newAcc;
+  }
+}
+
+function onIncomeSplitAmountInput(idx, val) {
+  const amt = parseFloat(val);
+  if (incomeSplitRows[idx]) {
+    incomeSplitRows[idx].amount = isNaN(amt) ? '' : amt;
+  }
+
+  const totalAmt = parseFloat(document.getElementById('inc-amount').value) || 0;
+  if (incomeSplitRows.length === 2 && idx === 0 && !isNaN(amt) && totalAmt > amt) {
+    const remainder = Math.round((totalAmt - amt) * 100) / 100;
+    incomeSplitRows[1].amount = remainder;
+    const secondInput = document.getElementById('inc-split-amt-1');
+    if (secondInput) secondInput.value = remainder;
+  }
+
+  updateIncomeSplitSummary();
+}
+
+function updateIncomeSplitSummary() {
+  const summaryEl = document.getElementById('inc-split-summary');
+  if (!summaryEl) return;
+
+  const totalAmt = parseFloat(document.getElementById('inc-amount').value) || 0;
+  const currentSum = incomeSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const diff = Math.round((totalAmt - currentSum) * 100) / 100;
+
+  if (Math.abs(diff) < 0.005 && totalAmt > 0) {
+    summaryEl.style.borderColor = '#2E7D32';
+    summaryEl.style.color = '#1B5E20';
+    summaryEl.style.background = 'rgba(76, 175, 80, 0.1)';
+    summaryEl.innerHTML = `🟢 <strong>Vollständig aufgeteilt:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (Rest: 0,00 €)`;
+  } else if (diff > 0) {
+    summaryEl.style.borderColor = '#F57C00';
+    summaryEl.style.color = '#E65100';
+    summaryEl.style.background = 'rgba(255, 152, 0, 0.1)';
+    summaryEl.innerHTML = `🟡 <strong>Aufgeteilt:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (Noch offen: ${formatCurrency(diff)})`;
+  } else {
+    summaryEl.style.borderColor = '#D32F2F';
+    summaryEl.style.color = '#B71C1C';
+    summaryEl.style.background = 'rgba(244, 67, 54, 0.1)';
+    summaryEl.innerHTML = `🔴 <strong>Überhang:</strong> ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)} (${formatCurrency(Math.abs(diff))} zu viel)`;
+  }
+}
+
 async function handleAddIncome(e) {
   e.preventDefault();
   const amount = parseFloat(document.getElementById('inc-amount').value);
   const freq = document.getElementById('inc-frequency').value;
-  const account = document.getElementById('inc-account').value;
+  const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : 'bank';
   const category = document.getElementById('inc-category').value;
   const subcategory = document.getElementById('inc-subcategory') ? document.getElementById('inc-subcategory').value : '';
   const date = document.getElementById('inc-date').value;
@@ -5440,6 +5639,27 @@ async function handleAddIncome(e) {
   const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
+
+  // Split-Einzahlung prüfen
+  const splitToggle = document.getElementById('inc-split-toggle');
+  const isSplit = splitToggle && splitToggle.checked;
+  let splitRowsValid = [];
+
+  if (isSplit) {
+    splitRowsValid = incomeSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    if (splitRowsValid.length < 2) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Einzahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.', true);
+      alert('⚠️ Bitte gib mindestens 2 Konten mit Beträgen für die Aufteilung der Einnahme an.');
+      return;
+    }
+    const splitSum = Math.round(splitRowsValid.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
+    const expectedTotal = Math.round(amount * 100) / 100;
+    if (Math.abs(splitSum - expectedTotal) > 0.01) {
+      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
+      alert(`⚠️ Die Summe der aufgeteilten Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
+      return;
+    }
+  }
 
   if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('inc-rec-day').value, 10) || 1;
@@ -5454,40 +5674,103 @@ async function handleAddIncome(e) {
       recStartMonth = parseInt(parts[1], 10) - 1;
     }
 
-    appState.recurring.push({
-      id: `rec_${Date.now()}`,
-      type: 'income',
-      account: account,
-      amount: amount,
-      category: category,
-      subcategory: subcategory,
-      name: desc || (subcategory ? `${category} (${subcategory})` : category),
-      interval: freq,
-      day: day,
-      weekday: weekday,
-      startYear: recStartYear,
-      startMonth: recStartMonth,
-      active: true
-    });
-    announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
+    if (isSplit) {
+      const splitId = `split_rec_inc_${Date.now()}`;
+      splitRowsValid.forEach((row, idx) => {
+        const rowAmt = parseFloat(row.amount);
+        const accName = formatAccountName(row.account);
+        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
+        const recName = desc ? `${desc} ${partText}` : `${category} ${partText}`;
+
+        appState.recurring.push({
+          id: `rec_${Date.now()}_${idx}`,
+          splitId: splitId,
+          splitIndex: idx + 1,
+          splitTotalCount: splitRowsValid.length,
+          splitTotalAmount: amount,
+          type: 'income',
+          account: row.account,
+          amount: rowAmt,
+          category: category,
+          subcategory: subcategory,
+          name: recName,
+          interval: freq,
+          day: day,
+          weekday: weekday,
+          startYear: recStartYear,
+          startMonth: recStartMonth,
+          active: true
+        });
+      });
+      announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten gespeichert!`);
+    } else {
+      appState.recurring.push({
+        id: `rec_${Date.now()}`,
+        type: 'income',
+        account: account,
+        amount: amount,
+        category: category,
+        subcategory: subcategory,
+        name: desc || (subcategory ? `${category} (${subcategory})` : category),
+        interval: freq,
+        day: day,
+        weekday: weekday,
+        startYear: recStartYear,
+        startMonth: recStartMonth,
+        active: true
+      });
+      announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
+    }
   } else {
-    appState.transactions.push({
-      id: `tx_${Date.now()}`,
-      type: 'income',
-      account: account,
-      amount: amount,
-      category: category,
-      subcategory: subcategory,
-      description: desc,
-      isPlanned: isPlanned,
-      date: date
-    });
-    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    if (isSplit) {
+      const splitId = `split_inc_${Date.now()}`;
+      splitRowsValid.forEach((row, idx) => {
+        const rowAmt = parseFloat(row.amount);
+        const accName = formatAccountName(row.account);
+        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
+        const finalDesc = desc ? `${desc} ${partText}` : `Split-Einzahlung ${partText}`;
+
+        appState.transactions.push({
+          id: `tx_${Date.now()}_${idx}`,
+          splitId: splitId,
+          splitIndex: idx + 1,
+          splitTotalCount: splitRowsValid.length,
+          splitTotalAmount: amount,
+          type: 'income',
+          account: row.account,
+          amount: rowAmt,
+          category: category,
+          subcategory: subcategory,
+          description: finalDesc,
+          isPlanned: isPlanned,
+          date: date
+        });
+      });
+      announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    } else {
+      appState.transactions.push({
+        id: `tx_${Date.now()}`,
+        type: 'income',
+        account: account,
+        amount: amount,
+        category: category,
+        subcategory: subcategory,
+        description: desc,
+        isPlanned: isPlanned,
+        date: date
+      });
+      announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+    }
   }
 
   await saveStateToEncryptedStorage();
   document.getElementById('form-add-income').reset();
   document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+  const splitToggleReset = document.getElementById('inc-split-toggle');
+  if (splitToggleReset && splitToggleReset.checked) {
+    splitToggleReset.checked = false;
+    toggleIncomeSplitPayment();
+  }
   toggleIncomeFrequencyFields();
   updateOverview();
   switchView('overview');

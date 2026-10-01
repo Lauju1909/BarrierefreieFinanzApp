@@ -21,12 +21,30 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.5.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.6.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.6.0 (Split-Einzahlung auf mehrere Konten)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🔀 Split-Einzahlung &amp; Einnahmen-Aufteilung:</strong><br>
+Einnahmen können ab sofort auf beliebig viele Konten gleichzeitig aufgeteilt werden (z. B. Gehalt oder Geschenk teils aufs Girokonto und teils direkt aufs Sparkonto) – sowohl bei einmaligen als auch bei dauerhaften Einnahmen.
+</li>
+<li>
+<strong>⚡ Automatische Restbetrags-Berechnung:</strong><br>
+Beim Eintragen der Teilbeträge wird der verbleibende Betrag für das nächste Konto automatisch berechnet.
+</li>
+<li>
+<strong>🎯 Cent-genaue Validierung &amp; Screenreader-Ansagen:</strong><br>
+Farbcodierte Statusanzeige und barrierefreie NVDA-Rückmeldungen garantieren, dass die Summe aller Teilbeträge exakt dem Einnahmebetrag entspricht.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.5.0 (Auto-Deckungskonto wie PayPal, Bargeld-Zähler &amp; Kontodetails)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -2299,7 +2317,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off">
+<input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()">
 </div>
 
 <div class="form-group">
@@ -2317,7 +2335,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 
-<div class="form-group">
+<div class="form-group" id="inc-account-group">
 <label for="inc-account" class="field-label">
 <strong>Auf welches Konto?</strong><span class="required-star" aria-hidden="true">*</span>
 </label>
@@ -2327,6 +2345,34 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="cash">💵 Bargeld (ins Portemonnaie bekommen)</option>
 <option value="savings">📈 Direkt aufs Tagesgeldkonto (Sparen)</option>
 </select>
+</div>
+
+<!-- OPTIONALE SPLIT-EINZAHLUNG: EINNAHME AUF MEHRERE KONTEN AUFTEILEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="inc-split-toggle" onchange="toggleIncomeSplitPayment()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="inc-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: var(--text-primary);">
+      🔀 Betrag auf mehrere Konten aufteilen (Split-Einzahlung, z. B. Teil Girokonto &amp; Teil Sparkonto)
+    </label>
+  </div>
+</div>
+
+<div id="inc-split-section" class="settings-box" style="display: none; border-left: 8px solid #2E7D32; background: rgba(76, 175, 80, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #1B5E20;">🔀 Split-Einzahlung: Aufteilung auf Konten</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege fest, wie viel Euro auf welches Konto eingezahlt oder gutgeschrieben werden. Die Summe aller Konten muss genau dem Gesamteinnahmebetrag entsprechen:</p>
+
+  <div id="inc-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
+    <!-- Wird dynamisch befüllt -->
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
+    <button type="button" id="inc-split-add-btn" class="btn btn-secondary" onclick="addIncomeSplitRow()" style="font-size: 13px; padding: 6px 12px;">
+      ➕ <strong>Weiteres Konto hinzufügen</strong>
+    </button>
+    <div id="inc-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #A5D6A7; color: #1B5E20;">
+      Aufgeteilt: 0,00 € von 0,00 €
+    </div>
+  </div>
 </div>
 
 <div class="form-group">
@@ -2648,7 +2694,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.5.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.6.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3292,7 +3338,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.5.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.6.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
