@@ -2130,11 +2130,6 @@ function renderAccountsViewList() {
             </div>
           </div>
           <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            ${isCash ? `
-              <button type="button" class="btn btn-secondary" onclick="openCashCounterModal('${acc.id}')" title="Bargeld im Portemonnaie mit Münzen &amp; Scheinen zählen" aria-label="Bargeld für ${escapeHTML(acc.name)} zählen" style="padding: 8px 14px; background: rgba(46, 125, 50, 0.08); border-color: #2E7D32; color: #2E7D32; font-weight: bold;">
-                🪙 Zählen
-              </button>
-            ` : ''}
             <button type="button" class="btn btn-secondary" onclick="openAccountModal('${acc.id}')" title="Konto bearbeiten" aria-label="Konto ${escapeHTML(acc.name)} bearbeiten" style="padding: 8px 14px;">
               ${editBtnText}
             </button>
@@ -2695,6 +2690,12 @@ function closeCashCounterModal() {
   if (currentCashCounterTarget === 'from-modal') {
     const balInput = document.getElementById('account-modal-balance');
     if (balInput) balInput.focus();
+  } else if (currentCashCounterTarget === 'income') {
+    const incInput = document.getElementById('inc-amount');
+    if (incInput) incInput.focus();
+  } else if (currentCashCounterTarget === 'expense') {
+    const expInput = document.getElementById('exp-amount');
+    if (expInput) expInput.focus();
   }
 }
 
@@ -2743,6 +2744,30 @@ async function applyCashCounterTotal() {
     }
     closeCashCounterModal();
     announceNVDA(`Gezähltes Bargeld von ${formatCurrency(total)} als Startguthaben übernommen.`);
+  } else if (currentCashCounterTarget === 'income') {
+    const incInput = document.getElementById('inc-amount');
+    if (incInput) {
+      incInput.value = total.toFixed(2);
+    }
+    const incAccountSelect = document.getElementById('inc-account');
+    if (incAccountSelect) {
+      const hasCash = Array.from(incAccountSelect.options).some(o => o.value === 'cash');
+      if (hasCash) incAccountSelect.value = 'cash';
+    }
+    closeCashCounterModal();
+    announceNVDA(`Gezähltes Bargeld von ${formatCurrency(total)} als Einnahme-Betrag übernommen.`);
+  } else if (currentCashCounterTarget === 'expense') {
+    const expInput = document.getElementById('exp-amount');
+    if (expInput) {
+      expInput.value = total.toFixed(2);
+    }
+    const expAccountSelect = document.getElementById('exp-account');
+    if (expAccountSelect) {
+      const hasCash = Array.from(expAccountSelect.options).some(o => o.value === 'cash');
+      if (hasCash) expAccountSelect.value = 'cash';
+    }
+    closeCashCounterModal();
+    announceNVDA(`Gezähltes Bargeld von ${formatCurrency(total)} als Ausgabe-Betrag übernommen.`);
   } else {
     // Ziel ist eine Konto-ID (z. B. 'cash')
     const accId = currentCashCounterTarget;
