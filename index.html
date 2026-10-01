@@ -21,12 +21,38 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.4.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.5.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.5.0 (Auto-Deckungskonto wie PayPal, Bargeld-Zähler &amp; Kontodetails)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>🛡️ Automatisches Deckungskonto (wie bei PayPal):</strong><br>
+Hinterlege bei jedem Konto (z. B. PayPal) ein Deckungskonto (z. B. Girokonto). Nur bei unzureichendem Guthaben wird der fehlende Betrag automatisch ausgeglichen.
+</li>
+<li>
+<strong>🪙 Bargeld-Zählhelfer (Münz- &amp; Scheinezähler):</strong><br>
+Bargeld im Portemonnaie stressfrei mit Plus/Minus-Tasten UND direkten Eingabefeldern für alle Scheine und Münzen zusammenzählen und mit einem Klick übernehmen.
+</li>
+<li>
+<strong>ℹ️ Erweiterte Kontoinformationen &amp; Bankdaten:</strong><br>
+Bankname, IBAN mit 4er-Block-Formatierung, BIC, Kontoinhaber, Dispolimit und Notizen sicher im AES-256 Tresor erfassen.
+</li>
+<li>
+<strong>💰 Flexibles Startguthaben &amp; Live-Kontostand:</strong><br>
+Startguthaben beim Erstellen und Bearbeiten flexibel anpassen mit Live-Anzeige des aktuellen berechneten Kontostands.
+</li>
+<li>
+<strong>⚠️ Intelligente Liquiditätsprüfung:</strong><br>
+Berücksichtigt automatische Deckungskonten und Dispolimits centgenau bei drohender Unterdeckung bis zum Monatsende.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.4.0 (Vertrags-Manager, Probe-Abos, Preiserhöhungen &amp; Historien-Schutz)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -1019,16 +1045,29 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
  MODAL DIALOG: KONTO ANLEGEN / BEARBEITEN
  ========================================================================= -->
 <div id="account-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="account-modal-heading" style="display: none;">
-<div class="modal-dialog-box" style="max-width: 600px;">
+<div class="modal-dialog-box" style="max-width: 620px;">
 <h2 id="account-modal-heading" tabindex="-1">Konto verwalten</h2>
 <p class="field-hint">Lege hier ein neues Konto an oder passe ein bestehendes Konto an:</p>
  
 <form id="form-account" onsubmit="saveAccount(event)" class="accessible-form" style="margin-top: 16px;">
 <input type="hidden" id="account-modal-id">
 
+<!-- Aktueller Saldo (nur sichtbar beim Bearbeiten) -->
+<div id="account-modal-current-balance-box" style="display: none; background: rgba(33, 150, 243, 0.08); border-left: 5px solid #2196F3; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div>
+      <span style="font-size: 13px; color: var(--text-secondary); display: block;">Aktueller berechneter Kontostand:</span>
+      <strong id="account-modal-current-balance-val" style="font-size: 18px; color: var(--text-primary);">0,00 €</strong>
+    </div>
+    <button type="button" class="btn btn-secondary" onclick="syncInitialBalanceToCurrent()" style="padding: 4px 10px; font-size: 12px;" title="Setzt das Startguthaben so, dass der aktuelle Saldo exakt diesem Wert entspricht">
+      🔄 Saldo auf Startguthaben übernehmen
+    </button>
+  </div>
+</div>
+
 <div class="form-group">
   <label for="account-modal-name" class="field-label"><strong>Name des Kontos:</strong><span class="required-star">*</span></label>
-  <input type="text" id="account-modal-name" class="large-input" placeholder="z. B. ING Girokonto, Trade Republic Depot, Notgroschen..." required>
+  <input type="text" id="account-modal-name" class="large-input" placeholder="z. B. ING Girokonto, PayPal, Bargeld..." required>
 </div>
 
 <div class="form-row-2">
@@ -1047,7 +1086,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </select>
   </div>
   <div class="form-group">
-    <label for="account-modal-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <label for="account-modal-balance" class="field-label" style="margin: 0;"><strong>Startguthaben in Euro (€):</strong></label>
+      <button type="button" class="btn btn-secondary" id="btn-open-cash-counter-from-modal" onclick="openCashCounterModal('from-modal')" style="padding: 2px 8px; font-size: 11px;" title="Münz- und Scheinezähler öffnen">
+        🪙 Zähler
+      </button>
+    </div>
     <input type="number" step="0.01" id="account-modal-balance" class="large-input" placeholder="0,00" value="0.00">
   </div>
 </div>
@@ -1055,6 +1099,77 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-group">
   <label for="account-modal-hint" class="field-label"><strong>Hinweis / Verwendung (optional):</strong></label>
   <input type="text" id="account-modal-hint" class="large-input" placeholder="z. B. Miete &amp; Gehalt, Notgroschen, Taschengeld...">
+</div>
+
+<!-- =========================================================================
+     NEU: AUTOMATISCHES DECKUNGSKONTO (WIE BEI PAYPAL)
+     ========================================================================= -->
+<div class="form-group" style="margin-top: 14px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="account-modal-backup-toggle" onchange="toggleAccountBackupSection()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="account-modal-backup-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      🛡️ Automatisches Deckungskonto aktivieren (wie bei PayPal)
+    </label>
+  </div>
+</div>
+<div id="account-modal-backup-section" class="settings-box" style="display: none; border-left: 6px solid #0070BA; background: rgba(0, 112, 186, 0.06); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #0070BA; font-size: 15px;">🛡️ Deckungskonto / Referenzkonto festlegen</h4>
+  <p style="font-size: 13px; margin: 0 0 10px 0;">
+    Wenn auf diesem Konto bei einer Zahlung nicht genügend Geld vorhanden ist, wird die fehlende Differenz automatisch vom gewählten Deckungskonto ausgeglichen. Reicht das Guthaben auf diesem Konto aus, bleibt das Deckungskonto unberührt:
+  </p>
+  <div class="form-group">
+    <label for="account-modal-backup-account" class="field-label" style="font-size: 13px;"><strong>Geld einziehen von welchem Konto (Deckungskonto):</strong></label>
+    <select id="account-modal-backup-account" class="large-select"></select>
+  </div>
+</div>
+
+<!-- =========================================================================
+     NEU: BANKDATEN & KONTO-INFORMATIONEN
+     ========================================================================= -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 8px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="account-modal-details-toggle" onchange="toggleAccountDetailsSection()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="account-modal-details-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-primary);">
+      ℹ️ Bankdaten &amp; erweiterte Kontoinformationen erfassen (optional)
+    </label>
+  </div>
+</div>
+<div id="account-modal-details-section" class="settings-box" style="display: none; border-left: 6px solid #2196F3; background: rgba(33, 150, 243, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 12px;">
+  <h4 style="margin: 0 0 6px 0; color: #1976D2; font-size: 15px;">🏦 Bankverbindung &amp; Konditionen</h4>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="account-modal-bank" class="field-label" style="font-size: 13px;"><strong>Bankname / Kreditinstitut:</strong></label>
+      <input type="text" id="account-modal-bank" class="large-input" placeholder="z. B. ING, Sparkasse, DKB, PayPal">
+    </div>
+    <div class="form-group">
+      <label for="account-modal-owner" class="field-label" style="font-size: 13px;"><strong>Kontoinhaber:</strong></label>
+      <input type="text" id="account-modal-owner" class="large-input" placeholder="z. B. Max Mustermann">
+    </div>
+  </div>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="account-modal-iban" class="field-label" style="font-size: 13px;"><strong>IBAN:</strong></label>
+      <input type="text" id="account-modal-iban" class="large-input" placeholder="DE12 3456 7890 1234 5678 90" style="font-family: monospace; letter-spacing: 1px;" oninput="formatIbanInput(this)">
+    </div>
+    <div class="form-group">
+      <label for="account-modal-bic" class="field-label" style="font-size: 13px;"><strong>BIC / SWIFT:</strong></label>
+      <input type="text" id="account-modal-bic" class="large-input" placeholder="z. B. INGDDEFFXXX" style="font-family: monospace;">
+    </div>
+  </div>
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="account-modal-number" class="field-label" style="font-size: 13px;"><strong>Kundennummer / Login-Mail:</strong></label>
+      <input type="text" id="account-modal-number" class="large-input" placeholder="z. B. PayPal-Email oder Kundennummer">
+    </div>
+    <div class="form-group">
+      <label for="account-modal-dispo" class="field-label" style="font-size: 13px;"><strong>Dispolimit / Kreditrahmen in Euro (€):</strong></label>
+      <input type="number" step="0.01" min="0" id="account-modal-dispo" class="large-input" placeholder="0,00">
+    </div>
+  </div>
+  <div class="form-group" style="margin-top: 6px;">
+    <label for="account-modal-notes" class="field-label" style="font-size: 13px;"><strong>Notizen &amp; Konditionen:</strong></label>
+    <input type="text" id="account-modal-notes" class="large-input" placeholder="z. B. Kostenlos ab 700€ Eingang, Kartensperre: 116 116">
+  </div>
 </div>
 
 <div class="form-actions" style="margin-top: 16px;">
@@ -1066,6 +1181,201 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </button>
 </div>
 </form>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: BARGELD-ZÄHLHELFER (MÜNZ- & SCHEINEZÄHLER)
+ ========================================================================= -->
+<div id="cash-counter-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cash-counter-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 680px; max-height: 90vh; overflow-y: auto;">
+  <h2 id="cash-counter-heading" tabindex="-1" style="margin: 0 0 6px 0; color: #2E7D32;">
+    🪙 Bargeld-Zählhelfer (Münzen &amp; Scheine)
+  </h2>
+  <p class="field-hint" style="margin-bottom: 14px;">
+    Zähle dein Bargeld im Portemonnaie oder in der Spardose. Nutze die <strong>Plus- und Minus-Tasten</strong> oder tippe die Stückzahl <strong>direkt in die Eingabefelder</strong> ein:
+  </p>
+
+  <div style="background: rgba(46, 125, 50, 0.08); border-left: 6px solid #2E7D32; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div>
+      <span style="font-size: 13px; color: var(--text-secondary); display: block;">Gesamtsumme gezählt:</span>
+      <strong id="cash-counter-total" style="font-size: 26px; color: #2E7D32;">0,00 €</strong>
+    </div>
+    <div style="display: flex; gap: 6px;">
+      <button type="button" class="btn btn-secondary" onclick="resetCashCounter()" style="padding: 6px 12px; font-size: 13px;">
+        🔄 Alles auf 0
+      </button>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+    <!-- SPALTE 1: BANKNOTEN / SCHEINE -->
+    <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #1976D2; border-bottom: 2px solid #1976D2; padding-bottom: 4px;">
+        💶 Banknoten / Scheine
+      </h3>
+      <div id="cash-notes-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- 200 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">200 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-200', -1)" aria-label="200 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-200" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 200 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-200', 1)" aria-label="200 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-200" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 100 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">100 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-100', -1)" aria-label="100 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-100" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 100 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-100', 1)" aria-label="100 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-100" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 50 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">50 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-50', -1)" aria-label="50 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-50" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 50 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-50', 1)" aria-label="50 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-50" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 20 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">20 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-20', -1)" aria-label="20 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-20" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 20 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-20', 1)" aria-label="20 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-20" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 10 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">10 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-10', -1)" aria-label="10 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-10" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 10 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-10', 1)" aria-label="10 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-10" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 5 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">5 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-5', -1)" aria-label="5 Euro Scheine minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-note-5" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 5 Euro Scheine">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('note-5', 1)" aria-label="5 Euro Scheine plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-note-5" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPALTE 2: HARTGELD / MÜNZEN -->
+    <div style="background: var(--card-bg, #ffffff); border: 1px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 10px 0; font-size: 15px; color: #F57F17; border-bottom: 2px solid #F57F17; padding-bottom: 4px;">
+        🪙 Hartgeld / Münzen
+      </h3>
+      <div id="cash-coins-list" style="display: flex; flex-direction: column; gap: 8px;">
+        <!-- 2 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">2,00 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-200', -1)" aria-label="2 Euro Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-200" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 2 Euro Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-200', 1)" aria-label="2 Euro Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-200" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 1 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">1,00 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-100', -1)" aria-label="1 Euro Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-100" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 1 Euro Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-100', 1)" aria-label="1 Euro Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-100" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,50 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,50 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-50', -1)" aria-label="50 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-50" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 50 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-50', 1)" aria-label="50 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-50" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,20 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,20 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-20', -1)" aria-label="20 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-20" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 20 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-20', 1)" aria-label="20 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-20" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,10 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,10 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-10', -1)" aria-label="10 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-10" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 10 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-10', 1)" aria-label="10 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-10" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,05 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,05 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-5', -1)" aria-label="5 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-5" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 5 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-5', 1)" aria-label="5 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-5" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,02 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,02 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-2', -1)" aria-label="2 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-2" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 2 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-2', 1)" aria-label="2 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-2" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+        <!-- 0,01 € -->
+        <div class="cash-row" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+          <span style="font-weight: bold; width: 65px;">0,01 €</span>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-1', -1)" aria-label="1 Cent Münzen minus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">-</button>
+            <input type="number" min="0" value="0" id="cash-count-coin-1" oninput="calculateCashTotalLive()" class="large-input" style="width: 55px; text-align: center; padding: 4px;" aria-label="Anzahl 1 Cent Münzen">
+            <button type="button" class="btn btn-secondary" onclick="adjustCashCount('coin-1', 1)" aria-label="1 Cent Münzen plus eins" style="padding: 4px 8px; font-size: 14px; font-weight: bold;">+</button>
+          </div>
+          <span id="cash-subtotal-coin-1" style="font-weight: bold; min-width: 70px; text-align: right;">0,00 €</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions" style="margin-top: 18px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+    <button type="button" class="btn btn-primary" onclick="applyCashCounterTotal()" style="background-color: #2E7D32; border-color: #1B5E20; padding: 10px 18px;">
+      <span>✅ <strong>Betrag übernehmen</strong></span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="closeCashCounterModal()">
+      <span>Abbrechen</span>
+    </button>
+  </div>
 </div>
 </div>
 
@@ -2328,7 +2638,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.4.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.5.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -2972,7 +3282,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.4.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.5.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.4.0';
+const CURRENT_APP_VERSION = 'v6.5.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -804,24 +804,85 @@ function checkLiquidityWarning(currentBalances) {
   const currentMonthPrefix = todayStr.substring(0, 7);
 
   // Calculate upcoming planned transactions and recurring items until end of month
-  const upcomingTx = appState.transactions.filter(t => t.date.startsWith(currentMonthPrefix) && t.date > todayStr && t.type === 'expense');
+  const upcomingTx = (appState.transactions || []).filter(t => t.date && t.date.startsWith(currentMonthPrefix) && t.date > todayStr && t.type === 'expense');
   const d = new Date();
-  const recList = getRecurringTransactionsForMonth(d.getFullYear(), d.getMonth()).filter(r => r.date > todayStr && r.type === 'expense');
+  const recList = getRecurringTransactionsForMonth(d.getFullYear(), d.getMonth()).filter(r => r.date && r.date > todayStr && r.type === 'expense');
   const allUpcoming = [...upcomingTx, ...recList];
 
-  const upcomingTotal = allUpcoming.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const bankBalance = currentBalances ? (currentBalances.bank || 0) : 0;
+  // Group upcoming expenses by account
+  const upcomingPerAcc = {};
+  allUpcoming.forEach(item => {
+    const accId = item.account || 'bank';
+    const amt = Number(item.amount || 0);
+    upcomingPerAcc[accId] = (upcomingPerAcc[accId] || 0) + amt;
+  });
 
-  if (upcomingTotal > 0 && bankBalance < upcomingTotal) {
-    const diff = upcomingTotal - bankBalance;
+  // Calculate shortfalls for accounts with a backup account (e.g. PayPal -> Bank)
+  // REGEL: Nur belasten, wenn auf dem Primärkonto wirklich nicht genug Geld vorhanden ist!
+  const backupBurdens = {}; // backupAccountId -> [{ sourceName, shortfall }]
+  (appState.accounts || []).forEach(acc => {
+    if (acc.hasBackupAccount && acc.backupAccountId) {
+      const upc = upcomingPerAcc[acc.id] || 0;
+      const curBal = currentBalances ? (currentBalances[acc.id] || 0) : 0;
+      // NUR WENN das aktuelle Guthaben kleiner ist als die anstehenden Ausgaben:
+      if (upc > 0 && curBal < upc) {
+        const shortfall = Math.round((upc - Math.max(0, curBal)) * 100) / 100;
+        if (shortfall > 0) {
+          if (!backupBurdens[acc.backupAccountId]) backupBurdens[acc.backupAccountId] = [];
+          backupBurdens[acc.backupAccountId].push({
+            sourceName: acc.name,
+            shortfall: shortfall
+          });
+        }
+      }
+    }
+  });
+
+  const alerts = [];
+  (appState.accounts || []).forEach(acc => {
+    const ownUpcoming = upcomingPerAcc[acc.id] || 0;
+    const extraBurdenList = backupBurdens[acc.id] || [];
+    const extraBurdenTotal = extraBurdenList.reduce((s, b) => s + b.shortfall, 0);
+    const totalLiabilities = Math.round((ownUpcoming + extraBurdenTotal) * 100) / 100;
+    const curBal = currentBalances ? (currentBalances[acc.id] || 0) : 0;
+    const dispo = Number(acc.dispoLimit || 0);
+    const effectiveAvailable = curBal + dispo;
+
+    // Prüfen, ob dieses Konto unterdeckt ist
+    if (totalLiabilities > 0 && effectiveAvailable < totalLiabilities) {
+      const diff = Math.round((totalLiabilities - effectiveAvailable) * 100) / 100;
+      let extraInfo = '';
+      if (extraBurdenList.length > 0) {
+        const detailsStr = extraBurdenList.map(b => `${formatCurrency(b.shortfall)} für ${escapeHTML(b.sourceName)}`).join(', ');
+        extraInfo = ` (inkl. Auto-Deckung: ${detailsStr}, da dort das Guthaben nicht ausreicht)`;
+      }
+      alerts.push({
+        accName: acc.name,
+        curBal: curBal,
+        dispo: dispo,
+        totalLiabilities: totalLiabilities,
+        diff: diff,
+        extraInfo: extraInfo
+      });
+    }
+  });
+
+  if (alerts.length > 0) {
     alertBox.style.display = 'flex';
     alertBox.className = 'liquidity-alert-box';
-    alertBox.innerHTML = `
-      <span style="font-size: 24px;" aria-hidden="true">⚠️</span>
-      <div>
-        <strong>Achtung Kontodeckung:</strong> Bis zum Monatsende stehen noch <strong>${formatCurrency(upcomingTotal)}</strong> an geplanten Ausgaben &amp; Daueraufträgen an. Auf dem Bankkonto sind aktuell <strong>${formatCurrency(bankBalance)}</strong> (Fehlbetrag: <strong>${formatCurrency(diff)}</strong>).
+    alertBox.innerHTML = alerts.map(a => `
+      <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px;">
+        <span style="font-size: 24px;" aria-hidden="true">⚠️</span>
+        <div>
+          <strong style="color: var(--text-primary); font-size: 15px;">Achtung Kontodeckung auf ${escapeHTML(a.accName)}:</strong>
+          <div style="font-size: 14px; margin-top: 2px;">
+            Bis zum Monatsende stehen noch <strong>${formatCurrency(a.totalLiabilities)}</strong> an Ausgaben &amp; Daueraufträgen an${a.extraInfo}.
+            Aktuelles Guthaben: <strong>${formatCurrency(a.curBal)}</strong>${a.dispo > 0 ? ` (+ Dispo: ${formatCurrency(a.dispo)})` : ''}.
+            Fehlbetrag: <strong style="color: #D32F2F;">${formatCurrency(a.diff)}</strong>.
+          </div>
+        </div>
       </div>
-    `;
+    `).join('<hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 8px 0;">');
   } else {
     alertBox.style.display = 'none';
   }
@@ -2007,36 +2068,82 @@ function renderAccountsViewList() {
   if (!container) return;
 
   const show = isSymbolsEnabled();
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentBalances = calculateBalancesUpToDate(todayStr);
 
   container.innerHTML = appState.accounts.map(acc => {
     const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
     const typeLabel = ACCOUNT_TYPE_NAMES[acc.type] || acc.type;
-    const balanceStr = formatCurrency(acc.initialBalance || 0);
+    const curBal = currentBalances[acc.id] !== undefined ? currentBalances[acc.id] : (acc.initialBalance || 0);
+    const curBalStr = formatCurrency(curBal);
+    const initBalStr = formatCurrency(acc.initialBalance || 0);
 
     const iconHtml = show ? `<span class="emoji-icon" aria-hidden="true" style="font-size: 26px;">${icon}</span>` : '';
     const editBtnText = show ? '✏️ Bearbeiten' : 'Bearbeiten';
     const delBtnText = show ? '🗑️ Löschen' : 'Löschen';
+    const isCash = (acc.type === 'cash' || acc.id === 'cash');
+
+    let backupBadge = '';
+    if (acc.hasBackupAccount && acc.backupAccountId) {
+      const backupAcc = appState.accounts.find(a => a.id === acc.backupAccountId);
+      const backupName = backupAcc ? backupAcc.name : acc.backupAccountId;
+      backupBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0, 112, 186, 0.1); color: #0070BA; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">🛡️ Auto-Deckung: ${escapeHTML(backupName)}</span>`;
+    }
+
+    let dispoBadge = '';
+    if (acc.dispoLimit && Number(acc.dispoLimit) > 0) {
+      dispoBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(156, 39, 176, 0.1); color: #9C27B0; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">💳 Dispo: ${formatCurrency(acc.dispoLimit)}</span>`;
+    }
+
+    const hasBankDetails = !!(acc.bankName || acc.owner || acc.iban || acc.bic || acc.accountNumber || acc.notes);
+    let bankDetailsHtml = '';
+    if (hasBankDetails) {
+      bankDetailsHtml = `
+        <details style="margin-top: 10px; width: 100%; font-size: 13px; color: var(--text-secondary);">
+          <summary style="cursor: pointer; font-weight: 600; color: #1976D2; padding: 2px 0;">ℹ️ Bankverbindung &amp; Details anzeigen</summary>
+          <div style="background: rgba(0,0,0,0.02); border: 1px solid var(--border-color, #e0e0e0); border-radius: 6px; padding: 10px 14px; margin-top: 6px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px;">
+            ${acc.bankName ? `<div><strong>Bank:</strong> ${escapeHTML(acc.bankName)}</div>` : ''}
+            ${acc.owner ? `<div><strong>Inhaber:</strong> ${escapeHTML(acc.owner)}</div>` : ''}
+            ${acc.iban ? `<div><strong>IBAN:</strong> <span style="font-family: monospace; font-size: 14px;">${escapeHTML(acc.iban)}</span></div>` : ''}
+            ${acc.bic ? `<div><strong>BIC:</strong> <span style="font-family: monospace;">${escapeHTML(acc.bic)}</span></div>` : ''}
+            ${acc.accountNumber ? `<div><strong>Konto/Kdnr:</strong> ${escapeHTML(acc.accountNumber)}</div>` : ''}
+            ${acc.notes ? `<div style="grid-column: 1 / -1;"><strong>Notizen:</strong> ${escapeHTML(acc.notes)}</div>` : ''}
+          </div>
+        </details>
+      `;
+    }
 
     return `
-      <div class="settings-account-item" style="display: flex; align-items: center; justify-content: space-between; background: var(--card-bg, #ffffff); border: 2px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 14px 18px; gap: 12px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px;">
-          ${iconHtml}
-          <div>
-            <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">${escapeHTML(acc.name)}</div>
-            <div style="font-size: 14px; color: var(--text-secondary); margin-top: 2px;">
-              ${escapeHTML(typeLabel)} | Startguthaben: <strong style="color: var(--text-primary);">${balanceStr}</strong>
+      <div class="settings-account-item" style="display: flex; flex-direction: column; background: var(--card-bg, #ffffff); border: 2px solid var(--border-color, #e0e0e0); border-radius: 8px; padding: 14px 18px; gap: 10px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 220px;">
+            ${iconHtml}
+            <div>
+              <div style="font-size: 18px; font-weight: bold; color: var(--text-primary);">${escapeHTML(acc.name)}</div>
+              <div style="font-size: 14px; color: var(--text-secondary); margin-top: 2px;">
+                ${escapeHTML(typeLabel)} | Kontostand aktuell: <strong style="color: ${curBal >= 0 ? '#2E7D32' : '#C62828'}; font-size: 15px;">${curBalStr}</strong> <span style="font-size: 12px; color: var(--text-muted, #777);">(Start: ${initBalStr})</span>
+              </div>
+              <div style="margin-top: 4px;">
+                ${backupBadge}${dispoBadge}
+              </div>
+              ${acc.hint ? `<div style="font-size: 13px; color: var(--text-muted, #777); margin-top: 3px;">${escapeHTML(acc.hint)}</div>` : ''}
             </div>
-            ${acc.hint ? `<div style="font-size: 13px; color: var(--text-muted, #777); margin-top: 2px;">${escapeHTML(acc.hint)}</div>` : ''}
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            ${isCash ? `
+              <button type="button" class="btn btn-secondary" onclick="openCashCounterModal('${acc.id}')" title="Bargeld im Portemonnaie mit Münzen &amp; Scheinen zählen" aria-label="Bargeld für ${escapeHTML(acc.name)} zählen" style="padding: 8px 14px; background: rgba(46, 125, 50, 0.08); border-color: #2E7D32; color: #2E7D32; font-weight: bold;">
+                🪙 Zählen
+              </button>
+            ` : ''}
+            <button type="button" class="btn btn-secondary" onclick="openAccountModal('${acc.id}')" title="Konto bearbeiten" aria-label="Konto ${escapeHTML(acc.name)} bearbeiten" style="padding: 8px 14px;">
+              ${editBtnText}
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="deleteAccount('${acc.id}')" title="Konto löschen" aria-label="Konto ${escapeHTML(acc.name)} löschen" style="padding: 8px 14px; color: #f44336; border-color: rgba(244, 67, 54, 0.4);">
+              ${delBtnText}
+            </button>
           </div>
         </div>
-        <div style="display: flex; gap: 10px;">
-          <button type="button" class="btn btn-secondary" onclick="openAccountModal('${acc.id}')" title="Konto bearbeiten" aria-label="Konto ${escapeHTML(acc.name)} bearbeiten" style="padding: 8px 16px;">
-            ${editBtnText}
-          </button>
-          <button type="button" class="btn btn-secondary" onclick="deleteAccount('${acc.id}')" title="Konto löschen" aria-label="Konto ${escapeHTML(acc.name)} löschen" style="padding: 8px 16px; color: #f44336; border-color: rgba(244, 67, 54, 0.4);">
-            ${delBtnText}
-          </button>
-        </div>
+        ${bankDetailsHtml}
       </div>
     `;
   }).join('');
@@ -2130,7 +2237,7 @@ const ACCOUNT_TYPE_NAMES = {
 
 const DEFAULT_ACCOUNTS = [
   { id: 'bank', name: 'Bankkonto / Girokonto', type: 'bank', icon: '🏦', hint: 'Miete, EC-Karte, Gehalt, Daueraufträge', initialBalance: 0 },
-  { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', icon: '🅿', hint: 'Online-Shopping, Freunde, Abos', initialBalance: 0 },
+  { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', icon: '🅿', hint: 'Online-Shopping, Freunde, Abos', initialBalance: 0, hasBackupAccount: true, backupAccountId: 'bank' },
   { id: 'savings', name: 'Tagesgeldkonto', type: 'savings', icon: '📈', hint: 'Notgroschen, Rücklagen, Urlaub', initialBalance: 0 },
   { id: 'cash', name: 'Bargeld', type: 'cash', icon: '💵', hint: 'Bäcker, Barbezahlung, Portemonnaie', initialBalance: 0 }
 ];
@@ -2255,6 +2362,63 @@ function renderSettingsAccountsList() {
   }).join('');
 }
 
+function formatIbanInput(input) {
+  if (!input) return;
+  let val = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (val.length > 34) val = val.substring(0, 34);
+  const parts = [];
+  for (let i = 0; i < val.length; i += 4) {
+    parts.push(val.substring(i, i + 4));
+  }
+  input.value = parts.join(' ');
+}
+
+function toggleAccountBackupSection() {
+  const toggle = document.getElementById('account-modal-backup-toggle');
+  const section = document.getElementById('account-modal-backup-section');
+  if (section && toggle) {
+    section.style.display = toggle.checked ? 'block' : 'none';
+  }
+}
+
+function toggleAccountDetailsSection() {
+  const toggle = document.getElementById('account-modal-details-toggle');
+  const section = document.getElementById('account-modal-details-section');
+  if (section && toggle) {
+    section.style.display = toggle.checked ? 'block' : 'none';
+  }
+}
+
+function syncInitialBalanceToCurrent() {
+  const idInput = document.getElementById('account-modal-id');
+  const balInput = document.getElementById('account-modal-balance');
+  if (!idInput || !idInput.value || !balInput) return;
+  const accId = idInput.value;
+  const todayStr = new Date().toISOString().split('T')[0];
+  const balances = calculateBalancesUpToDate(todayStr);
+  const curBal = balances[accId] !== undefined ? balances[accId] : 0;
+  balInput.value = curBal.toFixed(2);
+  announceNVDA(`Startguthaben auf aktuellen Saldo von ${formatCurrency(curBal)} gesetzt.`);
+}
+
+function populateAccountBackupDropdown(excludeAccId, selectedVal) {
+  const sel = document.getElementById('account-modal-backup-account');
+  if (!sel) return;
+  sel.innerHTML = '';
+  const otherAccs = (appState.accounts || []).filter(a => a.id !== excludeAccId);
+  otherAccs.forEach(acc => {
+    const opt = document.createElement('option');
+    opt.value = acc.id;
+    opt.textContent = `${acc.name} (${ACCOUNT_TYPE_NAMES[acc.type] || acc.type})`;
+    if (selectedVal && selectedVal === acc.id) {
+      opt.selected = true;
+    } else if (!selectedVal && acc.type === 'bank') {
+      opt.selected = true;
+    }
+    sel.appendChild(opt);
+  });
+}
+
 function openAccountModal(accId) {
   ensureAccountsInitialized();
   const modal = document.getElementById('account-modal');
@@ -2264,6 +2428,20 @@ function openAccountModal(accId) {
   const typeInput = document.getElementById('account-modal-type');
   const balInput = document.getElementById('account-modal-balance');
   const hintInput = document.getElementById('account-modal-hint');
+  const curBalBox = document.getElementById('account-modal-current-balance-box');
+  const curBalVal = document.getElementById('account-modal-current-balance-val');
+
+  const backupToggle = document.getElementById('account-modal-backup-toggle');
+  const detailsToggle = document.getElementById('account-modal-details-toggle');
+  const bankInput = document.getElementById('account-modal-bank');
+  const ownerInput = document.getElementById('account-modal-owner');
+  const ibanInput = document.getElementById('account-modal-iban');
+  const bicInput = document.getElementById('account-modal-bic');
+  const numberInput = document.getElementById('account-modal-number');
+  const dispoInput = document.getElementById('account-modal-dispo');
+  const notesInput = document.getElementById('account-modal-notes');
+
+  populateAccountBackupDropdown(accId || '', '');
 
   if (accId) {
     const acc = appState.accounts.find(a => a.id === accId);
@@ -2274,6 +2452,33 @@ function openAccountModal(accId) {
     typeInput.value = acc.type || 'bank';
     balInput.value = (acc.initialBalance !== undefined) ? acc.initialBalance : 0;
     hintInput.value = acc.hint || '';
+
+    // Aktuellen berechneten Saldo anzeigen
+    if (curBalBox && curBalVal) {
+      curBalBox.style.display = 'block';
+      const todayStr = new Date().toISOString().split('T')[0];
+      const balances = calculateBalancesUpToDate(todayStr);
+      const curBal = balances[acc.id] !== undefined ? balances[acc.id] : (acc.initialBalance || 0);
+      curBalVal.textContent = formatCurrency(curBal);
+    }
+
+    // Auto-Deckung
+    const hasBackup = !!acc.hasBackupAccount;
+    if (backupToggle) backupToggle.checked = hasBackup;
+    populateAccountBackupDropdown(acc.id, acc.backupAccountId || '');
+    toggleAccountBackupSection();
+
+    // Bankdetails
+    const hasDetails = !!(acc.bankName || acc.owner || acc.iban || acc.bic || acc.accountNumber || acc.dispoLimit || acc.notes);
+    if (detailsToggle) detailsToggle.checked = hasDetails;
+    if (bankInput) bankInput.value = acc.bankName || '';
+    if (ownerInput) ownerInput.value = acc.owner || '';
+    if (ibanInput) ibanInput.value = acc.iban || '';
+    if (bicInput) bicInput.value = acc.bic || '';
+    if (numberInput) numberInput.value = acc.accountNumber || '';
+    if (dispoInput) dispoInput.value = (acc.dispoLimit !== undefined && acc.dispoLimit !== null && acc.dispoLimit !== '') ? acc.dispoLimit : '';
+    if (notesInput) notesInput.value = acc.notes || '';
+    toggleAccountDetailsSection();
   } else {
     heading.textContent = 'Neues Konto hinzufügen';
     idInput.value = '';
@@ -2281,6 +2486,20 @@ function openAccountModal(accId) {
     typeInput.value = 'bank';
     balInput.value = '0.00';
     hintInput.value = '';
+    if (curBalBox) curBalBox.style.display = 'none';
+
+    if (backupToggle) backupToggle.checked = false;
+    toggleAccountBackupSection();
+
+    if (detailsToggle) detailsToggle.checked = false;
+    if (bankInput) bankInput.value = '';
+    if (ownerInput) ownerInput.value = '';
+    if (ibanInput) ibanInput.value = '';
+    if (bicInput) bicInput.value = '';
+    if (numberInput) numberInput.value = '';
+    if (dispoInput) dispoInput.value = '';
+    if (notesInput) notesInput.value = '';
+    toggleAccountDetailsSection();
   }
 
   if (modal) modal.style.display = 'flex';
@@ -2312,6 +2531,21 @@ async function saveAccount(e) {
   const hint = document.getElementById('account-modal-hint').value.trim();
   const icon = ACCOUNT_TYPE_ICONS[type] || '💳';
 
+  const backupToggle = document.getElementById('account-modal-backup-toggle');
+  const backupAccountSelect = document.getElementById('account-modal-backup-account');
+  const hasBackup = backupToggle ? backupToggle.checked : false;
+  const backupAccountId = (hasBackup && backupAccountSelect) ? backupAccountSelect.value : '';
+
+  const detailsToggle = document.getElementById('account-modal-details-toggle');
+  const hasDetails = detailsToggle ? detailsToggle.checked : false;
+  const bankName = hasDetails ? (document.getElementById('account-modal-bank')?.value.trim() || '') : '';
+  const owner = hasDetails ? (document.getElementById('account-modal-owner')?.value.trim() || '') : '';
+  const iban = hasDetails ? (document.getElementById('account-modal-iban')?.value.trim() || '') : '';
+  const bic = hasDetails ? (document.getElementById('account-modal-bic')?.value.trim() || '') : '';
+  const accountNumber = hasDetails ? (document.getElementById('account-modal-number')?.value.trim() || '') : '';
+  const dispoLimit = hasDetails ? (parseFloat(document.getElementById('account-modal-dispo')?.value) || 0) : 0;
+  const notes = hasDetails ? (document.getElementById('account-modal-notes')?.value.trim() || '') : '';
+
   if (!name) {
     alert('Bitte gib einen Namen für das Konto ein.');
     return;
@@ -2326,6 +2560,15 @@ async function saveAccount(e) {
       acc.icon = icon;
       acc.hint = hint;
       acc.initialBalance = balance;
+      acc.hasBackupAccount = hasBackup;
+      acc.backupAccountId = backupAccountId;
+      acc.bankName = bankName;
+      acc.owner = owner;
+      acc.iban = iban;
+      acc.bic = bic;
+      acc.accountNumber = accountNumber;
+      acc.dispoLimit = dispoLimit;
+      acc.notes = notes;
     }
   } else {
     // Add new
@@ -2336,7 +2579,16 @@ async function saveAccount(e) {
       type: type,
       icon: icon,
       hint: hint,
-      initialBalance: balance
+      initialBalance: balance,
+      hasBackupAccount: hasBackup,
+      backupAccountId: backupAccountId,
+      bankName: bankName,
+      owner: owner,
+      iban: iban,
+      bic: bic,
+      accountNumber: accountNumber,
+      dispoLimit: dispoLimit,
+      notes: notes
     });
   }
 
@@ -2380,20 +2632,143 @@ async function deleteAccount(accId) {
   const idx = appState.accounts.findIndex(a => a.id === accId);
   if (idx !== -1) {
     appState.accounts.splice(idx, 1);
+    // Verknüpfungen bereinigen, falls ein anderes Konto dieses Konto als Deckungskonto hatte
+    appState.accounts.forEach(a => {
+      if (a.backupAccountId === accId) {
+        a.backupAccountId = '';
+        a.hasBackupAccount = false;
+      }
+    });
     if (appState.initialBalances && appState.initialBalances[accId] !== undefined) {
       delete appState.initialBalances[accId];
     }
     await saveStateToEncryptedStorage();
     populateAllAccountDropdowns();
-  populateBudgetCategoryDropdown();
-  populateShoppingDropdowns();
-  renderShoppingCart();
+    populateBudgetCategoryDropdown();
+    populateShoppingDropdowns();
+    renderShoppingCart();
     renderAccountsViewList();
     updateOverview();
     announceNVDA(`Konto ${acc.name} gelöscht.`);
   }
 }
 
+// ============================================================================
+// BARGELD-ZÄHLHELFER (MÜNZ- & SCHEINEZÄHLER)
+// ============================================================================
+let currentCashCounterTarget = null;
+
+const CASH_DENOMINATIONS = [
+  { id: 'note-200', val: 200.0 },
+  { id: 'note-100', val: 100.0 },
+  { id: 'note-50',  val: 50.0 },
+  { id: 'note-20',  val: 20.0 },
+  { id: 'note-10',  val: 10.0 },
+  { id: 'note-5',   val: 5.0 },
+  { id: 'coin-200', val: 2.0 },
+  { id: 'coin-100', val: 1.0 },
+  { id: 'coin-50',  val: 0.50 },
+  { id: 'coin-20',  val: 0.20 },
+  { id: 'coin-10',  val: 0.10 },
+  { id: 'coin-5',   val: 0.05 },
+  { id: 'coin-2',   val: 0.02 },
+  { id: 'coin-1',   val: 0.01 }
+];
+
+function openCashCounterModal(target) {
+  currentCashCounterTarget = target || 'from-modal';
+  const modal = document.getElementById('cash-counter-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  resetCashCounter();
+  calculateCashTotalLive();
+
+  const firstInput = document.getElementById('cash-count-note-50');
+  if (firstInput) firstInput.focus();
+  announceNVDA('Bargeld-Zählhelfer geöffnet. Zähle Münzen und Scheine.');
+}
+
+function closeCashCounterModal() {
+  const modal = document.getElementById('cash-counter-modal');
+  if (modal) modal.style.display = 'none';
+  if (currentCashCounterTarget === 'from-modal') {
+    const balInput = document.getElementById('account-modal-balance');
+    if (balInput) balInput.focus();
+  }
+}
+
+function adjustCashCount(denomId, delta) {
+  const input = document.getElementById(`cash-count-${denomId}`);
+  if (!input) return;
+  let cur = parseInt(input.value, 10) || 0;
+  cur = Math.max(0, cur + delta);
+  input.value = cur;
+  calculateCashTotalLive();
+}
+
+function calculateCashTotalLive() {
+  let total = 0;
+  CASH_DENOMINATIONS.forEach(d => {
+    const input = document.getElementById(`cash-count-${d.id}`);
+    const subEl = document.getElementById(`cash-subtotal-${d.id}`);
+    const count = input ? (parseInt(input.value, 10) || 0) : 0;
+    const sub = Math.round(count * d.val * 100) / 100;
+    total += sub;
+    if (subEl) subEl.textContent = formatCurrency(sub);
+  });
+  total = Math.round(total * 100) / 100;
+  const totalEl = document.getElementById('cash-counter-total');
+  if (totalEl) totalEl.textContent = formatCurrency(total);
+  return total;
+}
+
+function resetCashCounter() {
+  CASH_DENOMINATIONS.forEach(d => {
+    const input = document.getElementById(`cash-count-${d.id}`);
+    const subEl = document.getElementById(`cash-subtotal-${d.id}`);
+    if (input) input.value = '0';
+    if (subEl) subEl.textContent = formatCurrency(0);
+  });
+  const totalEl = document.getElementById('cash-counter-total');
+  if (totalEl) totalEl.textContent = formatCurrency(0);
+}
+
+async function applyCashCounterTotal() {
+  const total = calculateCashTotalLive();
+  if (currentCashCounterTarget === 'from-modal') {
+    const balInput = document.getElementById('account-modal-balance');
+    if (balInput) {
+      balInput.value = total.toFixed(2);
+    }
+    closeCashCounterModal();
+    announceNVDA(`Gezähltes Bargeld von ${formatCurrency(total)} als Startguthaben übernommen.`);
+  } else {
+    // Ziel ist eine Konto-ID (z. B. 'cash')
+    const accId = currentCashCounterTarget;
+    const acc = appState.accounts.find(a => a.id === accId);
+    if (!acc) {
+      closeCashCounterModal();
+      return;
+    }
+    const todayStr = new Date().toISOString().split('T')[0];
+    const curBalances = calculateBalancesUpToDate(todayStr);
+    const curBal = curBalances[accId] !== undefined ? curBalances[accId] : 0;
+    const oldInit = Number(acc.initialBalance || 0);
+    const txDelta = curBal - oldInit;
+    const newInit = Math.round((total - txDelta) * 100) / 100;
+
+    acc.initialBalance = newInit;
+    if (!appState.initialBalances) appState.initialBalances = {};
+    appState.initialBalances[accId] = newInit;
+
+    await saveStateToEncryptedStorage();
+    closeCashCounterModal();
+    renderAccountsViewList();
+    updateOverview();
+    announceNVDA(`Bargeldbestand von ${acc.name} erfolgreich auf ${formatCurrency(total)} abgeglichen!`);
+  }
+}
 
 function autoUpdateFrequencyByDate(type) {
   const dateInput = document.getElementById(type + '-date');
@@ -2876,6 +3251,8 @@ function setupGlobalKeyboardShortcuts() {
     if (e.key === 'Escape') {
       closeEditModal();
       closeEditRecModal();
+      closeAccountModal();
+      closeCashCounterModal();
       return;
     }
 
@@ -4953,6 +5330,33 @@ async function handleAddExpense(e) {
       });
       announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
     } else {
+      // Auto-Deckung (wie bei PayPal):
+      // REGEL: Nur belasten, wenn auf dem Primärkonto wirklich nicht genug Geld vorhanden ist!
+      const chosenAcc = (appState.accounts || []).find(a => a.id === account);
+      let autoCoverMsg = '';
+      if (chosenAcc && chosenAcc.hasBackupAccount && chosenAcc.backupAccountId && !isPlanned) {
+        const balancesBefore = calculateBalancesUpToDate(date);
+        const curAvail = balancesBefore[account] !== undefined ? balancesBefore[account] : 0;
+        if (curAvail < amount) {
+          const shortfall = Math.round((amount - Math.max(0, curAvail)) * 100) / 100;
+          if (shortfall > 0) {
+            const backupAcc = (appState.accounts || []).find(a => a.id === chosenAcc.backupAccountId);
+            if (backupAcc) {
+              appState.transactions.push({
+                id: `tx_cov_${Date.now()}`,
+                type: 'transfer',
+                fromAccount: backupAcc.id,
+                toAccount: account,
+                amount: shortfall,
+                date: date,
+                description: `Automatische Deckung für ${category} (${chosenAcc.name} hatte nur ${formatCurrency(Math.max(0, curAvail))})`
+              });
+              autoCoverMsg = ` (davon ${formatCurrency(shortfall)} automatisch über ${backupAcc.name} gedeckt)`;
+            }
+          }
+        }
+      }
+
       appState.transactions.push({
         id: `tx_${Date.now()}`,
         type: 'expense',
@@ -4964,7 +5368,7 @@ async function handleAddExpense(e) {
         isPlanned: isPlanned,
         date: date
       });
-      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}!`);
     }
   }
 

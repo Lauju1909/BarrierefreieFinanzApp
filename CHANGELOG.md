@@ -1,6 +1,28 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.5.0 (Auto-Deckungskonto wie PayPal, Bargeld-Zählhelfer & Kontodetails)
+*Datum: 01. Oktober 2026*
+
+### 🛡️ 1. Automatisches Deckungskonto (wie bei PayPal)
+- **Automatischer Ausgleich:** Bei jedem Konto (z. B. PayPal) kann ein Deckungskonto (z. B. Girokonto) hinterlegt werden.
+- **Nur bei Unterdeckung:** Reicht das Guthaben auf dem Primärkonto aus, bleibt das Deckungskonto unberührt. Nur wenn das Geld nicht reicht, gleicht eine automatische Deckungs-Umbuchung exakt den Fehlbetrag aus.
+- **Intelligente Liquiditätsprüfung:** Anstehende Zahlungen und Daueraufträge auf dem Primärkonto belasten das Deckungskonto in der Monatsvorschau nur dann, wenn das Primärkonto tatsächlich unterdeckt ist.
+
+### 🪙 2. Bargeld-Zählhelfer (Münz- & Scheinezähler)
+- **Stressfreies Zählen ohne Kopfrechnen:** Plus- und Minus-Tasten UND direkte Tastatureingabefelder für alle Euro-Scheine (200 €, 100 €, 50 €, 20 €, 10 €, 5 €) und Münzen (2 €, 1 €, 50ct, 20ct, 10ct, 5ct, 2ct, 1ct).
+- **Live-Berechnung & 1-Klick-Übernahme:** Ermittelt sekundenschnell Zwischensummen und den Gesamtbetrag im Portemonnaie und übernimmt ihn direkt in das Bargeldkonto oder das Startguthaben.
+
+### ℹ️ 3. Bankdaten & Erweiterte Kontoinformationen
+- **Strukturierte Erfassung:** Optional können Bankname, IBAN mit automatischer 4er-Block-Formatierung, BIC, Kontoinhaber, Kundennummer/Login-Mail, Dispolimit und Notizen hinterlegt werden.
+- **Barrierefreie Anzeige:** Übersichtliche Darstellung mit aufklappbaren Details im Reiter „Konten“.
+
+### 💰 4. Startguthaben-Verwaltung & Live-Kontostand
+- **Flexibles Startguthaben:** Sowohl bei der Neuerstellung als auch beim Bearbeiten bestehender Konten anpassbar.
+- **Transparenter Kontostand:** Zeigt beim Bearbeiten den aktuellen berechneten Saldo mit Schnellabgleich an.
+
+---
+
 ## ⚡ Version 6.4.0 (Vertrags-Manager, Probe-Abos, Preiserhöhungen & Historien-Schutz)
 *Datum: 29. September 2026*
 

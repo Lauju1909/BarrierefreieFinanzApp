@@ -1,8 +1,13 @@
 {
-  "version": "6.4.0",
+  "version": "6.5.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-09-29",
+  "buildDate": "2026-10-01",
   "features": [
+    "Automatischer Deckungsausgleich (wie bei PayPal): Hinterlege bei jedem Konto ein Deckungskonto. Bei unzureichendem Guthaben wird die fehlende Differenz automatisch ausgeglichen – aber nur dann, wenn das Guthaben wirklich nicht ausreicht",
+    "Bargeld-Zählhelfer (Münz- & Scheinezähler): Bequemes Zählen von Portemonnaie und Spardose mit Plus/Minus-Tasten UND direkten Eingabefeldern für alle Scheine (200€ bis 5€) und Münzen (2€ bis 1ct) mit Live-Summe und 1-Klick-Übernahme",
+    "Erweiterte Kontoinformationen & Bankdaten: Sichere Hinterlegung von Bankname, IBAN mit 4er-Block-Formatierung, BIC, Kontoinhaber, Kundennummer, Dispolimit und Notizen",
+    "Startguthaben-Verwaltung & Live-Kontostand: Startguthaben kann beim Erstellen und Bearbeiten flexibel angepasst werden mit Live-Anzeige des aktuellen berechneten Kontostands",
+    "Intelligente Liquiditätsprüfung: Berücksichtigt automatische Deckungskonten und Dispolimits centgenau bei drohender Unterdeckung bis zum Monatsende",
     "Vertrags- & Kündigungs-Manager: Hinterlege Kundennummern, Mindestlaufzeiten, Kündigungsfristen, Hotline-Nummern und Kennwörter sicher verschlüsselt direkt am Dauerauftrag",
     "Flexibler Gratis-Zeitraum (Probe-Abos): Kostenlose Testphasen nach Tagen, Wochen oder Monaten mit automatischer 0,00 €-Belastung und rechtzeitigem Kündigungs-Wecker vor dem ersten Zahltag",
     "Zukünftige Preiserhöhungen / Preisänderungen: Vormerken neuer Beträge ab einem Zukunftsmonat mit Historien-Garantie (alte Monate behalten exakt den bisherigen Preis)",
