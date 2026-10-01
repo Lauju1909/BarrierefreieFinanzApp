@@ -339,6 +339,25 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 }
 .btn-delete-tx:hover { background-color: var(--accent-expense); color: #000; }
 
+.btn-receipt-tx {
+  background-color: var(--bg-surface-elevated);
+  color: var(--accent-action);
+  border: 2px solid var(--accent-action);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-receipt-tx:hover {
+  background-color: var(--accent-action);
+  color: #fff;
+}
+
 .empty-state { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 17px; }
 
 .form-container { background-color: var(--bg-surface); border: 3px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px; max-width: 800px; margin: 0 auto; width: 100%; }
@@ -561,7 +580,7 @@ body.show-symbols .symbol-icon {
     color: #000000 !important;
     font-size: 12pt !important;
   }
-  .app-header, .nav-tabs-wrapper, .time-picker-container, .form-actions, .btn, .btn-edit-tx, .btn-delete-tx, .modal-overlay:not(#print-report-modal), footer {
+  .app-header, .nav-tabs-wrapper, .time-picker-container, .form-actions, .btn, .btn-edit-tx, .btn-delete-tx, .btn-receipt-tx, .modal-overlay:not(#print-report-modal), footer {
     display: none !important;
   }
   #print-report-modal {
@@ -597,3 +616,121 @@ body.show-symbols .symbol-icon {
     max-height: 48vh !important;
   }
 }
+
+/* ==========================================================================
+   7. BELEG- & QUITTUNGS-ERFASSUNG & VOLLBILD-BETRACHTER (v6.7.0)
+   ========================================================================== */
+.receipt-upload-box {
+  background: var(--bg-surface-elevated);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.receipt-upload-box.drag-over {
+  border-color: var(--accent-action);
+  background: rgba(2, 132, 199, 0.12);
+}
+.receipt-buttons-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.receipt-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+}
+.receipt-thumb {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: #eee;
+  flex-shrink: 0;
+}
+.receipt-thumb-icon {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: rgba(2, 132, 199, 0.12);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.receipt-info-col {
+  flex: 1;
+  min-width: 0;
+}
+.receipt-name {
+  font-weight: bold;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.receipt-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.receipt-status-banner {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.receipt-status-banner.success {
+  background: rgba(76, 175, 80, 0.14);
+  border-left: 6px solid var(--accent-income);
+  color: var(--text-primary);
+}
+.receipt-status-banner.scanning {
+  background: rgba(2, 132, 199, 0.14);
+  border-left: 6px solid var(--accent-action);
+  color: var(--text-primary);
+}
+.receipt-status-banner.created {
+  background: rgba(245, 158, 11, 0.14);
+  border-left: 6px solid #F59E0B;
+  color: var(--text-primary);
+}
+.receipt-viewer-viewport {
+  width: 100%;
+  height: 60vh;
+  min-height: 380px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+.receipt-viewer-viewport img {
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.2s ease-out;
+  user-select: none;
+}
+.receipt-viewer-viewport iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+

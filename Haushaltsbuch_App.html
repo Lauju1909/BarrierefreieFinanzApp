@@ -347,6 +347,25 @@ body { font-family: var(--font-family); font-size: var(--font-size-base); line-h
 }
 .btn-delete-tx:hover { background-color: var(--accent-expense); color: #000; }
 
+.btn-receipt-tx {
+  background-color: var(--bg-surface-elevated);
+  color: var(--accent-action);
+  border: 2px solid var(--accent-action);
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-receipt-tx:hover {
+  background-color: var(--accent-action);
+  color: #fff;
+}
+
 .empty-state { text-align: center; padding: 24px 16px; color: var(--text-muted); font-size: 17px; }
 
 .form-container { background-color: var(--bg-surface); border: 3px solid var(--border-color); border-radius: var(--radius-lg); padding: 28px; max-width: 800px; margin: 0 auto; width: 100%; }
@@ -569,7 +588,7 @@ body.show-symbols .symbol-icon {
     color: #000000 !important;
     font-size: 12pt !important;
   }
-  .app-header, .nav-tabs-wrapper, .time-picker-container, .form-actions, .btn, .btn-edit-tx, .btn-delete-tx, .modal-overlay:not(#print-report-modal), footer {
+  .app-header, .nav-tabs-wrapper, .time-picker-container, .form-actions, .btn, .btn-edit-tx, .btn-delete-tx, .btn-receipt-tx, .modal-overlay:not(#print-report-modal), footer {
     display: none !important;
   }
   #print-report-modal {
@@ -606,6 +625,124 @@ body.show-symbols .symbol-icon {
   }
 }
 
+/* ==========================================================================
+   7. BELEG- & QUITTUNGS-ERFASSUNG & VOLLBILD-BETRACHTER (v6.7.0)
+   ========================================================================== */
+.receipt-upload-box {
+  background: var(--bg-surface-elevated);
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 14px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+.receipt-upload-box.drag-over {
+  border-color: var(--accent-action);
+  background: rgba(2, 132, 199, 0.12);
+}
+.receipt-buttons-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.receipt-preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+}
+.receipt-thumb {
+  width: 54px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border-subtle);
+  background: #eee;
+  flex-shrink: 0;
+}
+.receipt-thumb-icon {
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: rgba(2, 132, 199, 0.12);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.receipt-info-col {
+  flex: 1;
+  min-width: 0;
+}
+.receipt-name {
+  font-weight: bold;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+.receipt-meta {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.receipt-status-banner {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.receipt-status-banner.success {
+  background: rgba(76, 175, 80, 0.14);
+  border-left: 6px solid var(--accent-income);
+  color: var(--text-primary);
+}
+.receipt-status-banner.scanning {
+  background: rgba(2, 132, 199, 0.14);
+  border-left: 6px solid var(--accent-action);
+  color: var(--text-primary);
+}
+.receipt-status-banner.created {
+  background: rgba(245, 158, 11, 0.14);
+  border-left: 6px solid #F59E0B;
+  color: var(--text-primary);
+}
+.receipt-viewer-viewport {
+  width: 100%;
+  height: 60vh;
+  min-height: 380px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  position: relative;
+}
+.receipt-viewer-viewport img {
+  max-width: 100%;
+  max-height: 100%;
+  transition: transform 0.2s ease-out;
+  user-select: none;
+}
+.receipt-viewer-viewport iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+
 </style>
 </head>
 <body class="theme-light font-normal" id="app-body">
@@ -622,12 +759,34 @@ body.show-symbols .symbol-icon {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.6.1)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.7.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.7.0 (Belege erfassen &amp; Automatische Texterkennung)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>📸 Belege &amp; Rechnungen per Kamera, Datei oder Zwischenablage:</strong><br>
+Hebe Fotos per Smartphone-Kamera auf, wähle Bilddateien oder PDFs aus oder füge Screenshots direkt per Strg+V ein – sowohl bei Ausgaben, Einnahmen als auch beim Bearbeiten von Buchungen.
+</li>
+<li>
+<strong>🤖 Automatische Erkennung &amp; Selbst-Eintragen:</strong><br>
+Betrag, Datum und Laden/Händler werden automatisch aus dem Beleg erkannt und sofort in die Formularfelder eingetragen.
+</li>
+<li>
+<strong>✨ Automatische Kategorie-Erstellung:</strong><br>
+Existiert der erkannte Laden oder die passende Kategorie noch nicht in deiner Liste, wird sie selbstständig neu erstellt, gespeichert und ausgewählt!
+</li>
+<li>
+<strong>🔍 Vollbild-Betrachter mit Zoom &amp; 90°-Drehung:</strong><br>
+Jederzeit Belege in voller Auflösung ansehen, hinein- und herauszoomen, um 90° drehen oder als Datei herunterladen.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.6.1 (Fehlerbehebung Liquiditäts- &amp; Deckungsprüfung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -1286,6 +1445,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-group">
   <label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz:</strong></label>
   <input type="text" id="edit-tx-desc" class="large-input" placeholder="z. B. Wocheneinkauf, Geschenk...">
+</div>
+
+<div class="form-group receipt-upload-box" id="edit-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Angehängter Beleg / Rechnung (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Hier kannst du einen Beleg anheften, austauschen oder per Texterkennung analysieren lassen:
+  </p>
+
+  <input type="file" id="edit-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('edit', this.files)">
+  <input type="file" id="edit-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('edit', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('edit')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text analysieren</span>
+    </button>
+  </div>
+
+  <div id="edit-receipt-preview-container" style="display: none;"></div>
+  <div id="edit-receipt-status-banner" style="display: none;" role="status"></div>
 </div>
 
 <div class="form-actions" style="margin-top: 14px;">
@@ -2032,6 +2222,75 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <span>Abbrechen</span>
   </button>
 </div>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: BELEG- & QUITTUNGS-VOLLBILD-BETRACHTER
+ ========================================================================= -->
+<div id="receipt-viewer-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-viewer-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 900px; width: 95%;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+    <h2 id="receipt-viewer-heading" tabindex="-1" style="margin: 0; font-size: 22px;">🧾 Beleg / Quittung ansehen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeReceiptModal()" aria-label="Beleg-Betrachter schließen" style="min-height: 38px; padding: 6px 14px;">
+      <span>✕ Schließen</span>
+    </button>
+  </div>
+
+  <div id="receipt-viewer-meta" class="field-hint" style="margin-bottom: 10px;"></div>
+
+  <div class="receipt-viewer-toolbar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+    <button type="button" class="btn btn-secondary" onclick="zoomReceipt(0.2)" aria-label="Beleg vergrößern" style="padding: 6px 12px;">
+      <span>🔍+ Vergrößern</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="zoomReceipt(-0.2)" aria-label="Beleg verkleinern" style="padding: 6px 12px;">
+      <span>🔍- Verkleinern</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="resetReceiptZoom()" aria-label="Originalgröße wiederherstellen" style="padding: 6px 12px;">
+      <span>🔄 100%</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="rotateReceipt()" aria-label="Beleg um 90 Grad drehen" style="padding: 6px 12px;">
+      <span>🔃 90° Drehen</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="downloadReceipt()" aria-label="Beleg herunterladen" style="padding: 6px 12px;">
+      <span>💾 Herunterladen</span>
+    </button>
+    <button type="button" class="btn btn-delete-tx" id="receipt-viewer-delete-btn" onclick="deleteReceiptFromActiveTx()" aria-label="Beleg löschen" style="margin-left: auto;">
+      <span>🗑️ Beleg löschen</span>
+    </button>
+  </div>
+
+  <div class="receipt-viewer-viewport" id="receipt-viewer-viewport" tabindex="0" aria-label="Beleganzeigebereich. Mit Pfeiltasten scrollen.">
+    <img id="receipt-viewer-img" src="" alt="Vollbild-Vorschau des Belegs" style="display: none;">
+    <iframe id="receipt-viewer-pdf" src="" title="Beleg PDF Dokument" style="display: none;"></iframe>
+  </div>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: BELEG-TEXT EINFÜGEN & SCHNELL-ANALYSE
+ ========================================================================= -->
+<div id="receipt-text-prompt-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-text-modal-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 600px;">
+  <h2 id="receipt-text-modal-heading" tabindex="-1">📋 Text aus Beleg / Rechnung einfügen</h2>
+  <p class="field-hint">Kopiere Text aus einer Rechnung, E-Mail oder Online-Banking hier hinein. Betrag, Datum &amp; Händler werden sofort erkannt und automatisch in dein Formular übernommen:</p>
+
+  <form onsubmit="handleManualReceiptTextSubmit(event)" class="accessible-form" style="margin-top: 14px;">
+    <input type="hidden" id="receipt-text-target-form" value="exp">
+    <div class="form-group">
+      <label for="receipt-text-input" class="field-label"><strong>Belegtext / Rechnungsdaten:</strong></label>
+      <textarea id="receipt-text-input" rows="6" class="large-input" style="height: auto; min-height: 120px; font-family: monospace;" placeholder="Beispiel:&#10;REWE Markt GmbH&#10;Datum: 01.10.2026&#10;SUMME EUR 14,85"></textarea>
+    </div>
+
+    <div class="form-actions" style="margin-top: 16px;">
+      <button type="submit" class="btn btn-primary">
+        <span>✨ <strong>Analysieren &amp; Felder ausfüllen</strong> (Enter)</span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="closeReceiptTextPrompt()">
+        <span>Abbrechen</span>
+      </button>
+    </div>
+  </form>
 </div>
 </div>
 
@@ -2901,6 +3160,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </label>
 <input type="text" id="exp-desc" class="large-input" placeholder="z. B. Geplante neue Kopfhörer, Döner, Spotify...">
 </div>
+<div class="form-group receipt-upload-box" id="exp-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Beleg, Quittung oder Rechnung (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Lade ein Foto, Bild oder PDF hoch – Betrag, Datum &amp; Laden werden <strong>automatisch erkannt &amp; eingetragen</strong>! Fehlt die passende Kategorie, wird sie <strong>selbstständig neu erstellt</strong>.
+  </p>
+
+  <input type="file" id="exp-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('exp', this.files)">
+  <input type="file" id="exp-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('exp', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('exp-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto aufnehmen (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('exp-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Beleg-Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('exp')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text aus Beleg analysieren</span>
+    </button>
+  </div>
+
+  <div id="exp-receipt-preview-container" style="display: none;"></div>
+  <div id="exp-receipt-status-banner" style="display: none;" role="status"></div>
+</div>
 
 <div class="form-actions">
 <button type="submit" class="btn btn-primary">
@@ -3108,6 +3397,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <input type="text" id="inc-desc" class="large-input" placeholder="z. B. Taschengeld, Vinted Jacke Verkauf im Oktober...">
 </div>
 
+<div class="form-group receipt-upload-box" id="inc-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Beleg, Quittung oder Nachweis (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Lade ein Foto, Bild oder PDF hoch – Betrag, Datum &amp; Absender werden <strong>automatisch erkannt &amp; eingetragen</strong>! Fehlt die passende Kategorie, wird sie <strong>selbstständig neu erstellt</strong>.
+  </p>
+
+  <input type="file" id="inc-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('inc', this.files)">
+  <input type="file" id="inc-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('inc', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('inc-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto aufnehmen (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('inc-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Beleg-Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('inc')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text aus Beleg analysieren</span>
+    </button>
+  </div>
+
+  <div id="inc-receipt-preview-container" style="display: none;"></div>
+  <div id="inc-receipt-status-banner" style="display: none;" role="status"></div>
+</div>
+
 <div class="form-actions">
 <button type="submit" class="btn btn-primary">
 <span>🟢<strong>Einnahme speichern</strong>(Enter)</span>
@@ -3309,7 +3629,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.6.1</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.7.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3953,7 +4273,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.6.1</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.7.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -4814,7 +5134,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.6.1';
+const CURRENT_APP_VERSION = 'v6.7.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -8010,6 +8330,52 @@ async function handleAddCustomCategory(e) {
   alert('✅ Die Kategorie "' + subCatName + '" (' + mainCatName + ') wurde sofort in deiner App gespeichert und an den Entwickler übermittelt!');
 }
 
+async function ensureCategoryExists(type, mainCatName, subCatName) {
+  if (!mainCatName) return false;
+  const safeType = type === 'income' ? 'inc' : (type === 'expense' ? 'exp' : type);
+
+  if (!appState.customCategories) {
+    appState.customCategories = { exp: {}, inc: {}, trf: {} };
+  }
+  if (!appState.customCategories[safeType]) {
+    appState.customCategories[safeType] = {};
+  }
+
+  let created = false;
+  const db = CATEGORIES_DB[safeType] || {};
+
+  if (!db[mainCatName]) {
+    if (!appState.customCategories[safeType][mainCatName]) {
+      appState.customCategories[safeType][mainCatName] = [];
+    }
+    created = true;
+  }
+
+  const existingSubs = db[mainCatName] || appState.customCategories[safeType][mainCatName] || [];
+  if (subCatName && !existingSubs.includes(subCatName)) {
+    if (!appState.customCategories[safeType][mainCatName]) {
+      appState.customCategories[safeType][mainCatName] = [];
+    }
+    if (!appState.customCategories[safeType][mainCatName].includes(subCatName)) {
+      appState.customCategories[safeType][mainCatName].push(subCatName);
+    }
+    created = true;
+  }
+
+  if (created) {
+    mergeCustomCategoriesIntoDB();
+    populateCategoriesDropdowns();
+    populateAllAccountDropdowns();
+    populateBudgetCategoryDropdown();
+    populateShoppingDropdowns();
+    renderShoppingCart();
+    renderAccountsViewList();
+    initCustomCatSettingsForm();
+    await saveStateToEncryptedStorage();
+  }
+  return created;
+}
+
 function populateCategoriesDropdowns() {
   mergeCustomCategoriesIntoDB();
   initCustomCatSettingsForm();
@@ -8112,6 +8478,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   initDatePickers();
   setupGlobalKeyboardShortcuts();
+  setupReceiptPasteAndDropListeners();
   populateCategoriesDropdowns();
   populateAllAccountDropdowns();
   populateBudgetCategoryDropdown();
@@ -8175,6 +8542,8 @@ function setupGlobalKeyboardShortcuts() {
     );
 
     if (e.key === 'Escape') {
+      closeReceiptModal();
+      closeReceiptTextPrompt();
       closeEditModal();
       closeEditRecModal();
       closeAccountModal();
@@ -9272,6 +9641,10 @@ function renderTransactionList(list, containerId, emptyText) {
       ? `<button type="button" class="btn-delete-tx" onclick="openEndOrDeleteRecModal('${tx.recurringId}')" title="Dauerauftrag / Sparplan beenden oder löschen" aria-label="Dauerauftrag ${tx.category || tx.name || ''} beenden oder löschen">🗑️ Beenden / Löschen</button>`
       : `<button type="button" class="btn-delete-tx" onclick="deleteTransaction('${tx.id}')" title="Buchung löschen" aria-label="Buchung ${tx.category || ''} löschen">🗑️ Löschen</button>`;
 
+    const receiptBtn = tx.receipt
+      ? `<button type="button" class="btn-receipt-tx" onclick="openReceiptModalByTxId('${tx.id}')" title="Beleg / Quittung ansehen" aria-label="Beleg zu ${escapeHTML(tx.category || tx.name || '')} ansehen">🧾 Beleg</button>`
+      : '';
+
     const hasSub = tx.subcategory && tx.subcategory !== 'Gesamt / Allgemein' && tx.subcategory !== tx.category;
     let categoryDisplayHtml = '';
     if (hasSub) {
@@ -9295,11 +9668,13 @@ function renderTransactionList(list, containerId, emptyText) {
             <span class="tx-cat-name">${categoryDisplayHtml}</span>
             <span class="tx-account-badge">${accountBadgeText}</span>
             ${statusBadge}
+            ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
             ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
           </div>
         </div>
         <div class="tx-amount-col">
           <span class="tx-sum ${colorClass}">${sign ? sign + ' ' : ''}${formatCurrency(tx.amount)}</span>
+          ${receiptBtn}
           ${editBtn}
           ${deleteBtn}
         </div>
@@ -10256,7 +10631,7 @@ async function handleAddExpense(e) {
         const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} von ${accName})`;
         const finalDesc = desc ? `${desc} ${partText}` : `Split-Zahlung ${partText}`;
 
-        appState.transactions.push({
+        const splitTx = {
           id: `tx_${Date.now()}_${idx}`,
           splitId: splitId,
           splitIndex: idx + 1,
@@ -10270,7 +10645,11 @@ async function handleAddExpense(e) {
           description: finalDesc,
           isPlanned: isPlanned,
           date: date
-        });
+        };
+        if (currentExpenseReceipt) {
+          splitTx.receipt = JSON.parse(JSON.stringify(currentExpenseReceipt));
+        }
+        appState.transactions.push(splitTx);
       });
       announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
     } else {
@@ -10301,7 +10680,7 @@ async function handleAddExpense(e) {
         }
       }
 
-      appState.transactions.push({
+      const newTx = {
         id: `tx_${Date.now()}`,
         type: 'expense',
         account: account,
@@ -10311,7 +10690,11 @@ async function handleAddExpense(e) {
         description: desc,
         isPlanned: isPlanned,
         date: date
-      });
+      };
+      if (currentExpenseReceipt) {
+        newTx.receipt = JSON.parse(JSON.stringify(currentExpenseReceipt));
+      }
+      appState.transactions.push(newTx);
       announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}!`);
     }
   }
@@ -10339,6 +10722,8 @@ async function handleAddExpense(e) {
     contractReset.checked = false;
     toggleContractSection('exp');
   }
+  currentExpenseReceipt = null;
+  renderReceiptPreview('exp');
   toggleExpenseFrequencyFields();
   updateOverview();
   switchView('overview');
@@ -10620,7 +11005,7 @@ async function handleAddIncome(e) {
         const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
         const finalDesc = desc ? `${desc} ${partText}` : `Split-Einzahlung ${partText}`;
 
-        appState.transactions.push({
+        const splitTx = {
           id: `tx_${Date.now()}_${idx}`,
           splitId: splitId,
           splitIndex: idx + 1,
@@ -10634,11 +11019,15 @@ async function handleAddIncome(e) {
           description: finalDesc,
           isPlanned: isPlanned,
           date: date
-        });
+        };
+        if (currentIncomeReceipt) {
+          splitTx.receipt = JSON.parse(JSON.stringify(currentIncomeReceipt));
+        }
+        appState.transactions.push(splitTx);
       });
       announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
     } else {
-      appState.transactions.push({
+      const newTx = {
         id: `tx_${Date.now()}`,
         type: 'income',
         account: account,
@@ -10648,7 +11037,11 @@ async function handleAddIncome(e) {
         description: desc,
         isPlanned: isPlanned,
         date: date
-      });
+      };
+      if (currentIncomeReceipt) {
+        newTx.receipt = JSON.parse(JSON.stringify(currentIncomeReceipt));
+      }
+      appState.transactions.push(newTx);
       announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
     }
   }
@@ -10661,6 +11054,8 @@ async function handleAddIncome(e) {
     splitToggleReset.checked = false;
     toggleIncomeSplitPayment();
   }
+  currentIncomeReceipt = null;
+  renderReceiptPreview('inc');
   toggleIncomeFrequencyFields();
   updateOverview();
   switchView('overview');
@@ -10903,6 +11298,9 @@ function openEditModal(txId) {
 
   document.getElementById('edit-tx-desc').value = tx.description || '';
 
+  currentEditReceipt = tx.receipt ? JSON.parse(JSON.stringify(tx.receipt)) : null;
+  renderReceiptPreview('edit');
+
   const modal = document.getElementById('edit-tx-modal');
   modal.style.display = 'flex';
   document.getElementById('edit-tx-amount').focus();
@@ -10910,6 +11308,8 @@ function openEditModal(txId) {
 }
 
 function closeEditModal() {
+  currentEditReceipt = null;
+  renderReceiptPreview('edit');
   const modal = document.getElementById('edit-tx-modal');
   if (modal) modal.style.display = 'none';
 }
@@ -10947,6 +11347,14 @@ async function saveEditedTransaction(e) {
   }
 
   tx.description = document.getElementById('edit-tx-desc').value.trim();
+
+  if (currentEditReceipt) {
+    tx.receipt = currentEditReceipt;
+  } else {
+    delete tx.receipt;
+  }
+  currentEditReceipt = null;
+  renderReceiptPreview('edit');
 
   await saveStateToEncryptedStorage();
   closeEditModal();
@@ -11295,6 +11703,825 @@ async function deleteRecurring(recId) {
     updateOverview();
     announceNVDA(`Dauerauftrag ${deleted.name || deleted.category} gelöscht.`);
   }
+}
+
+// ----------------------------------------------------------------------------
+// 12b. BELEG- & QUITTUNGS-VERWALTUNG, SMART OCR & BETRACHTER (v6.7.0)
+// ----------------------------------------------------------------------------
+let currentExpenseReceipt = null;
+let currentIncomeReceipt = null;
+let currentEditReceipt = null;
+let viewerActiveTxId = null;
+let viewerActiveFormType = null;
+let viewerReceipt = null;
+let viewerZoom = 1.0;
+let viewerRotation = 0;
+let tesseractLoadingPromise = null;
+
+async function compressReceiptFile(file) {
+  const isPdf = file.type === 'application/pdf' || (file.name && file.name.toLowerCase().endsWith('.pdf'));
+  if (isPdf) {
+    if (file.size > 5 * 1024 * 1024) {
+      throw new Error('PDF-Datei ist größer als 5 MB. Bitte wähle eine kleinere Datei.');
+    }
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        name: file.name,
+        type: 'application/pdf',
+        data: reader.result,
+        size: file.size,
+        createdAt: new Date().toISOString()
+      });
+      reader.onerror = () => reject(new Error('Fehler beim Lesen der PDF-Datei.'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1400;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        const approxSize = Math.round((compressedDataUrl.length * 3) / 4);
+
+        resolve({
+          name: (file.name || 'beleg').replace(/\.[^/.]+$/, "") + ".jpg",
+          type: 'image/jpeg',
+          data: compressedDataUrl,
+          size: approxSize,
+          createdAt: new Date().toISOString(),
+          originalWidth: img.width,
+          originalHeight: img.height
+        });
+      };
+      img.onerror = () => reject(new Error('Das Bild konnte nicht geladen werden.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = () => reject(new Error('Fehler beim Lesen der Bilddatei.'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadTesseractScript() {
+  if (typeof Tesseract !== 'undefined') return Promise.resolve();
+  if (tesseractLoadingPromise) return tesseractLoadingPromise;
+  tesseractLoadingPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Tesseract konnte nicht geladen werden'));
+    document.head.appendChild(script);
+  });
+  return tesseractLoadingPromise;
+}
+
+function extractTextFromPdfDataUrl(dataUrl) {
+  try {
+    const base64 = dataUrl.split(',')[1];
+    if (!base64) return '';
+    const binary = atob(base64);
+
+    let text = '';
+    const tjRegex = /\(([^)]+)\)\s*Tj/g;
+    let match;
+    while ((match = tjRegex.exec(binary)) !== null) {
+      text += ' ' + match[1];
+    }
+    const tjArrayRegex = /\[([^\]]+)\]\s*TJ/g;
+    while ((match = tjArrayRegex.exec(binary)) !== null) {
+      const inner = match[1];
+      const partRegex = /\(([^)]+)\)/g;
+      let pMatch;
+      while ((pMatch = partRegex.exec(inner)) !== null) {
+        text += pMatch[1];
+      }
+      text += ' ';
+    }
+    return text.trim();
+  } catch (e) {
+    return '';
+  }
+}
+
+async function extractTextFromReceipt(receiptObj) {
+  let recognizedText = '';
+  let barcodeData = null;
+
+  // 1. BarcodeDetector für QR Codes / GiroCode / EPC QR
+  if ('BarcodeDetector' in window && receiptObj.type.startsWith('image/')) {
+    try {
+      const detector = new BarcodeDetector({ formats: ['qr_code', 'data_matrix', 'code_128', 'ean_13'] });
+      const img = new Image();
+      img.src = receiptObj.data;
+      await new Promise(r => { img.onload = r; img.onerror = r; });
+      const barcodes = await detector.detect(img);
+      if (barcodes && barcodes.length > 0) {
+        barcodeData = barcodes[0].rawValue;
+        recognizedText += '\n' + barcodeData;
+      }
+    } catch (e) {
+      console.warn('BarcodeDetector fallback:', e);
+    }
+  }
+
+  // 2. Chromium / Android ShapeDetection TextDetector
+  if ('TextDetector' in window && receiptObj.type.startsWith('image/')) {
+    try {
+      const detector = new TextDetector();
+      const img = new Image();
+      img.src = receiptObj.data;
+      await new Promise(r => { img.onload = r; img.onerror = r; });
+      const detectedTexts = await detector.detect(img);
+      if (detectedTexts && detectedTexts.length > 0) {
+        const fullOcr = detectedTexts.map(t => t.rawValue).join('\n');
+        recognizedText += '\n' + fullOcr;
+      }
+    } catch (e) {
+      console.warn('TextDetector fallback:', e);
+    }
+  }
+
+  // 3. PDF Textextraktion
+  if (receiptObj.type === 'application/pdf' && receiptObj.data) {
+    try {
+      const pdfText = extractTextFromPdfDataUrl(receiptObj.data);
+      if (pdfText) recognizedText += '\n' + pdfText;
+    } catch (e) {
+      console.warn('PDF text extraction fallback:', e);
+    }
+  }
+
+  // 4. Fallback zu Tesseract OCR (falls online und Text noch leer)
+  if (!recognizedText.trim() && receiptObj.type.startsWith('image/')) {
+    if (typeof Tesseract !== 'undefined') {
+      try {
+        const res = await Tesseract.recognize(receiptObj.data, 'deu+eng');
+        if (res && res.data && res.data.text) {
+          recognizedText += '\n' + res.data.text;
+        }
+      } catch (e) {
+        console.warn('Tesseract OCR fallback:', e);
+      }
+    } else if (navigator.onLine) {
+      try {
+        await loadTesseractScript();
+        if (typeof Tesseract !== 'undefined') {
+          const res = await Tesseract.recognize(receiptObj.data, 'deu+eng');
+          if (res && res.data && res.data.text) {
+            recognizedText += '\n' + res.data.text;
+          }
+        }
+      } catch (e) {
+        console.warn('Dynamic Tesseract fallback:', e);
+      }
+    }
+  }
+
+  // 5. Dateiname als Signal hinzufügen
+  if (receiptObj.name) {
+    recognizedText += '\n' + receiptObj.name;
+  }
+
+  return { text: recognizedText, barcodeData };
+}
+
+const KNOWN_RECEIPT_MERCHANTS = [
+  // Supermärkte & Discounter
+  { keywords: ['rewe'], merchant: 'Rewe', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Rewe' },
+  { keywords: ['edeka'], merchant: 'Edeka', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Edeka' },
+  { keywords: ['aldi nord'], merchant: 'Aldi Nord', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Aldi Nord' },
+  { keywords: ['aldi süd', 'aldi sued'], merchant: 'Aldi Süd', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Aldi Süd' },
+  { keywords: ['aldi'], merchant: 'Aldi', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Aldi Süd' },
+  { keywords: ['lidl'], merchant: 'Lidl', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Lidl' },
+  { keywords: ['kaufland'], merchant: 'Kaufland', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Kaufland' },
+  { keywords: ['penny'], merchant: 'Penny', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Penny' },
+  { keywords: ['netto marken', 'netto discount', 'netto'], merchant: 'Netto', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Netto Marken-Discount' },
+  { keywords: ['norma'], merchant: 'Norma', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Norma' },
+  { keywords: ['globus'], merchant: 'Globus', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Globus' },
+  { keywords: ['tegut'], merchant: 'Tegut', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Tegut' },
+  { keywords: ['alnatura'], merchant: 'Alnatura', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Alnatura' },
+  { keywords: ['denns'], merchant: 'Denns Biomarkt', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Denns Biomarkt' },
+  { keywords: ['bio company'], merchant: 'Bio Company', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Bio Company' },
+  { keywords: ['trinkgut', 'getränke'], merchant: 'Getränkemarkt', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Getränkemarkt / Trinkgut' },
+
+  // Drogerie & Kosmetik
+  { keywords: ['dm-drogerie', 'dm markt', 'dm drogerie', 'dm '], merchant: 'dm-drogerie markt', main: 'Drogerie, Kosmetik & Körperpflege', sub: 'dm-drogerie markt' },
+  { keywords: ['rossmann'], merchant: 'Rossmann', main: 'Drogerie, Kosmetik & Körperpflege', sub: 'Rossmann' },
+  { keywords: ['müller drogerie', 'mueller drogerie'], merchant: 'Müller', main: 'Drogerie, Kosmetik & Körperpflege', sub: 'Müller Drogerie' },
+
+  // Elektronik & Software
+  { keywords: ['mediamarkt', 'media markt'], merchant: 'MediaMarkt', main: 'Elektronik, Internet, Handy & Software', sub: 'MediaMarkt' },
+  { keywords: ['saturn'], merchant: 'Saturn', main: 'Elektronik, Internet, Handy & Software', sub: 'Saturn' },
+  { keywords: ['apple'], merchant: 'Apple', main: 'Elektronik, Internet, Handy & Software', sub: 'Apple' },
+  { keywords: ['amazon'], merchant: 'Amazon', main: 'Elektronik, Internet, Handy & Software', sub: 'Amazon' },
+  { keywords: ['cyberport'], merchant: 'Cyberport', main: 'Elektronik, Internet, Handy & Software', sub: 'Cyberport' },
+  { keywords: ['conrad'], merchant: 'Conrad Electronic', main: 'Elektronik, Internet, Handy & Software', sub: 'Conrad Electronic' },
+  { keywords: ['telekom'], merchant: 'Deutsche Telekom', main: 'Elektronik, Internet, Handy & Software', sub: 'Handyvertrag & Mobilfunk' },
+  { keywords: ['vodafone'], merchant: 'Vodafone', main: 'Elektronik, Internet, Handy & Software', sub: 'Handyvertrag & Mobilfunk' },
+  { keywords: ['o2 '], merchant: 'o2 Telefonica', main: 'Elektronik, Internet, Handy & Software', sub: 'Handyvertrag & Mobilfunk' },
+
+  // Möbel & Baumarkt
+  { keywords: ['ikea'], merchant: 'IKEA', main: 'Möbel, Deko & Inneneinrichtung', sub: 'IKEA' },
+  { keywords: ['bauhaus'], merchant: 'Bauhaus', main: 'Wohnen & Haushalt (Heimwerken)', sub: 'Bauhaus' },
+  { keywords: ['obi'], merchant: 'OBI', main: 'Wohnen & Haushalt (Heimwerken)', sub: 'OBI' },
+  { keywords: ['hornbach'], merchant: 'Hornbach', main: 'Wohnen & Haushalt (Heimwerken)', sub: 'Hornbach' },
+  { keywords: ['toom'], merchant: 'Toom Baumarkt', main: 'Wohnen & Haushalt (Heimwerken)', sub: 'Toom Baumarkt' },
+
+  // Mobilität & Tanken
+  { keywords: ['shell'], merchant: 'Shell', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Tanken (Benzin, Diesel, Autogas)' },
+  { keywords: ['aral'], merchant: 'Aral', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Tanken (Benzin, Diesel, Autogas)' },
+  { keywords: ['totalenergies', 'total tankstelle'], merchant: 'Total', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Tanken (Benzin, Diesel, Autogas)' },
+  { keywords: ['esso'], merchant: 'Esso', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Tanken (Benzin, Diesel, Autogas)' },
+  { keywords: ['jet tankstelle'], merchant: 'JET', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Tanken (Benzin, Diesel, Autogas)' },
+  { keywords: ['deutsche bahn', 'bahn'], merchant: 'Deutsche Bahn', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Deutsche Bahn & Fernverkehr' },
+  { keywords: ['flixbus'], merchant: 'FlixBus', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'FlixBus & Fernbus' },
+  { keywords: ['uber'], merchant: 'Uber', main: 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)', sub: 'Taxi, Uber & Fahrdienste' },
+
+  // Essen & Gastro
+  { keywords: ['mcdonald', 'mc donald'], merchant: "McDonald's", main: 'Ausgehen, Essen & Feiern', sub: 'Fast Food, Imbiss & Döner' },
+  { keywords: ['burger king'], merchant: 'Burger King', main: 'Ausgehen, Essen & Feiern', sub: 'Fast Food, Imbiss & Döner' },
+  { keywords: ['subway'], merchant: 'Subway', main: 'Ausgehen, Essen & Feiern', sub: 'Fast Food, Imbiss & Döner' },
+  { keywords: ['domino'], merchant: "Domino's Pizza", main: 'Ausgehen, Essen & Feiern', sub: 'Pizza, Pasta & Italienisch' },
+  { keywords: ['bäckerei', 'baeckerei', 'dörnbäcker', 'bäcker', 'baecker'], merchant: 'Bäckerei', main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Bäckerei / Dorfbäcker' },
+
+  // Gesundheit
+  { keywords: ['apotheke'], merchant: 'Apotheke', main: 'Gesundheit & Medizin', sub: 'Apotheke & Medikamente' },
+  { keywords: ['docmorris'], merchant: 'DocMorris', main: 'Gesundheit & Medizin', sub: 'Online-Apotheke (DocMorris, Shop-Apotheke)' },
+  { keywords: ['shop apotheke'], merchant: 'Shop Apotheke', main: 'Gesundheit & Medizin', sub: 'Online-Apotheke (DocMorris, Shop-Apotheke)' }
+];
+
+async function parseReceiptData(text, barcodeData, fileName, formType) {
+  const result = {
+    amount: null,
+    date: null,
+    merchant: null,
+    mainCategory: null,
+    subCategory: null,
+    description: '',
+    isNewCategory: false
+  };
+
+  const safeType = formType === 'inc' ? 'inc' : 'exp';
+
+  // 1. Barcode / GiroCode EPC QR
+  if (barcodeData && typeof barcodeData === 'string' && barcodeData.startsWith('BCD')) {
+    const lines = barcodeData.split(/\r?\n/);
+    if (lines.length >= 8) {
+      if (lines[5] && lines[5].trim()) result.merchant = lines[5].trim();
+      const amtMatch = lines[7] ? lines[7].match(/(?:EUR)?([0-9]+(?:\.[0-9]{1,2})?)/i) : null;
+      if (amtMatch) result.amount = parseFloat(amtMatch[1]);
+      if (lines[10] && lines[10].trim()) result.description = lines[10].trim();
+      else if (lines[9] && lines[9].trim()) result.description = lines[9].trim();
+    }
+  }
+
+  // 2. Betrag (Summe / Total)
+  if (!result.amount && text) {
+    const sumRegexes = [
+      /(?:summe|gesamtbetrag|gesamt|endbetrag|total|zu zahlen|zahlbetrag|rechnungsbetrag|kartenzahlung|geg\.\s*bar|bar)\s*[:=]?\s*(?:eur|€)?\s*([0-9]{1,4}(?:[.,][0-9]{3})*[.,][0-9]{2})/i,
+      /(?:eur|€)\s*([0-9]{1,4}(?:[.,][0-9]{3})*[.,][0-9]{2})/i,
+      /([0-9]{1,4}(?:[.,][0-9]{3})*[.,][0-9]{2})\s*(?:eur|€)/i
+    ];
+
+    for (const rx of sumRegexes) {
+      const match = text.match(rx);
+      if (match && match[1]) {
+        let numStr = match[1].replace(/\./g, '').replace(',', '.');
+        const parsedNum = parseFloat(numStr);
+        if (!isNaN(parsedNum) && parsedNum > 0 && parsedNum < 1000000) {
+          result.amount = parsedNum;
+          break;
+        }
+      }
+    }
+
+    if (!result.amount) {
+      const allAmounts = [];
+      const generalAmtRegex = /\b([0-9]{1,4}(?:[.,][0-9]{3})*[.,][0-9]{2})\b/g;
+      let m;
+      while ((m = generalAmtRegex.exec(text)) !== null) {
+        let val = parseFloat(m[1].replace(/\./g, '').replace(',', '.'));
+        if (!isNaN(val) && val > 0 && val < 50000) {
+          allAmounts.push(val);
+        }
+      }
+      if (allAmounts.length > 0) {
+        result.amount = Math.max(...allAmounts);
+      }
+    }
+  }
+
+  // 3. Datum
+  if (text) {
+    const dateMatchGerman = text.match(/\b([0-3]?[0-9])[./-]([0-1]?[0-9])[./-](20[2-3][0-9]|[2-3][0-9])\b/);
+    if (dateMatchGerman) {
+      const day = String(parseInt(dateMatchGerman[1], 10)).padStart(2, '0');
+      const month = String(parseInt(dateMatchGerman[2], 10)).padStart(2, '0');
+      let year = dateMatchGerman[3];
+      if (year.length === 2) year = '20' + year;
+      if (parseInt(month, 10) >= 1 && parseInt(month, 10) <= 12 && parseInt(day, 10) >= 1 && parseInt(day, 10) <= 31) {
+        result.date = `${year}-${month}-${day}`;
+      }
+    }
+
+    if (!result.date) {
+      const isoMatch = text.match(/\b(20[2-3][0-9])-([0-1]?[0-9])-([0-3]?[0-9])\b/);
+      if (isoMatch) {
+        result.date = `${isoMatch[1]}-${String(parseInt(isoMatch[2], 10)).padStart(2, '0')}-${String(parseInt(isoMatch[3], 10)).padStart(2, '0')}`;
+      }
+    }
+  }
+
+  // 4. Händler / Laden
+  const textLower = (text + ' ' + (fileName || '')).toLowerCase();
+
+  for (const item of KNOWN_RECEIPT_MERCHANTS) {
+    const matched = item.keywords.some(kw => textLower.includes(kw));
+    if (matched) {
+      result.merchant = item.merchant;
+      result.mainCategory = item.main;
+      result.subCategory = item.sub;
+      break;
+    }
+  }
+
+  if (!result.merchant && text) {
+    const lines = text.split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(l => l.length >= 3 && l.length <= 45);
+
+    const noiseWords = ['kassenbon', 'kassenzettel', 'quittung', 'rechnung', 'beleg', 'vielen dank', 'kunde', 'datum', 'uhrzeit', 'eur', 'summe', 'steuer', 'ust', 'tse', 'kartenzahlung', 'terminal', 'telefon', 'willkommen'];
+
+    for (const line of lines) {
+      const lineLow = line.toLowerCase();
+      const isNoise = noiseWords.some(nw => lineLow.includes(nw)) || /^[0-9.,:\-\s]+$/.test(line);
+      if (!isNoise) {
+        result.merchant = line;
+        break;
+      }
+    }
+  }
+
+  if (!result.merchant && fileName) {
+    const cleanName = fileName.replace(/\.[^/.]+$/, "").replace(/[_\-+]/g, ' ').trim();
+    if (cleanName.length >= 3) {
+      result.merchant = cleanName;
+    }
+  }
+
+  // 5. Kategorie zuordnen oder NEU ERSTELLEN
+  if (!result.mainCategory) {
+    if (result.merchant) {
+      const db = CATEGORIES_DB[safeType] || {};
+      let foundInDb = false;
+
+      for (const [mainCat, subs] of Object.entries(db)) {
+        const subMatch = subs.find(s => s.toLowerCase() === result.merchant.toLowerCase() || result.merchant.toLowerCase().includes(s.toLowerCase()));
+        if (subMatch) {
+          result.mainCategory = mainCat;
+          result.subCategory = subMatch;
+          foundInDb = true;
+          break;
+        }
+      }
+
+      if (!foundInDb) {
+        const mLow = result.merchant.toLowerCase();
+        let targetMain = safeType === 'inc' ? 'Sonstige Einnahmen' : 'Sonstige Ausgaben';
+
+        if (safeType === 'exp') {
+          if (/tier|hund|katz|fressnapf|zoo/i.test(mLow)) targetMain = 'Haustiere, Tierfutter & Tierarzt';
+          else if (/bäck|baeck|café|cafe|restaurant|imbiss|döner|pizza|burger|sushi/i.test(mLow)) targetMain = 'Ausgehen, Essen & Feiern';
+          else if (/sport|fitness|gym|kletter/i.test(mLow)) targetMain = 'Freizeit, Hobbys & Unterhaltung';
+          else if (/buch|buech|thalia/i.test(mLow)) targetMain = 'Bildung, Bücher, Studium & Beruf';
+          else if (/kleid|mode|schuh|fashion|snipes|zara|h&m/i.test(mLow)) targetMain = 'Kleidung, Schuhe & Accessoires';
+          else if (/arzt|zahnarzt|praxis|klinik|apothek/i.test(mLow)) targetMain = 'Gesundheit & Medizin';
+          else if (/kino|theater|konzert|ticket/i.test(mLow)) targetMain = 'Freizeit, Hobbys & Unterhaltung';
+          else if (/tank|kfz|auto|werkstatt|reifen/i.test(mLow)) targetMain = 'Mobilität & Unterwegs (Auto, Bahn, ÖPNV)';
+          else if (/elektronik|computer|handy|tech|software/i.test(mLow)) targetMain = 'Elektronik, Internet, Handy & Software';
+          else if (/bau|garten|blumen|baumarkt/i.test(mLow)) targetMain = 'Wohnen & Haushalt (Heimwerken)';
+          else if (/markt|supermarkt|lebensmittel/i.test(mLow)) targetMain = 'Lebensmittel, Supermarkt & Discounter';
+        }
+
+        result.mainCategory = targetMain;
+        result.subCategory = result.merchant;
+        result.isNewCategory = true;
+      }
+    } else {
+      result.mainCategory = safeType === 'inc' ? 'Sonstige Einnahmen' : 'Sonstige Ausgaben';
+      result.subCategory = 'Gesamt / Allgemein';
+    }
+  }
+
+  // 6. Notiz / Beschreibung
+  if (!result.description) {
+    if (result.merchant) {
+      result.description = `${result.merchant}${result.date ? ' (' + formatDateGerman(result.date) + ')' : ''}`;
+    } else if (fileName) {
+      result.description = fileName.replace(/\.[^/.]+$/, "");
+    }
+  }
+
+  return result;
+}
+
+async function applyParsedReceiptData(formType, parsed) {
+  const prefix = formType === 'edit' ? 'edit-tx' : formType;
+  let filledCount = 0;
+  let detailsText = [];
+
+  // 1. Betrag eintragen
+  if (parsed.amount && parsed.amount > 0) {
+    const amtEl = document.getElementById(`${prefix}-amount`);
+    if (amtEl) {
+      amtEl.value = parsed.amount.toFixed(2);
+      filledCount++;
+      detailsText.push(`${formatCurrency(parsed.amount)}`);
+    }
+  }
+
+  // 2. Datum eintragen
+  if (parsed.date) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    if (dateEl) {
+      dateEl.value = parsed.date;
+      filledCount++;
+      detailsText.push(`Datum: ${formatDateGerman(parsed.date)}`);
+    }
+  }
+
+  // 3. Kategorie & Unterkategorie auswählen (oder NEU erstellen!)
+  if (parsed.mainCategory) {
+    const catType = formType === 'inc' ? 'inc' : 'exp';
+    if (formType === 'edit') {
+      const editType = document.getElementById('edit-tx-type').value;
+      const actualCatType = editType === 'income' ? 'inc' : 'exp';
+      if (parsed.isNewCategory) {
+        await ensureCategoryExists(actualCatType, parsed.mainCategory, parsed.subCategory);
+      }
+      populateEditModalCategories(actualCatType, parsed.mainCategory, parsed.subCategory);
+    } else {
+      if (parsed.isNewCategory) {
+        await ensureCategoryExists(catType, parsed.mainCategory, parsed.subCategory);
+      }
+      const catEl = document.getElementById(`${prefix}-category`);
+      if (catEl) {
+        catEl.value = parsed.mainCategory;
+        onMainCategoryChange(prefix);
+        if (parsed.subCategory) {
+          const subEl = document.getElementById(`${prefix}-subcategory`);
+          if (subEl) subEl.value = parsed.subCategory;
+        }
+      }
+    }
+    filledCount++;
+    detailsText.push(`${parsed.subCategory || parsed.mainCategory}`);
+  }
+
+  // 4. Beschreibung eintragen
+  if (parsed.description) {
+    const descEl = document.getElementById(`${prefix}-desc`);
+    if (descEl && (!descEl.value || descEl.value.trim() === '')) {
+      descEl.value = parsed.description;
+    }
+  }
+
+  // Statusanzeige & NVDA Ansage
+  const statusEl = document.getElementById(`${formType}-receipt-status-banner`);
+  if (statusEl) {
+    if (filledCount > 0) {
+      const isNewCatMsg = parsed.isNewCategory 
+        ? ` · ✨ Neue Kategorie "${escapeHTML(parsed.subCategory)}" automatisch erstellt!` 
+        : '';
+      statusEl.className = 'receipt-status-banner success';
+      statusEl.innerHTML = `<span aria-hidden="true">✨</span><span><strong>Automatisch erkannt &amp; eingetragen:</strong> ${escapeHTML(detailsText.join(' · '))}${isNewCatMsg}</span>`;
+      statusEl.style.display = 'flex';
+      announceNVDA(`Belegdaten erkannt: ${detailsText.join(', ')} automatisch eingetragen.`);
+    } else {
+      statusEl.className = 'receipt-status-banner success';
+      statusEl.innerHTML = '<span aria-hidden="true">📎</span><span>Beleg angehängt. Bitte Betrag und Kategorie überprüfen.</span>';
+      statusEl.style.display = 'flex';
+      announceNVDA('Beleg angehängt.');
+    }
+  }
+}
+
+async function processReceiptFileAndAutofill(formType, file) {
+  const statusEl = document.getElementById(`${formType}-receipt-status-banner`);
+  if (statusEl) {
+    statusEl.className = 'receipt-status-banner scanning';
+    statusEl.innerHTML = '<span aria-hidden="true">⏳</span><span>Beleg wird komprimiert und analysiert...</span>';
+    statusEl.style.display = 'flex';
+  }
+
+  try {
+    const compressed = await compressReceiptFile(file);
+    if (formType === 'exp') currentExpenseReceipt = compressed;
+    else if (formType === 'inc') currentIncomeReceipt = compressed;
+    else if (formType === 'edit') currentEditReceipt = compressed;
+
+    renderReceiptPreview(formType);
+
+    const extracted = await extractTextFromReceipt(compressed);
+    const parsed = await parseReceiptData(extracted.text, extracted.barcodeData, file.name, formType);
+    await applyParsedReceiptData(formType, parsed);
+  } catch (err) {
+    console.error('Fehler bei Beleganalyse:', err);
+    if (statusEl) {
+      statusEl.className = 'receipt-status-banner';
+      statusEl.style.display = 'block';
+      statusEl.textContent = 'Hinweis: ' + (err.message || 'Beleg angehängt.');
+    }
+  }
+}
+
+function handleReceiptFileSelect(formType, files) {
+  if (!files || files.length === 0) return;
+  processReceiptFileAndAutofill(formType, files[0]);
+}
+
+function renderReceiptPreview(formType) {
+  let receipt = null;
+  if (formType === 'exp') receipt = currentExpenseReceipt;
+  else if (formType === 'inc') receipt = currentIncomeReceipt;
+  else if (formType === 'edit') receipt = currentEditReceipt;
+
+  const container = document.getElementById(`${formType}-receipt-preview-container`);
+  if (!container) return;
+
+  if (!receipt) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  const isPdf = receipt.type === 'application/pdf';
+  const kbSize = receipt.size ? Math.round(receipt.size / 1024) + ' KB' : '';
+
+  let thumbHtml = '';
+  if (isPdf) {
+    thumbHtml = '<div class="receipt-thumb-icon" aria-hidden="true">📄</div>';
+  } else {
+    thumbHtml = `<img src="${receipt.data}" alt="Vorschau Beleg" class="receipt-thumb">`;
+  }
+
+  container.innerHTML = `
+    <div class="receipt-preview-card">
+      ${thumbHtml}
+      <div class="receipt-info-col">
+        <div class="receipt-name" title="${escapeHTML(receipt.name)}">${escapeHTML(receipt.name)}</div>
+        <div class="receipt-meta">${isPdf ? 'PDF Dokument' : 'Bild'} · ${kbSize} · Bereit zum Speichern</div>
+      </div>
+      <div style="display: flex; gap: 6px; flex-shrink: 0;">
+        <button type="button" class="btn btn-secondary" onclick="openReceiptModalDirect('${formType}')" title="Beleg ansehen" aria-label="Beleg ${escapeHTML(receipt.name)} im Großbild ansehen" style="padding: 6px 10px; font-size: 14px;">
+          👁️ Ansehen
+        </button>
+        <button type="button" class="btn btn-delete-tx" onclick="removeReceipt('${formType}')" title="Beleg entfernen" aria-label="Beleg entfernen" style="padding: 6px 10px; font-size: 14px;">
+          🗑️ Entfernen
+        </button>
+      </div>
+    </div>
+  `;
+  container.style.display = 'block';
+}
+
+function removeReceipt(formType) {
+  if (formType === 'exp') currentExpenseReceipt = null;
+  else if (formType === 'inc') currentIncomeReceipt = null;
+  else if (formType === 'edit') currentEditReceipt = null;
+
+  renderReceiptPreview(formType);
+  const statusEl = document.getElementById(`${formType}-receipt-status-banner`);
+  if (statusEl) {
+    statusEl.style.display = 'none';
+    statusEl.innerHTML = '';
+  }
+  announceNVDA('Beleg entfernt.');
+}
+
+function openReceiptModalByTxId(txId) {
+  const tx = appState.transactions.find(t => t.id === txId) || (appState.recurring || []).find(r => r.id === txId);
+  if (!tx || !tx.receipt) return;
+  openReceiptViewer(tx.receipt, true, txId, null);
+}
+
+function openReceiptModalDirect(formType) {
+  let receipt = null;
+  if (formType === 'exp') receipt = currentExpenseReceipt;
+  else if (formType === 'inc') receipt = currentIncomeReceipt;
+  else if (formType === 'edit') receipt = currentEditReceipt;
+
+  if (!receipt) return;
+  openReceiptViewer(receipt, true, null, formType);
+}
+
+function openReceiptViewer(receipt, canDelete, activeTxId = null, formType = null) {
+  viewerReceipt = receipt;
+  viewerActiveTxId = activeTxId;
+  viewerActiveFormType = formType;
+  viewerZoom = 1.0;
+  viewerRotation = 0;
+
+  const modal = document.getElementById('receipt-viewer-modal');
+  const imgEl = document.getElementById('receipt-viewer-img');
+  const pdfEl = document.getElementById('receipt-viewer-pdf');
+  const metaEl = document.getElementById('receipt-viewer-meta');
+  const delBtn = document.getElementById('receipt-viewer-delete-btn');
+
+  if (delBtn) delBtn.style.display = canDelete ? 'inline-flex' : 'none';
+
+  const isPdf = receipt.type === 'application/pdf';
+  if (isPdf) {
+    imgEl.style.display = 'none';
+    pdfEl.style.display = 'block';
+    pdfEl.src = receipt.data;
+  } else {
+    pdfEl.style.display = 'none';
+    imgEl.style.display = 'block';
+    imgEl.src = receipt.data;
+    updateReceiptViewerTransform();
+  }
+
+  const kbSize = receipt.size ? Math.round(receipt.size / 1024) + ' KB' : '';
+  const dateStr = receipt.createdAt ? new Date(receipt.createdAt).toLocaleString('de-DE') : '';
+  if (metaEl) {
+    metaEl.textContent = `${receipt.name || 'Beleg'} · ${kbSize}${dateStr ? ' · Angehängt am ' + dateStr : ''}`;
+  }
+
+  modal.style.display = 'flex';
+  const heading = document.getElementById('receipt-viewer-heading');
+  if (heading) heading.focus();
+  announceNVDA('Beleg-Betrachter geöffnet.');
+}
+
+function closeReceiptModal() {
+  const modal = document.getElementById('receipt-viewer-modal');
+  if (modal) modal.style.display = 'none';
+  const imgEl = document.getElementById('receipt-viewer-img');
+  const pdfEl = document.getElementById('receipt-viewer-pdf');
+  if (imgEl) imgEl.src = '';
+  if (pdfEl) pdfEl.src = '';
+  viewerReceipt = null;
+  viewerActiveTxId = null;
+  viewerActiveFormType = null;
+}
+
+function zoomReceipt(delta) {
+  viewerZoom = Math.max(0.4, Math.min(4.0, viewerZoom + delta));
+  updateReceiptViewerTransform();
+  announceNVDA(`Zoom ${Math.round(viewerZoom * 100)} Prozent`);
+}
+
+function resetReceiptZoom() {
+  viewerZoom = 1.0;
+  updateReceiptViewerTransform();
+  announceNVDA('Originalgröße 100 Prozent');
+}
+
+function rotateReceipt() {
+  viewerRotation = (viewerRotation + 90) % 360;
+  updateReceiptViewerTransform();
+  announceNVDA(`Beleg gedreht auf ${viewerRotation} Grad`);
+}
+
+function updateReceiptViewerTransform() {
+  const imgEl = document.getElementById('receipt-viewer-img');
+  if (imgEl) {
+    imgEl.style.transform = `rotate(${viewerRotation}deg) scale(${viewerZoom})`;
+  }
+}
+
+function downloadReceipt() {
+  if (!viewerReceipt || !viewerReceipt.data) return;
+  const link = document.createElement('a');
+  link.href = viewerReceipt.data;
+  link.download = viewerReceipt.name || 'beleg';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  announceNVDA('Beleg heruntergeladen.');
+}
+
+async function deleteReceiptFromActiveTx() {
+  if (viewerActiveTxId) {
+    const tx = appState.transactions.find(t => t.id === viewerActiveTxId);
+    if (tx) {
+      delete tx.receipt;
+      await saveStateToEncryptedStorage();
+      updateOverview();
+    } else {
+      const rec = (appState.recurring || []).find(r => r.id === viewerActiveTxId);
+      if (rec) {
+        delete rec.receipt;
+        await saveStateToEncryptedStorage();
+        updateOverview();
+      }
+    }
+  } else if (viewerActiveFormType) {
+    removeReceipt(viewerActiveFormType);
+  }
+  closeReceiptModal();
+  announceNVDA('Beleg gelöscht.');
+}
+
+function openReceiptTextPastePrompt(formType) {
+  const modal = document.getElementById('receipt-text-prompt-modal');
+  const targetInput = document.getElementById('receipt-text-target-form');
+  const textInput = document.getElementById('receipt-text-input');
+  if (targetInput) targetInput.value = formType;
+  if (textInput) textInput.value = '';
+  if (modal) {
+    modal.style.display = 'flex';
+    if (textInput) textInput.focus();
+  }
+}
+
+function closeReceiptTextPrompt() {
+  const modal = document.getElementById('receipt-text-prompt-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleManualReceiptTextSubmit(e) {
+  e.preventDefault();
+  const formType = document.getElementById('receipt-text-target-form').value || 'exp';
+  const text = (document.getElementById('receipt-text-input').value || '').trim();
+  closeReceiptTextPrompt();
+  if (!text) return;
+
+  const parsed = await parseReceiptData(text, null, 'manueller_text', formType);
+  await applyParsedReceiptData(formType, parsed);
+}
+
+function setupReceiptPasteAndDropListeners() {
+  window.addEventListener('paste', async (e) => {
+    if (!e.clipboardData || !e.clipboardData.items) return;
+
+    for (const item of e.clipboardData.items) {
+      if (item.type && item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (!blob) continue;
+
+        let targetForm = 'exp';
+        const editModal = document.getElementById('edit-tx-modal');
+        if (editModal && editModal.style.display !== 'none') {
+          targetForm = 'edit';
+        } else {
+          const incView = document.getElementById('view-income');
+          if (incView && incView.style.display !== 'none') {
+            targetForm = 'inc';
+          }
+        }
+        await processReceiptFileAndAutofill(targetForm, blob);
+        break;
+      }
+    }
+  });
+
+  ['exp', 'inc', 'edit'].forEach(formType => {
+    const box = document.getElementById(`${formType}-receipt-group`);
+    if (!box) return;
+
+    box.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      box.classList.add('drag-over');
+    });
+
+    box.addEventListener('dragleave', () => {
+      box.classList.remove('drag-over');
+    });
+
+    box.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      box.classList.remove('drag-over');
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        await processReceiptFileAndAutofill(formType, e.dataTransfer.files[0]);
+      }
+    });
+  });
 }
 
 // ----------------------------------------------------------------------------

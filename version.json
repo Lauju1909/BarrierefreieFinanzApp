@@ -1,8 +1,12 @@
 {
-  "version": "6.6.1",
+  "version": "6.7.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-10-01",
   "features": [
+    "Beleg-, Quittungs- & Rechnungserfassung: Fotos per Kamera aufnehmen, Bild- oder PDF-Dateien anhängen oder per Strg+V einfügen mit automatischer Client-Side Bildkomprimierung (unter 250 KB)",
+    "Automatische Texterkennung & Selbst-Eintragen: Betrag, Datum und Laden/Händler werden aus Belegen (OCR, PDF-Streams, GiroCode QR) automatisch erkannt und in die Formularfelder eingetragen",
+    "Automatische Kategorie-Erstellung: Erkennt die Beleganalyse ein noch unbekanntes Geschäft oder eine neue Kategorie, wird diese selbstständig angelegt, gespeichert und direkt ausgewählt",
+    "Vollbild Beleg-Betrachter: Hohe Auflösung, Zoom (Vergrößern/Verkleinern), 90°-Drehung, Download und barrierefreie NVDA/TalkBack-Tastatursteuerung",
     "Fehlerbehebung Liquiditäts- & Deckungsprüfung: Falsche Warnungen und fehlerhafte Fehlbeträge behoben. Echte Verlaufssimulation verhindert Doppelabzüge und berücksichtigt gedeckte Konten korrekt",
     "Optionale Split-Einzahlung bei Einnahmen: Einnahmen können ab sofort auf beliebig viele Konten gleichzeitig aufgeteilt werden (z. B. Gehalt oder Geldgeschenk teils aufs Girokonto und teils aufs Sparkonto) mit automatischer Restbetragsberechnung und NVDA-Unterstützung",
     "Automatischer Deckungsausgleich (wie bei PayPal): Hinterlege bei jedem Konto ein Deckungskonto. Bei unzureichendem Guthaben wird die fehlende Differenz automatisch ausgeglichen – aber nur dann, wenn das Guthaben wirklich nicht ausreicht",

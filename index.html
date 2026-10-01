@@ -21,12 +21,34 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.6.1)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.7.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.7.0 (Belege erfassen &amp; Automatische Texterkennung)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>📸 Belege &amp; Rechnungen per Kamera, Datei oder Zwischenablage:</strong><br>
+Hebe Fotos per Smartphone-Kamera auf, wähle Bilddateien oder PDFs aus oder füge Screenshots direkt per Strg+V ein – sowohl bei Ausgaben, Einnahmen als auch beim Bearbeiten von Buchungen.
+</li>
+<li>
+<strong>🤖 Automatische Erkennung &amp; Selbst-Eintragen:</strong><br>
+Betrag, Datum und Laden/Händler werden automatisch aus dem Beleg erkannt und sofort in die Formularfelder eingetragen.
+</li>
+<li>
+<strong>✨ Automatische Kategorie-Erstellung:</strong><br>
+Existiert der erkannte Laden oder die passende Kategorie noch nicht in deiner Liste, wird sie selbstständig neu erstellt, gespeichert und ausgewählt!
+</li>
+<li>
+<strong>🔍 Vollbild-Betrachter mit Zoom &amp; 90°-Drehung:</strong><br>
+Jederzeit Belege in voller Auflösung ansehen, hinein- und herauszoomen, um 90° drehen oder als Datei herunterladen.
+</li>
+</ul>
+</div>
+
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.6.1 (Fehlerbehebung Liquiditäts- &amp; Deckungsprüfung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -685,6 +707,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-group">
   <label for="edit-tx-desc" class="field-label"><strong>Beschreibung / Notiz:</strong></label>
   <input type="text" id="edit-tx-desc" class="large-input" placeholder="z. B. Wocheneinkauf, Geschenk...">
+</div>
+
+<div class="form-group receipt-upload-box" id="edit-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Angehängter Beleg / Rechnung (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Hier kannst du einen Beleg anheften, austauschen oder per Texterkennung analysieren lassen:
+  </p>
+
+  <input type="file" id="edit-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('edit', this.files)">
+  <input type="file" id="edit-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('edit', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('edit-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('edit')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text analysieren</span>
+    </button>
+  </div>
+
+  <div id="edit-receipt-preview-container" style="display: none;"></div>
+  <div id="edit-receipt-status-banner" style="display: none;" role="status"></div>
 </div>
 
 <div class="form-actions" style="margin-top: 14px;">
@@ -1431,6 +1484,75 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <span>Abbrechen</span>
   </button>
 </div>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: BELEG- & QUITTUNGS-VOLLBILD-BETRACHTER
+ ========================================================================= -->
+<div id="receipt-viewer-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-viewer-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 900px; width: 95%;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+    <h2 id="receipt-viewer-heading" tabindex="-1" style="margin: 0; font-size: 22px;">🧾 Beleg / Quittung ansehen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeReceiptModal()" aria-label="Beleg-Betrachter schließen" style="min-height: 38px; padding: 6px 14px;">
+      <span>✕ Schließen</span>
+    </button>
+  </div>
+
+  <div id="receipt-viewer-meta" class="field-hint" style="margin-bottom: 10px;"></div>
+
+  <div class="receipt-viewer-toolbar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; align-items: center;">
+    <button type="button" class="btn btn-secondary" onclick="zoomReceipt(0.2)" aria-label="Beleg vergrößern" style="padding: 6px 12px;">
+      <span>🔍+ Vergrößern</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="zoomReceipt(-0.2)" aria-label="Beleg verkleinern" style="padding: 6px 12px;">
+      <span>🔍- Verkleinern</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="resetReceiptZoom()" aria-label="Originalgröße wiederherstellen" style="padding: 6px 12px;">
+      <span>🔄 100%</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="rotateReceipt()" aria-label="Beleg um 90 Grad drehen" style="padding: 6px 12px;">
+      <span>🔃 90° Drehen</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="downloadReceipt()" aria-label="Beleg herunterladen" style="padding: 6px 12px;">
+      <span>💾 Herunterladen</span>
+    </button>
+    <button type="button" class="btn btn-delete-tx" id="receipt-viewer-delete-btn" onclick="deleteReceiptFromActiveTx()" aria-label="Beleg löschen" style="margin-left: auto;">
+      <span>🗑️ Beleg löschen</span>
+    </button>
+  </div>
+
+  <div class="receipt-viewer-viewport" id="receipt-viewer-viewport" tabindex="0" aria-label="Beleganzeigebereich. Mit Pfeiltasten scrollen.">
+    <img id="receipt-viewer-img" src="" alt="Vollbild-Vorschau des Belegs" style="display: none;">
+    <iframe id="receipt-viewer-pdf" src="" title="Beleg PDF Dokument" style="display: none;"></iframe>
+  </div>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: BELEG-TEXT EINFÜGEN & SCHNELL-ANALYSE
+ ========================================================================= -->
+<div id="receipt-text-prompt-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="receipt-text-modal-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 600px;">
+  <h2 id="receipt-text-modal-heading" tabindex="-1">📋 Text aus Beleg / Rechnung einfügen</h2>
+  <p class="field-hint">Kopiere Text aus einer Rechnung, E-Mail oder Online-Banking hier hinein. Betrag, Datum &amp; Händler werden sofort erkannt und automatisch in dein Formular übernommen:</p>
+
+  <form onsubmit="handleManualReceiptTextSubmit(event)" class="accessible-form" style="margin-top: 14px;">
+    <input type="hidden" id="receipt-text-target-form" value="exp">
+    <div class="form-group">
+      <label for="receipt-text-input" class="field-label"><strong>Belegtext / Rechnungsdaten:</strong></label>
+      <textarea id="receipt-text-input" rows="6" class="large-input" style="height: auto; min-height: 120px; font-family: monospace;" placeholder="Beispiel:&#10;REWE Markt GmbH&#10;Datum: 01.10.2026&#10;SUMME EUR 14,85"></textarea>
+    </div>
+
+    <div class="form-actions" style="margin-top: 16px;">
+      <button type="submit" class="btn btn-primary">
+        <span>✨ <strong>Analysieren &amp; Felder ausfüllen</strong> (Enter)</span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="closeReceiptTextPrompt()">
+        <span>Abbrechen</span>
+      </button>
+    </div>
+  </form>
 </div>
 </div>
 
@@ -2300,6 +2422,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </label>
 <input type="text" id="exp-desc" class="large-input" placeholder="z. B. Geplante neue Kopfhörer, Döner, Spotify...">
 </div>
+<div class="form-group receipt-upload-box" id="exp-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Beleg, Quittung oder Rechnung (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Lade ein Foto, Bild oder PDF hoch – Betrag, Datum &amp; Laden werden <strong>automatisch erkannt &amp; eingetragen</strong>! Fehlt die passende Kategorie, wird sie <strong>selbstständig neu erstellt</strong>.
+  </p>
+
+  <input type="file" id="exp-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('exp', this.files)">
+  <input type="file" id="exp-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('exp', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('exp-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto aufnehmen (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('exp-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Beleg-Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('exp')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text aus Beleg analysieren</span>
+    </button>
+  </div>
+
+  <div id="exp-receipt-preview-container" style="display: none;"></div>
+  <div id="exp-receipt-status-banner" style="display: none;" role="status"></div>
+</div>
 
 <div class="form-actions">
 <button type="submit" class="btn btn-primary">
@@ -2507,6 +2659,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <input type="text" id="inc-desc" class="large-input" placeholder="z. B. Taschengeld, Vinted Jacke Verkauf im Oktober...">
 </div>
 
+<div class="form-group receipt-upload-box" id="inc-receipt-group">
+  <label class="field-label" style="display: flex; align-items: center; gap: 8px;">
+    <span aria-hidden="true" style="font-size: 20px;">🧾</span>
+    <strong>Beleg, Quittung oder Nachweis (Kamera / Datei / Zwischenablage):</strong>
+  </label>
+  <p class="field-hint" style="margin-bottom: 10px; font-size: 14px;">
+    Lade ein Foto, Bild oder PDF hoch – Betrag, Datum &amp; Absender werden <strong>automatisch erkannt &amp; eingetragen</strong>! Fehlt die passende Kategorie, wird sie <strong>selbstständig neu erstellt</strong>.
+  </p>
+
+  <input type="file" id="inc-receipt-camera" accept="image/*" capture="environment" style="display: none;" onchange="handleReceiptFileSelect('inc', this.files)">
+  <input type="file" id="inc-receipt-file" accept="image/*,application/pdf" style="display: none;" onchange="handleReceiptFileSelect('inc', this.files)">
+
+  <div class="receipt-buttons-row">
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('inc-receipt-camera').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📷</span>
+      <span>Foto aufnehmen (Kamera)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="document.getElementById('inc-receipt-file').click()" style="display: flex; align-items: center; gap: 6px;">
+      <span aria-hidden="true">📁</span>
+      <span>Beleg-Datei auswählen (Bild/PDF)</span>
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="openReceiptTextPastePrompt('inc')" style="display: flex; align-items: center; gap: 6px;" title="Beleg-Text einfügen und analysieren">
+      <span aria-hidden="true">📋</span>
+      <span>Text aus Beleg analysieren</span>
+    </button>
+  </div>
+
+  <div id="inc-receipt-preview-container" style="display: none;"></div>
+  <div id="inc-receipt-status-banner" style="display: none;" role="status"></div>
+</div>
+
 <div class="form-actions">
 <button type="submit" class="btn btn-primary">
 <span>🟢<strong>Einnahme speichern</strong>(Enter)</span>
@@ -2708,7 +2891,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.6.1</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.7.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3352,7 +3535,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.6.1</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.7.0</strong> – 100% Offline, AES-256 Verschlüsselung & Kauf-Planer. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

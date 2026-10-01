@@ -1,6 +1,28 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.7.0 (Belege erfassen, Smart OCR, Selbst-Ausfüllen & Kategorie-Erstellung)
+*Datum: 01. Oktober 2026*
+
+### 📸 1. Beleg- & Quittungserfassung
+- **Kamera, Datei & Zwischenablage:** Belege können auf Mobilgeräten direkt per Kamera fotografiert, als Bild (JPG, PNG, WebP) oder PDF hochgeladen oder per Strg+V aus der Zwischenablage eingefügt werden.
+- **Client-Side Komprimierung:** Bilder werden im Browser automatisch auf max. 1400px skaliert und komprimiert (unter 250 KB), sodass Tresordateien und E2E-Sync schlank und schnell bleiben.
+- **Verfügbar in allen Formularen:** Ausgaben (Reiter 2), Einnahmen (Reiter 3) und beim Bearbeiten beliebiger Buchungen.
+
+### 🤖 2. Automatische Erkennung & Selbst-Eintragen
+- **Intelligente Extraktion:** Betrag, Datum und Laden/Händler werden aus Belegen (OCR, PDF-Textstreams, GiroCode EPC-QR-Codes) automatisch analysiert.
+- **Formularfelder vorbefüllt:** Die erkannten Daten werden automatisch in Betrag, Datum, Laden/Beschreibung und Kategorie eingetragen.
+- **Screenreader-Rückmeldung:** NVDA und TalkBack sagen die erkannten Werte sofort an (`Belegdaten erkannt: 14,85 Euro bei Rewe am 01.10.2026 eingetragen`).
+
+### ✨ 3. Automatische Kategorie-Erstellung
+- **Selbstständige Neuanlage:** Erkennt die Beleganalyse einen Händler oder ein Geschäft, für das noch keine Kategorie oder Unterkategorie existiert, wird diese automatisch im Tresor neu angelegt und direkt im Formular ausgewählt.
+
+### 🔍 4. Vollbild-Betrachter
+- **Zoom & Rotation:** Belege können im Vollbild angesehen, stufenlos vergrößert/verkleinert (+ / - / 100%) und um 90° gedreht werden.
+- **Download & Löschen:** Mit 1 Klick als Datei herunterladen oder vom Eintrag entfernen.
+
+---
+
 ## ⚡ Version 6.6.1 (Fehlerbehebung Liquiditäts- & Kontodeckungsprüfung)
 *Datum: 01. Oktober 2026*
 
