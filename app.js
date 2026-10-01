@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.6.0';
+const CURRENT_APP_VERSION = 'v6.6.1';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -796,93 +796,170 @@ function renderExpenseRankings(expenseList) {
 // ----------------------------------------------------------------------------
 // C. LIQUIDITÄTS- & KONTODECKUNGS-WARNUNG
 // ----------------------------------------------------------------------------
-function checkLiquidityWarning(currentBalances) {
+function checkLiquidityWarning(periodEndBalances) {
   const alertBox = document.getElementById('overview-liquidity-alert');
   if (!alertBox) return;
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const currentMonthPrefix = todayStr.substring(0, 7);
+  const year = (typeof selectedYear !== 'undefined' && selectedYear !== null) ? selectedYear : new Date().getFullYear();
+  const month = (typeof selectedMonth !== 'undefined' && selectedMonth !== null) ? selectedMonth : new Date().getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const mFormatted = String(month + 1).padStart(2, '0');
+  const monthStartStr = `${year}-${mFormatted}-01`;
+  const monthEndStr = `${year}-${mFormatted}-${String(daysInMonth).padStart(2, '0')}`;
 
-  // Calculate upcoming planned transactions and recurring items until end of month
-  const upcomingTx = (appState.transactions || []).filter(t => t.date && t.date.startsWith(currentMonthPrefix) && t.date > todayStr && t.type === 'expense');
-  const d = new Date();
-  const recList = getRecurringTransactionsForMonth(d.getFullYear(), d.getMonth()).filter(r => r.date && r.date > todayStr && r.type === 'expense');
+  // Wenn der betrachtete Monat bereits in der Vergangenheit liegt, keine Fälligkeitswarnung
+  if (monthEndStr < todayStr) {
+    alertBox.style.display = 'none';
+    checkContractReminders();
+    return;
+  }
+
+  // Simulations-Start: Heute (oder Monatsanfang bei Zukunftsmonaten)
+  const evalStartStr = (todayStr > monthStartStr) ? todayStr : monthStartStr;
+  const startBalances = calculateBalancesUpToDate(evalStartStr);
+
+  // Anstehende Buchungen von morgen (oder nach evalStartStr) bis zum Monatsende
+  const upcomingTx = (appState.transactions || []).filter(t => t.date && t.date > evalStartStr && t.date <= monthEndStr);
+  const recList = getRecurringTransactionsForMonth(year, month).filter(r => r.date && r.date > evalStartStr && r.date <= monthEndStr);
   const allUpcoming = [...upcomingTx, ...recList];
 
-  // Group upcoming expenses by account
-  const upcomingPerAcc = {};
+  // Chronologisch sortieren
+  allUpcoming.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  // Verlauf für jedes Konto simulieren
+  const accStats = {};
+  (appState.accounts || []).forEach(acc => {
+    const cur = startBalances[acc.id] !== undefined ? startBalances[acc.id] : 0;
+    accStats[acc.id] = {
+      acc: acc,
+      startBal: cur,
+      runningBal: cur,
+      lowestBal: cur,
+      totalExpenses: 0,
+      totalIncome: 0,
+      dispo: Number(acc.dispoLimit || 0),
+      shortfall: 0,
+      coveredAmount: 0,
+      coveredBy: '',
+      uncoveredShortfall: 0
+    };
+  });
+
   allUpcoming.forEach(item => {
-    const accId = item.account || 'bank';
     const amt = Number(item.amount || 0);
-    upcomingPerAcc[accId] = (upcomingPerAcc[accId] || 0) + amt;
-  });
-
-  // Calculate shortfalls for accounts with a backup account (e.g. PayPal -> Bank)
-  // REGEL: Nur belasten, wenn auf dem Primärkonto wirklich nicht genug Geld vorhanden ist!
-  const backupBurdens = {}; // backupAccountId -> [{ sourceName, shortfall }]
-  (appState.accounts || []).forEach(acc => {
-    if (acc.hasBackupAccount && acc.backupAccountId) {
-      const upc = upcomingPerAcc[acc.id] || 0;
-      const curBal = currentBalances ? (currentBalances[acc.id] || 0) : 0;
-      // NUR WENN das aktuelle Guthaben kleiner ist als die anstehenden Ausgaben:
-      if (upc > 0 && curBal < upc) {
-        const shortfall = Math.round((upc - Math.max(0, curBal)) * 100) / 100;
-        if (shortfall > 0) {
-          if (!backupBurdens[acc.backupAccountId]) backupBurdens[acc.backupAccountId] = [];
-          backupBurdens[acc.backupAccountId].push({
-            sourceName: acc.name,
-            shortfall: shortfall
-          });
-        }
+    if (item.type === 'expense' && item.account && accStats[item.account]) {
+      accStats[item.account].runningBal -= amt;
+      accStats[item.account].totalExpenses += amt;
+      accStats[item.account].lowestBal = Math.min(accStats[item.account].lowestBal, accStats[item.account].runningBal);
+    } else if (item.type === 'income' && item.account && accStats[item.account]) {
+      accStats[item.account].runningBal += amt;
+      accStats[item.account].totalIncome += amt;
+      accStats[item.account].lowestBal = Math.min(accStats[item.account].lowestBal, accStats[item.account].runningBal);
+    } else if (item.type === 'transfer' && item.fromAccount && item.toAccount) {
+      if (accStats[item.fromAccount]) {
+        accStats[item.fromAccount].runningBal -= amt;
+        accStats[item.fromAccount].totalExpenses += amt;
+        accStats[item.fromAccount].lowestBal = Math.min(accStats[item.fromAccount].lowestBal, accStats[item.fromAccount].runningBal);
+      }
+      if (accStats[item.toAccount]) {
+        accStats[item.toAccount].runningBal += amt;
+        accStats[item.toAccount].totalIncome += amt;
+        accStats[item.toAccount].lowestBal = Math.min(accStats[item.toAccount].lowestBal, accStats[item.toAccount].runningBal);
       }
     }
   });
 
-  const alerts = [];
+  // Echten Fehlbetrag ermitteln (nur wenn Guthaben + Dispo unter 0 fällt!)
   (appState.accounts || []).forEach(acc => {
-    const ownUpcoming = upcomingPerAcc[acc.id] || 0;
-    const extraBurdenList = backupBurdens[acc.id] || [];
-    const extraBurdenTotal = extraBurdenList.reduce((s, b) => s + b.shortfall, 0);
-    const totalLiabilities = Math.round((ownUpcoming + extraBurdenTotal) * 100) / 100;
-    const curBal = currentBalances ? (currentBalances[acc.id] || 0) : 0;
-    const dispo = Number(acc.dispoLimit || 0);
-    const effectiveAvailable = curBal + dispo;
+    const st = accStats[acc.id];
+    if (!st) return;
+    const effectiveLowest = st.lowestBal + st.dispo;
+    if (effectiveLowest < 0) {
+      st.shortfall = Math.round(Math.abs(effectiveLowest) * 100) / 100;
+    } else {
+      st.shortfall = 0;
+    }
+    st.uncoveredShortfall = st.shortfall;
+  });
 
-    // Prüfen, ob dieses Konto unterdeckt ist
-    if (totalLiabilities > 0 && effectiveAvailable < totalLiabilities) {
-      const diff = Math.round((totalLiabilities - effectiveAvailable) * 100) / 100;
-      let extraInfo = '';
-      if (extraBurdenList.length > 0) {
-        const detailsStr = extraBurdenList.map(b => `${formatCurrency(b.shortfall)} für ${escapeHTML(b.sourceName)}`).join(', ');
-        extraInfo = ` (inkl. Auto-Deckung: ${detailsStr}, da dort das Guthaben nicht ausreicht)`;
+  // Auto-Deckungskonten anrechnen: Nur belasten, wenn das Primärkonto WIRKLICH nicht ausreicht!
+  (appState.accounts || []).forEach(acc => {
+    const st = accStats[acc.id];
+    if (!st || st.shortfall <= 0) return;
+
+    if (acc.hasBackupAccount && acc.backupAccountId && accStats[acc.backupAccountId]) {
+      const backupSt = accStats[acc.backupAccountId];
+      const backupAvailable = backupSt.lowestBal + backupSt.dispo;
+
+      if (backupAvailable >= st.shortfall) {
+        // Vollständig gedeckt
+        st.coveredAmount = st.shortfall;
+        st.coveredBy = backupSt.acc.name;
+        st.uncoveredShortfall = 0;
+        backupSt.lowestBal -= st.shortfall;
+      } else if (backupAvailable > 0) {
+        // Teilweise gedeckt
+        st.coveredAmount = Math.round(backupAvailable * 100) / 100;
+        st.coveredBy = backupSt.acc.name;
+        st.uncoveredShortfall = Math.round((st.shortfall - backupAvailable) * 100) / 100;
+        backupSt.lowestBal -= backupAvailable;
+      } else {
+        // Deckungskonto selbst leer
+        st.coveredAmount = 0;
+        st.uncoveredShortfall = st.shortfall;
       }
-      alerts.push({
-        accName: acc.name,
-        curBal: curBal,
-        dispo: dispo,
-        totalLiabilities: totalLiabilities,
-        diff: diff,
-        extraInfo: extraInfo
-      });
     }
   });
 
-  if (alerts.length > 0) {
-    alertBox.style.display = 'flex';
-    alertBox.className = 'liquidity-alert-box';
-    alertBox.innerHTML = alerts.map(a => `
-      <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px;">
-        <span style="font-size: 24px;" aria-hidden="true">⚠️</span>
-        <div>
-          <strong style="color: var(--text-primary); font-size: 15px;">Achtung Kontodeckung auf ${escapeHTML(a.accName)}:</strong>
-          <div style="font-size: 14px; margin-top: 2px;">
-            Bis zum Monatsende stehen noch <strong>${formatCurrency(a.totalLiabilities)}</strong> an Ausgaben &amp; Daueraufträgen an${a.extraInfo}.
-            Aktuelles Guthaben: <strong>${formatCurrency(a.curBal)}</strong>${a.dispo > 0 ? ` (+ Dispo: ${formatCurrency(a.dispo)})` : ''}.
-            Fehlbetrag: <strong style="color: #D32F2F;">${formatCurrency(a.diff)}</strong>.
+  // Warnungen und Benachrichtigungen zusammenstellen
+  const alertItems = [];
+
+  (appState.accounts || []).forEach(acc => {
+    const st = accStats[acc.id];
+    if (!st) return;
+
+    // Nur bei echter Unterdeckung warnen!
+    if (st.uncoveredShortfall > 0) {
+      let backupNote = '';
+      if (acc.hasBackupAccount && acc.backupAccountId && st.coveredAmount > 0) {
+        backupNote = ` (davon ${formatCurrency(st.coveredAmount)} über ${escapeHTML(st.coveredBy)} gedeckt, Rest ungedeckt)`;
+      } else if (acc.hasBackupAccount && acc.backupAccountId && accStats[acc.backupAccountId]) {
+        backupNote = ` (Deckungskonto ${escapeHTML(accStats[acc.backupAccountId].acc.name)} reicht ebenfalls nicht aus)`;
+      }
+      alertItems.push(`
+        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px;">
+          <span style="font-size: 24px;" aria-hidden="true">⚠️</span>
+          <div>
+            <strong style="color: var(--text-primary); font-size: 15px;">Achtung Kontodeckung auf ${escapeHTML(acc.name)}:</strong>
+            <div style="font-size: 14px; margin-top: 2px;">
+              Bis zum Monatsende stehen noch <strong>${formatCurrency(st.totalExpenses)}</strong> an Ausgaben &amp; Daueraufträgen an.
+              Aktuell verfügbar: <strong>${formatCurrency(Math.max(0, st.startBal))}</strong>${st.dispo > 0 ? ` (+ Dispo: ${formatCurrency(st.dispo)})` : ''}.
+              Drohender Fehlbetrag: <strong style="color: #D32F2F;">${formatCurrency(st.uncoveredShortfall)}</strong>${backupNote}.
+            </div>
           </div>
         </div>
-      </div>
-    `).join('<hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 8px 0;">');
+      `);
+    } else if (st.coveredAmount > 0) {
+      // Ruhige, positive Info, dass die Auto-Deckung greift und abgesichert ist
+      alertItems.push(`
+        <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 4px;">
+          <span style="font-size: 22px;" aria-hidden="true">🛡️</span>
+          <div>
+            <strong style="color: #1B5E20; font-size: 15px;">Automatische Deckung aktiv für ${escapeHTML(acc.name)}:</strong>
+            <div style="font-size: 14px; margin-top: 2px; color: var(--text-primary);">
+              Für anstehende Zahlungen (${formatCurrency(st.totalExpenses)}) werden voraussichtlich <strong>${formatCurrency(st.coveredAmount)}</strong> automatisch über <strong>${escapeHTML(st.coveredBy)}</strong> ausgeglichen. Dort ist ausreichend Guthaben vorhanden.
+            </div>
+          </div>
+        </div>
+      `);
+    }
+  });
+
+  if (alertItems.length > 0) {
+    alertBox.style.display = 'flex';
+    alertBox.className = 'liquidity-alert-box';
+    alertBox.innerHTML = alertItems.join('<hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 8px 0;">');
   } else {
     alertBox.style.display = 'none';
   }

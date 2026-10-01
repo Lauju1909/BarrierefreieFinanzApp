@@ -1,6 +1,16 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.6.1 (Fehlerbehebung Liquiditäts- & Kontodeckungsprüfung)
+*Datum: 01. Oktober 2026*
+
+### 🛡️ 1. Korrektur der Liquiditäts- & Deckungsprüfung
+- **Keine Doppelabzüge mehr:** Die Prüfung simuliert nun den echten chronologischen Kontoverlauf ab heute bis zum Monatsende. Anstehende Ausgaben werden nicht mehr fälschlicherweise von einem bereits reduzierten Monatsendsaldo abgezogen.
+- **Fehlalarme behoben:** Wenn ein Konto (wie PayPal) am Monatsende ein positives Guthaben behält (z. B. +17,77 €), wird kein falscher Fehlbetrag mehr gemeldet.
+- **Intelligente Berücksichtigung von Deckungskonten:** Kann ein etwaiger Fehlbetrag vollständig über ein verknüpftes Deckungskonto (z. B. Girokonto) ausgeglichen werden, bleibt die Hauptübersicht frei von störenden Fehlbetrags-Warnungen.
+
+---
+
 ## ⚡ Version 6.6.0 (Split-Einzahlung auf mehrere Konten)
 *Datum: 01. Oktober 2026*
 
