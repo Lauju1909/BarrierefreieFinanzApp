@@ -1,6 +1,34 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.8.0 (Interaktive Einkaufsliste, Checkliste & WhatsApp-Import)
+*Datum: 02. Oktober 2026*
+
+### 🛒 1. Interaktive Einkaufsliste & Checkliste
+- **Ersetzt alten Kauf-Planer:** Der bisherige statische Kauf-Planer wurde durch eine interaktive, barrierefreie Einkaufsliste direkt auf der Übersichtsseite ersetzt.
+- **Abhaken beim Einkaufen:** Artikel können mit einer großen, barrierefreien Checkbox oder Tastatur angehakt werden. Erledigte Artikel werden optisch durchgestrichen.
+- **Filter-Reiter:** Schneller Wechsel zwischen *Alle*, *⏳ Noch offen* und *✅ Erledigt*.
+- **Schnelleingabe:** Artikelname mit optionalem Preis und Geschäft/Laden über Datalist-Vorschläge (Rewe, Aldi, dm, etc.) blitzschnell eintragen.
+
+### 📋 2. WhatsApp-, Notiz- & Textlisten importieren
+- **1-Klick-Import:** Kopiere beliebige Textnachrichten aus WhatsApp, Google Notizen, Apple Notizen oder E-Mails hinein.
+- **Intelligente Aufteilung:** Aufzählungspunkte (`-`, `*`, `•`), Nummerierungen (`1.`, `2)`), Checkboxen (`[ ]`) werden automatisch entfernt.
+- **Preise & Läden erkannt:** Preise am Zeilenende (z. B. `2,49 €`) und Geschäfte in Klammern (z. B. `(Rewe)`) werden sofort als Metadaten erkannt, während Verpackungsgrößen wie `(10er)` oder `(500g)` sauber im Artikelnamen bleiben.
+
+### 📷 3. Dokumente & Belege hochladen
+- **Unterstützung für alle Formate:** Lade Textdateien (`.txt`, `.csv`), PDFs oder Belegfotos hoch oder nutze direkt die Smartphone-Kamera.
+- **Automatische Übernahme:** Text wird ausgelesen und direkt als strukturierte Artikel in die Einkaufsliste übernommen.
+
+### 💳 4. Einkauf als Ausgabe im Haushaltsbuch abbuchen
+- **Direkt verbuchen:** Mit 1 Klick wird die Summe der erledigten Artikel ermittelt und ein Dialog zum Abbuchen auf dem gewünschten Konto (Giro, Bargeld, PayPal) geöffnet.
+- **Automatisches Aufräumen:** Abgehakte Artikel können beim Buchen automatisch von der Einkaufsliste entfernt werden.
+
+### 📲 5. WhatsApp-Export & Aufräumhilfe
+- **Zwischenablage:** Die gesamte Liste wird mit formatierten Checkboxen kopiert, um sie per WhatsApp an Familie oder Partner zu senden.
+- **Erledigte aufräumen:** Alle erledigten Artikel mit einem Klick entfernen.
+
+---
+
 ## ⚡ Version 6.7.0 (Belege erfassen, Smart OCR, Selbst-Ausfüllen & Kategorie-Erstellung)
 *Datum: 01. Oktober 2026*
 

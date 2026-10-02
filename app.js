@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.7.0';
+const CURRENT_APP_VERSION = 'v6.8.0';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -623,7 +623,8 @@ let appState = {
   recurring: [],
   budgets: {},
   customCategories: { exp: {}, inc: {}, trf: {} },
-  wishlist: []
+  wishlist: [],
+  shoppingList: []
 };
 
 // ============================================================================
@@ -1048,968 +1049,622 @@ function checkContractReminders() {
 // ----------------------------------------------------------------------------
 // D. EINKAUFSZETTEL- & KASSENZETTEL-RECHNER
 // ----------------------------------------------------------------------------
-let shoppingCart = [];
+// EINKAUFSLISTE & CHECKLISTE (v6.8.0)
+// ----------------------------------------------------------------------------
+let currentShoppingFilter = 'all';
 
-function toggleShoppingCalculator() {
-  const details = document.getElementById('details-shopping-calc');
-  if (!details) return;
-  const isOpening = !details.open;
-  details.open = isOpening;
-  if (isOpening) {
-    populateShoppingDropdowns();
-    renderShoppingCart();
-    const itemInput = document.getElementById('shopping-item-name');
-    if (itemInput) itemInput.focus();
-    announceNVDA('Einkaufs- und Kassenrechner geöffnet.');
-  } else {
-    announceNVDA('Einkaufs- und Kassenrechner geschlossen.');
+function ensureShoppingListInitialized() {
+  if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) {
+    appState.shoppingList = [];
   }
 }
 
+function renderShoppingList() {
+  ensureShoppingListInitialized();
+  const listEl = document.getElementById('shopping-items-list');
+  if (!listEl) return;
+
+  const allItems = appState.shoppingList;
+  const openItems = allItems.filter(i => !i.checked);
+  const doneItems = allItems.filter(i => i.checked);
+
+  // Update counter badges
+  const cAll = document.getElementById('shopping-count-all');
+  const cOpen = document.getElementById('shopping-count-open');
+  const cDone = document.getElementById('shopping-count-done');
+  if (cAll) cAll.textContent = allItems.length;
+  if (cOpen) cOpen.textContent = openItems.length;
+  if (cDone) cDone.textContent = doneItems.length;
+
+  // Filter items
+  let displayItems = allItems;
+  if (currentShoppingFilter === 'open') {
+    displayItems = openItems;
+  } else if (currentShoppingFilter === 'done') {
+    displayItems = doneItems;
+  }
+
+  // Calculate totals
+  const openTotal = openItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+  const doneTotal = doneItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
+
+  const summaryEl = document.getElementById('shopping-summary-text');
+  if (summaryEl) {
+    if (allItems.length === 0) {
+      summaryEl.innerHTML = '<strong>Deine Einkaufsliste ist leer.</strong> Setze oben Artikel drauf oder füge eine WhatsApp-Liste ein!';
+    } else {
+      summaryEl.innerHTML = `
+        <strong>${openItems.length} Artikel noch offen</strong> (Geschätzt: <strong>${formatCurrency(openTotal)}</strong>) &bull; 
+        ${doneItems.length} abgehakt (${formatCurrency(doneTotal)})
+      `;
+    }
+  }
+
+  const bookBtn = document.getElementById('btn-open-shopping-book');
+  if (bookBtn) {
+    bookBtn.disabled = allItems.length === 0;
+    if (doneItems.length > 0) {
+      bookBtn.innerHTML = `<span>💳 <strong>${doneItems.length} erledigte Artikel buchen (${formatCurrency(doneTotal || openTotal)})</strong></span>`;
+    } else {
+      bookBtn.innerHTML = `<span>💳 <strong>Einkauf als Ausgabe buchen (${formatCurrency(openTotal)})</strong></span>`;
+    }
+  }
+
+  if (displayItems.length === 0) {
+    if (allItems.length === 0) {
+      listEl.innerHTML = `
+        <li class="shopping-empty-hint">
+          🛒 Noch keine Artikel auf der Einkaufsliste.<br>
+          Tippe oben einen Artikel ein, füge Text aus WhatsApp ein oder lade ein Foto / PDF hoch!
+        </li>`;
+    } else if (currentShoppingFilter === 'open') {
+      listEl.innerHTML = `
+        <li class="shopping-empty-hint">
+          🎉 Alles erledigt! Keine offenen Artikel mehr auf der Liste.
+        </li>`;
+    } else if (currentShoppingFilter === 'done') {
+      listEl.innerHTML = `
+        <li class="shopping-empty-hint">
+          Noch keine Artikel abgehakt. Hake Artikel an, sobald du sie im Einkaufswagen hast!
+        </li>`;
+    }
+    return;
+  }
+
+  listEl.innerHTML = displayItems.map(item => {
+    const isDone = Boolean(item.checked);
+    const priceText = item.price && Number(item.price) > 0 ? formatCurrency(Number(item.price)) : '';
+    const storeText = item.store ? escapeHTML(item.store) : '';
+
+    return `
+      <li class="shopping-item-row ${isDone ? 'is-done' : ''}" id="shopping-item-${item.id}">
+        <div class="shopping-item-main">
+          <label class="shopping-checkbox-label" for="chk-shop-${item.id}">
+            <input 
+              type="checkbox" 
+              id="chk-shop-${item.id}" 
+              class="shopping-checkbox-input" 
+              ${isDone ? 'checked' : ''} 
+              onchange="toggleShoppingItem('${item.id}')"
+              aria-label="${escapeHTML(item.name)} als ${isDone ? 'offen' : 'erledigt'} markieren"
+            >
+            <span class="shopping-item-name">${escapeHTML(item.name)}</span>
+          </label>
+        </div>
+        <div class="shopping-item-meta">
+          ${priceText ? `<span class="shopping-badge-price" title="Preis">${priceText}</span>` : ''}
+          ${storeText ? `<span class="shopping-badge-store" title="Laden / Geschäft">${storeText}</span>` : ''}
+          <button 
+            type="button" 
+            class="shopping-btn-delete" 
+            onclick="deleteShoppingItem('${item.id}')" 
+            aria-label="${escapeHTML(item.name)} von der Einkaufsliste löschen"
+            title="Artikel löschen"
+          >✕</button>
+        </div>
+      </li>
+    `;
+  }).join('');
+}
+
+async function addShoppingItemFromForm(e) {
+  if (e) e.preventDefault();
+  ensureShoppingListInitialized();
+
+  const nameInput = document.getElementById('shopping-new-name');
+  const priceInput = document.getElementById('shopping-new-price');
+  const storeInput = document.getElementById('shopping-new-store');
+
+  if (!nameInput) return;
+  const name = nameInput.value.trim();
+  if (!name) return;
+
+  const rawPrice = priceInput && priceInput.value ? parseFloat(priceInput.value) : null;
+  const price = rawPrice && !isNaN(rawPrice) && rawPrice > 0 ? rawPrice : null;
+  const store = storeInput ? storeInput.value.trim() : '';
+
+  const newItem = {
+    id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+    name: name,
+    price: price,
+    store: store,
+    checked: false,
+    createdAt: Date.now()
+  };
+
+  appState.shoppingList.push(newItem);
+  await saveStateToEncryptedStorage();
+
+  nameInput.value = '';
+  if (priceInput) priceInput.value = '';
+  nameInput.focus();
+
+  renderShoppingList();
+  announceNVDA(`${name} zur Einkaufsliste hinzugefügt.`);
+}
+
+async function toggleShoppingItem(id) {
+  ensureShoppingListInitialized();
+  const item = appState.shoppingList.find(i => i.id === id);
+  if (!item) return;
+
+  item.checked = !item.checked;
+  await saveStateToEncryptedStorage();
+  renderShoppingList();
+
+  const status = item.checked ? 'erledigt abgehakt' : 'wieder als offen markiert';
+  announceNVDA(`${item.name} ${status}.`);
+}
+
+async function deleteShoppingItem(id) {
+  ensureShoppingListInitialized();
+  const idx = appState.shoppingList.findIndex(i => i.id === id);
+  if (idx === -1) return;
+
+  const removed = appState.shoppingList.splice(idx, 1)[0];
+  await saveStateToEncryptedStorage();
+  renderShoppingList();
+  announceNVDA(`${removed.name} von der Einkaufsliste gelöscht.`);
+}
+
+function setShoppingFilter(filter) {
+  currentShoppingFilter = filter;
+  ['all', 'open', 'done'].forEach(f => {
+    const btn = document.getElementById('shopping-filter-' + f);
+    if (btn) {
+      const isActive = f === filter;
+      btn.classList.toggle('active', isActive);
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+  });
+  renderShoppingList();
+  const filterNames = { all: 'Alle Artikel', open: 'Nur noch offene Artikel', done: 'Nur erledigte Artikel' };
+  announceNVDA(`Filter geändert auf: ${filterNames[filter] || filter}`);
+}
+
+async function clearDoneShoppingItems() {
+  ensureShoppingListInitialized();
+  const countBefore = appState.shoppingList.length;
+  appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
+  const removedCount = countBefore - appState.shoppingList.length;
+
+  if (removedCount === 0) {
+    alert('Es gibt keine abgehakten Artikel zum Aufräumen.');
+    return;
+  }
+
+  await saveStateToEncryptedStorage();
+  renderShoppingList();
+  announceNVDA(`${removedCount} erledigte Artikel von der Einkaufsliste aufgeräumt.`);
+}
+
+async function clearEntireShoppingList() {
+  ensureShoppingListInitialized();
+  if (appState.shoppingList.length === 0) {
+    alert('Die Einkaufsliste ist bereits leer.');
+    return;
+  }
+
+  if (!confirm('Möchtest du wirklich alle Artikel von der Einkaufsliste löschen?')) {
+    return;
+  }
+
+  appState.shoppingList = [];
+  await saveStateToEncryptedStorage();
+  renderShoppingList();
+  announceNVDA('Einkaufsliste komplett geleert.');
+}
+
+function copyShoppingListAsText() {
+  ensureShoppingListInitialized();
+  if (appState.shoppingList.length === 0) {
+    alert('Die Einkaufsliste ist leer. Es gibt nichts zu kopieren.');
+    return;
+  }
+
+  const lines = ['🛒 *Einkaufsliste:*'];
+  const openItems = appState.shoppingList.filter(i => !i.checked);
+  const doneItems = appState.shoppingList.filter(i => i.checked);
+
+  if (openItems.length > 0) {
+    openItems.forEach(item => {
+      let meta = [];
+      if (item.store) meta.push(item.store);
+      if (item.price && Number(item.price) > 0) meta.push(formatCurrency(Number(item.price)));
+      const metaStr = meta.length > 0 ? ` (${meta.join(', ')})` : '';
+      lines.push(`- [ ] ${item.name}${metaStr}`);
+    });
+  }
+
+  if (doneItems.length > 0) {
+    lines.push('');
+    lines.push('✅ *Bereits erledigt:*');
+    doneItems.forEach(item => {
+      lines.push(`- [x] ~~${item.name}~~`);
+    });
+  }
+
+  const fullText = lines.join('\n');
+  navigator.clipboard.writeText(fullText).then(() => {
+    alert('✅ Einkaufsliste wurde in die Zwischenablage kopiert! Du kannst sie jetzt z. B. in WhatsApp mit Strg+V einfügen.');
+    announceNVDA('Einkaufsliste in Zwischenablage kopiert.');
+  }).catch(err => {
+    console.warn('Clipboard write failed:', err);
+    prompt('Einkaufsliste kopieren (Strg+C drücken):', fullText);
+  });
+}
+
+// ----------------------------------------------------------------------------
+// MODAL: WHATSAPP- & TEXT-IMPORT
+// ----------------------------------------------------------------------------
+function openShoppingPasteModal() {
+  const modal = document.getElementById('shopping-paste-modal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const ta = document.getElementById('shopping-paste-input');
+  if (ta) {
+    ta.value = '';
+    ta.focus();
+  }
+  const storeInput = document.getElementById('shopping-paste-store');
+  if (storeInput) storeInput.value = '';
+  announceNVDA('Dialog zum Einfügen von WhatsApp- oder Textlisten geöffnet.');
+}
+
+function closeShoppingPasteModal() {
+  const modal = document.getElementById('shopping-paste-modal');
+  if (modal) modal.style.display = 'none';
+  const btn = document.getElementById('shopping-new-name');
+  if (btn) btn.focus();
+}
+
+async function handleShoppingPasteSubmit(e) {
+  if (e) e.preventDefault();
+  const ta = document.getElementById('shopping-paste-input');
+  const storeInput = document.getElementById('shopping-paste-store');
+  if (!ta) return;
+
+  const rawText = ta.value;
+  const defaultStore = storeInput ? storeInput.value.trim() : '';
+
+  const addedCount = await parseAndImportShoppingText(rawText, defaultStore);
+  closeShoppingPasteModal();
+
+  if (addedCount > 0) {
+    alert(`✅ ${addedCount} Artikel wurden erfolgreich auf deine Einkaufsliste gesetzt!`);
+  } else {
+    alert('Es konnten keine Artikel im eingegebenen Text erkannt werden. Bitte überprüfe den Text.');
+  }
+}
+
+// Universal parser for WhatsApp text, bullet lists, OCR scans, notes, etc.
+async function parseAndImportShoppingText(rawText, defaultStore) {
+  ensureShoppingListInitialized();
+  if (!rawText || typeof rawText !== 'string') return 0;
+
+  const lines = rawText.split(/\r?\n/);
+  const itemsToAdd = [];
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+
+    // Skip generic header lines
+    if (/^(einkauf|einkaufsliste|liste|supermarkt|besorgen|rewe|aldi|lidl|edeka|hallo|moin)[s:!]*$/i.test(line)) {
+      continue;
+    }
+
+    // Strip bullet points, numbers, checkboxes
+    line = line.replace(/^[\s\-\*•–—\+■□\>]+/, '').trim();
+    line = line.replace(/^\d+[\.\)\-]\s*/, '').trim();
+    line = line.replace(/^\[[ xX✓✔]?\]\s*/, '').trim();
+    line = line.replace(/^[\u2610\u2611\u2612\u2705\u2713\u2714•]\s*/, '').trim();
+
+    if (!line) continue;
+
+    // Check for price at end of line (e.g. 2,49 € or 1.99 EUR or 3,50)
+    let price = null;
+    const priceMatch = line.match(/(?:(?:EUR|€)\s*([0-9]+[.,][0-9]{2})|([0-9]+[.,][0-9]{2})\s*(?:EUR|€|Euro)?)$/i);
+    if (priceMatch) {
+      const priceStr = priceMatch[1] || priceMatch[2];
+      const parsed = parseFloat(priceStr.replace(',', '.'));
+      if (!isNaN(parsed) && parsed > 0) {
+        price = parsed;
+        line = line.substring(0, priceMatch.index).trim();
+      }
+    }
+
+    // Check for store in parentheses / brackets e.g. (Rewe) or [Aldi] (avoid capturing package sizes like 10er, 500g)
+    let store = defaultStore || '';
+    const storeMatch = line.match(/[\(\[]([^\)\]]+)[\)\]]\s*$/);
+    if (storeMatch) {
+      const inside = storeMatch[1].trim();
+      const isPackSize = /^(\d+[\.,]?\d*\s*(?:er|g|kg|ml|l|stk|stück|st\.?|pack|pkg|dose|fl|flasche|beutel|bund|x|gl)?|\d+)$/i.test(inside);
+      if (!isPackSize) {
+        store = inside;
+        line = line.substring(0, storeMatch.index).trim();
+      }
+    }
+
+    // Strip trailing colons or commas
+    line = line.replace(/[,;:]+$/, '').trim();
+
+    if (!line) continue;
+
+    itemsToAdd.push({
+      id: 'shop_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+      name: line,
+      price: price,
+      store: store,
+      checked: false,
+      createdAt: Date.now()
+    });
+  }
+
+  if (itemsToAdd.length === 0) return 0;
+
+  appState.shoppingList.push(...itemsToAdd);
+  await saveStateToEncryptedStorage();
+  renderShoppingList();
+  announceNVDA(`${itemsToAdd.length} Artikel zur Einkaufsliste hinzugefügt.`);
+  return itemsToAdd.length;
+}
+
+// ----------------------------------------------------------------------------
+// DOKUMENT- & FOTO-UPLOAD FÜR EINKAUFSLISTE
+// ----------------------------------------------------------------------------
+async function handleShoppingDocumentSelect(files) {
+  if (!files || files.length === 0) return;
+  const file = files[0];
+
+  announceNVDA(`Dokument ${file.name} wird verarbeitet...`);
+
+  try {
+    // 1. Text- oder CSV-Datei
+    if (file.type === 'text/plain' || file.type === 'text/csv' || file.name.endsWith('.txt') || file.name.endsWith('.csv')) {
+      const text = await file.text();
+      const count = await parseAndImportShoppingText(text, '');
+      if (count > 0) {
+        alert(`✅ ${count} Artikel aus der Datei "${file.name}" wurden zur Einkaufsliste hinzugefügt!`);
+      } else {
+        alert('In der Textdatei wurden keine lesbaren Artikelzeilen gefunden.');
+      }
+      return;
+    }
+
+    // 2. PDF Datei
+    if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+      const compressed = await compressReceiptFile(file);
+      let pdfText = '';
+      if (compressed.data) {
+        pdfText = extractTextFromPdfDataUrl(compressed.data);
+      }
+      if (!pdfText) {
+        // Fallback to OCR extractor
+        const ext = await extractTextFromReceipt(compressed);
+        pdfText = ext.recognizedText;
+      }
+
+      if (pdfText && pdfText.trim()) {
+        const count = await parseAndImportShoppingText(pdfText, '');
+        alert(`✅ ${count} Artikel aus dem PDF-Dokument übernommen!`);
+      } else {
+        alert('Aus dem PDF konnte kein Text ausgelesen werden. Bitte Text als WhatsApp-Nachricht oder TXT einfügen.');
+      }
+      return;
+    }
+
+    // 3. Bild / Foto / Kamera
+    if (file.type.startsWith('image/')) {
+      const compressed = await compressReceiptFile(file);
+      const ext = await extractTextFromReceipt(compressed);
+      const ocrText = ext.recognizedText || '';
+
+      if (ocrText && ocrText.trim()) {
+        const count = await parseAndImportShoppingText(ocrText, '');
+        if (count > 0) {
+          alert(`✅ ${count} Artikel wurden aus dem Foto/Beleg erkannt und zur Einkaufsliste hinzugefügt!`);
+          return;
+        }
+      }
+
+      // Falls OCR offline keinen sauberen Text liefert, Text-Modal anbieten
+      const modal = document.getElementById('shopping-paste-modal');
+      if (modal) {
+        openShoppingPasteModal();
+        const ta = document.getElementById('shopping-paste-input');
+        if (ta && ocrText) ta.value = ocrText;
+        alert('Das Bild wurde geladen. Du kannst den erkannten Text im geöffneten Fenster überprüfen und anpassen.');
+      }
+    }
+  } catch (err) {
+    console.error('Fehler beim Dokument-Upload für Einkaufsliste:', err);
+    alert('Fehler beim Lesen der Datei: ' + err.message);
+  } finally {
+    const input = document.getElementById('shopping-file-upload-input');
+    if (input) input.value = '';
+  }
+}
+
+// ----------------------------------------------------------------------------
+// EINKAUF ALS AUSGABE BUCHEN
+// ----------------------------------------------------------------------------
 function populateShoppingDropdowns() {
   ensureAccountsInitialized();
   const accSel = document.getElementById('shopping-book-account');
-  const subSel = document.getElementById('shopping-book-subcat');
+  const catSel = document.getElementById('shopping-book-category');
+
   if (accSel) {
     accSel.innerHTML = appState.accounts.map(a => `<option value="${escapeHTML(a.id)}">${escapeHTML(a.name)}</option>`).join('');
     applySymbolsToOptions(accSel);
   }
-  if (subSel) {
-    const subs = CATEGORIES_DB.exp['Lebensmittel, Supermarkt & Discounter'] || ['Rewe', 'Aldi', 'Lidl', 'Edeka'];
-    subSel.innerHTML = subs.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
-    applySymbolsToOptions(subSel);
+
+  if (catSel) {
+    const expCategories = Object.keys(CATEGORIES_DB.exp || {});
+    catSel.innerHTML = expCategories.map(c => `<option value="${escapeHTML(c)}">${escapeHTML(c)}</option>`).join('');
+    // Default to Lebensmittel
+    if (expCategories.includes('Lebensmittel, Supermarkt & Discounter')) {
+      catSel.value = 'Lebensmittel, Supermarkt & Discounter';
+    }
+    applySymbolsToOptions(catSel);
+    onShoppingBookCatChange();
   }
 }
 
-function handleAddShoppingItem(e) {
-  e.preventDefault();
-  const nameInput = document.getElementById('shopping-item-name');
-  const priceInput = document.getElementById('shopping-item-price');
-  const name = nameInput.value.trim() || `Artikel #${shoppingCart.length + 1}`;
-  const price = parseFloat(priceInput.value);
+function onShoppingBookCatChange() {
+  const catSel = document.getElementById('shopping-book-category');
+  const subSel = document.getElementById('shopping-book-subcategory');
+  if (!catSel || !subSel) return;
 
-  if (isNaN(price) || price <= 0) return;
+  const selCat = catSel.value;
+  const subs = (CATEGORIES_DB.exp && CATEGORIES_DB.exp[selCat]) ? CATEGORIES_DB.exp[selCat] : ['Gesamt / Allgemein', 'Supermarkt', 'Sonstiges'];
 
-  shoppingCart.push({ name: name, price: price });
-  nameInput.value = '';
-  priceInput.value = '';
-  nameInput.focus();
-  renderShoppingCart();
-
-  const total = shoppingCart.reduce((s, i) => s + i.price, 0);
-  announceNVDA(`${name} für ${formatCurrency(price)} hinzugefügt. Zwischensumme: ${formatCurrency(total)}`);
+  subSel.innerHTML = subs.map(s => `<option value="${escapeHTML(s)}">${escapeHTML(s)}</option>`).join('');
+  applySymbolsToOptions(subSel);
 }
 
-function removeShoppingItem(idx) {
-  if (idx >= 0 && idx < shoppingCart.length) {
-    const removed = shoppingCart.splice(idx, 1)[0];
-    renderShoppingCart();
-    const total = shoppingCart.reduce((s, i) => s + i.price, 0);
-    announceNVDA(`${removed.name} entfernt. Neue Zwischensumme: ${formatCurrency(total)}`);
-  }
-}
-
-function clearShoppingCart() {
-  shoppingCart = [];
-  renderShoppingCart();
-  announceNVDA('Einkaufswagen geleert.');
-}
-
-function renderShoppingCart() {
-  const container = document.getElementById('shopping-cart-table-wrapper');
-  if (!container) return;
-
-  if (shoppingCart.length === 0) {
-    container.innerHTML = '<p class="field-hint" style="margin: 8px 0;">Noch keine Artikel im Einkaufswagen. Gib oben den ersten Artikel oder Preis ein!</p>';
+function openShoppingBookModal() {
+  ensureShoppingListInitialized();
+  const allItems = appState.shoppingList;
+  if (allItems.length === 0) {
+    alert('Deine Einkaufsliste ist leer. Füge zuerst Artikel hinzu.');
     return;
   }
 
-  const total = shoppingCart.reduce((s, i) => s + i.price, 0);
+  populateShoppingDropdowns();
 
-  container.innerHTML = `
-    <table class="shopping-table" aria-label="Einkaufsliste">
-      <thead>
-        <tr>
-          <th>Artikel</th>
-          <th style="text-align: right;">Preis</th>
-          <th style="width: 60px; text-align: center;">Aktion</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${shoppingCart.map((item, idx) => `
-          <tr>
-            <td>${escapeHTML(item.name)}</td>
-            <td style="text-align: right; font-weight: bold;">${formatCurrency(item.price)}</td>
-            <td style="text-align: center;">
-              <button type="button" class="btn btn-secondary" onclick="removeShoppingItem(${idx})" title="Artikel entfernen" aria-label="${escapeHTML(item.name)} entfernen" style="padding: 2px 8px; color: #f44336;">✕</button>
-            </td>
-          </tr>
-        `).join('')}
-        <tr class="shopping-total-row">
-          <td><strong>GESAMTSUMME (${shoppingCart.length} Artikel):</strong></td>
-          <td style="text-align: right; color: #2E7D32;"><strong>${formatCurrency(total)}</strong></td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
-  `;
-}
+  const doneItems = allItems.filter(i => i.checked);
+  const targetItems = doneItems.length > 0 ? doneItems : allItems;
+  const totalSum = targetItems.reduce((sum, item) => sum + (Number(item.price) || 0), 0);
 
-async function bookShoppingCartAsExpense() {
-  if (shoppingCart.length === 0) {
-    alert('Der Einkaufswagen ist leer.');
-    return;
+  const modal = document.getElementById('shopping-book-modal');
+  if (!modal) return;
+
+  const amtInput = document.getElementById('shopping-book-amount');
+  const dateInput = document.getElementById('shopping-book-date');
+  const noteInput = document.getElementById('shopping-book-note');
+  const hintEl = document.getElementById('shopping-book-hint');
+
+  if (amtInput) amtInput.value = totalSum > 0 ? totalSum.toFixed(2) : '';
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+  if (hintEl) {
+    hintEl.textContent = doneItems.length > 0
+      ? `Es werden ${doneItems.length} abgehakte Artikel verbucht. Passe den Betrag bei Bedarf an den Kassenzettel an:`
+      : `Es werden alle ${allItems.length} Artikel der Liste verbucht:`;
   }
 
-  const total = shoppingCart.reduce((s, i) => s + i.price, 0);
-  const account = document.getElementById('shopping-book-account').value || 'bank';
-  const subcat = document.getElementById('shopping-book-subcat').value || 'Supermarkt';
-  const itemsSummary = shoppingCart.map(i => `${i.name} (${formatCurrency(i.price)})`).join(', ');
-
-  const todayVal = new Date().toISOString().split('T')[0];
-
-  appState.transactions.push({
-    id: `tx_${Date.now()}`,
-    type: 'expense',
-    account: account,
-    amount: total,
-    category: 'Lebensmittel, Supermarkt & Discounter',
-    subcategory: subcat,
-    description: `Kassenzettel Einkauf: ${itemsSummary}`,
-    isPlanned: false,
-    date: todayVal
-  });
-
-  await saveStateToEncryptedStorage();
-  shoppingCart = [];
-  renderShoppingCart();
-  updateOverview();
-  announceNVDA(`Einkauf über ${formatCurrency(total)} bei ${subcat} erfolgreich gebucht!`);
-  alert(`✅ Der Einkauf über ${formatCurrency(total)} (${subcat}) wurde erfolgreich als Ausgabe verbucht!`);
-}
-
-// ----------------------------------------------------------------------------
-// E. GLOBALE SUCHE & FILTER-ENGINE
-// ----------------------------------------------------------------------------
-let currentTxFilter = {
-  query: '',
-  status: 'all',
-  account: 'all'
-};
-
-function handleTxSearchFilterChange() {
-  const qInput = document.getElementById('tx-search-query');
-  const sSelect = document.getElementById('tx-filter-status');
-  const aSelect = document.getElementById('tx-filter-account');
-  const banner = document.getElementById('tx-search-results-banner');
-  const bannerText = document.getElementById('tx-search-results-text');
-  const clearBtn = document.getElementById('btn-clear-tx-search');
-
-  currentTxFilter.query = qInput ? qInput.value.trim().toLowerCase() : '';
-  currentTxFilter.status = sSelect ? sSelect.value : 'all';
-  currentTxFilter.account = aSelect ? aSelect.value : 'all';
-
-  if (clearBtn) clearBtn.style.display = currentTxFilter.query ? 'inline-block' : 'none';
-
-  updateOverview();
-
-  const isSearchActive = Boolean(currentTxFilter.query || currentTxFilter.status !== 'all' || currentTxFilter.account !== 'all');
-
-  const feedExp = document.getElementById('overview-expense-items-feed');
-  const countExp = feedExp ? feedExp.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
-  const feedInc = document.getElementById('overview-income-items-feed');
-  const countInc = feedInc ? feedInc.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
-  const feedTrf = document.getElementById('overview-transfer-items-feed');
-  const countTrf = feedTrf ? feedTrf.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
-  const totalHits = countExp + countInc + countTrf;
-
-  const detExp = document.getElementById('details-expense-list');
-  const detInc = document.getElementById('details-income-list');
-  const detTrf = document.getElementById('details-transfer-list');
-
-  if (isSearchActive) {
-    if (detExp) detExp.open = countExp > 0;
-    if (detInc) detInc.open = countInc > 0;
-    if (detTrf) detTrf.open = countTrf > 0;
-
-    if (banner && bannerText) {
-      banner.style.display = 'flex';
-      if (totalHits > 0) {
-        bannerText.textContent = `🔍 ${totalHits} Treffer gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen).`;
-      } else {
-        bannerText.textContent = `⚠️ Keine Buchungen gefunden für "${currentTxFilter.query || 'aktuelle Filter'}".`;
-      }
-    }
-
-    if (currentTxFilter.query && currentTxFilter.query.length >= 2) {
-      if (totalHits > 0) {
-        announceNVDA(`${totalHits} Buchungen für "${currentTxFilter.query}" gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen). Listen geöffnet.`);
-      } else {
-        announceNVDA(`Keine Buchungen für "${currentTxFilter.query}" gefunden.`);
-      }
-    }
-  } else {
-    if (banner) banner.style.display = 'none';
-    if (detExp) detExp.open = false;
-    if (detInc) detInc.open = false;
-    if (detTrf) detTrf.open = false;
+  if (noteInput) {
+    const itemNames = targetItems.map(i => i.name + (i.price ? ` (${formatCurrency(i.price)})` : '')).join(', ');
+    noteInput.value = 'Einkauf: ' + itemNames;
   }
-}
-
-function populateFilterAccountDropdown() {
-  ensureAccountsInitialized();
-  const sel = document.getElementById('tx-filter-account');
-  if (!sel) return;
-  const currentVal = sel.value || 'all';
-  sel.innerHTML = '<option value="all">Alle Konten</option>' + appState.accounts.map(a => `<option value="${escapeHTML(a.id)}">${escapeHTML(a.name)}</option>`).join('');
-  sel.value = currentVal;
-  applySymbolsToOptions(sel);
-}
-
-
-// ----------------------------------------------------------------------------
-// GLOBAL SORTING ENGINE FOR OVERVIEW TRANSACTIONS
-// ----------------------------------------------------------------------------
-let currentTxSortOrder = 'date-desc';
-
-function handleTxSortChange() {
-  const sel = document.getElementById('tx-sort-order');
-  if (sel) {
-    currentTxSortOrder = sel.value;
-    const sortLabels = {
-      'date-desc': 'Datum: Neueste zuerst (Neu bis Alt)',
-      'date-asc': 'Datum: Älteste zuerst (Alt bis Neu)',
-      'alpha-asc': 'Alphabetisch: A bis Z',
-      'alpha-desc': 'Alphabetisch: Z bis A',
-      'amount-desc': 'Betrag: Höchste zuerst (Groß bis Klein)',
-      'amount-asc': 'Betrag: Niedrigste zuerst (Klein bis Groß)',
-      'category-asc': 'Kategorie: Alphabetisch (A bis Z)'
-    };
-    announceNVDA(`Sortierung geändert auf: ${sortLabels[currentTxSortOrder] || currentTxSortOrder}`);
-  }
-  updateOverview();
-}
-
-function applyTxSorting(list) {
-  return [...list].sort((a, b) => {
-    switch (currentTxSortOrder) {
-      case 'date-asc':
-        return a.date.localeCompare(b.date);
-      case 'alpha-asc': {
-        const nameA = a.description || a.subcategory || a.category || '';
-        const nameB = b.description || b.subcategory || b.category || '';
-        return nameA.localeCompare(nameB, 'de', { sensitivity: 'base' });
-      }
-      case 'alpha-desc': {
-        const nameA = a.description || a.subcategory || a.category || '';
-        const nameB = b.description || b.subcategory || b.category || '';
-        return nameB.localeCompare(nameA, 'de', { sensitivity: 'base' });
-      }
-      case 'amount-desc':
-        return Number(b.amount || 0) - Number(a.amount || 0);
-      case 'amount-asc':
-        return Number(a.amount || 0) - Number(b.amount || 0);
-      case 'category-asc': {
-        const catA = a.category || '';
-        const catB = b.category || '';
-        return catA.localeCompare(catB, 'de', { sensitivity: 'base' });
-      }
-      case 'date-desc':
-      default:
-        return b.date.localeCompare(a.date);
-    }
-  });
-}
-
-// ----------------------------------------------------------------------------
-// REITER 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
-// ----------------------------------------------------------------------------
-function ensureWishlistInitialized() {
-  if (!appState.wishlist || !Array.isArray(appState.wishlist)) {
-    appState.wishlist = [];
-  }
-}
-
-function populateWishlistAccountDropdown() {
-  ensureAccountsInitialized();
-  ensureSavingPotsInitialized();
-  const sel = document.getElementById('wish-target-account');
-  if (!sel) return;
-
-  let html = '';
-
-  if (appState.savingPots && appState.savingPots.length > 0) {
-    html += '<optgroup label="🎯 Vorhandene Spartöpfe">';
-    html += appState.savingPots.map(pot => {
-      const acc = appState.accounts.find(a => a.id === pot.accountId);
-      const accName = acc ? acc.name : 'Konto';
-      const val = pot.id.startsWith('pot_') ? pot.id : `pot_${pot.id}`;
-      return `<option value="${escapeHTML(val)}" data-emoji="🎯">🎯 ${escapeHTML(pot.name)} (${formatCurrency(pot.currentAmount)} auf ${escapeHTML(accName)})</option>`;
-    }).join('');
-    html += '</optgroup>';
-  }
-
-  html += '<optgroup label="🏦 Reguläre Konten">';
-  html += appState.accounts.map(acc => {
-    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
-    return `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
-  }).join('');
-  html += '</optgroup>';
-
-  sel.innerHTML = html;
-  applySymbolsToOptions(sel);
-}
-
-async function handleAddWish(e) {
-  e.preventDefault();
-  ensureWishlistInitialized();
-
-  const typeSelect = document.getElementById('wish-type');
-  const wishType = typeSelect ? typeSelect.value : 'once';
-  const title = document.getElementById('wish-title').value.trim();
-  const amount = parseFloat(document.getElementById('wish-amount').value);
-  const priority = document.getElementById('wish-priority').value;
-  const category = document.getElementById('wish-category').value;
-  const account = document.getElementById('wish-target-account').value;
-  const targetDate = document.getElementById('wish-target-date').value;
-  const note = document.getElementById('wish-note').value.trim();
-
-  if (!title || isNaN(amount) || amount <= 0) return;
-
-  const newWish = {
-    id: `wish_${Date.now()}`,
-    type: wishType,
-    title: title,
-    amount: amount,
-    priority: priority,
-    category: category,
-    account: account,
-    targetDate: targetDate,
-    note: note,
-    fulfilled: false,
-    createdAt: new Date().toISOString().split('T')[0]
-  };
-
-  appState.wishlist.push(newWish);
-  await saveStateToEncryptedStorage();
-
-  document.getElementById('form-add-wish').reset();
-  renderWishlist();
-  announceNVDA(`Wunsch "${title}" über ${formatCurrency(amount)} erfolgreich zur Wunschliste hinzugefügt!`);
-}
-
-function renderWishlist() {
-  ensureWishlistInitialized();
-  const container = document.getElementById('wishlist-items-container');
-  if (!container) return;
-
-  const filterSel = document.getElementById('wish-filter-status');
-  const filterStatus = filterSel ? filterSel.value : 'open';
-
-  const filterTypeSel = document.getElementById('wish-filter-type');
-  const filterType = filterTypeSel ? filterTypeSel.value : 'all';
-
-  let list = appState.wishlist;
-  if (filterStatus === 'open') {
-    list = list.filter(w => !w.fulfilled);
-  } else if (filterStatus === 'fulfilled') {
-    list = list.filter(w => w.fulfilled);
-  }
-
-  if (filterType === 'once') {
-    list = list.filter(w => !w.type || w.type === 'once');
-  } else if (filterType === 'subscriptions') {
-    list = list.filter(w => w.type && w.type !== 'once');
-  }
-
-  // Calculate statistics
-  const openWishes = appState.wishlist.filter(w => !w.fulfilled);
-  const totalAmount = openWishes.reduce((sum, w) => sum + Number(w.amount || 0), 0);
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const balances = calculateBalancesUpToDate(todayStr);
-
-  let affordableCount = 0;
-  openWishes.forEach(w => {
-    const accBal = balances[w.account] !== undefined ? balances[w.account] : balances.total;
-    if (accBal >= w.amount) affordableCount++;
-  });
-
-  const statCount = document.getElementById('wishlist-stat-count');
-  const statTotal = document.getElementById('wishlist-stat-total');
-  const statAffordable = document.getElementById('wishlist-stat-affordable');
-
-  if (statCount) statCount.textContent = `${openWishes.length} Wunsch / Wünsche`;
-  if (statTotal) statTotal.textContent = formatCurrency(totalAmount);
-  if (statAffordable) statAffordable.textContent = `${affordableCount} sofort leistbar`;
-
-  if (list.length === 0) {
-    container.innerHTML = `<p class="empty-state" style="padding: 24px; text-align: center;">Keine Wünsche in dieser Ansicht vorhanden. Trage oben einen neuen Wunsch ein!</p>`;
-    return;
-  }
-
-  const prioLabels = {
-    high: '⭐⭐⭐ Hohe Priorität',
-    medium: '⭐⭐ Mittlere Priorität',
-    low: '⭐ Geringe Priorität'
-  };
-
-  let html = '<div class="wishlist-cards-grid" style="display: flex; flex-direction: column; gap: 14px;">';
-
-  list.forEach(w => {
-    const isSub = w.type && w.type !== 'once';
-    let accName = 'Gesamtguthaben';
-    let accBal = balances.total;
-    if (w.account && w.account.startsWith('pot_')) {
-      const potId = w.account.replace('pot_', '');
-      const pot = (appState.savingPots || []).find(p => p.id === potId || p.id === w.account);
-      if (pot) {
-        accName = `🎯 Spartopf: ${pot.name}`;
-        accBal = Number(pot.currentAmount || 0);
-      }
-    } else {
-      const acc = appState.accounts.find(a => a.id === w.account);
-      if (acc) accName = acc.name;
-      if (balances[w.account] !== undefined) accBal = balances[w.account];
-    }
-    const isAffordable = accBal >= w.amount;
-    const diff = w.amount - accBal;
-    const percent = Math.max(0, Math.min(100, Math.round((Math.max(0, accBal) / w.amount) * 100)));
-
-    let typeBadge = '<span class="badge" style="background: #E8EAF6; color: #283593; padding: 2px 8px; border-radius: 4px; font-weight: bold;">📦 Einmalkauf</span>';
-    let subIntervalText = '';
-    if (w.type === 'monthly') {
-      typeBadge = '<span class="badge" style="background: #E1F5FE; color: #0277BD; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Monatliches Abo</span>';
-      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 12)} / Jahr</div>`;
-    } else if (w.type === 'yearly') {
-      typeBadge = '<span class="badge" style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🗓 Jährliches Abo</span>';
-      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount / 12)} / Monat</div>`;
-    } else if (w.type === 'quarterly') {
-      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Quartals-Abo</span>';
-      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 4)} / Jahr</div>`;
-    } else if (w.type === 'halfyear') {
-      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Halbjahres-Abo</span>';
-      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 2)} / Jahr</div>`;
-    }
-
-    html += `
-      <div class="wish-card" style="border: 2px solid var(--border-color); border-radius: 8px; padding: 16px; background: var(--card-bg, #ffffff); ${w.fulfilled ? 'opacity: 0.75; border-left: 8px solid #4CAF50;' : (isAffordable ? 'border-left: 8px solid #2E7D32;' : 'border-left: 8px solid #FF9800;')}">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
-          <div>
-            <h4 style="margin: 0 0 6px 0; font-size: 18px;">${w.fulfilled ? '✅ ' : (isSub ? '🔄 ' : '🎁 ')}${escapeHTML(w.title)}</h4>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted, #666); align-items: center;">
-              ${typeBadge}
-              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">🏷️ ${escapeHTML(w.category || 'Allgemein')}</span>
-              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">${prioLabels[w.priority] || w.priority}</span>
-              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">💳 Spartopf: ${escapeHTML(accName)}</span>
-              ${w.targetDate ? `<span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">📅 Bis: ${escapeHTML(w.targetDate)}</span>` : ''}
-            </div>
-            ${w.note ? `<p style="margin: 8px 0 0 0; font-size: 14px; font-style: italic;">📝 ${escapeHTML(w.note)}</p>` : ''}
-          </div>
-          <div style="text-align: right;">
-            <div style="font-size: 22px; font-weight: bold; color: var(--accent-primary, #2196F3);">${formatCurrency(w.amount)}${isSub ? (w.type === 'monthly' ? ' / Mt.' : (w.type === 'yearly' ? ' / Jr.' : '')) : ''}</div>
-            ${subIntervalText}
-            ${w.fulfilled ? '<span style="color: #2E7D32; font-weight: bold; font-size: 14px;">✅ Aktiv / Erfüllt!</span>' : ''}
-          </div>
-        </div>
-
-        ${!w.fulfilled ? `
-          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
-            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 4px;">
-              <span>Guthaben auf ${escapeHTML(accName)}: ${formatCurrency(accBal)}</span>
-              <span>${isAffordable ? '🟢 100% Leistbar!' : `Fortschritt: ${percent}% (Fehlen noch ${formatCurrency(diff)})`}</span>
-            </div>
-            <div style="background: #e0e0e0; border-radius: 6px; height: 10px; overflow: hidden;">
-              <div style="width: ${percent}%; height: 100%; background: ${isAffordable ? '#4CAF50' : '#FF9800'}; transition: width 0.3s;"></div>
-            </div>
-          </div>
-        ` : ''}
-
-        <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
-          ${!w.fulfilled ? (
-            isSub ? `
-              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsRecurring('${w.id}')" style="background-color: #0288D1; border-color: #01579B; padding: 6px 12px; font-size: 14px;">
-                <span>🔄 <strong>Als Dauerauftrag (Abo) starten &amp; Erfüllen</strong></span>
-              </button>
-            ` : `
-              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsExpense('${w.id}')" style="background-color: #2E7D32; border-color: #1B5E20; padding: 6px 12px; font-size: 14px;">
-                <span>🛒 <strong>Als Ausgabe buchen &amp; Erfüllen</strong></span>
-              </button>
-            `
-          ) : `
-            <button type="button" class="btn btn-secondary" onclick="handleToggleWishFulfilled('${w.id}')" style="padding: 6px 12px; font-size: 14px;">
-              <span>Wieder als offen markieren</span>
-            </button>
-          `}
-          <button type="button" class="btn btn-secondary" onclick="handleDeleteWish('${w.id}')" style="padding: 6px 12px; font-size: 14px; color: #D32F2F;">
-            <span>🗑️ Löschen</span>
-          </button>
-        </div>
-      </div>
-    `;
-  });
-
-  html += '</div>';
-  container.innerHTML = html;
-}
-
-async function handleFulfillWishAsExpense(wishId) {
-  ensureWishlistInitialized();
-  ensureSavingPotsInitialized();
-  const wish = appState.wishlist.find(w => w.id === wishId);
-  if (!wish) return;
-
-  let bookedAccount = wish.account || 'bank';
-  let potObj = null;
-  let potName = '';
-
-  if (wish.account && wish.account.startsWith('pot_')) {
-    const rawId = wish.account.replace(/^pot_+/, '');
-    potObj = (appState.savingPots || []).find(p => p.id === wish.account || p.id === rawId || p.id === `pot_${rawId}`);
-    if (potObj) {
-      potName = potObj.name;
-      bookedAccount = potObj.accountId || 'bank';
-      const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich aus dem Spartopf "${potObj.name}" entnehmen und als Ausgabe buchen?`;
-      if (!confirm(confirmMsg)) return;
-      potObj.currentAmount = Math.max(0, Math.round((Number(potObj.currentAmount || 0) - wish.amount) * 100) / 100);
-    }
-  } else {
-    const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich als Ausgabe von Konto "${formatAccountName(wish.account)}" abbuchen und den Wunsch als erfüllt markieren?`;
-    if (!confirm(confirmMsg)) return;
-  }
-
-  // Add expense transaction
-  appState.transactions.push({
-    id: `tx_${Date.now()}`,
-    type: 'expense',
-    account: bookedAccount,
-    amount: wish.amount,
-    category: 'Shopping, Online-Kauf & Marktplätze',
-    subcategory: wish.title,
-    description: `Wunsch erfüllt: ${wish.title}${potName ? ` (aus Spartopf "${potName}")` : ''}`,
-    isPlanned: false,
-    date: new Date().toISOString().split('T')[0]
-  });
-
-  wish.fulfilled = true;
-  wish.fulfilledDate = new Date().toISOString().split('T')[0];
-
-  await saveStateToEncryptedStorage();
-  updateOverview();
-  renderWishlist();
-  renderSavingPotsList();
-  announceNVDA(`Glückwunsch! Wunsch "${wish.title}" wurde als Ausgabe über ${formatCurrency(wish.amount)} abgebucht und erfüllt!`);
-}
-
-async function handleToggleWishFulfilled(wishId) {
-  ensureWishlistInitialized();
-  const wish = appState.wishlist.find(w => w.id === wishId);
-  if (!wish) return;
-
-  wish.fulfilled = !wish.fulfilled;
-  await saveStateToEncryptedStorage();
-  renderWishlist();
-  announceNVDA(`Wunsch "${wish.title}" Status aktualisiert.`);
-}
-
-async function handleDeleteWish(wishId) {
-  ensureWishlistInitialized();
-  const wish = appState.wishlist.find(w => w.id === wishId);
-  if (!wish) return;
-
-  if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
-
-  appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
-  await saveStateToEncryptedStorage();
-  renderWishlist();
-  announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
-}
-
-function applyTxFilters(list) {
-  const todayStr = new Date().toISOString().split('T')[0];
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-  const monthNamesDe = ['januar', 'februar', 'maerz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
-  const monthNamesRaw = ['januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
-  const weekdayNames = ['sonntag', 'montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag'];
-
-  return list.filter(tx => {
-    // 1. Super-Suche Engine
-    if (currentTxFilter.query) {
-      const rawQuery = currentTxFilter.query.trim().toLowerCase();
-      const qTokens = rawQuery.split(/\s+/).filter(Boolean);
-
-      const acc = appState.accounts ? appState.accounts.find(a => a.id === tx.account) : null;
-      const accName = acc ? acc.name : (tx.account || '');
-      const fromAcc = appState.accounts ? appState.accounts.find(a => a.id === tx.fromAccount) : null;
-      const fromAccName = fromAcc ? fromAcc.name : (tx.fromAccount || '');
-      const toAcc = appState.accounts ? appState.accounts.find(a => a.id === tx.toAccount) : null;
-      const toAccName = toAcc ? toAcc.name : (tx.toAccount || '');
-      const txAmt = Number(tx.amount || 0);
-      const amtStr = txAmt.toFixed(2);
-      const amtGerman = amtStr.replace('.', ',');
-      const amtNoDec = Math.round(txAmt).toString();
-
-      // Date information
-      let dateWords = [];
-      if (tx.date) {
-        dateWords.push(tx.date);
-        const [y, m, d] = tx.date.split('-');
-        if (y && m && d) {
-          const mIdx = parseInt(m, 10) - 1;
-          if (mIdx >= 0 && mIdx < 12) {
-            dateWords.push(monthNamesDe[mIdx], monthNamesRaw[mIdx]);
-            dateWords.push(monthNamesRaw[mIdx].substring(0, 3), monthNamesDe[mIdx].substring(0, 3));
-          }
-          const dtObj = new Date(tx.date + 'T12:00:00');
-          if (!isNaN(dtObj.getTime())) {
-            dateWords.push(weekdayNames[dtObj.getDay()]);
-          }
-          dateWords.push(`${d}.${m}.${y}`, `${d}.${m}.`, `${d}.`);
-        }
-        if (tx.date === todayStr) dateWords.push('heute');
-        if (tx.date === yesterdayStr) dateWords.push('gestern');
-      }
-
-      // Types & Tags
-      let typeWords = [];
-      if (tx.type === 'income') typeWords.push('einnahme', 'geld plus', 'einnahmen', 'habenseite');
-      else if (tx.type === 'transfer') typeWords.push('umbuchung', 'transfer', 'sparen', 'verschieben', 'sparplan');
-      else typeWords.push('ausgabe', 'ausgaben', 'minus', 'kosten');
-
-      if (tx.isRecurring) typeWords.push('wiederkehrend', 'dauerauftrag', 'abo', 'fixkosten', 'vertrag', 'sparplan');
-      else typeWords.push('einmalig', 'variabel');
-
-      if (tx.isInstallment || (tx.description && (tx.description.includes('Rate') || tx.description.includes('Kredit')))) {
-        typeWords.push('kredit', 'rate', 'ratenkauf', 'ratenzahlung', 'finanzierung', 'darlehen', 'schuld');
-      }
-
-      const rawComp = [
-        tx.description || '',
-        tx.category || '',
-        tx.subcategory || '',
-        accName,
-        tx.account || '',
-        fromAccName,
-        tx.fromAccount || '',
-        toAccName,
-        tx.toAccount || '',
-        ...dateWords,
-        ...typeWords,
-        amtStr,
-        amtGerman,
-        amtNoDec,
-        `${amtGerman} €`,
-        `${amtGerman}€`,
-        `${amtNoDec} €`,
-        `${amtNoDec}€`
-      ].join(' ').toLowerCase();
-
-      const normComp = normalizeSearchText(rawComp);
-      const compWords = normComp.split(/\s+/).filter(Boolean);
-
-      // Check each token
-      for (let token of qTokens) {
-        // Strip trailing currency symbols
-        token = token.replace(/€|euro/g, '').trim();
-        if (!token) continue;
-
-        // A. Negation: -token (e.g. -rewe, -paypal)
-        if (token.startsWith('-') && token.length > 1) {
-          const negToken = token.slice(1);
-          if (matchesFuzzyOrExact(negToken, compWords, rawComp, normComp)) {
-            return false;
-          }
-          continue;
-        }
-
-        // B. Range match: 10-50 or 10..50
-        const rangeMatch = token.match(/^(\d+(?:[.,]\d+)?)(?:-|\.\.)(\d+(?:[.,]\d+)?)$/);
-        if (rangeMatch) {
-          const minVal = parseFloat(rangeMatch[1].replace(',', '.'));
-          const maxVal = parseFloat(rangeMatch[2].replace(',', '.'));
-          if (!isNaN(minVal) && !isNaN(maxVal)) {
-            if (!(txAmt >= minVal && txAmt <= maxVal)) return false;
-            continue;
-          }
-        }
-
-        // C. Approximate amount: ~50
-        if (token.startsWith('~') && token.length > 1) {
-          const approxTarget = parseFloat(token.slice(1).replace(',', '.'));
-          if (!isNaN(approxTarget)) {
-            const margin = Math.max(2, approxTarget * 0.1);
-            if (Math.abs(txAmt - approxTarget) > margin) return false;
-            continue;
-          }
-        }
-
-        // D. Greater / Lesser comparison operators: >50, <100, >=20, <=80
-        if (token.startsWith('>') || token.startsWith('<')) {
-          const isGte = token.startsWith('>=');
-          const isLte = token.startsWith('<=');
-          const isGt = !isGte && token.startsWith('>');
-          const isLt = !isLte && token.startsWith('<');
-          const numStr = token.replace(/^[><]=?/, '').replace(',', '.');
-          const threshold = parseFloat(numStr);
-          if (!isNaN(threshold)) {
-            if (isGt && !(txAmt > threshold)) return false;
-            if (isLt && !(txAmt < threshold)) return false;
-            if (isGte && !(txAmt >= threshold)) return false;
-            if (isLte && !(txAmt <= threshold)) return false;
-            continue;
-          }
-        }
-
-        // E. Fuzzy, phonetic & exact token matching
-        if (!matchesFuzzyOrExact(token, compWords, rawComp, normComp)) {
-          return false;
-        }
-      }
-    }
-
-    // 2. Status
-    if (currentTxFilter.status === 'booked') {
-      if (tx.isPlanned || tx.date > todayStr) return false;
-    } else if (currentTxFilter.status === 'planned') {
-      if (!tx.isPlanned && tx.date <= todayStr) return false;
-    } else if (currentTxFilter.status === 'recurring') {
-      if (!tx.isRecurring) return false;
-    }
-
-    // 3. Account
-    if (currentTxFilter.account && currentTxFilter.account !== 'all') {
-      if (tx.account !== currentTxFilter.account && tx.fromAccount !== currentTxFilter.account && tx.toAccount !== currentTxFilter.account) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}
-
-// ----------------------------------------------------------------------------
-// F. BANK-KONTOAUSZUG / CSV-IMPORT ENGINE
-// ----------------------------------------------------------------------------
-let parsedCsvTransactions = [];
-
-function handleBankCsvUpload(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const text = evt.target.result;
-    parseAndPreviewBankCsv(text);
-  };
-  reader.readAsText(file, 'utf-8');
-  e.target.value = '';
-}
-
-function parseCurrencyString(val) {
-  if (!val) return NaN;
-  let s = val.replace(/€|EUR|\s/g, '').trim();
-  if (s.includes('.') && s.includes(',')) {
-    s = s.replace(/\./g, '').replace(',', '.');
-  } else if (s.includes(',')) {
-    s = s.replace(',', '.');
-  }
-  return parseFloat(s);
-}
-
-function parseAndPreviewBankCsv(csvText) {
-  parsedCsvTransactions = [];
-  const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-  if (lines.length < 2) {
-    alert('Die CSV-Datei enthält keine Buchungszeilen.');
-    return;
-  }
-
-  const firstLine = lines[0];
-  let sep = ';';
-  if ((firstLine.match(/;/g) || []).length < (firstLine.match(/,/g) || []).length) sep = ',';
-  if ((firstLine.match(/\t/g) || []).length > (firstLine.match(new RegExp(sep, 'g')) || []).length) sep = '\t';
-
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(sep).map(c => c.replace(/^["']|["']$/g, '').trim());
-    if (cols.length < 3) continue;
-
-    let dateStr = null;
-    let amountVal = null;
-    let payeeOrMemo = '';
-
-    for (let c = 0; c < cols.length; c++) {
-      const val = cols[c];
-      if (!val) continue;
-
-      // 1. Date matching (YYYY-MM-DD or DD.MM.YYYY)
-      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
-        if (!dateStr) dateStr = val;
-        continue;
-      } else if (/^\d{2}\.\d{2}\.\d{4}$/.test(val)) {
-        if (!dateStr) {
-          const parts = val.split('.');
-          dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
-        }
-        continue;
-      }
-
-      // 2. Amount matching (must not contain hyphens in date format or text)
-      const cleanNumStr = val.replace(/€|EUR|\s/g, '').replace(/\./g, '').replace(',', '.');
-      if (amountVal === null && /^-?\d+(\.\d+)?$/.test(cleanNumStr) && !val.includes(':')) {
-        const parsed = parseCurrencyString(val);
-        if (!isNaN(parsed) && parsed !== 0) {
-          amountVal = parsed;
-          continue;
-        }
-      }
-
-      // 3. Memo / Payee
-      if (val.length > 2 && isNaN(val)) {
-        payeeOrMemo += (payeeOrMemo ? ' ' : '') + val;
-      }
-    }
-
-    if (dateStr && amountVal !== null && !isNaN(amountVal) && amountVal !== 0) {
-      const isIncome = amountVal > 0;
-      const absAmount = Math.abs(amountVal);
-      const matchedCat = autoMatchCategoryForPayee(payeeOrMemo, isIncome ? 'inc' : 'exp');
-
-      parsedCsvTransactions.push({
-        selected: true,
-        date: dateStr,
-        amount: absAmount,
-        type: isIncome ? 'income' : 'expense',
-        category: matchedCat.main,
-        subcategory: matchedCat.sub,
-        description: payeeOrMemo || (isIncome ? 'Bank-Gutschrift' : 'Bank-Lastschrift / Kartenzahlung'),
-        account: appState.accounts[0] ? appState.accounts[0].id : 'bank'
-      });
-    }
-  }
-
-  if (parsedCsvTransactions.length === 0) {
-    alert('Es konnten keine gültigen Buchungszeilen in der CSV-Datei erkannt werden.');
-    return;
-  }
-
-  openCsvPreviewModal();
-}
-
-function autoMatchCategoryForPayee(text, type) {
-  const lower = (text || '').toLowerCase();
-  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
-
-  for (const [mainCat, subs] of Object.entries(db)) {
-    for (const sub of subs) {
-      if (lower.includes(sub.toLowerCase())) {
-        return { main: mainCat, sub: sub };
-      }
-    }
-  }
-
-  if (type === 'exp') {
-    if (lower.includes('rewe') || lower.includes('aldi') || lower.includes('lidl') || lower.includes('edeka') || lower.includes('kaufland') || lower.includes('netto') || lower.includes('penny')) {
-      return { main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Supermarkt' };
-    }
-    if (lower.includes('miete') || lower.includes('wohnen') || lower.includes('stadtwerke') || lower.includes('strom')) {
-      return { main: 'Miete, Wohnen & Nebenkosten', sub: 'Miete' };
-    }
-    if (lower.includes('amazon') || lower.includes('paypal') || lower.includes('ebay') || lower.includes('otto') || lower.includes('zalando')) {
-      return { main: 'Shopping, Online-Kauf & Marktplätze', sub: 'Online-Kauf' };
-    }
-    if (lower.includes('tanken') || lower.includes('aral') || lower.includes('shell') || lower.includes('total') || lower.includes('esso')) {
-      return { main: 'Mobilität, Auto & Kraftfahrzeuge', sub: 'Tanken' };
-    }
-    return { main: 'Sonstige Ausgaben & Bargeld', sub: 'Kartenzahlung' };
-  } else {
-    if (lower.includes('gehalt') || lower.includes('lohn') || lower.includes('bezüge') || lower.includes('arbeitgeber')) {
-      return { main: 'Gehalt, Lohn & Beruf', sub: 'Gehalt' };
-    }
-    if (lower.includes('kindergeld') || lower.includes('rente') || lower.includes('blindengeld') || lower.includes('amt') || lower.includes('kasse')) {
-      return { main: 'Staatliche Leistungen, Hilfen & Zuschüsse', sub: 'Leistungen' };
-    }
-    return { main: 'Sonstige Einnahmen', sub: 'Gutschrift' };
-  }
-}
-
-function openCsvPreviewModal() {
-  const modal = document.getElementById('csv-preview-modal');
-  const container = document.getElementById('csv-preview-table-container');
-  if (!container || !modal) return;
-
-  container.innerHTML = `
-    <table class="shopping-table" aria-label="CSV Vorschautabelle">
-      <thead>
-        <tr>
-          <th style="width: 40px; text-align: center;">✓</th>
-          <th>Datum</th>
-          <th>Art</th>
-          <th>Betrag</th>
-          <th>Hauptkategorie</th>
-          <th>Beschreibung</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${parsedCsvTransactions.map((tx, idx) => `
-          <tr>
-            <td style="text-align: center;">
-              <input type="checkbox" id="csv-chk-${idx}" ${tx.selected ? 'checked' : ''} onchange="parsedCsvTransactions[${idx}].selected = this.checked" style="width: 18px; height: 18px;">
-            </td>
-            <td>${escapeHTML(tx.date)}</td>
-            <td style="font-weight: bold; color: ${tx.type === 'income' ? '#4CAF50' : '#F44336'};">${tx.type === 'income' ? '🟢 Einnahme' : '🔴 Ausgabe'}</td>
-            <td style="font-weight: bold;">${formatCurrency(tx.amount)}</td>
-            <td>
-              <select class="large-select" style="padding: 4px 8px; font-size: 13px;" onchange="parsedCsvTransactions[${idx}].category = this.value">
-                ${Object.keys(CATEGORIES_DB[tx.type === 'income' ? 'inc' : 'exp']).map(c => `<option value="${escapeHTML(c)}" ${c === tx.category ? 'selected' : ''}>${escapeHTML(c)}</option>`).join('')}
-              </select>
-            </td>
-            <td><input type="text" class="large-input" value="${escapeHTML(tx.description)}" onchange="parsedCsvTransactions[${idx}].description = this.value" style="padding: 4px 8px; font-size: 13px;"></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
 
   modal.style.display = 'flex';
-  announceNVDA(`CSV-Vorschau geöffnet. ${parsedCsvTransactions.length} Buchungen erkannt.`);
+  if (amtInput) amtInput.focus();
+  announceNVDA('Dialog zum Abbuchen des Einkaufs geöffnet.');
 }
 
-function closeCsvPreviewModal() {
-  const modal = document.getElementById('csv-preview-modal');
+function closeShoppingBookModal() {
+  const modal = document.getElementById('shopping-book-modal');
   if (modal) modal.style.display = 'none';
 }
 
-async function confirmCsvImport() {
-  const toImport = parsedCsvTransactions.filter(t => t.selected);
-  if (toImport.length === 0) {
-    alert('Bitte wähle mindestens eine Buchung zum Importieren aus.');
+async function handleConfirmShoppingBooking(e) {
+  if (e) e.preventDefault();
+  ensureShoppingListInitialized();
+
+  const amtInput = document.getElementById('shopping-book-amount');
+  const accSel = document.getElementById('shopping-book-account');
+  const dateInput = document.getElementById('shopping-book-date');
+  const catSel = document.getElementById('shopping-book-category');
+  const subSel = document.getElementById('shopping-book-subcategory');
+  const noteInput = document.getElementById('shopping-book-note');
+  const clearDoneChk = document.getElementById('shopping-book-clear-done');
+
+  const amount = parseFloat(amtInput.value);
+  if (isNaN(amount) || amount <= 0) {
+    alert('Bitte gib einen gültigen Kassenbetrag größer als 0 € ein.');
     return;
   }
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const accountId = accSel ? accSel.value : 'bank';
+  const txDate = dateInput && dateInput.value ? dateInput.value : new Date().toISOString().split('T')[0];
+  const category = catSel ? catSel.value : 'Lebensmittel, Supermarkt & Discounter';
+  const subcategory = subSel ? subSel.value : 'Supermarkt';
+  const note = noteInput ? noteInput.value.trim() : 'Einkauf';
 
-  toImport.forEach(tx => {
-    appState.transactions.push({
-      id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-      type: tx.type,
-      account: tx.account,
-      amount: tx.amount,
-      category: tx.category,
-      subcategory: tx.subcategory || 'CSV-Import',
-      description: tx.description,
-      isPlanned: tx.date > todayStr,
-      date: tx.date
-    });
-  });
+  const newTx = {
+    id: 'tx_' + Date.now(),
+    type: 'expense',
+    account: accountId,
+    amount: amount,
+    category: category,
+    subcategory: subcategory,
+    description: note,
+    isPlanned: false,
+    date: txDate
+  };
+
+  appState.transactions.push(newTx);
+
+  // If checkbox is checked, remove booked items
+  if (clearDoneChk && clearDoneChk.checked) {
+    const doneItems = appState.shoppingList.filter(i => i.checked);
+    if (doneItems.length > 0) {
+      appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
+    } else {
+      // If none were checked, all were booked, so clear entire list
+      appState.shoppingList = [];
+    }
+  }
 
   await saveStateToEncryptedStorage();
-  closeCsvPreviewModal();
+  closeShoppingBookModal();
+  renderShoppingList();
   updateOverview();
-  announceNVDA(`${toImport.length} Buchungen erfolgreich importiert!`);
-  alert(`✅ Erfolgreich ${toImport.length} Buchungen aus dem Bank-Kontoauszug importiert!`);
+
+  const accName = getAccountName(accountId);
+  announceNVDA(`Einkauf über ${formatCurrency(amount)} auf Konto ${accName} erfolgreich abgebucht!`);
+  alert(`✅ Der Einkauf über ${formatCurrency(amount)} (${subcategory}) wurde erfolgreich im Haushaltsbuch abgebucht!`);
+}
+
+// Backwards compatibility aliases
+function renderShoppingCart() {
+  renderShoppingList();
+}
+function runPurchaseSimulation() {
+  // Deprecated simulator no-op
+}
+function saveSimulatedPurchase() {
+  // Deprecated simulator no-op
+}
+function clearShoppingCart() {
+  clearEntireShoppingList();
+}
+function handleAddShoppingItem(e) {
+  addShoppingItemFromForm(e);
+}
+function bookShoppingCartAsExpense() {
+  openShoppingBookModal();
 }
 
 // ----------------------------------------------------------------------------
@@ -4221,7 +3876,8 @@ function updateOverview() {
     renderTransactionList(dayStats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben an diesem Tag erfasst.');
     renderTransactionList(dayStats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen an diesem Tag erfasst.');
     runPurchaseSimulation();
-        populateFilterAccountDropdown();
+        renderShoppingList();
+  populateFilterAccountDropdown();
     renderExpenseRankings(dayStats.expenseList);
     checkLiquidityWarning(dayStats.balances);
     renderBudgetsList();
@@ -7982,6 +7638,7 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
       if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
       if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
       if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
+      if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
       if (!appState.transactions) appState.transactions = [];
       if (!appState.recurring) appState.recurring = [];
 

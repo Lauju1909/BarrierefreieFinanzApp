@@ -1,8 +1,13 @@
 {
-  "version": "6.7.0",
+  "version": "6.8.0",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-10-01",
+  "buildDate": "2026-10-02",
   "features": [
+    "Interaktive Einkaufsliste & Checkliste: Ersetzt den alten Kauf-Planer durch eine vollständige Einkaufsliste direkt auf der Übersichtsseite mit Abhaken, Durchstreichen und Filtern (Alle, Offen, Erledigt)",
+    "WhatsApp- & Text-Listen Import: Kopiere beliebige Einkaufslisten aus WhatsApp, Notizen oder E-Mails mit 1 Klick hinein – Punkte, Nummern, Preise und Läden werden vollautomatisch aufgeteilt",
+    "Dokument- & Foto-Upload für Einkaufslisten: Lade TXT, CSV, PDF oder Belegfotos/Kamerabilder hoch – der Inhalt wird ausgelesen und als Einkaufsartikel eingetragen",
+    "Mit 1 Klick als Ausgabe abbuchen: Buche getätigte Einkäufe direkt aus der Einkaufsliste als Ausgabe ins Haushaltsbuch ab, inklusive automatischer Kassensumme und Aufräumen erledigter Posten",
+    "WhatsApp-Export & Zwischenablage: Formatiere die Einkaufsliste sauber für WhatsApp und teile sie per Knopfdruck mit Familie und Freunden",
     "Beleg-, Quittungs- & Rechnungserfassung: Fotos per Kamera aufnehmen, Bild- oder PDF-Dateien anhängen oder per Strg+V einfügen mit automatischer Client-Side Bildkomprimierung (unter 250 KB)",
     "Automatische Texterkennung & Selbst-Eintragen: Betrag, Datum und Laden/Händler werden aus Belegen (OCR, PDF-Streams, GiroCode QR) automatisch erkannt und in die Formularfelder eingetragen",
     "Automatische Kategorie-Erstellung: Erkennt die Beleganalyse ein noch unbekanntes Geschäft oder eine neue Kategorie, wird diese selbstständig angelegt, gespeichert und direkt ausgewählt",
