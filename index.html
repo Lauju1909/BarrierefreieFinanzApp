@@ -1657,8 +1657,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span class="tab-key-hint" aria-hidden="true">7</span>
 <span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>
 </button>
-<button id="tab-sync" data-emoji="📱" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-sync" onclick="switchView('sync')" tabindex="-1">
+<button id="tab-shopping" data-emoji="🛒" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-shopping" onclick="switchView('shopping')" tabindex="-1">
 <span class="tab-key-hint" aria-hidden="true">8</span>
+<span>🛒<strong>Einkaufsliste &amp; Checkliste</strong></span>
+</button>
+<button id="tab-sync" data-emoji="📱" class="tab-btn" role="tab" aria-selected="false" aria-controls="view-sync" onclick="switchView('sync')" tabindex="-1">
+<span class="tab-key-hint" aria-hidden="true">9</span>
 <span>📱<strong>Smartphone-Sync (E2E)</strong></span>
 </button>
 </div>
@@ -1904,102 +1908,6 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 <div id="month-leftover-sub" class="hero-subtext">Einnahmen minus Ausgaben</div>
 </div>
-</div>
-</section>
-
-<!-- 5. BARRIEREFREIE EINKAUFSLISTE & CHECKLISTE -->
-<section class="overview-section" aria-labelledby="shopping-list-heading">
-<div class="section-card shopping-list-card">
-  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
-    <div>
-      <h3 id="shopping-list-heading" class="section-title" style="margin: 0;">🛒 5. Einkaufsliste &amp; Checkliste</h3>
-      <p class="field-hint" style="margin: 4px 0 0 0;">Abhaken beim Einkaufen, neue Artikel draufsetzen, WhatsApp-Texte einfügen oder Belege/Listen als Foto/PDF/Text hochladen.</p>
-    </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <button type="button" class="btn btn-secondary" onclick="openShoppingPasteModal()" aria-haspopup="dialog" title="WhatsApp-Text oder Notizen hier als Einkaufsliste einfügen">
-        <span>📋 <strong>Liste einkopieren (WhatsApp/Text)</strong></span>
-      </button>
-      <label class="btn btn-secondary" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center;" title="Dokument hochladen (TXT, CSV, PDF, Foto, Kamera)">
-        <span>📷📄 <strong>Dokument / Foto hochladen</strong></span>
-        <input type="file" id="shopping-file-upload-input" accept="image/*,.pdf,.txt,.csv" capture="environment" style="display: none;" onchange="handleShoppingDocumentSelect(this.files)">
-      </label>
-    </div>
-  </div>
-
-  <!-- Schnelleingabe für neue Artikel -->
-  <form id="form-shopping-quick-add" class="shopping-quick-form" onsubmit="addShoppingItemFromForm(event)">
-    <div style="flex: 3; min-width: 200px;">
-      <label for="shopping-new-name" class="sr-only">Artikelname für Einkaufsliste</label>
-      <input type="text" id="shopping-new-name" class="large-input" placeholder="Neuer Artikel (z. B. Hafermilch, Brot, Äpfel...)" required style="width: 100%;">
-    </div>
-    <div style="flex: 1; min-width: 110px;">
-      <label for="shopping-new-price" class="sr-only">Preis in Euro (optional)</label>
-      <input type="number" step="0.01" min="0" id="shopping-new-price" class="large-input" placeholder="Preis € (opt.)" style="width: 100%;">
-    </div>
-    <div style="flex: 1.5; min-width: 140px;">
-      <label for="shopping-new-store" class="sr-only">Supermarkt oder Geschäft (optional)</label>
-      <input type="text" id="shopping-new-store" class="large-input" placeholder="Laden (z.B. Rewe, Edeka, dm)" list="shopping-store-suggestions" style="width: 100%;">
-      <datalist id="shopping-store-suggestions">
-        <option value="Supermarkt"></option>
-        <option value="Rewe"></option>
-        <option value="Edeka"></option>
-        <option value="Aldi"></option>
-        <option value="Lidl"></option>
-        <option value="dm"></option>
-        <option value="Rossmann"></option>
-        <option value="Apotheke"></option>
-        <option value="Bäcker"></option>
-        <option value="Wochenmarkt"></option>
-      </datalist>
-    </div>
-    <button type="submit" class="btn btn-primary" style="background-color: #2E7D32; border-color: #1B5E20; white-space: nowrap;">
-      <span>➕ <strong>Draufsetzen</strong></span>
-    </button>
-  </form>
-
-  <!-- Filter-Leiste & Aktionen -->
-  <div class="shopping-toolbar">
-    <div class="shopping-filter-tabs" role="tablist" aria-label="Einkaufsliste filtern">
-      <button type="button" role="tab" class="shopping-filter-btn active" id="shopping-filter-all" aria-selected="true" onclick="setShoppingFilter('all')">
-        Alle (<span id="shopping-count-all">0</span>)
-      </button>
-      <button type="button" role="tab" class="shopping-filter-btn" id="shopping-filter-open" aria-selected="false" onclick="setShoppingFilter('open')">
-        ⏳ Noch offen (<span id="shopping-count-open">0</span>)
-      </button>
-      <button type="button" role="tab" class="shopping-filter-btn" id="shopping-filter-done" aria-selected="false" onclick="setShoppingFilter('done')">
-        ✅ Erledigt (<span id="shopping-count-done">0</span>)
-      </button>
-    </div>
-
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-      <button type="button" class="btn btn-secondary" onclick="copyShoppingListAsText()" title="Einkaufsliste in die Zwischenablage kopieren (z. B. zum Senden per WhatsApp)">
-        <span>📲 <strong>Als WhatsApp-Text kopieren</strong></span>
-      </button>
-      <button type="button" class="btn btn-secondary" onclick="clearDoneShoppingItems()" title="Alle abgehakten Artikel von der Liste löschen">
-        <span>🧹 <strong>Erledigte aufräumen</strong></span>
-      </button>
-      <button type="button" class="btn btn-secondary" onclick="clearEntireShoppingList()" style="color: #c62828;" title="Ganze Liste leeren">
-        <span>🗑️ <strong>Ganze Liste leeren</strong></span>
-      </button>
-    </div>
-  </div>
-
-  <!-- Die eigentliche interaktive Liste -->
-  <ul id="shopping-items-list" class="shopping-items-list" role="list" aria-label="Einkaufsartikel">
-    <!-- Dynamisch befüllt via appState.shoppingList -->
-  </ul>
-
-  <!-- Statuszeile & Ausgabe buchen -->
-  <div class="shopping-stats-card">
-    <div id="shopping-summary-text">
-      <strong>0 Artikel offen</strong> (Geschätzte Summe: <strong>0,00 €</strong>)
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-      <button type="button" class="btn btn-primary" onclick="openShoppingBookModal()" id="btn-open-shopping-book" style="background-color: #15803D; border-color: #166534;">
-        <span>💳 <strong>Einkauf als Ausgabe buchen</strong></span>
-      </button>
-    </div>
-  </div>
 </div>
 </section>
 
@@ -3406,6 +3314,110 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- =========================================================================
      8. SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION (E2EE)
      ========================================================================= -->
+<!-- =======================================================================
+ ANSICHT 8: EINKAUFSLISTE & CHECKLISTE
+ ======================================================================= -->
+<div id="view-shopping" class="view-panel" role="tabpanel" aria-labelledby="tab-shopping" style="display: none;">
+<div class="form-container" style="max-width: 960px; margin: 0 auto; width: 100%;">
+<h2 class="view-heading" tabindex="-1" id="heading-shopping-view" data-emoji="🛒">🛒 Einkaufsliste &amp; Checkliste</h2>
+<p class="view-sub">Artikel beim Einkaufen blitzschnell abhaken, neue Sachen draufsetzen, WhatsApp-Texte einfügen oder Belege &amp; Listen per Foto/Dokument hochladen.</p>
+
+<div class="section-card shopping-list-card" style="margin-top: 14px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+    <div>
+      <h3 id="shopping-list-heading" class="section-title" style="margin: 0; font-size: 20px;">Meine Einkaufsartikel</h3>
+      <p class="field-hint" style="margin: 4px 0 0 0;">Tippe neue Artikel ein, hake erledigte ab oder buche deinen Einkauf direkt als Ausgabe ab.</p>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" class="btn btn-secondary" onclick="openShoppingPasteModal()" aria-haspopup="dialog" title="WhatsApp-Text oder Notizen hier als Einkaufsliste einfügen">
+        <span>📋 <strong>Liste einkopieren (WhatsApp/Text)</strong></span>
+      </button>
+      <label class="btn btn-secondary" style="cursor: pointer; margin: 0; display: inline-flex; align-items: center;" title="Dokument hochladen (TXT, CSV, PDF, Foto, Kamera)">
+        <span>📷📄 <strong>Dokument / Foto hochladen</strong></span>
+        <input type="file" id="shopping-file-upload-input" accept="image/*,.pdf,.txt,.csv" capture="environment" style="display: none;" onchange="handleShoppingDocumentSelect(this.files)">
+      </label>
+    </div>
+  </div>
+
+  <!-- Schnelleingabe für neue Artikel -->
+  <form id="form-shopping-quick-add" class="shopping-quick-form" onsubmit="addShoppingItemFromForm(event)">
+    <div style="flex: 3; min-width: 200px;">
+      <label for="shopping-new-name" class="sr-only">Artikelname für Einkaufsliste</label>
+      <input type="text" id="shopping-new-name" class="large-input" placeholder="Neuer Artikel (z. B. Hafermilch, Brot, Äpfel...)" required style="width: 100%;">
+    </div>
+    <div style="flex: 1; min-width: 110px;">
+      <label for="shopping-new-price" class="sr-only">Preis in Euro (optional)</label>
+      <input type="number" step="0.01" min="0" id="shopping-new-price" class="large-input" placeholder="Preis € (opt.)" style="width: 100%;">
+    </div>
+    <div style="flex: 1.5; min-width: 140px;">
+      <label for="shopping-new-store" class="sr-only">Supermarkt oder Geschäft (optional)</label>
+      <input type="text" id="shopping-new-store" class="large-input" placeholder="Laden (z.B. Rewe, Edeka, dm)" list="shopping-store-suggestions" style="width: 100%;">
+      <datalist id="shopping-store-suggestions">
+        <option value="Supermarkt"></option>
+        <option value="Rewe"></option>
+        <option value="Edeka"></option>
+        <option value="Aldi"></option>
+        <option value="Lidl"></option>
+        <option value="dm"></option>
+        <option value="Rossmann"></option>
+        <option value="Apotheke"></option>
+        <option value="Bäcker"></option>
+        <option value="Wochenmarkt"></option>
+      </datalist>
+    </div>
+    <button type="submit" class="btn btn-primary" style="background-color: #2E7D32; border-color: #1B5E20; white-space: nowrap;">
+      <span>➕ <strong>Draufsetzen</strong></span>
+    </button>
+  </form>
+
+  <!-- Filter-Leiste & Aktionen -->
+  <div class="shopping-toolbar">
+    <div class="shopping-filter-tabs" role="tablist" aria-label="Einkaufsliste filtern">
+      <button type="button" role="tab" class="shopping-filter-btn active" id="shopping-filter-all" aria-selected="true" onclick="setShoppingFilter('all')">
+        Alle (<span id="shopping-count-all">0</span>)
+      </button>
+      <button type="button" role="tab" class="shopping-filter-btn" id="shopping-filter-open" aria-selected="false" onclick="setShoppingFilter('open')">
+        ⏳ Noch offen (<span id="shopping-count-open">0</span>)
+      </button>
+      <button type="button" role="tab" class="shopping-filter-btn" id="shopping-filter-done" aria-selected="false" onclick="setShoppingFilter('done')">
+        ✅ Erledigt (<span id="shopping-count-done">0</span>)
+      </button>
+    </div>
+
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" class="btn btn-secondary" onclick="copyShoppingListAsText()" title="Einkaufsliste in die Zwischenablage kopieren (z. B. zum Senden per WhatsApp)">
+        <span>📲 <strong>Als WhatsApp-Text kopieren</strong></span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="clearDoneShoppingItems()" title="Alle abgehakten Artikel von der Liste löschen">
+        <span>🧹 <strong>Erledigte aufräumen</strong></span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="clearEntireShoppingList()" style="color: #c62828;" title="Ganze Liste leeren">
+        <span>🗑️ <strong>Ganze Liste leeren</strong></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Die eigentliche interaktive Liste -->
+  <ul id="shopping-items-list" class="shopping-items-list" role="list" aria-label="Einkaufsartikel">
+    <!-- Dynamisch befüllt via appState.shoppingList -->
+  </ul>
+
+  <!-- Statuszeile & Ausgabe buchen -->
+  <div class="shopping-stats-card">
+    <div id="shopping-summary-text">
+      <strong>0 Artikel offen</strong> (Geschätzte Summe: <strong>0,00 €</strong>)
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+      <button type="button" class="btn btn-primary" onclick="openShoppingBookModal()" id="btn-open-shopping-book" style="background-color: #15803D; border-color: #166534;">
+        <span>💳 <strong>Einkauf als Ausgabe buchen</strong></span>
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="view-header">
     <h2>📱 Smartphone &amp; Desktop Live-Synchronisation</h2>

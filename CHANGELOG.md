@@ -5,7 +5,7 @@
 *Datum: 02. Oktober 2026*
 
 ### 🛒 1. Interaktive Einkaufsliste & Checkliste
-- **Ersetzt alten Kauf-Planer:** Der bisherige statische Kauf-Planer wurde durch eine interaktive, barrierefreie Einkaufsliste direkt auf der Übersichtsseite ersetzt.
+- **Eigener Reiter im Hauptmenü (Reiter 8):** Ersetzt den alten Kauf-Planer und ist als übersichtlicher eigener Hauptmenü-Reiter (Taste 8) erreichbar, sodass die Monatsübersicht sauber und fokussiert bleibt.
 - **Abhaken beim Einkaufen:** Artikel können mit einer großen, barrierefreien Checkbox oder Tastatur angehakt werden. Erledigte Artikel werden optisch durchgestrichen.
 - **Filter-Reiter:** Schneller Wechsel zwischen *Alle*, *⏳ Noch offen* und *✅ Erledigt*.
 - **Schnelleingabe:** Artikelname mit optionalem Preis und Geschäft/Laden über Datalist-Vorschläge (Rewe, Aldi, dm, etc.) blitzschnell eintragen.

@@ -7241,7 +7241,7 @@ function initTheme() {
 function switchView(viewName) {
   currentActiveView = viewName;
 
-  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist', 'sync'];
+  const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist', 'shopping', 'sync'];
   views.forEach(v => {
     const el = document.getElementById(`view-${v}`);
     const tab = document.getElementById(`tab-${v}`);
@@ -7299,7 +7299,13 @@ function switchView(viewName) {
     const newNameInput = document.getElementById('new-acc-name');
     if (newNameInput) newNameInput.focus();
     announceNVDA('Konto-Optionen und Konten verwalten (Reiter 6) geöffnet.');
-    } else if (viewName === 'sync') {
+    } else if (viewName === 'shopping') {
+    populateShoppingDropdowns();
+    renderShoppingList();
+    const newNameInput = document.getElementById('shopping-new-name');
+    if (newNameInput) newNameInput.focus();
+    announceNVDA('Einkaufsliste und Checkliste (Reiter 8) geöffnet.');
+  } else if (viewName === 'sync') {
     initSyncView();
   } else if (viewName === 'wishlist') {
     populateWishlistAccountDropdown();
