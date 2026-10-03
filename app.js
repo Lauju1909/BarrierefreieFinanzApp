@@ -9130,21 +9130,50 @@ function setSyncMode(mode) {
 }
 
 function isSyncConnected() {
-  return localStorage.getItem('haushaltsbuch_sync_connected') === 'true';
+  const isConn = localStorage.getItem('haushaltsbuch_sync_connected') === 'true';
+  const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
+  const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || 
+               (typeof SyncEngine !== 'undefined' && SyncEngine.getActivePairingCode ? SyncEngine.getActivePairingCode() : null);
+
+  // Falls versehentlich der eigene Gerätename ("Computer" / "PC") als Partner gespeichert war, aufräumen
+  if (dev === 'Computer' || dev === 'PC') {
+    localStorage.removeItem('haushaltsbuch_sync_connected');
+    localStorage.removeItem('haushaltsbuch_sync_connected_device');
+    localStorage.removeItem('haushaltsbuch_sync_connected_code');
+    localStorage.removeItem('haushaltsbuch_sync_connected_time');
+    return false;
+  }
+
+  return isConn && !!dev && !!code;
 }
 
 function getConnectedDevice() {
-  return localStorage.getItem('haushaltsbuch_sync_connected_device') || 'Computer';
+  const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
+  if (dev === 'Computer' || dev === 'PC') return '';
+  return dev || '';
 }
 
 function getConnectedTime() {
-  return localStorage.getItem('haushaltsbuch_sync_connected_time') || 'Heute';
+  return localStorage.getItem('haushaltsbuch_sync_connected_time') || '';
 }
 
 function disconnectSyncPairing() {
   localStorage.removeItem('haushaltsbuch_sync_connected');
   localStorage.removeItem('haushaltsbuch_sync_connected_device');
+  localStorage.removeItem('haushaltsbuch_sync_connected_code');
   localStorage.removeItem('haushaltsbuch_sync_connected_time');
+  localStorage.removeItem('haushaltsbuch_mailbox_last_sync');
+  localStorage.removeItem('haushaltsbuch_last_received_mailbox_ts');
+  localStorage.removeItem('haushaltsbuch_last_sent_mailbox_ts');
+  if (typeof window !== 'undefined') {
+    window.__PAIRED_DEVICE__ = null;
+    window.__MANUAL_SYNC_EDIT__ = false;
+  }
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+  if (targetDevInput) targetDevInput.value = '';
+  if (targetCodeInput) targetCodeInput.value = '';
+
   if (typeof SyncEngine !== 'undefined') {
     SyncEngine.generateNewPairingCode();
   }
@@ -9153,13 +9182,13 @@ function disconnectSyncPairing() {
     initLockScreenSync();
   }
   if (typeof announceNVDA === 'function') {
-    announceNVDA('Verbindung getrennt. Gerätename und neuer Kopplungscode werden wieder angezeigt.');
+    announceNVDA('Kopplung aufgehoben. Beide Geräte sind nun getrennt.');
   }
 }
 
 function updateSyncConnectedUI() {
   // Falls window.__PAIRED_DEVICE__ vom C# Server bereitsteht, in LocalStorage übernehmen
-  if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device) {
+  if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device && window.__PAIRED_DEVICE__.device !== 'Computer' && window.__PAIRED_DEVICE__.device !== 'PC') {
     if (!localStorage.getItem('haushaltsbuch_sync_connected_device')) {
       localStorage.setItem('haushaltsbuch_sync_connected', 'true');
       localStorage.setItem('haushaltsbuch_sync_connected_device', window.__PAIRED_DEVICE__.device);
@@ -9174,8 +9203,8 @@ function updateSyncConnectedUI() {
 
   const connected = isSyncConnected();
   const devName = getConnectedDevice();
-  const pairedCode = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || '';
-  const syncTime = getConnectedTime();
+  const pairedCode = localStorage.getItem('haushaltsbuch_sync_connected_code') || '';
+  const syncTime = getConnectedTime() || 'Heute';
 
   // Lockscreen
   const lockConnectedBox = document.getElementById('lock-sync-connected');
@@ -9209,7 +9238,7 @@ function updateSyncConnectedUI() {
   const targetDevInput = document.getElementById('input-target-device');
   const targetCodeInput = document.getElementById('input-target-code');
 
-  if (devName && devName !== 'Unbekanntes Gerät') {
+  if (connected && devName) {
     if (targetDevInput && !targetDevInput.value) targetDevInput.value = devName;
     if (targetCodeInput && !targetCodeInput.value && pairedCode) targetCodeInput.value = pairedCode;
 
@@ -9233,7 +9262,7 @@ function updateSyncConnectedUI() {
   const lastSyncTimeStr = localStorage.getItem('haushaltsbuch_mailbox_last_sync') || syncTime;
 
   if (mailboxBadge) {
-    if (connected) {
+    if (connected && devName) {
       mailboxBadge.textContent = '🟢 Postfach aktiv & gekoppelt';
       mailboxBadge.style.color = '#15803d';
       mailboxBadge.style.background = '#dcfce7';
@@ -9252,8 +9281,8 @@ function updateSyncConnectedUI() {
     mailboxLastSync.textContent = lastSyncTimeStr;
   }
   if (mailboxNotice && mailboxContent) {
-    mailboxNotice.style.display = connected ? 'none' : 'block';
-    mailboxContent.style.display = connected ? 'block' : 'none';
+    mailboxNotice.style.display = (connected && devName) ? 'none' : 'block';
+    mailboxContent.style.display = (connected && devName) ? 'block' : 'none';
   }
 }
 
