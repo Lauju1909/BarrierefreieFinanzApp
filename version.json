@@ -1,8 +1,9 @@
 {
-  "version": "6.8.1",
+  "version": "6.8.2",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-10-03",
   "features": [
+    "Wiederherstellung Wunschliste & Sparziele (Reiter 7): Alle Wunschlisten-Funktionen (renderWishlist, Sparziel-Verknüpfung, Einmalkauf- und Abo-Erfüllung) wurden wiederhergestellt. Alle bisher im verschlüsselten Tresor gespeicherten Wünsche werden nun wieder sofort und vollständig angezeigt",
     "Fehlerbehebung PIN-Entsperrung: Beseitigt Fehlalarme beim Entsperren mit korrekter PIN. Krypto-Entschlüsselung und Benutzeroberfläche sind nun strikt getrennt, sodass Darstellungsfehler niemals als PIN-Fehlversuch gewertet werden",
     "Re-Entrancy-Schutz: Verhindert doppelte oder parallele Entsperr-Vorgänge beim Drücken der Enter-Taste oder Doppelklick",
     "Interaktive Einkaufsliste & Checkliste: Ersetzt den alten Kauf-Planer durch einen eigenen, barrierefreien Menü-Reiter (Reiter 8) mit Abhaken, Durchstreichen und Filtern (Alle, Offen, Erledigt)",

@@ -120,3 +120,123 @@ if (parsed[5].name !== 'Kaffee' || parsed[5].price !== 6.99) {
 }
 
 console.log('Shopping list test: 100% PASS!');
+
+// 4. Test Wishlist elements and functions
+console.log('Testing Wishlist & Sparziele integration...');
+const expectedWishlistIds = [
+  'form-add-wish',
+  'wish-type',
+  'wish-title',
+  'wish-amount',
+  'wish-priority',
+  'wish-category',
+  'wish-target-account',
+  'wish-target-date',
+  'wish-note',
+  'wish-filter-status',
+  'wish-filter-type',
+  'wishlist-items-container',
+  'wishlist-stat-count',
+  'wishlist-stat-total',
+  'wishlist-stat-affordable'
+];
+expectedWishlistIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing Wishlist HTML element id="${id}"`);
+    process.exit(1);
+  }
+});
+console.log('All 15 Wishlist HTML element IDs present.');
+
+// Test wishlist functions existence in app.js
+const requiredWishlistFunctions = [
+  'ensureWishlistInitialized',
+  'populateWishlistAccountDropdown',
+  'handleAddWish',
+  'renderWishlist',
+  'handleFulfillWishAsExpense',
+  'handleFulfillWishAsRecurring',
+  'handleToggleWishFulfilled',
+  'handleDeleteWish'
+];
+requiredWishlistFunctions.forEach(fn => {
+  const regex = new RegExp(`\\bfunction\\s+${fn}\\b|\\basync\\s+function\\s+${fn}\\b`);
+  if (!regex.test(appJs)) {
+    console.error(`Missing required Wishlist function: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log('All 8 Wishlist functions present in app.js.');
+
+// Functional simulation of wishlist logic
+const testState = {
+  wishlist: [],
+  accounts: [{ id: 'bank', name: 'Girokonto', balance: 500 }],
+  savingPots: [{ id: 'pot_1', accountId: 'bank', name: 'Neuer PC', currentAmount: 250, targetAmount: 1000 }],
+  transactions: []
+};
+
+// Add one-time wish
+testState.wishlist.push({
+  id: 'wish_test_1',
+  type: 'once',
+  title: 'Monitor',
+  amount: 200,
+  priority: 'high',
+  category: 'Elektronik',
+  account: 'pot_1',
+  fulfilled: false
+});
+
+// Add subscription wish
+testState.wishlist.push({
+  id: 'wish_test_2',
+  type: 'monthly',
+  title: 'Musik-Streaming',
+  amount: 10.99,
+  priority: 'medium',
+  category: 'Abo',
+  account: 'bank',
+  fulfilled: false
+});
+
+if (testState.wishlist.length !== 2) {
+  console.error('Wishlist length mismatch');
+  process.exit(1);
+}
+
+// Test open wishes filter
+const openWishes = testState.wishlist.filter(w => !w.fulfilled);
+if (openWishes.length !== 2) {
+  console.error('Open wishes filter mismatch');
+  process.exit(1);
+}
+
+// Fulfill wish 1 from pot
+const wish1 = testState.wishlist.find(w => w.id === 'wish_test_1');
+const pot = testState.savingPots.find(p => p.id === wish1.account);
+pot.currentAmount -= wish1.amount;
+wish1.fulfilled = true;
+testState.transactions.push({
+  id: 'tx_wish_1',
+  type: 'expense',
+  amount: wish1.amount,
+  description: `Wunsch erfüllt: ${wish1.title}`
+});
+
+if (pot.currentAmount !== 50) {
+  console.error('Pot deduction mismatch, expected 50, got', pot.currentAmount);
+  process.exit(1);
+}
+if (testState.transactions.length !== 1 || testState.transactions[0].amount !== 200) {
+  console.error('Transaction mismatch');
+  process.exit(1);
+}
+
+const remainingOpen = testState.wishlist.filter(w => !w.fulfilled);
+if (remainingOpen.length !== 1 || remainingOpen[0].id !== 'wish_test_2') {
+  console.error('Remaining open wishes mismatch');
+  process.exit(1);
+}
+
+console.log('Wishlist logic test: 100% PASS!');

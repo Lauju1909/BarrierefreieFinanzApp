@@ -1,6 +1,17 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.8.2 (Wiederherstellung Wunschliste & Sparziele)
+*Datum: 03. Oktober 2026*
+
+### 🎁 1. Wiederherstellung der Wunschliste & Sparziele (Reiter 7)
+- **Vollständige Anzeige wiederhergestellt:** Behebt das Problem, dass nach dem Update auf v6.8.0 die Wünsche in Reiter 7 nicht mehr angezeigt wurden.
+- **Wiederhergestellte Funktionen:** Die Rendering- und Verwaltungsfunktionen (`renderWishlist`, `populateWishlistAccountDropdown`, `handleAddWish`, `handleFulfillWishAsExpense`, `handleToggleWishFulfilled`, `handleDeleteWish`) wurden vollständig wiederhergestellt und angebunden.
+- **100% Datensicherheit im Tresor:** Alle bisher gespeicherten Wünsche, Notizen, Zieltermine und Verknüpfungen mit Spartöpfen blieben im verschlüsselten Tresor lückenlos erhalten und werden nun wieder sofort angezeigt.
+- **Erfüllen & Buchen:** Einmalkauf-Wünsche können direkt aus Spartöpfen oder vom Girokonto als Ausgabe verbucht werden; wiederkehrende Wünsche (Abos) können als Dauerauftrag übernommen werden.
+
+---
+
 ## ⚡ Version 6.8.1 (Fehlerbehebung PIN-Entsperrung & Tresor-Zugang)
 *Datum: 03. Oktober 2026*
 

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.8.1';
+const CURRENT_APP_VERSION = 'v6.8.2';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -1665,6 +1665,310 @@ function handleAddShoppingItem(e) {
 }
 function bookShoppingCartAsExpense() {
   openShoppingBookModal();
+}
+
+// ----------------------------------------------------------------------------
+// REITER 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
+// ----------------------------------------------------------------------------
+function ensureWishlistInitialized() {
+  if (!appState.wishlist || !Array.isArray(appState.wishlist)) {
+    appState.wishlist = [];
+  }
+}
+
+function populateWishlistAccountDropdown() {
+  ensureAccountsInitialized();
+  ensureSavingPotsInitialized();
+  const sel = document.getElementById('wish-target-account');
+  if (!sel) return;
+
+  let html = '';
+
+  if (appState.savingPots && appState.savingPots.length > 0) {
+    html += '<optgroup label="🎯 Vorhandene Spartöpfe">';
+    html += appState.savingPots.map(pot => {
+      const acc = appState.accounts.find(a => a.id === pot.accountId);
+      const accName = acc ? acc.name : 'Konto';
+      const val = pot.id.startsWith('pot_') ? pot.id : `pot_${pot.id}`;
+      return `<option value="${escapeHTML(val)}" data-emoji="🎯">🎯 ${escapeHTML(pot.name)} (${formatCurrency(pot.currentAmount)} auf ${escapeHTML(accName)})</option>`;
+    }).join('');
+    html += '</optgroup>';
+  }
+
+  html += '<optgroup label="🏦 Reguläre Konten">';
+  html += appState.accounts.map(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    return `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
+  }).join('');
+  html += '</optgroup>';
+
+  sel.innerHTML = html;
+  applySymbolsToOptions(sel);
+}
+
+async function handleAddWish(e) {
+  e.preventDefault();
+  ensureWishlistInitialized();
+
+  const typeSelect = document.getElementById('wish-type');
+  const wishType = typeSelect ? typeSelect.value : 'once';
+  const title = document.getElementById('wish-title').value.trim();
+  const amount = parseFloat(document.getElementById('wish-amount').value);
+  const priority = document.getElementById('wish-priority').value;
+  const category = document.getElementById('wish-category').value;
+  const account = document.getElementById('wish-target-account').value;
+  const targetDate = document.getElementById('wish-target-date').value;
+  const note = document.getElementById('wish-note').value.trim();
+
+  if (!title || isNaN(amount) || amount <= 0) return;
+
+  const newWish = {
+    id: `wish_${Date.now()}`,
+    type: wishType,
+    title: title,
+    amount: amount,
+    priority: priority,
+    category: category,
+    account: account,
+    targetDate: targetDate,
+    note: note,
+    fulfilled: false,
+    createdAt: new Date().toISOString().split('T')[0]
+  };
+
+  appState.wishlist.push(newWish);
+  await saveStateToEncryptedStorage();
+
+  document.getElementById('form-add-wish').reset();
+  renderWishlist();
+  announceNVDA(`Wunsch "${title}" über ${formatCurrency(amount)} erfolgreich zur Wunschliste hinzugefügt!`);
+}
+
+function renderWishlist() {
+  ensureWishlistInitialized();
+  const container = document.getElementById('wishlist-items-container');
+  if (!container) return;
+
+  const filterSel = document.getElementById('wish-filter-status');
+  const filterStatus = filterSel ? filterSel.value : 'open';
+
+  const filterTypeSel = document.getElementById('wish-filter-type');
+  const filterType = filterTypeSel ? filterTypeSel.value : 'all';
+
+  let list = appState.wishlist;
+  if (filterStatus === 'open') {
+    list = list.filter(w => !w.fulfilled);
+  } else if (filterStatus === 'fulfilled') {
+    list = list.filter(w => w.fulfilled);
+  }
+
+  if (filterType === 'once') {
+    list = list.filter(w => !w.type || w.type === 'once');
+  } else if (filterType === 'subscriptions') {
+    list = list.filter(w => w.type && w.type !== 'once');
+  }
+
+  // Calculate statistics
+  const openWishes = appState.wishlist.filter(w => !w.fulfilled);
+  const totalAmount = openWishes.reduce((sum, w) => sum + Number(w.amount || 0), 0);
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const balances = calculateBalancesUpToDate(todayStr);
+
+  let affordableCount = 0;
+  openWishes.forEach(w => {
+    const accBal = balances[w.account] !== undefined ? balances[w.account] : balances.total;
+    if (accBal >= w.amount) affordableCount++;
+  });
+
+  const statCount = document.getElementById('wishlist-stat-count');
+  const statTotal = document.getElementById('wishlist-stat-total');
+  const statAffordable = document.getElementById('wishlist-stat-affordable');
+
+  if (statCount) statCount.textContent = `${openWishes.length} Wunsch / Wünsche`;
+  if (statTotal) statTotal.textContent = formatCurrency(totalAmount);
+  if (statAffordable) statAffordable.textContent = `${affordableCount} sofort leistbar`;
+
+  if (list.length === 0) {
+    container.innerHTML = `<p class="empty-state" style="padding: 24px; text-align: center;">Keine Wünsche in dieser Ansicht vorhanden. Trage oben einen neuen Wunsch ein!</p>`;
+    return;
+  }
+
+  const prioLabels = {
+    high: '⭐⭐⭐ Hohe Priorität',
+    medium: '⭐⭐ Mittlere Priorität',
+    low: '⭐ Geringe Priorität'
+  };
+
+  let html = '<div class="wishlist-cards-grid" style="display: flex; flex-direction: column; gap: 14px;">';
+
+  list.forEach(w => {
+    const isSub = w.type && w.type !== 'once';
+    let accName = 'Gesamtguthaben';
+    let accBal = balances.total;
+    if (w.account && w.account.startsWith('pot_')) {
+      const potId = w.account.replace('pot_', '');
+      const pot = (appState.savingPots || []).find(p => p.id === potId || p.id === w.account);
+      if (pot) {
+        accName = `🎯 Spartopf: ${pot.name}`;
+        accBal = Number(pot.currentAmount || 0);
+      }
+    } else {
+      const acc = appState.accounts.find(a => a.id === w.account);
+      if (acc) accName = acc.name;
+      if (balances[w.account] !== undefined) accBal = balances[w.account];
+    }
+    const isAffordable = accBal >= w.amount;
+    const diff = w.amount - accBal;
+    const percent = Math.max(0, Math.min(100, Math.round((Math.max(0, accBal) / w.amount) * 100)));
+
+    let typeBadge = '<span class="badge" style="background: #E8EAF6; color: #283593; padding: 2px 8px; border-radius: 4px; font-weight: bold;">📦 Einmalkauf</span>';
+    let subIntervalText = '';
+    if (w.type === 'monthly') {
+      typeBadge = '<span class="badge" style="background: #E1F5FE; color: #0277BD; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Monatliches Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 12)} / Jahr</div>`;
+    } else if (w.type === 'yearly') {
+      typeBadge = '<span class="badge" style="background: #FFF3E0; color: #E65100; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🗓 Jährliches Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount / 12)} / Monat</div>`;
+    } else if (w.type === 'quarterly') {
+      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Quartals-Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 4)} / Jahr</div>`;
+    } else if (w.type === 'halfyear') {
+      typeBadge = '<span class="badge" style="background: #EDE7F6; color: #512DA8; padding: 2px 8px; border-radius: 4px; font-weight: bold;">🔄 Halbjahres-Abo</span>';
+      subIntervalText = `<div style="font-size: 12px; color: var(--text-muted, #666);">${formatCurrency(w.amount * 2)} / Jahr</div>`;
+    }
+
+    html += `
+      <div class="wish-card" style="border: 2px solid var(--border-color); border-radius: 8px; padding: 16px; background: var(--card-bg, #ffffff); ${w.fulfilled ? 'opacity: 0.75; border-left: 8px solid #4CAF50;' : (isAffordable ? 'border-left: 8px solid #2E7D32;' : 'border-left: 8px solid #FF9800;')}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <h4 style="margin: 0 0 6px 0; font-size: 18px;">${w.fulfilled ? '✅ ' : (isSub ? '🔄 ' : '🎁 ')}${escapeHTML(w.title)}</h4>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--text-muted, #666); align-items: center;">
+              ${typeBadge}
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">🏷️ ${escapeHTML(w.category || 'Allgemein')}</span>
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">${prioLabels[w.priority] || w.priority}</span>
+              <span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">💳 Spartopf: ${escapeHTML(accName)}</span>
+              ${w.targetDate ? `<span class="badge" style="background: var(--bg-hover, #eee); padding: 2px 8px; border-radius: 4px;">📅 Bis: ${escapeHTML(w.targetDate)}</span>` : ''}
+            </div>
+            ${w.note ? `<p style="margin: 8px 0 0 0; font-size: 14px; font-style: italic;">📝 ${escapeHTML(w.note)}</p>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 22px; font-weight: bold; color: var(--accent-primary, #2196F3);">${formatCurrency(w.amount)}${isSub ? (w.type === 'monthly' ? ' / Mt.' : (w.type === 'yearly' ? ' / Jr.' : '')) : ''}</div>
+            ${subIntervalText}
+            ${w.fulfilled ? '<span style="color: #2E7D32; font-weight: bold; font-size: 14px;">✅ Aktiv / Erfüllt!</span>' : ''}
+          </div>
+        </div>
+
+        ${!w.fulfilled ? `
+          <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin-bottom: 4px;">
+              <span>Guthaben auf ${escapeHTML(accName)}: ${formatCurrency(accBal)}</span>
+              <span>${isAffordable ? '🟢 100% Leistbar!' : `Fortschritt: ${percent}% (Fehlen noch ${formatCurrency(diff)})`}</span>
+            </div>
+            <div style="background: #e0e0e0; border-radius: 6px; height: 10px; overflow: hidden;">
+              <div style="width: ${percent}%; height: 100%; background: ${isAffordable ? '#4CAF50' : '#FF9800'}; transition: width 0.3s;"></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+          ${!w.fulfilled ? (
+            isSub ? `
+              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsRecurring('${w.id}')" style="background-color: #0288D1; border-color: #01579B; padding: 6px 12px; font-size: 14px;">
+                <span>🔄 <strong>Als Dauerauftrag (Abo) starten &amp; Erfüllen</strong></span>
+              </button>
+            ` : `
+              <button type="button" class="btn btn-primary" onclick="handleFulfillWishAsExpense('${w.id}')" style="background-color: #2E7D32; border-color: #1B5E20; padding: 6px 12px; font-size: 14px;">
+                <span>🛒 <strong>Als Ausgabe buchen &amp; Erfüllen</strong></span>
+              </button>
+            `
+          ) : `
+            <button type="button" class="btn btn-secondary" onclick="handleToggleWishFulfilled('${w.id}')" style="padding: 6px 12px; font-size: 14px;">
+              <span>Wieder als offen markieren</span>
+            </button>
+          `}
+          <button type="button" class="btn btn-secondary" onclick="handleDeleteWish('${w.id}')" style="padding: 6px 12px; font-size: 14px; color: #D32F2F;">
+            <span>🗑️ Löschen</span>
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+async function handleFulfillWishAsExpense(wishId) {
+  ensureWishlistInitialized();
+  ensureSavingPotsInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  let bookedAccount = wish.account || 'bank';
+  let potObj = null;
+  let potName = '';
+
+  if (wish.account && wish.account.startsWith('pot_')) {
+    const rawId = wish.account.replace(/^pot_+/, '');
+    potObj = (appState.savingPots || []).find(p => p.id === wish.account || p.id === rawId || p.id === `pot_${rawId}`);
+    if (potObj) {
+      potName = potObj.name;
+      bookedAccount = potObj.accountId || 'bank';
+      const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich aus dem Spartopf "${potObj.name}" entnehmen und als Ausgabe buchen?`;
+      if (!confirm(confirmMsg)) return;
+      potObj.currentAmount = Math.max(0, Math.round((Number(potObj.currentAmount || 0) - wish.amount) * 100) / 100);
+    }
+  } else {
+    const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich als Ausgabe von Konto "${formatAccountName(wish.account)}" abbuchen und den Wunsch als erfüllt markieren?`;
+    if (!confirm(confirmMsg)) return;
+  }
+
+  // Add expense transaction
+  appState.transactions.push({
+    id: `tx_${Date.now()}`,
+    type: 'expense',
+    account: bookedAccount,
+    amount: wish.amount,
+    category: 'Shopping, Online-Kauf & Marktplätze',
+    subcategory: wish.title,
+    description: `Wunsch erfüllt: ${wish.title}${potName ? ` (aus Spartopf "${potName}")` : ''}`,
+    isPlanned: false,
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  wish.fulfilled = true;
+  wish.fulfilledDate = new Date().toISOString().split('T')[0];
+
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  renderWishlist();
+  renderSavingPotsList();
+  announceNVDA(`Glückwunsch! Wunsch "${wish.title}" wurde als Ausgabe über ${formatCurrency(wish.amount)} abgebucht und erfüllt!`);
+}
+
+async function handleToggleWishFulfilled(wishId) {
+  ensureWishlistInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  wish.fulfilled = !wish.fulfilled;
+  await saveStateToEncryptedStorage();
+  renderWishlist();
+  announceNVDA(`Wunsch "${wish.title}" Status aktualisiert.`);
+}
+
+async function handleDeleteWish(wishId) {
+  ensureWishlistInitialized();
+  const wish = appState.wishlist.find(w => w.id === wishId);
+  if (!wish) return;
+
+  if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
+
+  appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
+  await saveStateToEncryptedStorage();
+  renderWishlist();
+  announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
 }
 
 // ----------------------------------------------------------------------------
