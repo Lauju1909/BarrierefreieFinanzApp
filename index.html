@@ -21,7 +21,7 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.8.0)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.8.1)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
@@ -1557,6 +1557,110 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 
 <!-- =========================================================================
+ MODAL DIALOG: EINKAUFSLISTE AUS WHATSAPP / TEXT EINFÜGEN
+ ========================================================================= -->
+<div id="shopping-paste-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shopping-paste-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 620px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="shopping-paste-heading" tabindex="-1" style="margin: 0;">📋 Liste einkopieren (WhatsApp / Notizen)</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeShoppingPasteModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  <p class="field-hint">Kopiere einfach eine Nachricht aus WhatsApp, deinen Notizen oder einer E-Mail hier hinein. Jede Zeile oder Aufzählungspunkt (z. B. "- 2x Milch", "Brot 2,49 €", "Kaffee (Rewe)") wird automatisch als einzelner Artikel auf die Einkaufsliste gesetzt:</p>
+
+  <form onsubmit="handleShoppingPasteSubmit(event)" class="accessible-form" style="margin-top: 14px;">
+    <div class="form-group">
+      <label for="shopping-paste-input" class="field-label"><strong>Nachricht / Text hier einfügen:</strong></label>
+      <textarea id="shopping-paste-input" rows="8" class="large-input" style="height: auto; min-height: 140px; font-family: sans-serif;" placeholder="Beispiel:&#10;Milch 1.5%&#10;- Vollkornbrot 2,49 €&#10;• 3 Bananen&#10;Butter (Rewe)&#10;Kaffee 5.99"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="shopping-paste-store" class="field-label">Standard-Laden für diese Liste (optional):</label>
+      <input type="text" id="shopping-paste-store" class="large-input" placeholder="z. B. Rewe, Aldi, dm..." list="shopping-store-suggestions">
+    </div>
+
+    <div class="form-actions" style="margin-top: 16px;">
+      <button type="submit" class="btn btn-primary" style="background-color: #2E7D32;">
+        <span>➕ <strong>Auf Einkaufsliste setzen</strong> (Enter)</span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="closeShoppingPasteModal()">
+        <span>Abbrechen</span>
+      </button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: EINKAUF ALS AUSGABE BUCHEN
+ ========================================================================= -->
+<div id="shopping-book-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shopping-book-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 620px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="shopping-book-heading" tabindex="-1" style="margin: 0;">💳 Einkauf als Ausgabe buchen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeShoppingBookModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  <p class="field-hint" id="shopping-book-hint">Wähle das Konto und die Kategorie aus, um deinen Einkauf im Haushaltsbuch abzubuchen:</p>
+
+  <form onsubmit="handleConfirmShoppingBooking(event)" class="accessible-form" style="margin-top: 14px;">
+    <div class="form-group">
+      <label for="shopping-book-amount" class="field-label"><strong>Tatsächlicher Gesamtbetrag laut Bon (€):</strong></label>
+      <input type="number" step="0.01" min="0.01" id="shopping-book-amount" class="large-input" required>
+      <span class="field-hint">Wurde aus den abgehakten Artikeln summiert. Du kannst ihn an den genauen Kassenbon anpassen.</span>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="shopping-book-account" class="field-label"><strong>Bezahlt mit (Konto):</strong></label>
+        <select id="shopping-book-account" class="large-select" required>
+          <!-- Befüllt via JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="shopping-book-date" class="field-label"><strong>Datum des Einkaufs:</strong></label>
+        <input type="date" id="shopping-book-date" class="large-input" required>
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="shopping-book-category" class="field-label"><strong>Hauptkategorie:</strong></label>
+        <select id="shopping-book-category" class="large-select" onchange="onShoppingBookCatChange()" required>
+          <!-- Befüllt via JS -->
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="shopping-book-subcategory" class="field-label"><strong>Unterkategorie / Laden:</strong></label>
+        <select id="shopping-book-subcategory" class="large-select" required>
+          <!-- Befüllt via JS -->
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="shopping-book-note" class="field-label">Notiz / Aufzählung der Artikel:</label>
+      <textarea id="shopping-book-note" rows="3" class="large-input" style="height: auto; font-size: 15px;"></textarea>
+    </div>
+
+    <div class="form-group" style="margin-top: 8px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" id="shopping-book-clear-done" checked style="width: 20px; height: 20px;">
+        <span><strong>Abgehakte Artikel nach dem Buchen von der Einkaufsliste entfernen</strong></span>
+      </label>
+    </div>
+
+    <div class="form-actions" style="margin-top: 16px;">
+      <button type="submit" class="btn btn-primary" style="background-color: #15803D;">
+        <span>💾 <strong>Jetzt im Haushaltsbuch abbuchen</strong></span>
+      </button>
+      <button type="button" class="btn btn-secondary" onclick="closeShoppingBookModal()">
+        <span>Abbrechen</span>
+      </button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- =========================================================================
  MODAL DIALOG: DRUCKBARER MONATS- & JAHRESBERICHT (PDF)
  ========================================================================= -->
 <div id="print-report-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="print-report-heading" style="display: none;">
@@ -2823,7 +2927,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.8.0</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.8.1</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3571,7 +3675,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.8.0</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.8.1</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

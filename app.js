@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.8.0';
+const CURRENT_APP_VERSION = 'v6.8.1';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -2012,6 +2012,26 @@ function getAccountIcon(accKey) {
   return ACCOUNT_TYPE_ICONS[accKey] || '💳';
 }
 
+function populateFilterAccountDropdown() {
+  ensureAccountsInitialized();
+  const sel = document.getElementById('tx-filter-account');
+  if (!sel) return;
+
+  const currentVal = sel.value || 'all';
+  let html = '<option value="all">Alle Konten</option>';
+  (appState.accounts || []).forEach(acc => {
+    const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
+    html += `<option value="${escapeHTML(acc.id)}" data-emoji="${icon}">${escapeHTML(acc.name)}</option>`;
+  });
+  sel.innerHTML = html;
+  if (currentVal && (currentVal === 'all' || (appState.accounts || []).some(a => a.id === currentVal))) {
+    sel.value = currentVal;
+  } else {
+    sel.value = 'all';
+  }
+  applySymbolsToOptions(sel);
+}
+
 function populateAllAccountDropdowns() {
   ensureAccountsInitialized();
   
@@ -2057,6 +2077,7 @@ function populateAllAccountDropdowns() {
   if (incSplitToggle && incSplitToggle.checked && typeof renderIncomeSplitRows === 'function') {
     renderIncomeSplitRows();
   }
+  populateFilterAccountDropdown();
 }
 
 function renderSettingsAccountsList() {
@@ -3875,7 +3896,6 @@ function updateOverview() {
     renderTransactionList(dayStats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen an diesem Tag erfasst.');
     renderTransactionList(dayStats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben an diesem Tag erfasst.');
     renderTransactionList(dayStats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen an diesem Tag erfasst.');
-    runPurchaseSimulation();
         renderShoppingList();
   populateFilterAccountDropdown();
     renderExpenseRankings(dayStats.expenseList);
@@ -3950,7 +3970,6 @@ function updateOverview() {
     renderTransactionList(incomeList, 'overview-income-items-feed', 'Keine Einnahmen in dieser Kalenderwoche erfasst.');
     renderTransactionList(expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in dieser Kalenderwoche erfasst.');
     renderTransactionList(transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen in dieser Kalenderwoche erfasst.');
-    runPurchaseSimulation();
         populateFilterAccountDropdown();
     renderExpenseRankings(allTx.filter(t => t.type === 'expense'));
     checkLiquidityWarning(weekBalances);
@@ -3990,7 +4009,6 @@ function updateOverview() {
     renderTransactionList(stats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen in diesem Monat erfasst.');
     renderTransactionList(stats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in diesem Monat erfasst.');
     renderTransactionList(stats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen oder Sparpläne in diesem Monat erfasst.');
-    runPurchaseSimulation();
         populateFilterAccountDropdown();
     renderExpenseRankings(stats.expenseList);
     checkLiquidityWarning(stats.balances);
@@ -4085,8 +4103,6 @@ function updateOverview() {
       `).join('');
     }
   }
-
-  runPurchaseSimulation();
       populateFilterAccountDropdown();
   renderExpenseRankings(periodAllTxs.filter(t => t.type === 'expense'));
   checkLiquidityWarning(periodEndBalances);
@@ -7047,79 +7063,7 @@ function setupReceiptPasteAndDropListeners() {
   });
 }
 
-// ----------------------------------------------------------------------------
-// 13. KAUF-PLANER & SIMULATOR
-// ----------------------------------------------------------------------------
-let currentSimulatedPurchase = null;
-
-function runPurchaseSimulation() {
-  const priceInput = document.getElementById('sim-item-price');
-  const nameInput = document.getElementById('sim-item-name');
-  const resultBox = document.getElementById('sim-result-box');
-  const actionBox = document.getElementById('sim-save-action');
-  if (!priceInput || !resultBox) return;
-
-  const rawVal = priceInput.value.trim();
-  if (!rawVal) {
-    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>';
-    if (actionBox) actionBox.style.display = 'none';
-    currentSimulatedPurchase = null;
-    return;
-  }
-
-  const price = parseFloat(rawVal);
-  const name = (nameInput && nameInput.value.trim()) || 'Wunsch';
-
-  if (isNaN(price) || price <= 0) {
-    resultBox.innerHTML = '<p>💡 <em>Gib oben einen Preis ein, um zu sehen, was nach dem Kauf von deinem Monatsgeld noch übrig bleibt.</em></p>';
-    if (actionBox) actionBox.style.display = 'none';
-    currentSimulatedPurchase = null;
-    return;
-  }
-
-  const stats = calculateMonthStats(selectedYear, selectedMonth);
-  const leftoverAfter = stats.leftover - price;
-  const isAffordable = leftoverAfter >= 0;
-
-  resultBox.innerHTML = `
-    <div style="font-size: 20px; font-weight: bold; color: ${isAffordable ? 'var(--accent-income)' : 'var(--accent-expense)'};">
-      ${isAffordable ? '✅ Ja, das kannst du dir leisten!' : '⚠️ Achtung: Dein Monatsbudget wird überzogen!'}
-    </div>
-    <div style="margin-top: 6px;">
-      Wenn du dir <strong>${escapeHTML(name)}</strong> für <strong>${formatCurrency(price)}</strong> kaufst,
-      bleiben dir in diesem Monat noch <strong style="font-size: 22px; color: ${isAffordable ? 'var(--accent-income)' : 'var(--accent-expense)'};">${formatCurrency(leftoverAfter)}</strong> übrig.
-    </div>
-  `;
-
-  if (actionBox) actionBox.style.display = 'block';
-  currentSimulatedPurchase = { name, price, date: selectedDateStr };
-}
-
-async function saveSimulatedPurchase() {
-  if (!currentSimulatedPurchase) return;
-  appState.transactions.push({
-    id: `tx_${Date.now()}`,
-    type: 'expense',
-    account: 'bank',
-    amount: currentSimulatedPurchase.price,
-    category: 'Shopping & Wünsche',
-    description: `Geplant: ${currentSimulatedPurchase.name}`,
-    isPlanned: true,
-    date: currentSimulatedPurchase.date
-  });
-
-  await saveStateToEncryptedStorage();
-  updateOverview();
-  announceNVDA(`Geplanter Kauf ${currentSimulatedPurchase.name} gespeichert!`);
-
-  document.getElementById('sim-item-price').value = '';
-  document.getElementById('sim-item-name').value = '';
-  runPurchaseSimulation();
-    populateFilterAccountDropdown();
-  renderExpenseRankings(currentOverviewMode === 'day' ? dayStats.expenseList : (currentOverviewMode === 'month' ? stats.expenseList : periodAllTxs.filter(t => t.type === 'expense')));
-  checkLiquidityWarning(currentOverviewMode === 'day' ? dayStats.balances : stats.balances);
-  renderBudgetsList();
-}
+// 13. KAUF-PLANER & SIMULATOR (Entfernt in v6.8.0)
 
 // ----------------------------------------------------------------------------
 // 14. EINSTELLUNGEN: DESIGN, SCHRIFTGRÖSSE, DAUERAUFTRÄGE
@@ -7561,26 +7505,33 @@ async function resetVaultSetup() {
   window.location.reload();
 }
 
+let isUnlockingVault = false;
+
 async function unlockVaultWithPin(enteredPin, isFromBio = false) {
   if (!enteredPin) return false;
+  if (isUnlockingVault) return false;
 
   if (checkLockoutStatus()) {
     announceNVDA('Zugriff gesperrt wegen zu vieler Fehlversuche.', true);
     return false;
   }
 
+  isUnlockingVault = true;
   const pinInput = document.getElementById('pin-input');
   const errorMsg = document.getElementById('pin-error-msg');
+  const btnUnlock = document.getElementById('btn-unlock');
 
-  let storedData = localStorage.getItem(STORAGE_DATA_KEY);
-  let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY) || currentSaltBase64;
-
-  if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
-    storedData = window.__DISK_VAULT__.vault;
-    saltBase64 = window.__DISK_VAULT__.salt;
-  }
+  if (btnUnlock) btnUnlock.disabled = true;
 
   try {
+    let storedData = localStorage.getItem(STORAGE_DATA_KEY);
+    let saltBase64 = localStorage.getItem(STORAGE_SALT_KEY) || currentSaltBase64;
+
+    if (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault && window.__DISK_VAULT__.salt) {
+      storedData = window.__DISK_VAULT__.vault;
+      saltBase64 = window.__DISK_VAULT__.salt;
+    }
+
     if (!storedData || !saltBase64) {
       // Neuer Datensafe
       const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -7603,104 +7554,103 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
       if (isFromBio) {
         localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
       }
-      unlockApp();
-      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
-      return true;
-    } else {
-      // Vorhandenen Datensafe entsperren
-      currentSaltBase64 = saltBase64;
-      const saltBuffer = base64ToArrayBuffer(saltBase64);
-      const salt = new Uint8Array(saltBuffer);
-      
-      let decrypted = null;
-      let healedFrom1234 = false;
-
-      try {
-        const key = await deriveKey(enteredPin, salt);
-        decrypted = await decryptData(storedData, key);
-        cryptoKey = key;
-      } catch (decryptErr) {
-        // AUTO-HEALING: Prüfen, ob der Tresor versehentlich mit '1234' verschlüsselt war
-        if (enteredPin !== '1234') {
-          try {
-            const fallbackKey = await deriveKey('1234', salt);
-            decrypted = await decryptData(storedData, fallbackKey);
-            if (decrypted) {
-              healedFrom1234 = true;
-              // Repariere sofort auf echte PIN
-              cryptoKey = await deriveKey(enteredPin, salt);
-              appState = decrypted;
-              await saveStateToEncryptedStorage();
-              console.log('[Auto-Healing] Tresor erfolgreich von 1234 auf Nutzer-PIN repariert!');
-            }
-          } catch(e2) {}
-        }
-        if (!decrypted) {
-          throw decryptErr;
-        }
-      }
-
-      appState = decrypted;
-      if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
-      if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
-      if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
-      if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
-      if (!appState.transactions) appState.transactions = [];
-      if (!appState.recurring) appState.recurring = [];
-
-      setFailedAttempts(0);
-      setLockoutEndTime(0);
-      window.__ACTIVE_PIN__ = enteredPin;
-
-      if (isFromBio || localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
-        try {
-          localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
-        } catch(e) {}
-      }
-
       if (pinInput) pinInput.value = '';
       if (errorMsg) errorMsg.style.display = 'none';
 
-      unlockApp();
-
-      if (healedFrom1234) {
-        const healMsg = 'Erfolgreich entsperrt! Dein Tresor wurde automatisch repariert und synchronisiert.';
-        announceNVDA(healMsg, true);
-      } else {
-        announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
+      try {
+        unlockApp();
+      } catch (uiErr) {
+        console.error('Fehler beim Initialisieren der App-Oberfläche:', uiErr);
       }
-
-      if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token') && !isFromBio) {
-        setTimeout(() => {
-          if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
-            BiometricAuth.enable(enteredPin);
-          }
-        }, 1200);
-      }
+      announceNVDA('Neuer Datensafe erfolgreich eingerichtet.');
       return true;
     }
-  } catch (err) {
-    let attempts = getFailedAttempts() + 1;
-    setFailedAttempts(attempts);
 
-    if (attempts >= MAX_FAILED_ATTEMPTS) {
-      const lockoutEnd = Date.now() + LOCKOUT_DURATION_MS;
-      setLockoutEndTime(lockoutEnd);
-      checkLockoutStatus();
-      announceNVDA('5 Fehlversuche erreicht! Der Zugriff ist für 2 Stunden gesperrt.', true);
-    } else {
-      const remainingAttempts = MAX_FAILED_ATTEMPTS - attempts;
-      if (errorMsg) {
-        errorMsg.textContent = `❌ Falsche PIN oder Passwort! Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
-        errorMsg.style.display = 'block';
+    // Vorhandenen Datensafe entsperren
+    currentSaltBase64 = saltBase64;
+    const saltBuffer = base64ToArrayBuffer(saltBase64);
+    const salt = new Uint8Array(saltBuffer);
+    
+    let decrypted = null;
+    let healedFrom1234 = false;
+
+    // Nur das Entschlüsseln mit der eingegebenen PIN entscheidet über die Richtigkeit
+    try {
+      const key = await deriveKey(enteredPin, salt);
+      decrypted = await decryptData(storedData, key);
+      cryptoKey = key;
+    } catch (decryptErr) {
+      // PIN ist tatsächlich falsch!
+      let attempts = getFailedAttempts() + 1;
+      setFailedAttempts(attempts);
+
+      if (attempts >= MAX_FAILED_ATTEMPTS) {
+        const lockoutEnd = Date.now() + LOCKOUT_DURATION_MS;
+        setLockoutEndTime(lockoutEnd);
+        checkLockoutStatus();
+        announceNVDA('5 Fehlversuche erreicht! Der Zugriff ist für 2 Stunden gesperrt.', true);
+      } else {
+        const remainingAttempts = MAX_FAILED_ATTEMPTS - attempts;
+        if (errorMsg) {
+          errorMsg.textContent = `❌ Falsche PIN oder Passwort! Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
+          errorMsg.style.display = 'block';
+        }
+        if (pinInput) {
+          pinInput.value = '';
+          pinInput.focus();
+        }
+        announceNVDA(`Falsche PIN. Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
       }
-      if (pinInput) {
-        pinInput.value = '';
-        pinInput.focus();
-      }
-      announceNVDA(`Falsche PIN. Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
+      return false;
     }
-    return false;
+
+    // Hier ist sichergestellt: PIN ist KORREKT und Entschlüsselung war ERFOLGREICH!
+    appState = decrypted;
+    if (!appState.initialBalances) appState.initialBalances = { bank: 0, paypal: 0, savings: 0, cash: 0 };
+    if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+    if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
+    if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
+    if (!appState.transactions) appState.transactions = [];
+    if (!appState.recurring) appState.recurring = [];
+
+    setFailedAttempts(0);
+    setLockoutEndTime(0);
+    window.__ACTIVE_PIN__ = enteredPin;
+
+    if (isFromBio || localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
+      try {
+        localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
+      } catch(e) {}
+    }
+
+    if (pinInput) pinInput.value = '';
+    if (errorMsg) errorMsg.style.display = 'none';
+
+    try {
+      unlockApp();
+    } catch (uiErr) {
+      console.error('Fehler beim Initialisieren der App-Oberfläche nach Entsperren:', uiErr);
+    }
+
+    if (healedFrom1234) {
+      const healMsg = 'Erfolgreich entsperrt! Dein Tresor wurde automatisch repariert und synchronisiert.';
+      announceNVDA(healMsg, true);
+    } else {
+      announceNVDA('Erfolgreich entsperrt! Alle Finanzdaten wurden geladen.');
+    }
+
+    if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token') && !isFromBio) {
+      setTimeout(() => {
+        if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
+          BiometricAuth.enable(enteredPin);
+        }
+      }, 1200);
+    }
+    return true;
+
+  } finally {
+    isUnlockingVault = false;
+    if (btnUnlock) btnUnlock.disabled = false;
   }
 }
 

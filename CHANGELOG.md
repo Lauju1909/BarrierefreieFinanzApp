@@ -1,6 +1,18 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.8.1 (Fehlerbehebung PIN-Entsperrung & Tresor-Zugang)
+*Datum: 03. Oktober 2026*
+
+### 🛡️ 1. Fehlerbehebung bei der PIN-Eingabe
+- **Keine Fehlalarme mehr beim Entsperren:** Behebt das Problem, dass die App beim Eingeben der korrekten PIN fälschlicherweise "Falsche PIN oder Passwort!" meldete, obwohl die PIN korrekt war und man ins Haushaltsbuch gelangte.
+- **Ursachenbehebung:** Beim Laden der Monatsübersicht fehlte eine interne Filter-Hilfsfunktion (`populateFilterAccountDropdown`), wodurch ein nachgelagerter Scriptfehler entstand. Da die Benutzeroberfläche fälschlicherweise innerhalb des Krypto-Prüfblocks initialisiert wurde, fing der allgemeine Krypto-Fehlerhandler diesen UI-Fehler ab und deutete ihn fälschlicherweise als "falsche PIN".
+- **Strikte Isolierung:** Entschlüsselung und Benutzeroberfläche sind nun vollständig entkoppelt. Fehler in der Darstellung können die Krypto-Prüfung niemals mehr beeinflussen.
+- **Re-Entrancy & Doppelklick-Schutz:** Der Entsperr-Button wird während des Krypto-Vorgangs gesperrt und parallele Aufrufe werden abgewiesen.
+- **Entfernung unsicherer Auto-Healing-Routinen:** Die PIN-Prüfung arbeitet nun absolut deterministisch ohne unaufgeforderte Hintergrund-Umverschlüsselungen.
+
+---
+
 ## ⚡ Version 6.8.0 (Interaktive Einkaufsliste, Checkliste & WhatsApp-Import)
 *Datum: 02. Oktober 2026*
 
