@@ -110,8 +110,14 @@ class MiniMqttClient {
             offset += topicLen;
             const payload = new TextDecoder().decode(data.slice(offset));
 
-            if (this.subscriptions.has(topic)) {
-              this.subscriptions.get(topic)(topic, payload);
+            for (const [subPattern, callback] of this.subscriptions.entries()) {
+              if (this._matchesTopic(subPattern, topic)) {
+                try {
+                  callback(topic, payload);
+                } catch (e) {
+                  console.warn('[MiniMqttClient] Sub callback error:', e);
+                }
+              }
             }
           }
         };
@@ -172,6 +178,25 @@ class MiniMqttClient {
     this._sendSubscribePacket(topic);
   }
 
+  _matchesTopic(pattern, topic) {
+    if (pattern === topic) return true;
+    if (pattern.endsWith('/#')) {
+      const prefix = pattern.slice(0, -2);
+      return topic === prefix || topic.startsWith(prefix + '/');
+    }
+    if (pattern === '#') return true;
+    if (pattern.includes('+')) {
+      const pParts = pattern.split('/');
+      const tParts = topic.split('/');
+      if (pParts.length !== tParts.length) return false;
+      for (let i = 0; i < pParts.length; i++) {
+        if (pParts[i] !== '+' && pParts[i] !== tParts[i]) return false;
+      }
+      return true;
+    }
+    return false;
+  }
+
   unsubscribe(topic) {
     this.subscriptions.delete(topic);
     if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) return;
@@ -188,7 +213,7 @@ class MiniMqttClient {
     this.ws.send(packet);
   }
 
-  publish(topic, message) {
+  publish(topic, message, retain = false) {
     if (!this.connected || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
       throw new Error('Nicht mit dem Synchronisations-Server verbunden.');
     }
@@ -205,8 +230,9 @@ class MiniMqttClient {
       lenBytes.push(encodedByte);
     } while (x > 0);
 
+    const firstByte = retain ? 0x31 : 0x30; // 0x31 = PUBLISH QoS 0 mit RETAIN-Flag
     const header = [
-      0x30, // PUBLISH QoS 0
+      firstByte,
       ...lenBytes,
       (topicBytes.length >> 8) & 0xff,
       topicBytes.length & 0xff,
@@ -237,12 +263,30 @@ const SyncEngine = {
   lastSyncTime: null,
   processedMessageIds: new Set(),
   mqttClient: null,
+  isImporting: false,
+  mailboxPushTimer: null,
+  isCheckingMailbox: false,
+  isPostingMailbox: false,
+  mailboxListenerActive: false,
 
   // Ausfallsichere Broker-Liste über WebSockets (Standard-WSS Ports)
   BROKERS: [
     'wss://broker.emqx.io:8084/mqtt',
     'wss://test.mosquitto.org:8081'
   ],
+
+  getActivePairingCode() {
+    return localStorage.getItem('haushaltsbuch_sync_connected_code') || 
+           localStorage.getItem('haushaltsbuch_sync_code') || 
+           (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || 
+           null;
+  },
+
+  isPaired() {
+    return !!localStorage.getItem('haushaltsbuch_sync_connected') || 
+           !!localStorage.getItem('haushaltsbuch_sync_connected_code') || 
+           (window.__PAIRED_DEVICE__ && !!window.__PAIRED_DEVICE__.code);
+  },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
   getDeviceName() {
@@ -367,6 +411,19 @@ const SyncEngine = {
     return 'finanzapp/v2/' + hash.substring(0, 16);
   },
 
+  // 4b. ASYNCHRONES E2E-POSTFACH TOPIC (Zero-Knowledge: SHA-256 aus Pairing-Code)
+  async getMailboxTopic(pairingCode, deviceName = null) {
+    const code = (pairingCode || this.getActivePairingCode() || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    if (!code) return null;
+    const hash = await this.sha256Hex('finanz_mailbox_' + code);
+    const base = 'finanzapp/v2/mailbox/' + hash.substring(0, 24);
+    if (deviceName) {
+      const cleanDev = String(deviceName).replace(/[^a-zA-Z0-9_-]/g, '_');
+      return `${base}/${cleanDev}`;
+    }
+    return base;
+  },
+
   // 5. HANDY / RECEIVER: AUF SYNCHRONISATION LAUSCHEN
   async startListening(onStatusUpdate) {
     this.isListening = true;
@@ -376,6 +433,7 @@ const SyncEngine = {
     const myCode = this.getPairingCode();
     const topicReq = await this.getTopicForDevice(myDevice);
     const topicResp = topicReq + '_resp';
+    const boxTopic = await this.getMailboxTopic(myCode);
 
     if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Warte auf Signal vom PC (Gerät: ${myDevice})...`);
 
@@ -387,6 +445,7 @@ const SyncEngine = {
       this.mqttClient = new MiniMqttClient(this.BROKERS);
       await this.mqttClient.connect('dev_' + myDevice.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6));
 
+      // 1. Live-Sync Kanal
       this.mqttClient.subscribe(topicReq, async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
@@ -409,7 +468,26 @@ const SyncEngine = {
         }
       });
 
-      if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Bereit für Synchronisation (Gerät: ${myDevice})`);
+      // 2. Asynchrones E2E-Postfach abonnieren (empfängt auch Retained Messages, falls PC längst aus ist!)
+      if (boxTopic) {
+        const handleMailbox = async (topic, msgStr) => {
+          try {
+            const payload = JSON.parse(msgStr);
+            if (payload && payload.ct && payload.iv && payload.salt) {
+              const decrypted = await this.decrypt(payload, myCode);
+              if (decrypted && decrypted.type === 'MAILBOX_UPDATE') {
+                await this.handleIncomingMailboxUpdate(decrypted, onStatusUpdate);
+              }
+            }
+          } catch (e) {
+            // Ignorieren
+          }
+        };
+        this.mqttClient.subscribe(boxTopic, handleMailbox);
+        this.mqttClient.subscribe(boxTopic + '/#', handleMailbox);
+      }
+
+      if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Bereit für Synchronisation & Postfach aktiv (Gerät: ${myDevice})`);
     } catch (err) {
       console.warn('[SyncEngine] startListening Verbindungsfehler:', err.message);
       if (onStatusUpdate) onStatusUpdate('error', '⚠️ Verbindung wird aufgebaut... (Offline-Modus aktiv)');
@@ -493,13 +571,23 @@ const SyncEngine = {
     let responseReceived = false;
 
     const responsePromise = new Promise((resolve, reject) => {
-      // 15 Sekunden Timeout
-      const timer = setTimeout(() => {
+      // 10 Sekunden Timeout für Live-Handshake
+      const timer = setTimeout(async () => {
         if (!responseReceived) {
           client.close();
-          reject(new Error('Das Smartphone hat nicht geantwortet. Bitte stelle sicher, dass die App auf dem Smartphone geöffnet ist und Gerätename & Code übereinstimmen.'));
+          // Automatischer Fallback in das asynchrone E2E-Postfach!
+          try {
+            if (onStatusUpdate) onStatusUpdate('syncing', '📬 Smartphone antwortet gerade nicht. Hinterlege Daten versiegelt im Postfach...');
+            await this.postToMailbox(onStatusUpdate, false);
+            const msg = `📬 Smartphone ist gerade offline. Deine Daten wurden versiegelt im Postfach hinterlegt und werden automatisch geladen, sobald das Smartphone gestartet wird!`;
+            if (onStatusUpdate) onStatusUpdate('success', msg);
+            if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+            resolve({ type: 'MAILBOX_SAVED', vault: null });
+          } catch(boxErr) {
+            reject(new Error('Das Smartphone ist offline und das Postfach konnte nicht erreicht werden: ' + boxErr.message));
+          }
         }
-      }, 15000);
+      }, 10000);
 
       client.subscribe(topicResp, async (topic, msgStr) => {
         try {
@@ -542,10 +630,9 @@ const SyncEngine = {
     const response = await responsePromise;
     client.close(); // Temporären Client schließen
 
-    if (onStatusUpdate) onStatusUpdate('syncing', '📦 Antwort empfangen. Aktualisiere lokale Daten...');
-
-    // 5. Empfangene Daten in lokalen Tresor mergen
-    if (response.vault) {
+    // Falls reguläre Antwort empfangen wurde: Daten mergen
+    if (response && response.type === 'SYNC_RESPONSE' && response.vault) {
+      if (onStatusUpdate) onStatusUpdate('syncing', '📦 Antwort empfangen. Aktualisiere lokale Daten...');
       await this.importSyncedVaultData(response.vault, onStatusUpdate);
     }
 
@@ -555,6 +642,9 @@ const SyncEngine = {
     localStorage.setItem('haushaltsbuch_sync_connected_code', cleanPairCode);
     localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
     
+    // Auch Postfach aktualisieren, damit immer der neueste Stand im Briefkasten liegt
+    this.scheduleMailboxPush();
+
     // An den lokalen Desktop-Server senden zur dauerhaften Speicherung in Haushaltsbuch_Kopplung.json
     try {
       const port = window.__LOCAL_PORT__ || 48123;
@@ -572,13 +662,202 @@ const SyncEngine = {
 
     if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
-    if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
-    if (typeof announceNVDA === 'function') announceNVDA('Synchronisation mit Smartphone erfolgreich abgeschlossen!', true);
+    if (response && response.type === 'SYNC_RESPONSE') {
+      if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
+      if (typeof announceNVDA === 'function') announceNVDA('Synchronisation mit Smartphone erfolgreich abgeschlossen!', true);
+    }
 
     // Vibration / Feedback
     if (window.navigator && window.navigator.vibrate) {
       try { window.navigator.vibrate([40, 30, 60]); } catch(e) {}
     }
+  },
+
+  // 6b. ASYNCHRONES E2E-POSTFACH: DATEN IM BRIEFKASTEN HINTERLEGEN (RETAINED)
+  async postToMailbox(onStatusUpdate, isManual = false) {
+    const code = this.getActivePairingCode();
+    if (!code) {
+      if (onStatusUpdate) onStatusUpdate('error', '⚠️ Noch kein Kopplungscode vorhanden.');
+      return false;
+    }
+
+    if (this.isPostingMailbox) return false;
+    this.isPostingMailbox = true;
+
+    try {
+      const baseTopic = await this.getMailboxTopic(code);
+      if (!baseTopic) return false;
+
+      const myDevice = this.getDeviceName();
+      const devTopic = await this.getMailboxTopic(code, myDevice);
+      const timestamp = Date.now();
+      const vaultData = await this.exportCurrentVaultData();
+
+      const envelope = {
+        type: 'MAILBOX_UPDATE',
+        version: 2,
+        timestamp: timestamp,
+        sender: myDevice,
+        vault: vaultData
+      };
+
+      const encrypted = await this.encrypt(envelope, code);
+      const payloadStr = JSON.stringify(encrypted);
+
+      localStorage.setItem('haushaltsbuch_last_sent_mailbox_ts', String(timestamp));
+
+      // Verwende bestehenden Client oder erstelle einen kurzlebigen Sender
+      let client = this.mqttClient;
+      let needClose = false;
+      if (!client || !client.connected) {
+        client = new MiniMqttClient(this.BROKERS);
+        await client.connect('box_pub_' + Math.random().toString(36).substring(2, 7));
+        needClose = true;
+      }
+
+      client.publish(devTopic, payloadStr, true); // retain = true (0x31)
+      client.publish(baseTopic, payloadStr, true); // retain = true (0x31)
+
+      if (needClose) {
+        setTimeout(() => {
+          try { client.close(); } catch(e) {}
+        }, 1000);
+      }
+
+      const timeStr = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + timeStr);
+      localStorage.setItem('haushaltsbuch_mailbox_last_sync', timeStr);
+
+      if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+      if (onStatusUpdate) onStatusUpdate('success', `📬 Daten versiegelt im Postfach hinterlegt (Stand: ${timeStr})!`);
+      if (isManual && typeof announceNVDA === 'function') {
+        announceNVDA('Finanzdaten erfolgreich im verschlüsselten Postfach hinterlegt!', true);
+      }
+      return true;
+    } catch (err) {
+      console.warn('[SyncEngine] postToMailbox error:', err);
+      if (onStatusUpdate) onStatusUpdate('error', '⚠️ Postfach-Aktualisierung: ' + err.message);
+      return false;
+    } finally {
+      this.isPostingMailbox = false;
+    }
+  },
+
+  scheduleMailboxPush() {
+    if (this.isImporting) return; // Nicht während eines laufenden Imports zurückfeuern
+    if (!this.isPaired()) return;
+    clearTimeout(this.mailboxPushTimer);
+    this.mailboxPushTimer = setTimeout(() => {
+      this.postToMailbox(null, false).catch(() => {});
+    }, 800);
+  },
+
+  // 6c. ASYNCHRONES E2E-POSTFACH: BRIEFKASTEN PRÜFEN & NEUE DATEN ABHOLEN
+  async checkMailbox(onStatusUpdate, isManual = false) {
+    const code = this.getActivePairingCode();
+    if (!code) {
+      if (onStatusUpdate) onStatusUpdate('error', '⚠️ Noch kein Kopplungscode vorhanden.');
+      return false;
+    }
+
+    if (this.isCheckingMailbox) return false;
+    this.isCheckingMailbox = true;
+
+    try {
+      const baseTopic = await this.getMailboxTopic(code);
+      if (!baseTopic) return false;
+
+      if (onStatusUpdate) onStatusUpdate('connecting', '📬 Prüfe verschlüsseltes Postfach auf neue Daten...');
+
+      let client = this.mqttClient;
+      if (!client || !client.connected) {
+        client = new MiniMqttClient(this.BROKERS);
+        this.mqttClient = client;
+        await client.connect('box_sub_' + Math.random().toString(36).substring(2, 7));
+      }
+
+      let updateFound = false;
+      const onMailboxMsg = async (recvTopic, msgStr) => {
+        try {
+          const payload = JSON.parse(msgStr);
+          if (payload && payload.ct && payload.iv && payload.salt) {
+            const decrypted = await this.decrypt(payload, code);
+            if (decrypted && decrypted.type === 'MAILBOX_UPDATE') {
+              updateFound = true;
+              await this.handleIncomingMailboxUpdate(decrypted, onStatusUpdate);
+            }
+          }
+        } catch (e) {
+          console.warn('[SyncEngine] Fehler beim Entschlüsseln der Postfach-Nachricht:', e.message);
+        }
+      };
+
+      client.subscribe(baseTopic, onMailboxMsg);
+      client.subscribe(baseTopic + '/#', onMailboxMsg);
+
+      if (isManual) {
+        if (typeof announceNVDA === 'function') {
+          announceNVDA('Postfach wird auf neue Daten geprüft...', true);
+        }
+        setTimeout(() => {
+          if (!updateFound && onStatusUpdate) {
+            const lastSync = localStorage.getItem('haushaltsbuch_mailbox_last_sync');
+            const info = lastSync ? ` (Zuletzt synchronisiert: ${lastSync})` : '';
+            onStatusUpdate('success', `✅ Postfach ist auf dem neuesten Stand! Keine neueren Daten vom Partnergerät vorhanden${info}.`);
+          }
+        }, 1500);
+      }
+      return true;
+    } catch (err) {
+      console.warn('[SyncEngine] checkMailbox error:', err);
+      if (onStatusUpdate) onStatusUpdate('error', '⚠️ Postfach nicht erreichbar: ' + err.message);
+      return false;
+    } finally {
+      this.isCheckingMailbox = false;
+    }
+  },
+
+  async handleIncomingMailboxUpdate(update, onStatusUpdate) {
+    const myDevice = this.getDeviceName();
+    if (update.sender === myDevice) {
+      return; // Eigene Aktualisierung ignorieren
+    }
+
+    const lastReceivedTs = Number(localStorage.getItem('haushaltsbuch_last_received_mailbox_ts') || 0);
+    if (update.timestamp <= lastReceivedTs) {
+      return; // Bereits verarbeitet
+    }
+
+    localStorage.setItem('haushaltsbuch_last_received_mailbox_ts', String(update.timestamp));
+    localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+    localStorage.setItem('haushaltsbuch_sync_connected_device', update.sender || 'Gekoppeltes Gerät');
+    
+    const timeStr = new Date(update.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date(update.timestamp).toLocaleDateString('de-DE');
+    localStorage.setItem('haushaltsbuch_sync_connected_time', `${dateStr} um ${timeStr}`);
+    localStorage.setItem('haushaltsbuch_mailbox_last_sync', timeStr);
+
+    if (update.vault) {
+      if (onStatusUpdate) onStatusUpdate('syncing', `📬 Neue Daten von ${update.sender} im Postfach gefunden! Übernehme...`);
+      await this.importSyncedVaultData(update.vault, onStatusUpdate);
+    }
+
+    this.lastSyncTime = new Date();
+    if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+    if (onStatusUpdate) onStatusUpdate('success', `✅ Postfach-Abgleich: Daten von ${update.sender} erfolgreich übernommen (Stand: ${timeStr})!`);
+    if (typeof announceNVDA === 'function') {
+      announceNVDA(`Neue Daten vom Postfach übernommen! Synchronisiert mit ${update.sender}.`, true);
+    }
+    if (window.navigator && window.navigator.vibrate) {
+      try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
+    }
+  },
+
+  startMailboxListener() {
+    if (!this.isPaired()) return;
+    if (this.mailboxListenerActive && this.mqttClient && this.mqttClient.connected) return;
+    this.mailboxListenerActive = true;
+    this.checkMailbox(null, false).catch(() => {});
   },
 
   // 7. TRESORDATEN EXPORTIEREN
@@ -590,7 +869,11 @@ const SyncEngine = {
         transactions: appState.transactions || [],
         accounts: appState.accounts || [],
         wishlist: appState.wishlist || [],
-        recurring: appState.recurring || []
+        recurring: appState.recurring || [],
+        savingPots: appState.savingPots || [],
+        shoppingList: appState.shoppingList || [],
+        budgets: appState.budgets || {},
+        customCategories: appState.customCategories || {}
       };
     }
 
@@ -600,8 +883,8 @@ const SyncEngine = {
       recurringRules: (typeof recurringRules !== 'undefined') ? recurringRules : [],
       spartoepfe: (typeof spartoepfe !== 'undefined') ? spartoepfe : [],
       accounts: (typeof accounts !== 'undefined') ? accounts : [],
-      profiles: (typeof profiles !== 'undefined') ? profiles : [],
-      currentProfile: (typeof currentProfile !== 'undefined') ? currentProfile : 'Standard',
+      savingPots: (typeof savingPots !== 'undefined') ? savingPots : [],
+      shoppingList: (typeof appState !== 'undefined' && appState && appState.shoppingList) ? appState.shoppingList : [],
       wishlist: (typeof wishlistItems !== 'undefined') ? wishlistItems : []
     };
   },
@@ -609,6 +892,7 @@ const SyncEngine = {
   // 8. TRESORDATEN IMPORTIEREN — Funktioniert immer (auch ohne PIN / bei Erststart!)
   async importSyncedVaultData(incomingData, onStatusUpdate) {
     if (!incomingData) return;
+    this.isImporting = true;
 
     try {
       const incoming = incomingData.appState || incomingData;
@@ -759,6 +1043,8 @@ const SyncEngine = {
     } catch (err) {
       console.error('[SyncEngine] importSyncedVaultData error:', err);
       throw new Error('Abgleich fehlgeschlagen: ' + err.message);
+    } finally {
+      this.isImporting = false;
     }
   },
 
@@ -812,6 +1098,45 @@ const SyncEngine = {
         appState.recurring.push(r);
         existingRecIds.add(String(r.id));
       }
+    }
+
+    // Spartöpfe
+    if (!Array.isArray(appState.savingPots)) appState.savingPots = [];
+    const existingPotIds = new Set(appState.savingPots.map(p => String(p.id)));
+    const incomingPots = incoming.savingPots || [];
+    for (const p of incomingPots) {
+      if (p && p.id && !existingPotIds.has(String(p.id))) {
+        appState.savingPots.push(p);
+        existingPotIds.add(String(p.id));
+      }
+    }
+
+    // Einkaufsliste & Checkliste
+    if (!Array.isArray(appState.shoppingList)) appState.shoppingList = [];
+    const existingShopIds = new Set(appState.shoppingList.map(s => String(s.id)));
+    const incomingShop = incoming.shoppingList || [];
+    for (const s of incomingShop) {
+      if (s && s.id && !existingShopIds.has(String(s.id))) {
+        appState.shoppingList.push(s);
+        existingShopIds.add(String(s.id));
+      }
+    }
+
+    // Budgets
+    if (incoming.budgets && typeof incoming.budgets === 'object') {
+      if (!appState.budgets) appState.budgets = {};
+      Object.assign(appState.budgets, incoming.budgets);
+    }
+
+    // Benutzerdefinierte Kategorien
+    if (incoming.customCategories && typeof incoming.customCategories === 'object') {
+      if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
+      ['exp', 'inc', 'trf'].forEach(type => {
+        if (incoming.customCategories[type]) {
+          if (!appState.customCategories[type]) appState.customCategories[type] = {};
+          Object.assign(appState.customCategories[type], incoming.customCategories[type]);
+        }
+      });
     }
   },
 

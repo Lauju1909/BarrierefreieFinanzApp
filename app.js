@@ -8001,6 +8001,11 @@ async function saveStateToEncryptedStorage() {
       });
     } catch(e) {}
 
+    // 5. Asynchrones E2E-Postfach im Hintergrund versiegeln und hinterlegen
+    if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.scheduleMailboxPush === 'function') {
+      SyncEngine.scheduleMailboxPush();
+    }
+
   } catch (err) {
     console.error('Verschlüsselungsfehler:', err);
     announceNVDA('Fehler beim Speichern der Daten!', true);
@@ -8023,6 +8028,16 @@ function unlockApp() {
 
   switchView('overview');
   resetInactivityTimer();
+
+  // Asynchrones E2E-Postfach beim Entsperren prüfen
+  if (typeof SyncEngine !== 'undefined') {
+    if (typeof SyncEngine.startMailboxListener === 'function') {
+      SyncEngine.startMailboxListener();
+    }
+    if (typeof SyncEngine.checkMailbox === 'function') {
+      SyncEngine.checkMailbox(null, false).catch(() => {});
+    }
+  }
 
   if (window.__PENDING_SYNC_DATA__ && typeof SyncEngine !== 'undefined') {
     const pending = window.__PENDING_SYNC_DATA__;
@@ -9208,6 +9223,38 @@ function updateSyncConnectedUI() {
     if (pairedCard) pairedCard.style.display = 'none';
     if (manualForm) manualForm.style.display = 'block';
   }
+
+  // Asynchrone Postfach-Statuskarte aktualisieren
+  const mailboxBadge = document.getElementById('sync-mailbox-badge');
+  const mailboxDevSpan = document.getElementById('sync-mailbox-partner-name');
+  const mailboxLastSync = document.getElementById('sync-mailbox-last-sync-time');
+  const mailboxNotice = document.getElementById('sync-mailbox-unpaired-notice');
+  const mailboxContent = document.getElementById('sync-mailbox-paired-content');
+  const lastSyncTimeStr = localStorage.getItem('haushaltsbuch_mailbox_last_sync') || syncTime;
+
+  if (mailboxBadge) {
+    if (connected) {
+      mailboxBadge.textContent = '🟢 Postfach aktiv & gekoppelt';
+      mailboxBadge.style.color = '#15803d';
+      mailboxBadge.style.background = '#dcfce7';
+      mailboxBadge.style.border = '1px solid #86efac';
+    } else {
+      mailboxBadge.textContent = '⚪ Noch nicht gekoppelt';
+      mailboxBadge.style.color = '#475569';
+      mailboxBadge.style.background = '#f1f5f9';
+      mailboxBadge.style.border = '1px solid #cbd5e1';
+    }
+  }
+  if (mailboxDevSpan) {
+    mailboxDevSpan.textContent = devName || 'Gekoppeltes Partnergerät';
+  }
+  if (mailboxLastSync && lastSyncTimeStr) {
+    mailboxLastSync.textContent = lastSyncTimeStr;
+  }
+  if (mailboxNotice && mailboxContent) {
+    mailboxNotice.style.display = connected ? 'none' : 'block';
+    mailboxContent.style.display = connected ? 'block' : 'none';
+  }
 }
 
 function triggerQuickSyncWithPaired() {
@@ -9285,6 +9332,11 @@ function initLockScreenSync() {
 function initSyncView() {
   setSyncMode(getSyncMode());
   updateSyncConnectedUI();
+  if (typeof SyncEngine !== 'undefined') {
+    if (typeof SyncEngine.startMailboxListener === 'function') {
+      SyncEngine.startMailboxListener();
+    }
+  }
 }
 
 function restartSyncListener() {
@@ -9386,6 +9438,66 @@ async function handleStartSync(e) {
     if (btnTrigger) btnTrigger.disabled = false;
   }
 }
+
+async function triggerManualMailboxSync() {
+  if (typeof SyncEngine === 'undefined') return;
+  const btn = document.getElementById('btn-manual-mailbox-sync');
+  const statusEl = document.getElementById('sync-mailbox-last-status');
+  if (btn) btn.disabled = true;
+  try {
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = '📬 Prüfe verschlüsseltes Postfach auf Aktualisierungen...';
+      statusEl.style.color = '#0284c7';
+    }
+    await SyncEngine.checkMailbox((state, msg) => {
+      if (statusEl) {
+        statusEl.textContent = msg;
+        if (state === 'success') statusEl.style.color = '#15803d';
+        else if (state === 'error') statusEl.style.color = '#b91c1c';
+        else statusEl.style.color = '#0284c7';
+      }
+    }, true);
+
+    // Anschließend aktuellen lokalen Stand im Postfach absichern
+    setTimeout(async () => {
+      try {
+        await SyncEngine.postToMailbox((state, msg) => {
+          if (statusEl && state === 'success') {
+            statusEl.textContent = msg;
+            statusEl.style.color = '#15803d';
+          }
+        }, false);
+      } catch(e) {}
+    }, 1200);
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = '⚠️ ' + err.message;
+      statusEl.style.color = '#b91c1c';
+    }
+  } finally {
+    setTimeout(() => {
+      if (btn) btn.disabled = false;
+    }, 1500);
+  }
+}
+
+// Global: Postfach automatisch abfragen, wenn App wieder in den Vordergrund tritt
+window.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && typeof SyncEngine !== 'undefined' && typeof SyncEngine.checkMailbox === 'function') {
+    if (SyncEngine.isPaired()) {
+      SyncEngine.checkMailbox(null, false).catch(() => {});
+    }
+  }
+});
+
+window.addEventListener('focus', () => {
+  if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.checkMailbox === 'function') {
+    if (SyncEngine.isPaired()) {
+      SyncEngine.checkMailbox(null, false).catch(() => {});
+    }
+  }
+});
 
 
 // =============================================================================

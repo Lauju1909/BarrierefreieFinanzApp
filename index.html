@@ -21,12 +21,33 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.8.2)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.0)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(3, 105, 161, 0.08); border-left: 6px solid #0284c7; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #0369a1; font-size: 20px;">📬 Neu in Version 6.9.0 (Asynchroner E2E-Postfach-Sync / Briefkasten-Synchronisation)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li>
+<strong>📬 Synchronisation ohne dass beide Geräte gleichzeitig an sein müssen:</strong><br>
+Computer und Smartphone müssen nicht mehr zeitgleich eingeschaltet sein oder im selben WLAN liegen. Deine Finanzdaten werden versiegelt in einem verschlüsselten E2E-Postfach hinterlegt.
+</li>
+<li>
+<strong>🔒 100% Zero-Knowledge &amp; AES-256-GCM Verschlüsselung:</strong><br>
+Alle Daten werden lokal vor dem Verlassen deines Geräts mit deinem privaten Kopplungscode verschlüsselt. Niemand – auch kein Server oder Broker – kann deine Beträge oder Konten einsehen.
+</li>
+<li>
+<strong>🔄 Automatischer Hintergrund-Abgleich:</strong><br>
+Sobald du die App auf dem Smartphone oder PC entsperrst oder in den Vordergrund holst, holt sie die neuesten Buchungen, Spartöpfe, Einkaufslisten und Budgets automatisch aus dem Postfach ab.
+</li>
+<li>
+<strong>⚡ 1-Klick Postfach-Prüfung:</strong><br>
+In Reiter 8 gibt es einen neuen Button „Jetzt Postfach prüfen &amp; abgleichen“, der dir sofort akustisch und optisch Auskunft gibt, ob neue Buchungen vorliegen.
+</li>
+</ul>
+</div>
 <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #2E7D32; font-size: 20px;">⚡ Neu in Version 6.8.2 (Wunschliste &amp; Sparziele wiederhergestellt)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -2940,7 +2961,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.8.2</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.9.0</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -3537,8 +3558,45 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="view-header">
-    <h2>📱 Smartphone &amp; Desktop Live-Synchronisation</h2>
-    <p class="view-desc">Übertrage deine Finanzdaten über eine militärisch gesicherte Ende-zu-Ende-Verschlüsselung (AES-256-GCM) live zwischen deinem Computer und Smartphone, wenn beide Geräte aktiv sind.</p>
+    <h2>📱 Synchronisation &amp; Verschlüsseltes E2E-Postfach</h2>
+    <p class="view-desc">Gleiche deine Finanzdaten per Ende-zu-Ende-Verschlüsselung (AES-256-GCM) zwischen Computer und Smartphone ab. Dank des neuen asynchronen E2E-Postfachs müssen beide Geräte <strong>nicht mehr gleichzeitig eingeschaltet sein</strong>!</p>
+  </div>
+
+  <!-- ASYNCHRONER E2E-POSTFACH-SYNC (BRIEFKASTEN) -->
+  <div id="sync-mailbox-card" class="section-card" style="margin-bottom: 20px; border: 2px solid #0284c7; background: #f0f9ff; border-radius: 10px; padding: 18px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+      <h3 style="margin: 0; font-size: 19px; color: #0369a1; display: flex; align-items: center; gap: 8px;">
+        📬 <strong>Asynchroner Postfach-Sync (E2E-Tresor)</strong>
+      </h3>
+      <span id="sync-mailbox-badge" style="font-size: 13px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
+        ⚪ Noch nicht gekoppelt
+      </span>
+    </div>
+
+    <p style="margin: 0 0 14px 0; font-size: 15px; color: #0c4a6e; line-height: 1.5;">
+      <strong>Kein gleichzeitiges Einschalten nötig!</strong> Deine Finanzdaten werden versiegelt in einem anonymen, mit deinem Kopplungscode Ende-zu-Ende verschlüsselten E2E-Postfach hinterlegt. Sobald dein Computer oder Smartphone gestartet wird, holt es die neuesten Buchungen automatisch ab.
+    </p>
+
+    <!-- Inhalt wenn gekoppelt -->
+    <div id="sync-mailbox-paired-content" style="display: none; background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
+      <div style="font-size: 15px; margin-bottom: 8px; color: #0369a1;">
+        🤝 Gekoppelt mit: <strong id="sync-mailbox-partner-name">Partnergerät</strong>
+      </div>
+      <div style="font-size: 14px; margin-bottom: 12px; color: #475569;">
+        🕒 Letzter Postfach-Abgleich: <strong id="sync-mailbox-last-sync-time">Noch nie</strong>
+      </div>
+      <button type="button" id="btn-manual-mailbox-sync" class="btn btn-primary" onclick="triggerManualMailboxSync()" style="width: 100%; font-size: 16px; padding: 12px 18px; background-color: #0284c7;">
+        📬 <strong>Jetzt Postfach prüfen &amp; abgleichen</strong>
+      </button>
+    </div>
+
+    <!-- Hinweis wenn noch nicht gekoppelt -->
+    <div id="sync-mailbox-unpaired-notice" style="background: rgba(255,255,255,0.8); border: 1px dashed #7dd3fc; border-radius: 8px; padding: 12px; font-size: 14px; color: #0369a1;">
+      ℹ️ Kopple PC und Smartphone einmalig über die Auswahlen unten (Gerätename &amp; Kopplungscode). Danach funktioniert der Postfach-Abgleich dauerhaft automatisch bei jedem Speichern!
+    </div>
+
+    <div id="sync-mailbox-last-status" aria-live="polite" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 6px; font-size: 14px; font-weight: bold; background: #ffffff; border: 1px solid #e2e8f0;">
+    </div>
   </div>
 
   <div style="display: flex; gap: 10px; margin-bottom: 16px;">
@@ -3688,7 +3746,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.8.2</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.9.0</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

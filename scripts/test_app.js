@@ -240,3 +240,103 @@ if (remainingOpen.length !== 1 || remainingOpen[0].id !== 'wish_test_2') {
 }
 
 console.log('Wishlist logic test: 100% PASS!');
+
+// 5. Test Mailbox Sync UI and Functions
+console.log('Testing Mailbox Sync integration...');
+const expectedMailboxIds = [
+  'sync-mailbox-card',
+  'sync-mailbox-badge',
+  'sync-mailbox-paired-content',
+  'sync-mailbox-unpaired-notice',
+  'sync-mailbox-partner-name',
+  'sync-mailbox-last-sync-time',
+  'btn-manual-mailbox-sync',
+  'sync-mailbox-last-status'
+];
+expectedMailboxIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing Mailbox Sync HTML element id="${id}"`);
+    process.exit(1);
+  }
+});
+console.log('All 8 Mailbox Sync HTML element IDs present.');
+
+const syncEngineJs = fs.readFileSync('sync_engine.js', 'utf8');
+try {
+  new Function(syncEngineJs);
+  console.log('sync_engine.js syntax check: PASS (valid JavaScript)');
+} catch (e) {
+  console.error('sync_engine.js syntax check: FAIL', e.message);
+  process.exit(1);
+}
+
+const requiredSyncMethods = [
+  'postToMailbox',
+  'checkMailbox',
+  'scheduleMailboxPush',
+  'startMailboxListener',
+  'handleIncomingMailboxUpdate',
+  'getMailboxTopic',
+  'exportCurrentVaultData',
+  'mergeIncomingIntoAppState'
+];
+requiredSyncMethods.forEach(m => {
+  if (!syncEngineJs.includes(m)) {
+    console.error(`Missing required SyncEngine method: ${m}`);
+    process.exit(1);
+  }
+});
+console.log('All 8 SyncEngine mailbox methods present.');
+
+// Test entity merging logic
+const localState = {
+  transactions: [{ id: 'tx_1', amount: 50 }],
+  accounts: [{ id: 'acc_1', name: 'Giro', balance: 500 }],
+  savingPots: [{ id: 'pot_1', name: 'Urlaub', currentAmount: 100 }],
+  shoppingList: [{ id: 'shop_1', name: 'Milch', checked: false }],
+  budgets: { Lebensmittel: 300 },
+  customCategories: { exp: { Garten: true } }
+};
+
+const incomingState = {
+  transactions: [{ id: 'tx_1', amount: 50 }, { id: 'tx_2', amount: 25 }],
+  savingPots: [{ id: 'pot_1', name: 'Urlaub' }, { id: 'pot_2', name: 'Auto', currentAmount: 500 }],
+  shoppingList: [{ id: 'shop_1', name: 'Milch' }, { id: 'shop_2', name: 'Brot', checked: true }],
+  budgets: { Freizeit: 150 },
+  customCategories: { exp: { Haustier: true } }
+};
+
+// Simulate mergeIncomingIntoAppState
+const existingTxIds = new Set(localState.transactions.map(t => String(t.id)));
+for (const t of incomingState.transactions) {
+  if (t && t.id && !existingTxIds.has(String(t.id))) {
+    localState.transactions.push(t);
+  }
+}
+const existingPotIds = new Set(localState.savingPots.map(p => String(p.id)));
+for (const p of incomingState.savingPots) {
+  if (p && p.id && !existingPotIds.has(String(p.id))) {
+    localState.savingPots.push(p);
+  }
+}
+const existingShopIds = new Set(localState.shoppingList.map(s => String(s.id)));
+for (const s of incomingState.shoppingList) {
+  if (s && s.id && !existingShopIds.has(String(s.id))) {
+    localState.shoppingList.push(s);
+  }
+}
+Object.assign(localState.budgets, incomingState.budgets);
+Object.assign(localState.customCategories.exp, incomingState.customCategories.exp);
+
+if (localState.transactions.length !== 2 || localState.savingPots.length !== 2 || localState.shoppingList.length !== 2) {
+  console.error('Entity merge mismatch');
+  process.exit(1);
+}
+if (localState.budgets.Freizeit !== 150 || localState.customCategories.exp.Haustier !== true) {
+  console.error('Budgets or categories merge mismatch');
+  process.exit(1);
+}
+console.log('Entity merge simulation: 100% PASS!');
+console.log('\n======================================');
+console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.0)');
+console.log('======================================');

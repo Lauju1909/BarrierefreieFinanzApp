@@ -1,6 +1,19 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.9.0 (Asynchroner E2E-Postfach-Sync / Briefkasten-Synchronisation)
+*Datum: 03. Oktober 2026*
+
+### 📬 1. Asynchrone Synchronisation (PC & Smartphone müssen nicht mehr gleichzeitig an sein!)
+- **Unabhängige Synchronisation:** Computer und Smartphone müssen nicht mehr zeitgleich eingeschaltet sein oder im selben Netzwerk liegen. Wenn du unterwegs auf dem Smartphone Buchungen machst, während der PC ausgeschaltet ist, werden deine Änderungen versiegelt in einem verschlüsselten E2E-Postfach hinterlegt.
+- **Automatischer Abruf beim Start:** Sobald der PC später gestartet oder die App entsperrt wird, holt er die neuen Buchungen automatisch aus dem Postfach ab. Genauso erhält das Smartphone alle am PC vorgenommenen Buchungen, sobald es eingeschaltet wird.
+- **100% Zero-Knowledge & AES-256-GCM:** Alle Tresordaten werden lokal mit dem geheimen Pairing-Code verschlüsselt, bevor sie übertragen werden. Weder Broker noch Dritte können jemals Konten, Buchungen oder Beträge lesen.
+- **Gerätespezifische Postfächer (Kein Überschreiben):** Beide Geräte hinterlegen ihre Aktualisierungen in eigenen Postfach-Fächern, sodass niemals Daten des jeweils anderen Geräts überschrieben werden können.
+- **Lückenloser Abgleich:** Buchungen, Kontostände, Spartöpfe, Einkaufslisten, Budgets und benutzerdefinierte Kategorien werden intelligent und konfliktfrei zusammengeführt.
+- **1-Klick-Prüfung:** Neuer Button „Jetzt Postfach prüfen & abgleichen“ im Reiter 8 für sofortiges manuelles Prüfen und Absichern mit voller Screenreader-Ansage (NVDA/TalkBack).
+
+---
+
 ## ⚡ Version 6.8.2 (Wiederherstellung Wunschliste & Sparziele)
 *Datum: 03. Oktober 2026*
 
