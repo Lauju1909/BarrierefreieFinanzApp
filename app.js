@@ -8039,9 +8039,16 @@ function unlockApp() {
     }
   }
 
-  if (window.__PENDING_SYNC_DATA__ && typeof SyncEngine !== 'undefined') {
-    const pending = window.__PENDING_SYNC_DATA__;
+  let pending = window.__PENDING_SYNC_DATA__;
+  if (!pending) {
+    try {
+      const storedPending = localStorage.getItem('haushaltsbuch_pending_sync_data');
+      if (storedPending) pending = JSON.parse(storedPending);
+    } catch(e) {}
+  }
+  if (pending && typeof SyncEngine !== 'undefined') {
     window.__PENDING_SYNC_DATA__ = null;
+    try { localStorage.removeItem('haushaltsbuch_pending_sync_data'); } catch(e) {}
     setTimeout(() => {
       SyncEngine.importSyncedVaultData(pending);
     }, 200);
@@ -9135,8 +9142,22 @@ function isSyncConnected() {
   const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || 
                (typeof SyncEngine !== 'undefined' && SyncEngine.getActivePairingCode ? SyncEngine.getActivePairingCode() : null);
 
-  // Falls versehentlich der eigene Gerätename ("Computer" / "PC") als Partner gespeichert war, aufräumen
-  if (dev === 'Computer' || dev === 'PC') {
+  const isAndroid = !!window.__IS_ANDROID__ || 
+                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  // Auf Desktop darf der Partner nicht "Computer" oder "PC" heißen (denn das ist der PC selbst!)
+  if (!isAndroid && (dev === 'Computer' || dev === 'PC')) {
+    localStorage.removeItem('haushaltsbuch_sync_connected');
+    localStorage.removeItem('haushaltsbuch_sync_connected_device');
+    localStorage.removeItem('haushaltsbuch_sync_connected_code');
+    localStorage.removeItem('haushaltsbuch_sync_connected_time');
+    return false;
+  }
+
+  // Ein Gerät darf nicht mit seinem eigenen Namen gekoppelt sein
+  const myDev = (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getDeviceName === 'function') ? SyncEngine.getDeviceName() : '';
+  if (dev && myDev && dev.toLowerCase() === myDev.toLowerCase()) {
     localStorage.removeItem('haushaltsbuch_sync_connected');
     localStorage.removeItem('haushaltsbuch_sync_connected_device');
     localStorage.removeItem('haushaltsbuch_sync_connected_code');
@@ -9149,7 +9170,10 @@ function isSyncConnected() {
 
 function getConnectedDevice() {
   const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
-  if (dev === 'Computer' || dev === 'PC') return '';
+  const isAndroid = !!window.__IS_ANDROID__ || 
+                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (!isAndroid && (dev === 'Computer' || dev === 'PC')) return '';
   return dev || '';
 }
 
@@ -9165,6 +9189,7 @@ function disconnectSyncPairing() {
   localStorage.removeItem('haushaltsbuch_mailbox_last_sync');
   localStorage.removeItem('haushaltsbuch_last_received_mailbox_ts');
   localStorage.removeItem('haushaltsbuch_last_sent_mailbox_ts');
+  localStorage.removeItem('haushaltsbuch_pending_sync_data');
   if (typeof window !== 'undefined') {
     window.__PAIRED_DEVICE__ = null;
     window.__MANUAL_SYNC_EDIT__ = false;
@@ -9173,6 +9198,16 @@ function disconnectSyncPairing() {
   const targetCodeInput = document.getElementById('input-target-code');
   if (targetDevInput) targetDevInput.value = '';
   if (targetCodeInput) targetCodeInput.value = '';
+
+  try {
+    const port = window.__LOCAL_PORT__ || 48123;
+    const headers = (typeof getVaultApiHeaders === 'function') ? getVaultApiHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' };
+    fetch(`http://127.0.0.1:${port}/api/save_pairing`, {
+      method: 'POST',
+      headers: headers,
+      body: '{}'
+    }).catch(() => {});
+  } catch(e) {}
 
   if (typeof SyncEngine !== 'undefined') {
     SyncEngine.generateNewPairingCode();
@@ -9315,11 +9350,6 @@ function editSyncConnection() {
 function initLockScreenSync() {
   if (typeof SyncEngine === 'undefined') return;
 
-  // Wenn noch nicht mit dem Computer verbunden: Bei JEDEM App-Start einen neuen Kopplungscode generieren
-  if (!isSyncConnected()) {
-    SyncEngine.generateNewPairingCode();
-  }
-
   updateSyncConnectedUI();
 
   const myDevice = SyncEngine.getDeviceName();
@@ -9348,13 +9378,8 @@ function initLockScreenSync() {
 
   restartSyncListener();
 
-  // Regelmäßige Erneuerung des Kopplungscodes (alle 10 Minuten), solange noch nicht gekoppelt
-  if (!window.__sync_rotate_timer__) {
-    window.__sync_rotate_timer__ = setInterval(() => {
-      if (!isSyncConnected() && typeof SyncEngine !== 'undefined') {
-        generateNewSyncCode(true); // leise ohne Ton/Alert
-      }
-    }, 10 * 60 * 1000);
+  if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.checkMailbox === 'function') {
+    SyncEngine.checkMailbox(null, false).catch(() => {});
   }
 }
 
@@ -9433,6 +9458,24 @@ async function handleStartSync(e) {
 
   if (!targetName || !targetCode) {
     alert('Bitte gib den Smartphone-Namen und den Kopplungscode ein!');
+    return;
+  }
+
+  const isAndroid = !!window.__IS_ANDROID__ || 
+                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const myDevice = (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getDeviceName === 'function') ? SyncEngine.getDeviceName() : '';
+  if (!isAndroid && (targetName.toLowerCase() === 'computer' || targetName.toLowerCase() === 'pc' || (myDevice && targetName.toLowerCase() === myDevice.toLowerCase()))) {
+    const msg = '⚠️ Bitte gib den Namen deines Smartphones ein (z. B. Handy-XXXX), nicht deinen eigenen Computer. Den Gerätenamen findest du auf deinem Smartphone unter Reiter 8 (Smartphone-Sync).';
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+      statusBox.style.color = '#b91c1c';
+      statusBox.textContent = msg;
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+    else alert(msg);
     return;
   }
 

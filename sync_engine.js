@@ -529,6 +529,9 @@ const SyncEngine = {
       this.lastSyncTime = new Date();
       localStorage.setItem('haushaltsbuch_sync_connected', 'true');
       localStorage.setItem('haushaltsbuch_sync_connected_device', request.sender || 'Computer');
+      if (myCode) {
+        localStorage.setItem('haushaltsbuch_sync_connected_code', myCode);
+      }
       localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
       if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
       if (onStatusUpdate) {
@@ -831,6 +834,10 @@ const SyncEngine = {
     localStorage.setItem('haushaltsbuch_last_received_mailbox_ts', String(update.timestamp));
     localStorage.setItem('haushaltsbuch_sync_connected', 'true');
     localStorage.setItem('haushaltsbuch_sync_connected_device', update.sender || 'Gekoppeltes Gerät');
+    const curCode = this.getActivePairingCode();
+    if (curCode) {
+      localStorage.setItem('haushaltsbuch_sync_connected_code', curCode);
+    }
     
     const timeStr = new Date(update.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date(update.timestamp).toLocaleDateString('de-DE');
@@ -967,6 +974,9 @@ const SyncEngine = {
       // FALL 3: GERÄT IST GESPERRT UND HAT BEREITS EINEN TRESOR -> DATEN ZWISCHENSPEICHERN BIS PIN EINGEGEBEN WIRD
       if (!isUnlocked && hasVaultOnDisk) {
         window.__PENDING_SYNC_DATA__ = incomingData;
+        try {
+          localStorage.setItem('haushaltsbuch_pending_sync_data', JSON.stringify(incomingData));
+        } catch(e) {}
         const msg = 'Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein.';
         if (typeof announceNVDA === 'function') announceNVDA(msg, true);
         if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
