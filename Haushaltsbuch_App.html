@@ -14865,6 +14865,300 @@ function matchesFuzzyOrExact(token, compWords, rawCompText, normCompText) {
   return false;
 }
 
+// ----------------------------------------------------------------------------
+// GLOBALE SUCHE, FILTER & SORTIERUNG ENGINE FÜR BUCHUNGEN
+// ----------------------------------------------------------------------------
+let currentTxFilter = {
+  query: '',
+  status: 'all',
+  account: 'all'
+};
+
+let currentTxSortOrder = 'date-desc';
+
+function handleTxSearchFilterChange() {
+  const qInput = document.getElementById('tx-search-query');
+  const sSelect = document.getElementById('tx-filter-status');
+  const aSelect = document.getElementById('tx-filter-account');
+  const banner = document.getElementById('tx-search-results-banner');
+  const bannerText = document.getElementById('tx-search-results-text');
+  const clearBtn = document.getElementById('btn-clear-tx-search');
+
+  currentTxFilter.query = qInput ? qInput.value.trim().toLowerCase() : '';
+  currentTxFilter.status = sSelect ? sSelect.value : 'all';
+  currentTxFilter.account = aSelect ? aSelect.value : 'all';
+
+  if (clearBtn) clearBtn.style.display = currentTxFilter.query ? 'inline-block' : 'none';
+
+  updateOverview();
+
+  const isSearchActive = Boolean(currentTxFilter.query || currentTxFilter.status !== 'all' || currentTxFilter.account !== 'all');
+
+  const feedExp = document.getElementById('overview-expense-items-feed');
+  const countExp = feedExp ? feedExp.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const feedInc = document.getElementById('overview-income-items-feed');
+  const countInc = feedInc ? feedInc.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const feedTrf = document.getElementById('overview-transfer-items-feed');
+  const countTrf = feedTrf ? feedTrf.querySelectorAll('.tx-item, [role="listitem"]').length : 0;
+  const totalHits = countExp + countInc + countTrf;
+
+  const detExp = document.getElementById('details-expense-list');
+  const detInc = document.getElementById('details-income-list');
+  const detTrf = document.getElementById('details-transfer-list');
+
+  if (isSearchActive) {
+    if (detExp) detExp.open = countExp > 0;
+    if (detInc) detInc.open = countInc > 0;
+    if (detTrf) detTrf.open = countTrf > 0;
+
+    if (banner && bannerText) {
+      banner.style.display = 'flex';
+      if (totalHits > 0) {
+        bannerText.textContent = `🔍 ${totalHits} Treffer gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen).`;
+      } else {
+        bannerText.textContent = `⚠️ Keine Buchungen gefunden für "${currentTxFilter.query || 'aktuelle Filter'}".`;
+      }
+    }
+
+    if (currentTxFilter.query && currentTxFilter.query.length >= 2) {
+      if (totalHits > 0) {
+        announceNVDA(`${totalHits} Buchungen für "${currentTxFilter.query}" gefunden (${countExp} Ausgaben, ${countInc} Einnahmen, ${countTrf} Umbuchungen). Listen geöffnet.`);
+      } else {
+        announceNVDA(`Keine Buchungen für "${currentTxFilter.query}" gefunden.`);
+      }
+    }
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (detExp) detExp.open = false;
+    if (detInc) detInc.open = false;
+    if (detTrf) detTrf.open = false;
+  }
+}
+
+function handleTxSortChange() {
+  const sel = document.getElementById('tx-sort-order');
+  if (sel) {
+    currentTxSortOrder = sel.value;
+    const sortLabels = {
+      'date-desc': 'Datum: Neueste zuerst (Neu bis Alt)',
+      'date-asc': 'Datum: Älteste zuerst (Alt bis Neu)',
+      'alpha-asc': 'Alphabetisch: A bis Z',
+      'alpha-desc': 'Alphabetisch: Z bis A',
+      'amount-desc': 'Betrag: Höchste zuerst (Groß bis Klein)',
+      'amount-asc': 'Betrag: Niedrigste zuerst (Klein bis Groß)',
+      'category-asc': 'Kategorie: Alphabetisch (A bis Z)'
+    };
+    announceNVDA(`Sortierung geändert auf: ${sortLabels[currentTxSortOrder] || currentTxSortOrder}`);
+  }
+  updateOverview();
+}
+
+function applyTxSorting(list) {
+  if (!Array.isArray(list)) return [];
+  return [...list].sort((a, b) => {
+    switch (currentTxSortOrder) {
+      case 'date-asc':
+        return (a.date || '').localeCompare(b.date || '');
+      case 'alpha-asc': {
+        const nameA = a.description || a.subcategory || a.category || '';
+        const nameB = b.description || b.subcategory || b.category || '';
+        return nameA.localeCompare(nameB, 'de', { sensitivity: 'base' });
+      }
+      case 'alpha-desc': {
+        const nameA = a.description || a.subcategory || a.category || '';
+        const nameB = b.description || b.subcategory || b.category || '';
+        return nameB.localeCompare(nameA, 'de', { sensitivity: 'base' });
+      }
+      case 'amount-desc':
+        return Number(b.amount || 0) - Number(a.amount || 0);
+      case 'amount-asc':
+        return Number(a.amount || 0) - Number(b.amount || 0);
+      case 'category-asc': {
+        const catA = a.category || '';
+        const catB = b.category || '';
+        return catA.localeCompare(catB, 'de', { sensitivity: 'base' });
+      }
+      case 'date-desc':
+      default:
+        return (b.date || '').localeCompare(a.date || '');
+    }
+  });
+}
+
+function applyTxFilters(list) {
+  if (!Array.isArray(list)) return [];
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+  const monthNamesDe = ['januar', 'februar', 'maerz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
+  const monthNamesRaw = ['januar', 'februar', 'märz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember'];
+  const weekdayNames = ['sonntag', 'montag', 'dienstag', 'mittwoch', 'donnerstag', 'freitag', 'samstag'];
+
+  return list.filter(tx => {
+    // 1. Super-Suche Engine
+    if (currentTxFilter.query) {
+      const rawQuery = currentTxFilter.query.trim().toLowerCase();
+      const qTokens = rawQuery.split(/\s+/).filter(Boolean);
+
+      const acc = (appState && appState.accounts) ? appState.accounts.find(a => a.id === tx.account) : null;
+      const accName = acc ? acc.name : (tx.account || '');
+      const fromAcc = (appState && appState.accounts) ? appState.accounts.find(a => a.id === tx.fromAccount) : null;
+      const fromAccName = fromAcc ? fromAcc.name : (tx.fromAccount || '');
+      const toAcc = (appState && appState.accounts) ? appState.accounts.find(a => a.id === tx.toAccount) : null;
+      const toAccName = toAcc ? toAcc.name : (tx.toAccount || '');
+      const txAmt = Number(tx.amount || 0);
+      const amtStr = txAmt.toFixed(2);
+      const amtGerman = amtStr.replace('.', ',');
+      const amtNoDec = Math.round(txAmt).toString();
+
+      // Date information
+      let dateWords = [];
+      if (tx.date) {
+        dateWords.push(tx.date);
+        const [y, m, d] = tx.date.split('-');
+        if (y && m && d) {
+          const mIdx = parseInt(m, 10) - 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            dateWords.push(monthNamesDe[mIdx], monthNamesRaw[mIdx]);
+            dateWords.push(monthNamesRaw[mIdx].substring(0, 3), monthNamesDe[mIdx].substring(0, 3));
+          }
+          const dtObj = new Date(tx.date + 'T12:00:00');
+          if (!isNaN(dtObj.getTime())) {
+            dateWords.push(weekdayNames[dtObj.getDay()]);
+          }
+          dateWords.push(`${d}.${m}.${y}`, `${d}.${m}.`, `${d}.`);
+        }
+        if (tx.date === todayStr) dateWords.push('heute');
+        if (tx.date === yesterdayStr) dateWords.push('gestern');
+      }
+
+      // Types & Tags
+      let typeWords = [];
+      if (tx.type === 'income') typeWords.push('einnahme', 'geld plus', 'einnahmen', 'habenseite');
+      else if (tx.type === 'transfer') typeWords.push('umbuchung', 'transfer', 'sparen', 'verschieben', 'sparplan');
+      else typeWords.push('ausgabe', 'ausgaben', 'minus', 'kosten');
+
+      if (tx.isRecurring) typeWords.push('wiederkehrend', 'dauerauftrag', 'abo', 'fixkosten', 'vertrag', 'sparplan');
+      else typeWords.push('einmalig', 'variabel');
+
+      if (tx.isInstallment || (tx.description && (tx.description.includes('Rate') || tx.description.includes('Kredit')))) {
+        typeWords.push('kredit', 'rate', 'ratenkauf', 'ratenzahlung', 'finanzierung', 'darlehen', 'schuld');
+      }
+
+      const rawComp = [
+        tx.description || '',
+        tx.category || '',
+        tx.subcategory || '',
+        accName,
+        tx.account || '',
+        fromAccName,
+        tx.fromAccount || '',
+        toAccName,
+        tx.toAccount || '',
+        ...dateWords,
+        ...typeWords,
+        amtStr,
+        amtGerman,
+        amtNoDec,
+        `${amtGerman} €`,
+        `${amtGerman}€`,
+        `${amtNoDec} €`,
+        `${amtNoDec}€`
+      ].join(' ').toLowerCase();
+
+      const normComp = (typeof normalizeSearchText === 'function') ? normalizeSearchText(rawComp) : rawComp;
+      const compWords = normComp.split(/\s+/).filter(Boolean);
+
+      // Check each token
+      for (let token of qTokens) {
+        // Strip trailing currency symbols
+        token = token.replace(/€|euro/g, '').trim();
+        if (!token) continue;
+
+        // A. Negation: -token (e.g. -rewe, -paypal)
+        if (token.startsWith('-') && token.length > 1) {
+          const negToken = token.slice(1);
+          if (typeof matchesFuzzyOrExact === 'function' && matchesFuzzyOrExact(negToken, compWords, rawComp, normComp)) {
+            return false;
+          } else if (rawComp.includes(negToken) || normComp.includes(negToken)) {
+            return false;
+          }
+          continue;
+        }
+
+        // B. Range match: 10-50 or 10..50
+        const rangeMatch = token.match(/^(\d+(?:[.,]\d+)?)(?:-|\.\.)(\d+(?:[.,]\d+)?)$/);
+        if (rangeMatch) {
+          const minVal = parseFloat(rangeMatch[1].replace(',', '.'));
+          const maxVal = parseFloat(rangeMatch[2].replace(',', '.'));
+          if (!isNaN(minVal) && !isNaN(maxVal)) {
+            if (!(txAmt >= minVal && txAmt <= maxVal)) return false;
+            continue;
+          }
+        }
+
+        // C. Approximate amount: ~50
+        if (token.startsWith('~') && token.length > 1) {
+          const approxTarget = parseFloat(token.slice(1).replace(',', '.'));
+          if (!isNaN(approxTarget)) {
+            const margin = Math.max(2, approxTarget * 0.1);
+            if (Math.abs(txAmt - approxTarget) > margin) return false;
+            continue;
+          }
+        }
+
+        // D. Greater / Lesser comparison operators: >50, <100, >=20, <=80
+        if (token.startsWith('>') || token.startsWith('<')) {
+          const isGte = token.startsWith('>=');
+          const isLte = token.startsWith('<=');
+          const isGt = !isGte && token.startsWith('>');
+          const isLt = !isLte && token.startsWith('<');
+          const numStr = token.replace(/^[><]=?/, '').replace(',', '.');
+          const threshold = parseFloat(numStr);
+          if (!isNaN(threshold)) {
+            if (isGt && !(txAmt > threshold)) return false;
+            if (isLt && !(txAmt < threshold)) return false;
+            if (isGte && !(txAmt >= threshold)) return false;
+            if (isLte && !(txAmt <= threshold)) return false;
+            continue;
+          }
+        }
+
+        // E. Fuzzy, phonetic & exact token matching
+        if (typeof matchesFuzzyOrExact === 'function') {
+          if (!matchesFuzzyOrExact(token, compWords, rawComp, normComp)) {
+            return false;
+          }
+        } else {
+          if (!rawComp.includes(token) && !normComp.includes(token)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // 2. Status
+    if (currentTxFilter.status === 'booked') {
+      if (tx.isPlanned || tx.date > todayStr) return false;
+    } else if (currentTxFilter.status === 'planned') {
+      if (!tx.isPlanned && tx.date <= todayStr) return false;
+    } else if (currentTxFilter.status === 'recurring') {
+      if (!tx.isRecurring) return false;
+    }
+
+    // 3. Account
+    if (currentTxFilter.account && currentTxFilter.account !== 'all') {
+      if (tx.account !== currentTxFilter.account && tx.fromAccount !== currentTxFilter.account && tx.toAccount !== currentTxFilter.account) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 function clearTxSearch() {
   const qInput = document.getElementById('tx-search-query');
   if (qInput) qInput.value = '';

@@ -337,6 +337,147 @@ if (localState.budgets.Freizeit !== 150 || localState.customCategories.exp.Haust
   process.exit(1);
 }
 console.log('Entity merge simulation: 100% PASS!');
+
+// 6. Test Overview Accordion & Transaction Filtering / Sorting
+console.log('Testing Transaction Filter & Sort Engine for Overview Accordions...');
+
+const requiredTxFunctions = [
+  'applyTxFilters',
+  'applyTxSorting',
+  'handleTxSearchFilterChange',
+  'handleTxSortChange',
+  'clearTxSearch',
+  'renderTransactionList'
+];
+requiredTxFunctions.forEach(fn => {
+  const regex = new RegExp(`\\bfunction\\s+${fn}\\b|\\basync\\s+function\\s+${fn}\\b`);
+  if (!regex.test(appJs)) {
+    console.error(`Missing required Transaction function: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log('All 6 Transaction / Overview functions present in app.js.');
+
+// Evaluate filtering and sorting functions in sandbox
+const sandbox = {};
+const txTestCode = `
+${appJs}
+return {
+  applyTxFilters,
+  applyTxSorting,
+  currentTxFilter,
+  get currentTxSortOrder() { return currentTxSortOrder; },
+  set currentTxSortOrder(v) { currentTxSortOrder = v; },
+  handleTxSortChange,
+  renderTransactionList
+};
+`;
+
+let txEngine;
+try {
+  const factory = new Function(txTestCode);
+  // Provide basic window / document mocks
+  global.window = {
+    addEventListener: () => {},
+    matchMedia: () => ({ matches: false, addEventListener: () => {} }),
+    location: { href: '' }
+  };
+  global.document = {
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    getElementById: (id) => ({
+      value: '',
+      style: {},
+      innerHTML: '',
+      focus: () => {},
+      querySelectorAll: () => []
+    }),
+    querySelectorAll: () => [],
+    querySelector: () => null,
+    createElement: () => ({ style: {}, appendChild: () => {}, setAttribute: () => {} }),
+    body: { appendChild: () => {}, classList: { add: () => {}, remove: () => {} } }
+  };
+  global.appState = {
+    accounts: [
+      { id: 'acc_giro', name: 'Girokonto' },
+      { id: 'acc_sparen', name: 'Tagesgeld' }
+    ]
+  };
+  global.announceNVDA = () => {};
+  global.formatDateGerman = (d) => d;
+  global.formatCurrency = (amt) => (amt || 0).toFixed(2) + ' €';
+  global.escapeHTML = (s) => String(s || '');
+  txEngine = factory();
+} catch (e) {
+  console.error('Failed to instantiate Transaction Filter / Sort Engine:', e);
+  process.exit(1);
+}
+
+// Test sample transaction list
+const dummyTransactions = [
+  { id: 'tx_1', date: '2026-10-01', amount: 45.50, category: 'Lebensmittel', subcategory: 'Supermarkt', description: 'Wocheneinkauf Rewe', type: 'expense', account: 'acc_giro' },
+  { id: 'tx_2', date: '2026-10-02', amount: 1200.00, category: 'Gehalt', subcategory: 'Hauptberuf', description: 'Gehaltseingang', type: 'income', account: 'acc_giro' },
+  { id: 'tx_3', date: '2026-10-03', amount: 15.00, category: 'Freizeit', subcategory: 'Kino', description: 'Kinokarte Cinemaxx', type: 'expense', account: 'acc_sparen' },
+  { id: 'tx_4', date: '2026-10-04', amount: 150.00, category: 'Sparen', subcategory: 'Notgroschen', description: 'Übertrag Tagesgeld', type: 'transfer', fromAccount: 'acc_giro', toAccount: 'acc_sparen' }
+];
+
+// Test 1: Empty filter returns all
+let res = txEngine.applyTxFilters(dummyTransactions);
+if (res.length !== 4) {
+  console.error('Expected 4 unfiltered transactions, got', res.length);
+  process.exit(1);
+}
+
+// Test 2: Search by query (fuzzy / text)
+txEngine.currentTxFilter.query = 'rewe';
+res = txEngine.applyTxFilters(dummyTransactions);
+if (res.length !== 1 || res[0].id !== 'tx_1') {
+  console.error('Query search for "rewe" failed, got', res);
+  process.exit(1);
+}
+
+// Test 3: Search by account
+txEngine.currentTxFilter.query = '';
+txEngine.currentTxFilter.account = 'acc_sparen';
+res = txEngine.applyTxFilters(dummyTransactions);
+// tx_3 (account: acc_sparen) and tx_4 (toAccount: acc_sparen)
+if (res.length !== 2) {
+  console.error('Account filter for "acc_sparen" failed, got', res.length);
+  process.exit(1);
+}
+
+// Test 4: Sorting by amount descending
+txEngine.currentTxFilter.account = 'all';
+txEngine.currentTxSortOrder = 'amount-desc';
+res = txEngine.applyTxSorting(dummyTransactions);
+if (res[0].id !== 'tx_2' || res[res.length - 1].id !== 'tx_3') {
+  console.error('Amount desc sort failed:', res.map(t => t.amount));
+  process.exit(1);
+}
+
+// Test 5: Sorting by date ascending
+txEngine.currentTxSortOrder = 'date-asc';
+res = txEngine.applyTxSorting(dummyTransactions);
+if (res[0].id !== 'tx_1' || res[res.length - 1].id !== 'tx_4') {
+  console.error('Date asc sort failed:', res.map(t => t.date));
+  process.exit(1);
+}
+
+// Test 6: Verify renderTransactionList works without error and produces markup
+const containerEl = { innerHTML: '', style: {} };
+global.document.getElementById = (id) => {
+  if (id === 'test-tx-container') return containerEl;
+  return { value: '', style: {}, innerHTML: '', focus: () => {}, querySelectorAll: () => [] };
+};
+txEngine.renderTransactionList(dummyTransactions, 'test-tx-container', 'Keine Buchungen vorhanden');
+if (!containerEl.innerHTML.includes('tx-list') || !containerEl.innerHTML.includes('Wocheneinkauf Rewe')) {
+  console.error('renderTransactionList failed to render markup:', containerEl.innerHTML);
+  process.exit(1);
+}
+console.log('renderTransactionList HTML output: verified PASS!');
+
+console.log('Transaction Filter & Sort Engine: 100% PASS!');
 console.log('\n======================================');
-console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.0)');
+console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.3)');
 console.log('======================================');
+
