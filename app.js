@@ -1642,7 +1642,7 @@ async function handleConfirmShoppingBooking(e) {
   renderShoppingList();
   updateOverview();
 
-  const accName = getAccountName(accountId);
+  const accName = formatAccountName(accountId);
   announceNVDA(`Einkauf über ${formatCurrency(amount)} auf Konto ${accName} erfolgreich abgebucht!`);
   alert(`✅ Der Einkauf über ${formatCurrency(amount)} (${subcategory}) wurde erfolgreich im Haushaltsbuch abgebucht!`);
 }
@@ -1969,6 +1969,228 @@ async function handleDeleteWish(wishId) {
   await saveStateToEncryptedStorage();
   renderWishlist();
   announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
+}
+
+// ----------------------------------------------------------------------------
+// F. BANK-KONTOAUSZUG / CSV-IMPORT ENGINE
+// ----------------------------------------------------------------------------
+let parsedCsvTransactions = [];
+
+function handleBankCsvUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const text = evt.target.result;
+    parseAndPreviewBankCsv(text);
+  };
+  reader.readAsText(file, 'utf-8');
+  e.target.value = '';
+}
+
+function parseCurrencyString(val) {
+  if (!val) return NaN;
+  let s = val.replace(/€|EUR|\s/g, '').trim();
+  if (s.includes('.') && s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+  return parseFloat(s);
+}
+
+function parseAndPreviewBankCsv(csvText) {
+  parsedCsvTransactions = [];
+  const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length < 2) {
+    alert('Die CSV-Datei enthält keine Buchungszeilen.');
+    return;
+  }
+
+  const firstLine = lines[0];
+  let sep = ';';
+  if ((firstLine.match(/;/g) || []).length < (firstLine.match(/,/g) || []).length) sep = ',';
+  if ((firstLine.match(/\t/g) || []).length > (firstLine.match(new RegExp(sep, 'g')) || []).length) sep = '\t';
+
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(sep).map(c => c.replace(/^["']|["']$/g, '').trim());
+    if (cols.length < 3) continue;
+
+    let dateStr = null;
+    let amountVal = null;
+    let payeeOrMemo = '';
+
+    for (let c = 0; c < cols.length; c++) {
+      const val = cols[c];
+      if (!val) continue;
+
+      // 1. Date matching (YYYY-MM-DD or DD.MM.YYYY)
+      if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+        if (!dateStr) dateStr = val;
+        continue;
+      } else if (/^\d{2}\.\d{2}\.\d{4}$/.test(val)) {
+        if (!dateStr) {
+          const parts = val.split('.');
+          dateStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        continue;
+      }
+
+      // 2. Amount matching (must not contain hyphens in date format or text)
+      const cleanNumStr = val.replace(/€|EUR|\s/g, '').replace(/\./g, '').replace(',', '.');
+      if (amountVal === null && /^-?\d+(\.\d+)?$/.test(cleanNumStr) && !val.includes(':')) {
+        const parsed = parseCurrencyString(val);
+        if (!isNaN(parsed) && parsed !== 0) {
+          amountVal = parsed;
+          continue;
+        }
+      }
+
+      // 3. Memo / Payee
+      if (val.length > 2 && isNaN(val)) {
+        payeeOrMemo += (payeeOrMemo ? ' ' : '') + val;
+      }
+    }
+
+    if (dateStr && amountVal !== null && !isNaN(amountVal) && amountVal !== 0) {
+      const isIncome = amountVal > 0;
+      const absAmount = Math.abs(amountVal);
+      const matchedCat = autoMatchCategoryForPayee(payeeOrMemo, isIncome ? 'inc' : 'exp');
+
+      parsedCsvTransactions.push({
+        selected: true,
+        date: dateStr,
+        amount: absAmount,
+        type: isIncome ? 'income' : 'expense',
+        category: matchedCat.main,
+        subcategory: matchedCat.sub,
+        description: payeeOrMemo || (isIncome ? 'Bank-Gutschrift' : 'Bank-Lastschrift / Kartenzahlung'),
+        account: (appState.accounts && appState.accounts[0]) ? appState.accounts[0].id : 'bank'
+      });
+    }
+  }
+
+  if (parsedCsvTransactions.length === 0) {
+    alert('Es konnten keine gültigen Buchungszeilen in der CSV-Datei erkannt werden.');
+    return;
+  }
+
+  openCsvPreviewModal();
+}
+
+function autoMatchCategoryForPayee(text, type) {
+  const lower = (text || '').toLowerCase();
+  const db = (typeof CATEGORIES_DB !== 'undefined' && CATEGORIES_DB[type]) ? CATEGORIES_DB[type] : (typeof CATEGORIES_DB !== 'undefined' ? CATEGORIES_DB['exp'] : {});
+
+  for (const [mainCat, subs] of Object.entries(db)) {
+    for (const sub of subs) {
+      if (lower.includes(sub.toLowerCase())) {
+        return { main: mainCat, sub: sub };
+      }
+    }
+  }
+
+  if (type === 'exp') {
+    if (lower.includes('rewe') || lower.includes('aldi') || lower.includes('lidl') || lower.includes('edeka') || lower.includes('kaufland') || lower.includes('netto') || lower.includes('penny')) {
+      return { main: 'Lebensmittel, Supermarkt & Discounter', sub: 'Supermarkt' };
+    }
+    if (lower.includes('miete') || lower.includes('wohnen') || lower.includes('stadtwerke') || lower.includes('strom')) {
+      return { main: 'Miete, Wohnen & Nebenkosten', sub: 'Miete' };
+    }
+    if (lower.includes('amazon') || lower.includes('paypal') || lower.includes('ebay') || lower.includes('otto') || lower.includes('zalando')) {
+      return { main: 'Shopping, Online-Kauf & Marktplätze', sub: 'Online-Kauf' };
+    }
+    if (lower.includes('tanken') || lower.includes('aral') || lower.includes('shell') || lower.includes('total') || lower.includes('esso')) {
+      return { main: 'Mobilität, Auto & Kraftfahrzeuge', sub: 'Tanken' };
+    }
+    return { main: 'Sonstige Ausgaben & Bargeld', sub: 'Kartenzahlung' };
+  } else {
+    if (lower.includes('gehalt') || lower.includes('lohn') || lower.includes('bezüge') || lower.includes('arbeitgeber')) {
+      return { main: 'Gehalt, Lohn & Beruf', sub: 'Gehalt' };
+    }
+    if (lower.includes('kindergeld') || lower.includes('rente') || lower.includes('blindengeld') || lower.includes('amt') || lower.includes('kasse')) {
+      return { main: 'Staatliche Leistungen, Hilfen & Zuschüsse', sub: 'Leistungen' };
+    }
+    return { main: 'Sonstige Einnahmen', sub: 'Gutschrift' };
+  }
+}
+
+function openCsvPreviewModal() {
+  const modal = document.getElementById('csv-preview-modal');
+  const container = document.getElementById('csv-preview-table-container');
+  if (!container || !modal) return;
+
+  container.innerHTML = `
+    <table class="shopping-table" aria-label="CSV Vorschautabelle">
+      <thead>
+        <tr>
+          <th style="width: 40px; text-align: center;">✓</th>
+          <th>Datum</th>
+          <th>Art</th>
+          <th>Betrag</th>
+          <th>Hauptkategorie</th>
+          <th>Beschreibung</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${parsedCsvTransactions.map((tx, idx) => `
+          <tr>
+            <td style="text-align: center;">
+              <input type="checkbox" id="csv-chk-${idx}" ${tx.selected ? 'checked' : ''} onchange="parsedCsvTransactions[${idx}].selected = this.checked" style="width: 18px; height: 18px;">
+            </td>
+            <td>${escapeHTML(tx.date)}</td>
+            <td style="font-weight: bold; color: ${tx.type === 'income' ? '#4CAF50' : '#F44336'};">${tx.type === 'income' ? '📥 Einnahme' : '📤 Ausgabe'}</td>
+            <td style="font-weight: bold;">${formatCurrency(tx.amount)}</td>
+            <td>
+              <select class="large-select" style="padding: 4px 8px; font-size: 13px;" onchange="parsedCsvTransactions[${idx}].category = this.value">
+                ${Object.keys(CATEGORIES_DB[tx.type === 'income' ? 'inc' : 'exp'] || {}).map(c => `<option value="${escapeHTML(c)}" ${c === tx.category ? 'selected' : ''}>${escapeHTML(c)}</option>`).join('')}
+              </select>
+            </td>
+            <td><input type="text" class="large-input" value="${escapeHTML(tx.description)}" onchange="parsedCsvTransactions[${idx}].description = this.value" style="padding: 4px 8px; font-size: 13px;"></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  modal.style.display = 'flex';
+  announceNVDA(`CSV-Vorschau geöffnet. ${parsedCsvTransactions.length} Buchungen erkannt.`);
+}
+
+function closeCsvPreviewModal() {
+  const modal = document.getElementById('csv-preview-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function confirmCsvImport() {
+  const toImport = parsedCsvTransactions.filter(t => t.selected);
+  if (toImport.length === 0) {
+    alert('Bitte wähle mindestens eine Buchung zum Importieren aus.');
+    return;
+  }
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  toImport.forEach(tx => {
+    appState.transactions.push({
+      id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+      type: tx.type,
+      account: tx.account,
+      amount: tx.amount,
+      category: tx.category,
+      subcategory: tx.subcategory || 'CSV-Import',
+      description: tx.description,
+      isPlanned: tx.date > todayStr,
+      date: tx.date
+    });
+  });
+
+  await saveStateToEncryptedStorage();
+  closeCsvPreviewModal();
+  updateOverview();
+  announceNVDA(`${toImport.length} Buchungen erfolgreich importiert!`);
+  alert(`✅ Erfolgreich ${toImport.length} Buchungen aus dem Bank-Kontoauszug importiert!`);
 }
 
 // ----------------------------------------------------------------------------
@@ -2307,6 +2529,10 @@ function formatAccountName(accKey) {
   const found = appState.accounts.find(a => a.id === accKey);
   if (found) return found.name;
   return ACCOUNT_TYPE_NAMES[accKey] || accKey;
+}
+
+function getAccountName(accKey) {
+  return formatAccountName(accKey);
 }
 
 function getAccountIcon(accKey) {

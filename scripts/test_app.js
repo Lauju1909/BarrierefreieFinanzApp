@@ -477,6 +477,69 @@ if (!containerEl.innerHTML.includes('tx-list') || !containerEl.innerHTML.include
 console.log('renderTransactionList HTML output: verified PASS!');
 
 console.log('Transaction Filter & Sort Engine: 100% PASS!');
+
+// 7. Test Bank-Kontoauszug / CSV-Import Engine & Account Aliases
+console.log('Testing Bank-CSV Import Engine & Account Helper Functions...');
+
+const requiredCsvFunctions = [
+  'handleBankCsvUpload',
+  'parseCurrencyString',
+  'parseAndPreviewBankCsv',
+  'autoMatchCategoryForPayee',
+  'openCsvPreviewModal',
+  'closeCsvPreviewModal',
+  'confirmCsvImport',
+  'getAccountName',
+  'formatAccountName'
+];
+requiredCsvFunctions.forEach(fn => {
+  const regex = new RegExp(`\\bfunction\\s+${fn}\\b|\\basync\\s+function\\s+${fn}\\b`);
+  if (!regex.test(appJs)) {
+    console.error(`Missing required CSV or Account function: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log('All 9 CSV and Account helper functions present in app.js.');
+
+// 8. Comprehensive HTML Event Handlers Integrity Check
+console.log('Testing all HTML event handlers for undefined function references...');
+const handlerRegex = /on[a-z]+\s*=\s*['"]([^'"]+)['"]/gi;
+const calledFuncs = new Set();
+while ((match = handlerRegex.exec(html)) !== null) {
+  const code = match[1];
+  const fnMatches = code.matchAll(/(?:^|[^\w$.])([a-zA-Z0-9_$]+)\s*\(/g);
+  for (const fn of fnMatches) {
+    const fnName = fn[1];
+    if (!['alert', 'confirm', 'prompt', 'parseFloat', 'parseInt', 'Boolean', 'Number', 'String', 'encodeURIComponent', 'decodeURIComponent', 'event', 'stopPropagation', 'preventDefault'].includes(fnName)) {
+      calledFuncs.add(fnName);
+    }
+  }
+}
+
+const syncCombined = appJs + '\n' + syncEngineJs;
+const missingHtmlFuncs = [];
+for (const fn of calledFuncs) {
+  const isFound = new RegExp(
+    `\\bfunction\\s+${fn}\\b|` +
+    `\\basync\\s+function\\s+${fn}\\b|` +
+    `\\bconst\\s+${fn}\\b|` +
+    `\\blet\\s+${fn}\\b|` +
+    `\\bvar\\s+${fn}\\b|` +
+    `window\\.${fn}\\s*=|` +
+    `\\b${fn}\\s*:\\s*(?:function|async\\s+function|\\()`
+  ).test(syncCombined);
+
+  if (!isFound) {
+    missingHtmlFuncs.push(fn);
+  }
+}
+
+if (missingHtmlFuncs.length > 0) {
+  console.error('Found HTML event handlers referencing missing functions:', missingHtmlFuncs);
+  process.exit(1);
+}
+console.log(`All ${calledFuncs.size} HTML inline function calls successfully verified!`);
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.3)');
 console.log('======================================');
