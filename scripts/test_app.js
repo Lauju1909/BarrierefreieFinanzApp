@@ -541,6 +541,6 @@ if (missingHtmlFuncs.length > 0) {
 console.log(`All ${calledFuncs.size} HTML inline function calls successfully verified!`);
 
 console.log('\n======================================');
-console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.3)');
+console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.4)');
 console.log('======================================');
 

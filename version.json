@@ -1,8 +1,11 @@
 {
-  "version": "6.9.0",
+  "version": "6.9.4",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-10-03",
+  "buildDate": "2026-10-05",
   "features": [
+    "Wiederherstellung Buchungsanzeige in der Übersicht (Reiter 1): Alle Einnahmen-, Ausgaben- und Umbuchungs-Listen werden beim Ausklappen der Akkordeons wieder sofort, barrierefrei und vollständig angezeigt",
+    "Wiederherstellung Bank-Kontoauszug / CSV-Import: Die Import-Engine zum automatischen Einlesen von Bank-Umsätzen (.csv/.txt) mit Erkennung von Datum, Betrag und Kategorien wurde vollständig reaktiviert",
+    "Fehlerbehebung Einkaufsliste: Das Abbuchen getätigter Einkäufe direkt als Ausgabe ins Haushaltsbuch läuft nun ohne Unterbrechung fehlerfrei durch",
     "Asynchroner E2E-Postfach-Sync (Briefkasten-Synchronisation): Computer und Smartphone können ab sofort völlig unabhängig voneinander synchronisieren! Kein gleichzeitiges Einschalten oder gemeinsames WLAN mehr nötig. Finanzdaten werden versiegelt in einem verschlüsselten E2E-Postfach hinterlegt und beim nächsten Start automatisch abgerufen",
     "Wiederherstellung Wunschliste & Sparziele (Reiter 7): Alle Wunschlisten-Funktionen (renderWishlist, Sparziel-Verknüpfung, Einmalkauf- und Abo-Erfüllung) wurden wiederhergestellt. Alle bisher im verschlüsselten Tresor gespeicherten Wünsche werden nun wieder sofort und vollständig angezeigt",
     "Fehlerbehebung PIN-Entsperrung: Beseitigt Fehlalarme beim Entsperren mit korrekter PIN. Krypto-Entschlüsselung und Benutzeroberfläche sind nun strikt getrennt, sodass Darstellungsfehler niemals als PIN-Fehlversuch gewertet werden",

@@ -1,6 +1,22 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ Version 6.9.4 (Übersicht-Listen, Bank-CSV-Import & Einkaufslisten-Buchung repariert)
+*Datum: 05. Oktober 2026*
+
+### 📊 1. Wiederherstellung Buchungsanzeige in der Übersicht (Reiter 1)
+- **Fehlerfreies Ausklappen:** Behebt das Problem, dass beim Klick auf „Alle Einnahmen / Ausgaben / Umbuchungen ausklappen“ keine Buchungen gerendert wurden.
+- **Wiederherstellung Filter- & Sortier-Engine:** `applyTxFilters`, `applyTxSorting`, `currentTxFilter`, `currentTxSortOrder`, `handleTxSearchFilterChange` und `handleTxSortChange` wurden vollständig wiederhergestellt.
+- **Intelligente Suche:** Text-, Betrags- und Kontofilter sowie Sortierungen nach Datum, Betrag und Alphabet greifen wieder direkt.
+
+### 🏦 2. Bank-Kontoauszug / CSV-Import reaktiviert
+- **Vollständige Import-Engine:** Das Einlesen von Bank-Umsätzen (.csv/.txt) über die Einstellungen (Reiter 5) inklusive automatischer Erkennung von Datum, Betrag, Empfänger und Kategorie sowie interaktivem Vorschau-Dialog wurde wiederhergestellt.
+
+### 🛒 3. Korrektur Einkaufslisten-Buchung
+- **Fehlerfreies Abbuchen:** Beim Abbuchen eines Einkaufs als Ausgabe aus Reiter 8 wird die Buchung nun ohne Skriptabbruch vollständig im Tresor gespeichert und das Konto korrekt benannt.
+
+---
+
 ## ⚡ Version 6.9.0 (Asynchroner E2E-Postfach-Sync / Briefkasten-Synchronisation)
 *Datum: 03. Oktober 2026*
 
