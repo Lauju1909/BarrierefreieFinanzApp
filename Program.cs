@@ -505,10 +505,20 @@ namespace HaushaltsbuchApp
 
                         string relPath = url.TrimStart('/').Split('?')[0];
                         string filePath = Path.Combine(_activeStorageDir, relPath);
-                        if (!string.IsNullOrEmpty(relPath) && File.Exists(filePath) && !string.Equals(filePath, _vaultPath, StringComparison.OrdinalIgnoreCase))
+                        string fullPath = Path.GetFullPath(filePath);
+                        string storageRoot = Path.GetFullPath(_activeStorageDir);
+                        if (!storageRoot.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                            storageRoot += Path.DirectorySeparatorChar;
+
+                        bool isUnderStorage = fullPath.StartsWith(storageRoot, StringComparison.OrdinalIgnoreCase);
+                        bool isSensitiveVault = fullPath.EndsWith(".vault", StringComparison.OrdinalIgnoreCase) || 
+                                               fullPath.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
+                                               fullPath.IndexOf("Tresor_Sicherheitskopien", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                        if (!string.IsNullOrEmpty(relPath) && isUnderStorage && !isSensitiveVault && File.Exists(fullPath))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            string ext = Path.GetExtension(filePath).ToLowerInvariant();
+                            string ext = Path.GetExtension(fullPath).ToLowerInvariant();
                             string mime = "application/octet-stream";
                             if (ext == ".js") mime = "application/javascript";
                             else if (ext == ".css") mime = "text/css";
@@ -517,7 +527,7 @@ namespace HaushaltsbuchApp
                             else if (ext == ".png") mime = "image/png";
                             else if (ext == ".svg") mime = "image/svg+xml";
 
-                            byte[] fileBytes = File.ReadAllBytes(filePath);
+                            byte[] fileBytes = File.ReadAllBytes(fullPath);
                             SendHttpResponse(stream, 200, mime, fileBytes);
                             return;
                         }
