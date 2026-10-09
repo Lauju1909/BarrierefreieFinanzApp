@@ -5297,6 +5297,24 @@ function toggleExpenseSplitPayment() {
   }
 }
 
+function toggleExpenseLoanFields() {
+  const toggle = document.getElementById('exp-loan-toggle');
+  const sec = document.getElementById('exp-loan-section');
+  const isLoan = toggle && toggle.checked;
+  if (sec) sec.style.display = isLoan ? 'block' : 'none';
+  if (isLoan) {
+    const personInput = document.getElementById('exp-loan-person');
+    if (personInput) personInput.focus();
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details für verliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details ausgeblendet.');
+    }
+  }
+}
+
 function initExpenseSplitRows() {
   ensureAccountsInitialized();
   const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
@@ -5446,6 +5464,24 @@ async function handleAddExpense(e) {
   const splitToggle = document.getElementById('exp-split-toggle');
   const isSplit = splitToggle && splitToggle.checked;
   let splitRowsValid = [];
+
+  // Leihgabe prüfen (Geld an jemanden verliehen)
+  const expLoanToggle = document.getElementById('exp-loan-toggle');
+  const isExpLoan = expLoanToggle && expLoanToggle.checked;
+  let expLoanPerson = '';
+  let expLoanDueDate = '';
+  let expLoanNote = '';
+  if (isExpLoan) {
+    expLoanPerson = document.getElementById('exp-loan-person')?.value.trim() || '';
+    if (!expLoanPerson) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Bitte gib den Namen der Person ein, an die du das Geld verliehen hast.', true);
+      alert('⚠️ Bitte gib den Namen der Person ein, an die du das Geld verliehen hast.');
+      document.getElementById('exp-loan-person')?.focus();
+      return;
+    }
+    expLoanDueDate = document.getElementById('exp-loan-due-date')?.value || '';
+    expLoanNote = document.getElementById('exp-loan-note')?.value.trim() || '';
+  }
 
   if (isSplit) {
     splitRowsValid = expenseSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
@@ -5782,7 +5818,53 @@ async function handleAddExpense(e) {
       }
       appState.transactions.push(newTx);
       announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}!`);
+
+      if (isExpLoan) {
+        ensurePeerLoansInitialized();
+        appState.peerLoans.push({
+          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: 'lent',
+          person: expLoanPerson,
+          amount: amount,
+          paidAmount: 0,
+          date: date,
+          dueDate: expLoanDueDate,
+          account: account,
+          autoBooked: true,
+          txId: newTx.id,
+          note: expLoanNote || desc,
+          settled: false,
+          settledDate: null,
+          repayments: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+      }
     }
+  }
+
+  if (isExpLoan && isSplit) {
+    ensurePeerLoansInitialized();
+    appState.peerLoans.push({
+      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      type: 'lent',
+      person: expLoanPerson,
+      amount: amount,
+      paidAmount: 0,
+      date: date,
+      dueDate: expLoanDueDate,
+      account: splitRowsValid[0]?.account || account,
+      autoBooked: true,
+      txId: splitRowsValid[0]?.id || null,
+      note: expLoanNote || desc,
+      settled: false,
+      settledDate: null,
+      repayments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -5792,6 +5874,11 @@ async function handleAddExpense(e) {
   if (splitToggleReset && splitToggleReset.checked) {
     splitToggleReset.checked = false;
     toggleExpenseSplitPayment();
+  }
+  const expLoanReset = document.getElementById('exp-loan-toggle');
+  if (expLoanReset && expLoanReset.checked) {
+    expLoanReset.checked = false;
+    toggleExpenseLoanFields();
   }
   const trialReset = document.getElementById('exp-rec-trial-toggle');
   if (trialReset && trialReset.checked) {
@@ -5852,6 +5939,24 @@ function toggleIncomeSplitPayment() {
   } else {
     if (typeof announceNVDA === 'function') {
       announceNVDA('Split-Einzahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
+    }
+  }
+}
+
+function toggleIncomeLoanFields() {
+  const toggle = document.getElementById('inc-loan-toggle');
+  const sec = document.getElementById('inc-loan-section');
+  const isLoan = toggle && toggle.checked;
+  if (sec) sec.style.display = isLoan ? 'block' : 'none';
+  if (isLoan) {
+    const personInput = document.getElementById('inc-loan-person');
+    if (personInput) personInput.focus();
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details für geliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details ausgeblendet.');
     }
   }
 }
@@ -6006,6 +6111,24 @@ async function handleAddIncome(e) {
   const isSplit = splitToggle && splitToggle.checked;
   let splitRowsValid = [];
 
+  // Leihgabe prüfen (Geld von jemandem geliehen)
+  const incLoanToggle = document.getElementById('inc-loan-toggle');
+  const isIncLoan = incLoanToggle && incLoanToggle.checked;
+  let incLoanPerson = '';
+  let incLoanDueDate = '';
+  let incLoanNote = '';
+  if (isIncLoan) {
+    incLoanPerson = document.getElementById('inc-loan-person')?.value.trim() || '';
+    if (!incLoanPerson) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Bitte gib den Namen der Person ein, von der du dir das Geld geliehen hast.', true);
+      alert('⚠️ Bitte gib den Namen der Person ein, von der du dir das Geld geliehen hast.');
+      document.getElementById('inc-loan-person')?.focus();
+      return;
+    }
+    incLoanDueDate = document.getElementById('inc-loan-due-date')?.value || '';
+    incLoanNote = document.getElementById('inc-loan-note')?.value.trim() || '';
+  }
+
   if (isSplit) {
     splitRowsValid = incomeSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
     if (splitRowsValid.length < 2) {
@@ -6129,7 +6252,53 @@ async function handleAddIncome(e) {
       }
       appState.transactions.push(newTx);
       announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+
+      if (isIncLoan) {
+        ensurePeerLoansInitialized();
+        appState.peerLoans.push({
+          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: 'borrowed',
+          person: incLoanPerson,
+          amount: amount,
+          paidAmount: 0,
+          date: date,
+          dueDate: incLoanDueDate,
+          account: account,
+          autoBooked: true,
+          txId: newTx.id,
+          note: incLoanNote || desc,
+          settled: false,
+          settledDate: null,
+          repayments: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+      }
     }
+  }
+
+  if (isIncLoan && isSplit) {
+    ensurePeerLoansInitialized();
+    appState.peerLoans.push({
+      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      type: 'borrowed',
+      person: incLoanPerson,
+      amount: amount,
+      paidAmount: 0,
+      date: date,
+      dueDate: incLoanDueDate,
+      account: splitRowsValid[0]?.account || account,
+      autoBooked: true,
+      txId: splitRowsValid[0]?.id || null,
+      note: incLoanNote || desc,
+      settled: false,
+      settledDate: null,
+      repayments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -6139,6 +6308,11 @@ async function handleAddIncome(e) {
   if (splitToggleReset && splitToggleReset.checked) {
     splitToggleReset.checked = false;
     toggleIncomeSplitPayment();
+  }
+  const incLoanReset = document.getElementById('inc-loan-toggle');
+  if (incLoanReset && incLoanReset.checked) {
+    incLoanReset.checked = false;
+    toggleIncomeLoanFields();
   }
   currentIncomeReceipt = null;
   renderReceiptPreview('inc');
@@ -10282,6 +10456,8 @@ window.deletePeerLoanRepayment = deletePeerLoanRepayment;
 window.reopenPeerLoan = reopenPeerLoan;
 window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
+window.toggleExpenseLoanFields = toggleExpenseLoanFields;
+window.toggleIncomeLoanFields = toggleIncomeLoanFields;
 
 
 function handleTransferAccountsChange() {

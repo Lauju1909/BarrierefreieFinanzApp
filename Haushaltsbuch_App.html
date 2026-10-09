@@ -3355,6 +3355,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
+<!-- OPTIONALE LEIHGABE: GELD AN JEMANDEN VERLIEHEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-loan-toggle" onchange="toggleExpenseLoanFields()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="exp-loan-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: #6A1B9A;">
+      🤝 Geld an jemanden verliehen (als Leihgabe / Forderung erfassen)
+    </label>
+  </div>
+</div>
+
+<div id="exp-loan-section" class="settings-box" style="display: none; border-left: 8px solid #8E24AA; background: rgba(142, 36, 170, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #6A1B9A;">🤝 Leihgabe-Details erfassen</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Das Geld wird als Ausgabe verbucht und gleichzeitig in deiner Leihgaben-Übersicht als offene Forderung festgehalten:</p>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="exp-loan-person" class="field-label"><strong>An wen verliehen? (Name der Person):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="exp-loan-person" class="large-input" placeholder="z. B. Peter, Kollege, Bruder">
+    </div>
+    <div class="form-group">
+      <label for="exp-loan-due-date" class="field-label"><strong>Rückzahlung fällig bis (optional):</strong></label>
+      <input type="date" id="exp-loan-due-date" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom: 0;">
+    <label for="exp-loan-note" class="field-label"><strong>Notiz zur Leihgabe (optional):</strong></label>
+    <input type="text" id="exp-loan-note" class="large-input" placeholder="z. B. Essen ausgelegt, Konzertkarten...">
+  </div>
+</div>
+
 <div class="form-group">
 <label for="exp-cat-search" class="field-label">
 <span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>
@@ -3732,6 +3762,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <div id="inc-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #A5D6A7; color: #1B5E20;">
       Aufgeteilt: 0,00 € von 0,00 €
     </div>
+  </div>
+</div>
+
+<!-- OPTIONALE LEIHGABE: GELD VON JEMANDEM GELIEHEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="inc-loan-toggle" onchange="toggleIncomeLoanFields()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="inc-loan-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: #6A1B9A;">
+      🤝 Geld von jemandem geliehen (als Leihgabe / Schuld erfassen)
+    </label>
+  </div>
+</div>
+
+<div id="inc-loan-section" class="settings-box" style="display: none; border-left: 8px solid #8E24AA; background: rgba(142, 36, 170, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #6A1B9A;">🤝 Leihgabe-Details erfassen</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Das Geld wird als Einnahme verbucht und gleichzeitig in deiner Leihgaben-Übersicht als offene Schuld festgehalten:</p>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="inc-loan-person" class="field-label"><strong>Von wem geliehen? (Name der Person):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="inc-loan-person" class="large-input" placeholder="z. B. Markus, Mama, Anna">
+    </div>
+    <div class="form-group">
+      <label for="inc-loan-due-date" class="field-label"><strong>Rückzahlung fällig bis (optional):</strong></label>
+      <input type="date" id="inc-loan-due-date" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom: 0;">
+    <label for="inc-loan-note" class="field-label"><strong>Notiz zur Leihgabe (optional):</strong></label>
+    <input type="text" id="inc-loan-note" class="large-input" placeholder="z. B. Urlaubsvorschuss, Überbrückung...">
   </div>
 </div>
 
@@ -11381,6 +11441,24 @@ function toggleExpenseSplitPayment() {
   }
 }
 
+function toggleExpenseLoanFields() {
+  const toggle = document.getElementById('exp-loan-toggle');
+  const sec = document.getElementById('exp-loan-section');
+  const isLoan = toggle && toggle.checked;
+  if (sec) sec.style.display = isLoan ? 'block' : 'none';
+  if (isLoan) {
+    const personInput = document.getElementById('exp-loan-person');
+    if (personInput) personInput.focus();
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details für verliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details ausgeblendet.');
+    }
+  }
+}
+
 function initExpenseSplitRows() {
   ensureAccountsInitialized();
   const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
@@ -11530,6 +11608,24 @@ async function handleAddExpense(e) {
   const splitToggle = document.getElementById('exp-split-toggle');
   const isSplit = splitToggle && splitToggle.checked;
   let splitRowsValid = [];
+
+  // Leihgabe prüfen (Geld an jemanden verliehen)
+  const expLoanToggle = document.getElementById('exp-loan-toggle');
+  const isExpLoan = expLoanToggle && expLoanToggle.checked;
+  let expLoanPerson = '';
+  let expLoanDueDate = '';
+  let expLoanNote = '';
+  if (isExpLoan) {
+    expLoanPerson = document.getElementById('exp-loan-person')?.value.trim() || '';
+    if (!expLoanPerson) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Bitte gib den Namen der Person ein, an die du das Geld verliehen hast.', true);
+      alert('⚠️ Bitte gib den Namen der Person ein, an die du das Geld verliehen hast.');
+      document.getElementById('exp-loan-person')?.focus();
+      return;
+    }
+    expLoanDueDate = document.getElementById('exp-loan-due-date')?.value || '';
+    expLoanNote = document.getElementById('exp-loan-note')?.value.trim() || '';
+  }
 
   if (isSplit) {
     splitRowsValid = expenseSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
@@ -11866,7 +11962,53 @@ async function handleAddExpense(e) {
       }
       appState.transactions.push(newTx);
       announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}!`);
+
+      if (isExpLoan) {
+        ensurePeerLoansInitialized();
+        appState.peerLoans.push({
+          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: 'lent',
+          person: expLoanPerson,
+          amount: amount,
+          paidAmount: 0,
+          date: date,
+          dueDate: expLoanDueDate,
+          account: account,
+          autoBooked: true,
+          txId: newTx.id,
+          note: expLoanNote || desc,
+          settled: false,
+          settledDate: null,
+          repayments: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+      }
     }
+  }
+
+  if (isExpLoan && isSplit) {
+    ensurePeerLoansInitialized();
+    appState.peerLoans.push({
+      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      type: 'lent',
+      person: expLoanPerson,
+      amount: amount,
+      paidAmount: 0,
+      date: date,
+      dueDate: expLoanDueDate,
+      account: splitRowsValid[0]?.account || account,
+      autoBooked: true,
+      txId: splitRowsValid[0]?.id || null,
+      note: expLoanNote || desc,
+      settled: false,
+      settledDate: null,
+      repayments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -11876,6 +12018,11 @@ async function handleAddExpense(e) {
   if (splitToggleReset && splitToggleReset.checked) {
     splitToggleReset.checked = false;
     toggleExpenseSplitPayment();
+  }
+  const expLoanReset = document.getElementById('exp-loan-toggle');
+  if (expLoanReset && expLoanReset.checked) {
+    expLoanReset.checked = false;
+    toggleExpenseLoanFields();
   }
   const trialReset = document.getElementById('exp-rec-trial-toggle');
   if (trialReset && trialReset.checked) {
@@ -11936,6 +12083,24 @@ function toggleIncomeSplitPayment() {
   } else {
     if (typeof announceNVDA === 'function') {
       announceNVDA('Split-Einzahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
+    }
+  }
+}
+
+function toggleIncomeLoanFields() {
+  const toggle = document.getElementById('inc-loan-toggle');
+  const sec = document.getElementById('inc-loan-section');
+  const isLoan = toggle && toggle.checked;
+  if (sec) sec.style.display = isLoan ? 'block' : 'none';
+  if (isLoan) {
+    const personInput = document.getElementById('inc-loan-person');
+    if (personInput) personInput.focus();
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details für geliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details ausgeblendet.');
     }
   }
 }
@@ -12090,6 +12255,24 @@ async function handleAddIncome(e) {
   const isSplit = splitToggle && splitToggle.checked;
   let splitRowsValid = [];
 
+  // Leihgabe prüfen (Geld von jemandem geliehen)
+  const incLoanToggle = document.getElementById('inc-loan-toggle');
+  const isIncLoan = incLoanToggle && incLoanToggle.checked;
+  let incLoanPerson = '';
+  let incLoanDueDate = '';
+  let incLoanNote = '';
+  if (isIncLoan) {
+    incLoanPerson = document.getElementById('inc-loan-person')?.value.trim() || '';
+    if (!incLoanPerson) {
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Bitte gib den Namen der Person ein, von der du dir das Geld geliehen hast.', true);
+      alert('⚠️ Bitte gib den Namen der Person ein, von der du dir das Geld geliehen hast.');
+      document.getElementById('inc-loan-person')?.focus();
+      return;
+    }
+    incLoanDueDate = document.getElementById('inc-loan-due-date')?.value || '';
+    incLoanNote = document.getElementById('inc-loan-note')?.value.trim() || '';
+  }
+
   if (isSplit) {
     splitRowsValid = incomeSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
     if (splitRowsValid.length < 2) {
@@ -12213,7 +12396,53 @@ async function handleAddIncome(e) {
       }
       appState.transactions.push(newTx);
       announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}!`);
+
+      if (isIncLoan) {
+        ensurePeerLoansInitialized();
+        appState.peerLoans.push({
+          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          type: 'borrowed',
+          person: incLoanPerson,
+          amount: amount,
+          paidAmount: 0,
+          date: date,
+          dueDate: incLoanDueDate,
+          account: account,
+          autoBooked: true,
+          txId: newTx.id,
+          note: incLoanNote || desc,
+          settled: false,
+          settledDate: null,
+          repayments: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+      }
     }
+  }
+
+  if (isIncLoan && isSplit) {
+    ensurePeerLoansInitialized();
+    appState.peerLoans.push({
+      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      type: 'borrowed',
+      person: incLoanPerson,
+      amount: amount,
+      paidAmount: 0,
+      date: date,
+      dueDate: incLoanDueDate,
+      account: splitRowsValid[0]?.account || account,
+      autoBooked: true,
+      txId: splitRowsValid[0]?.id || null,
+      note: incLoanNote || desc,
+      settled: false,
+      settledDate: null,
+      repayments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
+    announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
 
   await saveStateToEncryptedStorage();
@@ -12223,6 +12452,11 @@ async function handleAddIncome(e) {
   if (splitToggleReset && splitToggleReset.checked) {
     splitToggleReset.checked = false;
     toggleIncomeSplitPayment();
+  }
+  const incLoanReset = document.getElementById('inc-loan-toggle');
+  if (incLoanReset && incLoanReset.checked) {
+    incLoanReset.checked = false;
+    toggleIncomeLoanFields();
   }
   currentIncomeReceipt = null;
   renderReceiptPreview('inc');
@@ -16366,6 +16600,8 @@ window.deletePeerLoanRepayment = deletePeerLoanRepayment;
 window.reopenPeerLoan = reopenPeerLoan;
 window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
+window.toggleExpenseLoanFields = toggleExpenseLoanFields;
+window.toggleIncomeLoanFields = toggleIncomeLoanFields;
 
 
 function handleTransferAccountsChange() {

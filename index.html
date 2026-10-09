@@ -2465,6 +2465,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
+<!-- OPTIONALE LEIHGABE: GELD AN JEMANDEN VERLIEHEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="exp-loan-toggle" onchange="toggleExpenseLoanFields()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="exp-loan-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: #6A1B9A;">
+      🤝 Geld an jemanden verliehen (als Leihgabe / Forderung erfassen)
+    </label>
+  </div>
+</div>
+
+<div id="exp-loan-section" class="settings-box" style="display: none; border-left: 8px solid #8E24AA; background: rgba(142, 36, 170, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #6A1B9A;">🤝 Leihgabe-Details erfassen</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Das Geld wird als Ausgabe verbucht und gleichzeitig in deiner Leihgaben-Übersicht als offene Forderung festgehalten:</p>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="exp-loan-person" class="field-label"><strong>An wen verliehen? (Name der Person):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="exp-loan-person" class="large-input" placeholder="z. B. Peter, Kollege, Bruder">
+    </div>
+    <div class="form-group">
+      <label for="exp-loan-due-date" class="field-label"><strong>Rückzahlung fällig bis (optional):</strong></label>
+      <input type="date" id="exp-loan-due-date" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom: 0;">
+    <label for="exp-loan-note" class="field-label"><strong>Notiz zur Leihgabe (optional):</strong></label>
+    <input type="text" id="exp-loan-note" class="large-input" placeholder="z. B. Essen ausgelegt, Konzertkarten...">
+  </div>
+</div>
+
 <div class="form-group">
 <label for="exp-cat-search" class="field-label">
 <span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>
@@ -2842,6 +2872,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <div id="inc-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #A5D6A7; color: #1B5E20;">
       Aufgeteilt: 0,00 € von 0,00 €
     </div>
+  </div>
+</div>
+
+<!-- OPTIONALE LEIHGABE: GELD VON JEMANDEM GELIEHEN -->
+<div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px;">
+    <input type="checkbox" id="inc-loan-toggle" onchange="toggleIncomeLoanFields()" style="width: 22px; height: 22px; cursor: pointer;">
+    <label for="inc-loan-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: #6A1B9A;">
+      🤝 Geld von jemandem geliehen (als Leihgabe / Schuld erfassen)
+    </label>
+  </div>
+</div>
+
+<div id="inc-loan-section" class="settings-box" style="display: none; border-left: 8px solid #8E24AA; background: rgba(142, 36, 170, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #6A1B9A;">🤝 Leihgabe-Details erfassen</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Das Geld wird als Einnahme verbucht und gleichzeitig in deiner Leihgaben-Übersicht als offene Schuld festgehalten:</p>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="inc-loan-person" class="field-label"><strong>Von wem geliehen? (Name der Person):</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="inc-loan-person" class="large-input" placeholder="z. B. Markus, Mama, Anna">
+    </div>
+    <div class="form-group">
+      <label for="inc-loan-due-date" class="field-label"><strong>Rückzahlung fällig bis (optional):</strong></label>
+      <input type="date" id="inc-loan-due-date" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom: 0;">
+    <label for="inc-loan-note" class="field-label"><strong>Notiz zur Leihgabe (optional):</strong></label>
+    <input type="text" id="inc-loan-note" class="large-input" placeholder="z. B. Urlaubsvorschuss, Überbrückung...">
   </div>
 </div>
 
