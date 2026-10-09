@@ -5745,8 +5745,9 @@ async function handleAddExpense(e) {
       announceNVDA(`Dauerhafte Ausgabe ${category} über ${formatCurrency(amount)} gespeichert!`);
     }
   } else {
+    let expenseSplitId = null;
     if (isSplit) {
-      const splitId = `split_${Date.now()}`;
+      expenseSplitId = `split_${Date.now()}`;
       splitRowsValid.forEach((row, idx) => {
         const rowAmt = parseFloat(row.amount);
         const accName = formatAccountName(row.account);
@@ -5755,7 +5756,7 @@ async function handleAddExpense(e) {
 
         const splitTx = {
           id: `tx_${Date.now()}_${idx}`,
-          splitId: splitId,
+          splitId: expenseSplitId,
           splitIndex: idx + 1,
           splitTotalCount: splitRowsValid.length,
           splitTotalAmount: amount,
@@ -5821,8 +5822,10 @@ async function handleAddExpense(e) {
 
       if (isExpLoan) {
         ensurePeerLoansInitialized();
+        const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        newTx.peerLoanId = loanId;
         appState.peerLoans.push({
-          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          id: loanId,
           type: 'lent',
           person: expLoanPerson,
           amount: amount,
@@ -5846,8 +5849,9 @@ async function handleAddExpense(e) {
 
   if (isExpLoan && isSplit) {
     ensurePeerLoansInitialized();
+    const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     appState.peerLoans.push({
-      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      id: loanId,
       type: 'lent',
       person: expLoanPerson,
       amount: amount,
@@ -5856,13 +5860,17 @@ async function handleAddExpense(e) {
       dueDate: expLoanDueDate,
       account: splitRowsValid[0]?.account || account,
       autoBooked: true,
-      txId: splitRowsValid[0]?.id || null,
+      txId: expenseSplitId,
       note: expLoanNote || desc,
       settled: false,
       settledDate: null,
       repayments: [],
       createdAt: Date.now(),
       updatedAt: Date.now()
+    });
+    // Set peerLoanId on all split transactions
+    appState.transactions.forEach(t => {
+      if (t.splitId === expenseSplitId) t.peerLoanId = loanId;
     });
     announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
@@ -6206,8 +6214,9 @@ async function handleAddIncome(e) {
       announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} gespeichert!`);
     }
   } else {
+    let incomeSplitId = null;
     if (isSplit) {
-      const splitId = `split_inc_${Date.now()}`;
+      incomeSplitId = `split_inc_${Date.now()}`;
       splitRowsValid.forEach((row, idx) => {
         const rowAmt = parseFloat(row.amount);
         const accName = formatAccountName(row.account);
@@ -6216,7 +6225,7 @@ async function handleAddIncome(e) {
 
         const splitTx = {
           id: `tx_${Date.now()}_${idx}`,
-          splitId: splitId,
+          splitId: incomeSplitId,
           splitIndex: idx + 1,
           splitTotalCount: splitRowsValid.length,
           splitTotalAmount: amount,
@@ -6255,8 +6264,10 @@ async function handleAddIncome(e) {
 
       if (isIncLoan) {
         ensurePeerLoansInitialized();
+        const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        newTx.peerLoanId = loanId;
         appState.peerLoans.push({
-          id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+          id: loanId,
           type: 'borrowed',
           person: incLoanPerson,
           amount: amount,
@@ -6280,8 +6291,9 @@ async function handleAddIncome(e) {
 
   if (isIncLoan && isSplit) {
     ensurePeerLoansInitialized();
+    const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     appState.peerLoans.push({
-      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      id: loanId,
       type: 'borrowed',
       person: incLoanPerson,
       amount: amount,
@@ -6290,13 +6302,17 @@ async function handleAddIncome(e) {
       dueDate: incLoanDueDate,
       account: splitRowsValid[0]?.account || account,
       autoBooked: true,
-      txId: splitRowsValid[0]?.id || null,
+      txId: incomeSplitId,
       note: incLoanNote || desc,
       settled: false,
       settledDate: null,
       repayments: [],
       createdAt: Date.now(),
       updatedAt: Date.now()
+    });
+    // Set peerLoanId on all split transactions
+    appState.transactions.forEach(t => {
+      if (t.splitId === incomeSplitId) t.peerLoanId = loanId;
     });
     announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
   }
@@ -6779,7 +6795,30 @@ function openEditModal(txId) {
 
   // Prüfen, ob eine verknüpfte Leihgabe existiert
   ensurePeerLoansInitialized();
-  const linkedLoan = (appState.peerLoans || []).find(l => l.txId === tx.id || (tx.splitId && l.txId === tx.splitId));
+  const linkedLoan = (appState.peerLoans || []).find(l => {
+    if (l.txId && (l.txId === tx.id || (tx.splitId && l.txId === tx.splitId))) return true;
+    if (tx.peerLoanId && l.id === tx.peerLoanId) return true;
+    if (Math.abs(Number(l.amount) - Number(tx.amount)) < 0.01 && l.person && tx.description && tx.description.toLowerCase().includes(l.person.toLowerCase())) return true;
+    return false;
+  });
+
+  let detectedPerson = '';
+  let detectedNote = '';
+  if (!linkedLoan && tx.type !== 'transfer') {
+    const isLentText = (tx.description || '').startsWith('Verliehen an ');
+    const isBorrowedText = (tx.description || '').startsWith('Geliehen von ');
+    if (isLentText || isBorrowedText) {
+      const fullText = tx.description.substring(14).trim();
+      const match = fullText.match(/^([^(]+)(?:\((.*)\))?$/);
+      if (match) {
+        detectedPerson = match[1].trim();
+        detectedNote = match[2] ? match[2].trim() : '';
+      } else {
+        detectedPerson = fullText;
+      }
+    }
+  }
+
   const loanToggle = document.getElementById('edit-tx-loan-toggle');
   const loanSec = document.getElementById('edit-tx-loan-section');
   const loanPersonInput = document.getElementById('edit-tx-loan-person');
@@ -6792,6 +6831,12 @@ function openEditModal(txId) {
     if (loanPersonInput) loanPersonInput.value = linkedLoan.person || '';
     if (loanDueDateInput) loanDueDateInput.value = linkedLoan.dueDate || '';
     if (loanNoteInput) loanNoteInput.value = linkedLoan.note || '';
+  } else if (detectedPerson && tx.type !== 'transfer') {
+    if (loanToggle) loanToggle.checked = true;
+    if (loanSec) loanSec.style.display = 'block';
+    if (loanPersonInput) loanPersonInput.value = detectedPerson;
+    if (loanDueDateInput) loanDueDateInput.value = '';
+    if (loanNoteInput) loanNoteInput.value = detectedNote;
   } else {
     if (loanToggle) loanToggle.checked = false;
     if (loanSec) loanSec.style.display = 'none';
@@ -6831,17 +6876,38 @@ async function saveEditedTransaction(e) {
   const tx = appState.transactions.find(t => t.id === id);
   if (!tx) return;
 
+  const originalSplitId = tx.splitId;
+  const originalPeerLoanId = tx.peerLoanId;
+
   const type = document.getElementById('edit-tx-type').value;
   const date = document.getElementById('edit-tx-date').value;
   const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
-  const totalAmount = parseFloat(document.getElementById('edit-tx-amount').value);
+  const rawAmt = document.getElementById('edit-tx-amount').value || '0';
+  const totalAmount = parseFloat(rawAmt.toString().replace(',', '.')) || 0;
   const plannedVal = document.getElementById('edit-tx-planned').value;
   const isPlanned = (plannedVal === 'true') || isFuture;
   const desc = document.getElementById('edit-tx-desc').value.trim();
 
   const isSplitToggle = document.getElementById('edit-tx-split-toggle')?.checked && type !== 'transfer';
+  const isLoanToggle = document.getElementById('edit-tx-loan-toggle')?.checked && type !== 'transfer';
 
+  // Frühzeitige Validierung der Leihgabe vor allen Änderungen
+  let loanPerson = '';
+  let loanDueDate = '';
+  let loanNote = '';
+  if (isLoanToggle) {
+    loanPerson = document.getElementById('edit-tx-loan-person')?.value.trim();
+    if (!loanPerson) {
+      alert('Bitte gib den Namen der Person für die Leihgabe ein.');
+      document.getElementById('edit-tx-loan-person')?.focus();
+      return;
+    }
+    loanDueDate = document.getElementById('edit-tx-loan-due-date')?.value || '';
+    loanNote = document.getElementById('edit-tx-loan-note')?.value.trim() || '';
+  }
+
+  let newSplitId = null;
   if (isSplitToggle) {
     const validRows = editSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
     if (validRows.length < 2) {
@@ -6868,7 +6934,7 @@ async function saveEditedTransaction(e) {
     }
 
     // Neue Split-Buchungen anlegen
-    const newSplitId = oldSplitId || (`split_${Date.now()}`);
+    newSplitId = oldSplitId || (`split_${Date.now()}`);
     validRows.forEach((row, idx) => {
       const rowAmt = parseFloat(row.amount);
       const accName = formatAccountName(row.account);
@@ -6939,21 +7005,19 @@ async function saveEditedTransaction(e) {
   }
 
   // Leihgabe-Synchronisation beim Bearbeiten der Buchung
-  const isLoanToggle = document.getElementById('edit-tx-loan-toggle')?.checked && type !== 'transfer';
   ensurePeerLoansInitialized();
-  const linkedLoan = (appState.peerLoans || []).find(l => l.txId === id || (tx.splitId && l.txId === tx.splitId));
+  const linkedLoan = (appState.peerLoans || []).find(l => {
+    if (l.txId && (l.txId === id || (originalSplitId && l.txId === originalSplitId))) return true;
+    if (originalPeerLoanId && l.id === originalPeerLoanId) return true;
+    if (Math.abs(Number(l.amount) - Number(totalAmount)) < 0.01 && l.person && (desc && desc.toLowerCase().includes(l.person.toLowerCase()))) return true;
+    return false;
+  });
+
+  const targetTxId = isSplitToggle ? newSplitId : id;
 
   if (isLoanToggle) {
-    const loanPerson = document.getElementById('edit-tx-loan-person')?.value.trim();
-    if (!loanPerson) {
-      alert('Bitte gib den Namen der Person für die Leihgabe ein.');
-      document.getElementById('edit-tx-loan-person')?.focus();
-      return;
-    }
-    const loanDueDate = document.getElementById('edit-tx-loan-due-date')?.value || '';
-    const loanNote = document.getElementById('edit-tx-loan-note')?.value.trim() || '';
     const loanType = (type === 'income') ? 'borrowed' : 'lent';
-    const loanAcc = tx.account || (isSplitToggle ? editSplitRows[0]?.account : 'bank');
+    const loanAcc = tx?.account || (isSplitToggle ? editSplitRows[0]?.account : 'bank');
 
     if (linkedLoan) {
       linkedLoan.person = loanPerson;
@@ -6961,8 +7025,9 @@ async function saveEditedTransaction(e) {
       linkedLoan.amount = totalAmount;
       linkedLoan.date = date;
       linkedLoan.dueDate = loanDueDate;
-      linkedLoan.account = loanAcc;
+      linkedLoan.account = loanAcc || linkedLoan.account;
       linkedLoan.note = loanNote;
+      linkedLoan.txId = targetTxId;
       linkedLoan.updatedAt = Date.now();
       if (Number(linkedLoan.paidAmount || 0) >= totalAmount) {
         linkedLoan.settled = true;
@@ -6970,18 +7035,25 @@ async function saveEditedTransaction(e) {
         linkedLoan.settled = false;
         linkedLoan.settledDate = null;
       }
+      if (tx) tx.peerLoanId = linkedLoan.id;
+      if (isSplitToggle && newSplitId) {
+        appState.transactions.forEach(t => {
+          if (t.splitId === newSplitId) t.peerLoanId = linkedLoan.id;
+        });
+      }
     } else {
+      const newLoanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       appState.peerLoans.push({
-        id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        id: newLoanId,
         type: loanType,
         person: loanPerson,
         amount: totalAmount,
         paidAmount: 0,
         date: date,
         dueDate: loanDueDate,
-        account: loanAcc,
+        account: loanAcc || 'bank',
         autoBooked: true,
-        txId: isSplitToggle ? (tx.splitId || id) : id,
+        txId: targetTxId,
         note: loanNote || desc,
         settled: false,
         settledDate: null,
@@ -6989,10 +7061,22 @@ async function saveEditedTransaction(e) {
         createdAt: Date.now(),
         updatedAt: Date.now()
       });
+      if (tx) tx.peerLoanId = newLoanId;
+      if (isSplitToggle && newSplitId) {
+        appState.transactions.forEach(t => {
+          if (t.splitId === newSplitId) t.peerLoanId = newLoanId;
+        });
+      }
     }
   } else if (linkedLoan) {
     // Häkchen wurde entfernt: Leihgabe entfernen
     appState.peerLoans = appState.peerLoans.filter(l => l.id !== linkedLoan.id);
+    if (tx) delete tx.peerLoanId;
+    if (isSplitToggle && newSplitId) {
+      appState.transactions.forEach(t => {
+        if (t.splitId === newSplitId) delete t.peerLoanId;
+      });
+    }
   }
 
   currentEditReceipt = null;
