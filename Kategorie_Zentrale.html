@@ -153,6 +153,16 @@
       justify-content: space-between;
       align-items: center;
       font-weight: bold;
+      animation: fadeIn 0.3s ease;
+    }
+    .status-banner.error {
+      background: #FFEBEE;
+      color: #C62828;
+      border-color: #EF9A9A;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     .form-group {
       margin-bottom: 16px;
@@ -286,21 +296,21 @@
       <div>
         <h1>🏷️ Kategorie- &amp; Laden-Zentrale</h1>
         <p style="margin: 4px 0 0 0; color: var(--sub); font-size: 15px;">
-          Erstelle, bearbeite und synchronisiere Kategorien &amp; Geschäfte für alle Apps &amp; Handys ohne App-Update.
+          Automatische 1-Klick-Synchronisation zu GitHub: Änderungen werden sofort auf alle Handys &amp; Apps verteilt!
         </p>
       </div>
       <div class="header-actions">
+        <button type="button" class="btn btn-success" id="btn-publish-github-header" onclick="publishDirectlyToGitHub()" title="Veröffentlicht alle Änderungen sofort auf GitHub für alle Geräte">
+          🚀 <strong>1-Klick: Auf GitHub veröffentlichen</strong>
+        </button>
         <button type="button" class="btn btn-secondary" onclick="loadFromGitHub()" title="Neuesten Stand von GitHub abrufen">
-          📥 <strong>Von GitHub laden</strong>
+          📥 Von GitHub laden
         </button>
         <button type="button" class="btn btn-secondary" onclick="saveCategoriesLocally()" title="Lokal als categories.json speichern">
-          💾 <strong>Lokal speichern</strong>
+          💾 Lokal speichern
         </button>
-        <button type="button" class="btn btn-primary" onclick="copyCategoriesJSON()" title="JSON-Code kopieren">
-          📋 <strong>JSON kopieren</strong>
-        </button>
-        <button type="button" class="btn btn-success" onclick="openGitHubFileEditor()" title="Direkt im GitHub Web-Editor öffnen">
-          🚀 <strong>Auf GitHub eintragen</strong>
+        <button type="button" class="btn btn-secondary" onclick="copyCategoriesJSON()" title="JSON-Code kopieren">
+          📋 JSON kopieren
         </button>
       </div>
     </header>
@@ -319,6 +329,9 @@
       </button>
       <button type="button" class="tab-btn" id="tab-btn-suggestions" onclick="switchTab('suggestions')">
         📬 3. Vorschläge von Nutzern (<span id="sugg-badge">0</span>)
+      </button>
+      <button type="button" class="tab-btn" id="tab-btn-settings" onclick="switchTab('settings')">
+        ⚙️ 4. GitHub-Einstellungen
       </button>
     </nav>
 
@@ -354,7 +367,7 @@
     <section id="tab-content-add" class="card" style="display: none;">
       <h2 style="margin-top: 0; font-size: 20px;">➕ Neue Kategorie oder neues Geschäft hinzufügen</h2>
       <p class="field-hint" style="color: var(--sub); margin-bottom: 16px;">
-        Füge einen neuen Laden zu einer bestehenden Kategorie hinzu oder erstelle eine komplett neue Hauptkategorie:
+        Trage hier deinen neuen Laden ein – mit aktiviertem Häkchen wird er <strong>sofort und vollautomatisch auf GitHub eingetragen</strong>, ohne dass du etwas anderes tun musst!
       </p>
 
       <form id="add-cat-form" onsubmit="handleAdminAddCategory(event)">
@@ -385,7 +398,7 @@
 
         <div id="admin-sub-group" class="form-group">
           <label for="admin-sub-name">Name des Geschäfts / der Unterkategorie:</label>
-          <input type="text" id="admin-sub-name" class="large-input" placeholder="z. B. Späti am Eck, Tante Emma Laden, Trinkgut...">
+          <input type="text" id="admin-sub-name" class="large-input" placeholder="z. B. Späti am Eck, Tante Emma Laden, Trinkgut, Action, Norma...">
         </div>
 
         <div id="admin-main-group" style="display: none;">
@@ -405,9 +418,16 @@
           </div>
         </div>
 
+        <div class="form-group" style="margin-top: 14px; background: rgba(46, 125, 50, 0.08); padding: 12px 16px; border-radius: 8px; border-left: 6px solid #2E7D32;">
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-size: 16px;">
+            <input type="checkbox" id="auto-publish-toggle" checked style="width: 22px; height: 22px; cursor: pointer;">
+            <span>🚀 <strong>Sofort automatisch auf GitHub veröffentlichen (Alle Handys &amp; Apps erhalten es direkt)</strong></span>
+          </label>
+        </div>
+
         <div style="margin-top: 18px; display: flex; gap: 10px;">
-          <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;">
-            💾 <strong>Zum Katalog hinzufügen</strong>
+          <button type="submit" id="btn-submit-add-cat" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;">
+            💾 <strong>Zum Katalog hinzufügen &amp; speichern</strong>
           </button>
           <button type="reset" class="btn btn-secondary">
             Zurücksetzen
@@ -436,12 +456,44 @@
         <p style="color: var(--sub);">Lade Vorschläge...</p>
       </div>
     </section>
+
+    <!-- =========================================================================
+     TAB 4: GITHUB EINSTELLUNGEN
+     ========================================================================= -->
+    <section id="tab-content-settings" class="card" style="display: none;">
+      <h2 style="margin-top: 0; font-size: 20px;">⚙️ GitHub-Verbindung &amp; Token</h2>
+      <p class="field-hint" style="color: var(--sub); margin-bottom: 16px;">
+        Hier ist dein persönlicher GitHub-Schlüssel gespeichert, damit die App automatisch und ohne Passworteingabe auf GitHub pushen kann:
+      </p>
+
+      <div class="form-group">
+        <label for="github-token-input">GitHub Personal Access Token:</label>
+        <input type="password" id="github-token-input" class="large-input" placeholder="Wird automatisch geladen oder hier manuell eingeben...">
+        <p style="font-size: 13px; color: var(--sub); margin-top: 4px;">
+          Dieser Schlüssel wird automatisch von deiner lokalen GitHub-CLI bezogen oder sicher lokal auf deinem PC gespeichert.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-primary" onclick="saveGitHubToken()">
+          💾 Token speichern
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="toggleTokenVisibility()">
+          👁️ Token anzeigen / verbergen
+        </button>
+      </div>
+    </section>
   </div>
 
   <script>
     // =========================================================================
     // KATEGORIEN-DATENBANK & INITIALISIERUNG
     // =========================================================================
+    let currentToken = '';
+    const GITHUB_REPO_OWNER = 'Lauju1909';
+    const GITHUB_DESKTOP_REPO = 'BarrierefreieFinanzApp';
+    const GITHUB_ANDROID_REPO = 'BarrierefreieFinanzApp-Android';
+
     let catalog = {
       version: '2026.10.09.1',
       lastUpdated: new Date().toISOString(),
@@ -452,6 +504,50 @@
     };
 
     let activeFilter = 'all';
+    let localPort = 48129;
+
+    // Port aus URL extrahieren (falls von EXE gestartet: ?port=48129)
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('port')) localPort = parseInt(urlParams.get('port'), 10);
+    } catch(e) {}
+
+    async function loadToken() {
+      currentToken = localStorage.getItem('gh_token') || '';
+      if (!currentToken) {
+        try {
+          const resp = await fetch('http://127.0.0.1:' + localPort + '/api/get_token');
+          if (resp.ok) {
+            const data = await resp.json();
+            if (data && data.token) {
+              currentToken = data.token;
+              localStorage.setItem('gh_token', currentToken);
+            }
+          }
+        } catch(e) {}
+      }
+      if (currentToken && document.getElementById('github-token-input')) {
+        document.getElementById('github-token-input').value = currentToken;
+      }
+    }
+
+    function getGitHubToken() {
+      return currentToken || localStorage.getItem('gh_token') || (document.getElementById('github-token-input') ? document.getElementById('github-token-input').value.trim() : '');
+    }
+
+    function saveGitHubToken() {
+      const val = document.getElementById('github-token-input').value.trim();
+      if (val) {
+        currentToken = val;
+        localStorage.setItem('gh_token', val);
+        alert('✅ GitHub-Token erfolgreich gespeichert!');
+      }
+    }
+
+    function toggleTokenVisibility() {
+      const el = document.getElementById('github-token-input');
+      if (el) el.type = (el.type === 'password') ? 'text' : 'password';
+    }
 
     function announceNVDA(msg) {
       const el = document.getElementById('nvda-live');
@@ -462,7 +558,7 @@
     }
 
     function switchTab(tabId) {
-      ['view', 'add', 'suggestions'].forEach(t => {
+      ['view', 'add', 'suggestions', 'settings'].forEach(t => {
         const btn = document.getElementById('tab-btn-' + t);
         const sec = document.getElementById('tab-content-' + t);
         if (btn) btn.classList.toggle('active', t === tabId);
@@ -485,7 +581,22 @@
     // LADEN & SPEICHERN
     // =========================================================================
     async function loadInitialCatalog() {
-      // 1. Versuche lokale categories.json im selben Ordner
+      // 1. Versuche lokale API der EXE
+      try {
+        const resp = await fetch('http://127.0.0.1:' + localPort + '/categories.json?t=' + Date.now());
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data && (data.exp || data.inc)) {
+            catalog = data;
+            showStatus('✅ Lokale categories.json aus Dokumente geladen.');
+            renderCategoryList();
+            populateAdminParentSelect();
+            return;
+          }
+        }
+      } catch(e) {}
+
+      // 2. Versuche lokale categories.json im selben Ordner
       try {
         const resp = await fetch('categories.json?t=' + Date.now());
         if (resp.ok) {
@@ -500,12 +611,12 @@
         }
       } catch(e) {}
 
-      // 2. Versuche GitHub
+      // 3. Fallback: Direkt von GitHub
       await loadFromGitHub(false);
     }
 
     async function loadFromGitHub(notify = true) {
-      const url = 'https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main/categories.json?t=' + Date.now();
+      const url = 'https://raw.githubusercontent.com/' + GITHUB_REPO_OWNER + '/' + GITHUB_DESKTOP_REPO + '/main/categories.json?t=' + Date.now();
       try {
         const resp = await fetch(url);
         if (resp.ok) {
@@ -524,12 +635,13 @@
       }
     }
 
-    function showStatus(msg) {
+    function showStatus(msg, isError = false) {
       const banner = document.getElementById('status-banner');
       const text = document.getElementById('status-text');
       const stats = document.getElementById('status-stats');
       if (banner && text && stats) {
         banner.style.display = 'flex';
+        banner.className = isError ? 'status-banner error' : 'status-banner';
         text.textContent = msg;
         const totalCats = Object.keys(catalog.exp || {}).length + Object.keys(catalog.inc || {}).length;
         stats.textContent = totalCats + ' Kategorien';
@@ -537,11 +649,120 @@
       announceNVDA(msg);
     }
 
+    // =========================================================================
+    // VOLLAUTOMATISCHER 1-KLICK GITHUB PUSH
+    // =========================================================================
+    async function publishDirectlyToGitHub(silent = false) {
+      const btn = document.getElementById('btn-publish-github-header');
+      const token = getGitHubToken();
+
+      if (!token) {
+        alert('Bitte hinterlege unter Einstellungen einen GitHub-Token.');
+        switchTab('settings');
+        return false;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>⏳ <strong>Wird auf GitHub eingetragen...</strong></span>';
+      }
+      showStatus('⏳ Übertrage Kategorien automatisch auf GitHub...');
+
+      catalog.lastUpdated = new Date().toISOString();
+      const jsonString = JSON.stringify(catalog, null, 2);
+
+      // 1. Auch lokal speichern
+      saveLocallyQuiet(jsonString);
+
+      try {
+        // Base64 encoding utf8-safe
+        const utf8Bytes = new TextEncoder().encode(jsonString);
+        let binaryStr = '';
+        for (let i = 0; i < utf8Bytes.length; i++) binaryStr += String.fromCharCode(utf8Bytes[i]);
+        const base64Content = btoa(binaryStr);
+
+        // Update Desktop Repo
+        await updateGitHubRepoFile(GITHUB_DESKTOP_REPO, 'categories.json', base64Content, token);
+
+        // Update Android Repo
+        try {
+          await updateGitHubRepoFile(GITHUB_ANDROID_REPO, 'www/categories.json', base64Content, token);
+        } catch(eAnd) {
+          console.warn('Android push warning:', eAnd);
+        }
+
+        showStatus('🎉 Erfolgreich auf GitHub veröffentlicht! Alle Apps laden die Änderungen ab sofort.');
+        if (!silent) {
+          alert('🎉 Perfekt! Die neuen Kategorien wurden vollautomatisch auf GitHub eingetragen!\n\nAlle Handys und Apps erhalten die neuen Kategorien ab sofort automatisch.');
+        }
+        return true;
+      } catch(err) {
+        showStatus('❌ Fehler beim Eintragen auf GitHub: ' + err.message, true);
+        alert('❌ Fehler beim automatischen Eintragen auf GitHub:\n' + err.message);
+        return false;
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '<span>🚀 <strong>1-Klick: Auf GitHub veröffentlichen</strong></span>';
+        }
+      }
+    }
+
+    async function updateGitHubRepoFile(repoName, filePath, base64Content, token) {
+      const apiUrl = `https://api.github.com/repos/${GITHUB_REPO_OWNER}/${repoName}/contents/${filePath}`;
+      
+      // 1. Get current SHA
+      let sha = '';
+      const getResp = await fetch(apiUrl, {
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+      if (getResp.ok) {
+        const getData = await getResp.json();
+        sha = getData.sha;
+      }
+
+      // 2. Commit & Push via PUT
+      const putResp = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: 'feat: update categories.json via Kategorie-Zentrale (Auto-Sync)',
+          content: base64Content,
+          sha: sha || undefined,
+          branch: 'main'
+        })
+      });
+
+      if (!putResp.ok) {
+        const errJson = await putResp.json().catch(() => ({}));
+        throw new Error(errJson.message || `HTTP ${putResp.status}`);
+      }
+      return await putResp.json();
+    }
+
+    async function saveLocallyQuiet(jsonString) {
+      try {
+        await fetch('http://127.0.0.1:' + localPort + '/api/save_local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: jsonString
+        });
+      } catch(e) {}
+    }
+
     function saveCategoriesLocally() {
       catalog.lastUpdated = new Date().toISOString();
       const jsonStr = JSON.stringify(catalog, null, 2);
+
+      saveLocallyQuiet(jsonStr);
       
-      // Blob Download
       const blob = new Blob([jsonStr], { type: 'application/json' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -551,8 +772,8 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
 
-      showStatus('💾 categories.json heruntergeladen / gespeichert.');
-      alert('✅ Die Datei "categories.json" wurde heruntergeladen! Kopiere sie in deinen Haushaltsbuch-Ordner oder auf GitHub.');
+      showStatus('💾 categories.json lokal gespeichert.');
+      alert('✅ categories.json wurde lokal gespeichert!');
     }
 
     function copyCategoriesJSON() {
@@ -564,11 +785,6 @@
       }).catch(() => {
         alert('Kopieren fehlgeschlagen. Bitte manuell markieren.');
       });
-    }
-
-    function openGitHubFileEditor() {
-      copyCategoriesJSON();
-      window.open('https://github.com/Lauju1909/BarrierefreieFinanzApp/edit/main/categories.json', '_blank');
     }
 
     // =========================================================================
@@ -645,7 +861,7 @@
       if (el) el.style.display = (el.style.display === 'none') ? 'block' : 'none';
     }
 
-    function addInlineSub(type, mainCat) {
+    async function addInlineSub(type, mainCat) {
       const input = document.getElementById('inline-input-' + type + '_' + mainCat);
       if (!input) return;
       const val = input.value.trim();
@@ -658,12 +874,16 @@
         input.value = '';
         renderCategoryList();
         showStatus('➕ "' + val + '" zu ' + mainCat + ' hinzugefügt!');
+
+        if (confirm(`✅ "${val}" wurde hinzugefügt!\n\nMöchtest du die Änderung jetzt sofort automatisch auf GitHub veröffentlichen?`)) {
+          await publishDirectlyToGitHub(false);
+        }
       } else {
         alert('Dieser Eintrag existiert bereits in dieser Kategorie.');
       }
     }
 
-    function removeSubCategory(type, mainCat, index) {
+    async function removeSubCategory(type, mainCat, index) {
       if (catalog[type] && catalog[type][mainCat] && catalog[type][mainCat][index] !== undefined) {
         const removed = catalog[type][mainCat].splice(index, 1);
         renderCategoryList();
@@ -710,13 +930,16 @@
       }).join('');
     }
 
-    function handleAdminAddCategory(e) {
+    async function handleAdminAddCategory(e) {
       e.preventDefault();
       const type = document.getElementById('admin-cat-type').value;
       const mode = document.getElementById('admin-cat-mode').value;
+      const autoPublish = document.getElementById('auto-publish-toggle') ? document.getElementById('auto-publish-toggle').checked : true;
 
       if (!catalog[type]) catalog[type] = {};
       if (!catalog.icons) catalog.icons = {};
+
+      let addedName = '';
 
       if (mode === 'sub') {
         const mainCat = document.getElementById('admin-parent-select').value;
@@ -730,8 +953,7 @@
           catalog[type][mainCat].push(subName);
         }
         document.getElementById('admin-sub-name').value = '';
-        showStatus('✅ "' + subName + '" zu ' + mainCat + ' hinzugefügt!');
-        alert('✅ "' + subName + '" wurde zu "' + mainCat + '" hinzugefügt!');
+        addedName = `"${subName}" zu "${mainCat}"`;
       } else {
         const mainName = document.getElementById('admin-main-name').value.trim();
         const icon = document.getElementById('admin-main-icon').value.trim() || '📦';
@@ -747,11 +969,17 @@
         catalog.icons[mainName] = icon;
         document.getElementById('admin-main-name').value = '';
         document.getElementById('admin-first-sub').value = '';
-        showStatus('✅ Neue Hauptkategorie "' + mainName + '" erstellt!');
-        alert('✅ Hauptkategorie "' + mainName + '" mit Unterkategorie "' + firstSub + '" erstellt!');
+        addedName = `Hauptkategorie "${mainName}"`;
       }
 
+      showStatus('✅ ' + addedName + ' erfolgreich angelegt!');
       switchTab('view');
+
+      if (autoPublish) {
+        await publishDirectlyToGitHub(false);
+      } else {
+        alert('✅ ' + addedName + ' angelegt! Klicke oben auf "🚀 1-Klick: Auf GitHub veröffentlichen", wenn du es online stellen willst.');
+      }
     }
 
     // =========================================================================
@@ -802,7 +1030,7 @@
               </div>
               <div>
                 <button type="button" class="btn btn-success" onclick="acceptSuggestion('${escapeForAttr(sugg.type)}', '${escapeForAttr(sugg.mainCat)}', '${escapeForAttr(sugg.subCat)}')">
-                  ✅ In Katalog übernehmen
+                  ✅ In Katalog übernehmen &amp; online stellen
                 </button>
               </div>
             </div>
@@ -839,15 +1067,18 @@
       return { type, typeLabel, mainCat, subCat: subCat || msg, date: dateStr };
     }
 
-    function acceptSuggestion(type, mainCat, subCat) {
+    async function acceptSuggestion(type, mainCat, subCat) {
       if (!catalog[type]) catalog[type] = {};
       if (!catalog[type][mainCat]) catalog[type][mainCat] = [];
       if (!catalog[type][mainCat].includes(subCat)) {
         catalog[type][mainCat].push(subCat);
       }
       renderCategoryList();
-      showStatus('✅ Vorschlag "' + subCat + '" (' + mainCat + ') erfolgreich in den Katalog übernommen!');
-      alert('✅ Der Vorschlag "' + subCat + '" wurde erfolgreich zu "' + mainCat + '" hinzugefügt! Vergiss nicht, danach auf "💾 Lokal speichern" oder "🚀 Auf GitHub eintragen" zu klicken.');
+      showStatus('✅ Vorschlag "' + subCat + '" (' + mainCat + ') übernommen!');
+
+      if (confirm(`✅ "${subCat}" wurde in "${mainCat}" übernommen!\n\nSoll die Änderung jetzt sofort automatisch auf GitHub veröffentlicht werden?`)) {
+        await publishDirectlyToGitHub(false);
+      }
     }
 
     function escapeHTML(str) {
@@ -858,6 +1089,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+      loadToken();
       loadInitialCatalog();
     });
   </script>
