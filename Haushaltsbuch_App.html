@@ -911,19 +911,18 @@ body.theme-dark .shopping-badge-price {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.5)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.6)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
 <div style="background: rgba(142, 36, 170, 0.08); border-left: 6px solid #8E24AA; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.5 (Bedarfsgesteuerte Übersicht &amp; Geliehenes/Verliehenes Geld)</h3>
+<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.6 (Split-Zahlungen bearbeiten &amp; Leihgaben-Verwaltung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-<li><strong>🤝 Geliehenes &amp; Verliehenes Geld erfassen:</strong> Neue barrierefreie Karte für private Leihgaben unter Freunden und Familie. Zeigt übersichtlich Forderungen (Geld, das dir geschuldet wird) und Verbindlichkeiten (Geld, das du schuldest).</li>
-<li><strong>💵 Teilrückzahlungen &amp; Fortschritt:</strong> Leihgaben können mit einem Klick vollständig beglichen oder mit flexiblen Teilbeträgen und Fortschrittsbalken abbezahlt werden – auf Wunsch mit automatischer Gegenbuchung auf dein Konto.</li>
-<li><strong>🧹 Bedarfsgesteuerte Monatsübersicht:</strong> Leere Bereiche nehmen keinen Platz mehr weg. Die Karten für Kredite (0 Kredite), Umbuchungen (0 Umbuchungen im Monat) und Geliehenes Geld (0 offene Posten) werden automatisch ausgeblendet und erscheinen nur bei Bedarf.</li>
-<li><strong>📱 E2E-Postfach-Sync für Leihgaben:</strong> Alle geliehenen und verliehenen Beträge werden Ende-zu-Ende verschlüsselt und automatisch mit dem Smartphone abgeglichen.</li>
+<li><strong>🔀 Split-Zahlungen in Buchungsbearbeitung:</strong> Jede bestehende Buchung kann nun im Bearbeiten-Dialog in eine Split-Zahlung über mehrere Konten (z. B. Teil Bar und Teil Girokonto) umgewandelt werden. Bestehende Split-Buchungen lassen sich mit Live-Summenprüfung anpassen oder wieder zu einer Einzelbuchung vereinen.</li>
+<li><strong>🤝 Vollständige Bearbeitung &amp; Historie von Leihgaben:</strong> Geliehenes und verliehenes Geld kann jederzeit nachträglich editiert werden – inklusive automatischer Aktualisierung verknüpfter Kontobuchungen. Alle Teilrückzahlungen bieten eine eigene Historie zum Bearbeiten und Löschen. Beglichene Leihgaben können im Archiv eingesehen oder wieder geöffnet werden.</li>
+<li><strong>🧹 Bedarfsgesteuerte Monatsübersicht:</strong> Kredite, Umbuchungen und Leihgaben werden nur eingeblendet, wenn tatsächlich Daten vorhanden sind.</li>
 </ul>
 </div>
 
@@ -1605,6 +1604,32 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <option value="savings">Tagesgeldkonto</option>
     <option value="cash">Bargeld</option>
   </select>
+</div>
+
+<!-- SPLIT-ZAHLUNG IN BEARBEITUNG -->
+<div id="edit-tx-split-toggle-group" class="form-group" style="margin-top: 4px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px; background: rgba(33, 150, 243, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(33, 150, 243, 0.3);">
+    <input type="checkbox" id="edit-tx-split-toggle" onchange="toggleEditSplitPayment()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-tx-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-color);">
+      🔀 Betrag auf mehrere Konten aufteilen (Split-Zahlung, z. B. Teil Bar &amp; Teil Girokonto)
+    </label>
+  </div>
+</div>
+
+<div id="edit-tx-split-section" class="settings-box" style="display: none; border-left: 8px solid #1976D2; background: rgba(33, 150, 243, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung auf Konten anpassen</h4>
+  <p class="field-hint" style="margin-bottom: 12px;">Passe die Beträge und Konten an. Die Summe aller Teilbeträge muss genau dem Gesamtbetrag entsprechen:</p>
+  <div id="edit-tx-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
+    <!-- Befüllt per JavaScript -->
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
+    <button type="button" id="edit-tx-split-add-btn" class="btn btn-secondary" onclick="addEditSplitRow()" style="font-size: 13px; padding: 6px 12px;">
+      ➕ Weiteres Konto hinzufügen
+    </button>
+    <div id="edit-tx-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #90CAF9; color: #0D47A1;">
+      Summe der Teile: 0,00 € / Gesamt: 0,00 €
+    </div>
+  </div>
 </div>
 
 <div id="edit-tx-transfer-accounts-group" class="form-row-2" style="display: none;">
@@ -2733,6 +2758,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <form id="peer-loan-repay-form" onsubmit="handleConfirmPeerLoanRepay(event)" class="accessible-form">
     <input type="hidden" id="peer-loan-repay-id" value="">
+    <input type="hidden" id="peer-loan-repay-item-id" value="">
 
     <div class="form-group">
       <label for="peer-loan-repay-amount" class="field-label"><strong>Rückzahlungsbetrag (€):</strong></label>
@@ -2769,7 +2795,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
     <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
       <button type="button" class="btn btn-secondary" onclick="closePeerLoanRepayModal()">Abbrechen</button>
-      <button type="submit" class="btn btn-primary" style="background-color: #2E7D32;">✅ Rückzahlung buchen</button>
+      <button type="submit" id="peer-loan-repay-submit-btn" class="btn btn-primary" style="background-color: #2E7D32;">✅ Rückzahlung buchen</button>
     </div>
   </form>
 </div>
@@ -6041,7 +6067,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.9.5';
+const CURRENT_APP_VERSION = 'v6.9.6';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -12339,17 +12365,172 @@ function onEditTxTypeChange() {
   const singleAcc = document.getElementById('edit-tx-single-account-group');
   const trfAcc = document.getElementById('edit-tx-transfer-accounts-group');
   const catSection = document.getElementById('edit-tx-category-section');
+  const splitToggleGroup = document.getElementById('edit-tx-split-toggle-group');
+  const splitToggle = document.getElementById('edit-tx-split-toggle');
+  const splitSec = document.getElementById('edit-tx-split-section');
 
   if (type === 'transfer') {
+    if (splitToggleGroup) splitToggleGroup.style.display = 'none';
+    if (splitToggle) splitToggle.checked = false;
+    if (splitSec) splitSec.style.display = 'none';
     if (singleAcc) singleAcc.style.display = 'none';
     if (trfAcc) trfAcc.style.display = 'grid';
     if (catSection) catSection.style.display = 'none';
   } else {
-    if (singleAcc) singleAcc.style.display = 'block';
+    if (splitToggleGroup) splitToggleGroup.style.display = 'block';
+    const isSplit = splitToggle && splitToggle.checked;
+    if (singleAcc) singleAcc.style.display = isSplit ? 'none' : 'block';
+    if (splitSec) splitSec.style.display = isSplit ? 'block' : 'none';
     if (trfAcc) trfAcc.style.display = 'none';
     if (catSection) catSection.style.display = 'block';
     const catType = (type === 'income') ? 'inc' : 'exp';
     populateEditModalCategories(catType);
+  }
+}
+
+// ----------------------------------------------------------------------------
+// SPLIT-ZAHLUNG IN BUCHUNGS-BEARBEITUNG
+// ----------------------------------------------------------------------------
+let editSplitRows = [];
+
+function getEditSplitAccountOptionsHtml(selectedAccId) {
+  ensureAccountsInitialized();
+  return appState.accounts.map(acc => {
+    const sel = (acc.id === selectedAccId) ? 'selected' : '';
+    return `<option value="${escapeHTML(acc.id)}" ${sel}>${escapeHTML(acc.name)}</option>`;
+  }).join('');
+}
+
+function toggleEditSplitPayment() {
+  const toggle = document.getElementById('edit-tx-split-toggle');
+  const splitSec = document.getElementById('edit-tx-split-section');
+  const singleAcc = document.getElementById('edit-tx-single-account-group');
+  const isSplit = toggle && toggle.checked;
+
+  if (splitSec) splitSec.style.display = isSplit ? 'block' : 'none';
+  if (singleAcc) singleAcc.style.display = isSplit ? 'none' : 'block';
+
+  if (isSplit) {
+    if (!editSplitRows || editSplitRows.length < 2) {
+      initEditSplitRows();
+    } else {
+      renderEditSplitRows();
+    }
+    announceNVDA('Split-Zahlung in Bearbeitung aktiviert. Du kannst den Betrag nun auf mehrere Konten aufteilen.');
+  } else {
+    announceNVDA('Split-Zahlung in Bearbeitung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
+  }
+}
+
+function initEditSplitRows() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('edit-tx-amount').value) || 0;
+  const currentAcc = document.getElementById('edit-tx-account')?.value;
+  const acc1 = currentAcc || (appState.accounts[0] ? appState.accounts[0].id : 'bank');
+  const acc2 = appState.accounts.find(a => a.id !== acc1)?.id || (appState.accounts[1] ? appState.accounts[1].id : 'cash');
+
+  const half = Math.round((totalAmt / 2) * 100) / 100;
+  const rest = Math.round((totalAmt - half) * 100) / 100;
+
+  editSplitRows = [
+    { account: acc1, amount: half > 0 ? half : '' },
+    { account: acc2, amount: rest > 0 ? rest : '' }
+  ];
+  renderEditSplitRows();
+}
+
+function renderEditSplitRows() {
+  const container = document.getElementById('edit-tx-split-rows-container');
+  if (!container) return;
+
+  container.innerHTML = editSplitRows.map((row, idx) => {
+    const canRemove = editSplitRows.length > 2;
+    return `
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 160px;">
+          <label for="edit-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Konto ${idx + 1}:</strong>
+          </label>
+          <select id="edit-split-acc-${idx}" class="large-select" onchange="onEditSplitAccountChange(${idx}, this.value)">
+            ${getEditSplitAccountOptionsHtml(row.account)}
+          </select>
+        </div>
+        <div style="flex: 1; min-width: 120px;">
+          <label for="edit-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teilbetrag (€):</strong>
+          </label>
+          <input type="number" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
+        </div>
+        ${canRemove ? `
+          <button type="button" class="btn btn-secondary" onclick="removeEditSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Konto ${idx + 1} entfernen">
+            🗑️
+          </button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+
+  updateEditSplitSummary();
+}
+
+function addEditSplitRow() {
+  ensureAccountsInitialized();
+  const totalAmt = parseFloat(document.getElementById('edit-tx-amount').value) || 0;
+  const currentSum = editSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
+  const remaining = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
+
+  const usedAccs = new Set(editSplitRows.map(r => r.account));
+  const freeAcc = appState.accounts.find(a => !usedAccs.has(a.id));
+  const newAcc = freeAcc ? freeAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
+
+  editSplitRows.push({ account: newAcc, amount: remaining > 0 ? remaining : '' });
+  renderEditSplitRows();
+  announceNVDA(`Weiteres Konto für Split hinzugefügt. Jetzt ${editSplitRows.length} Konten.`);
+}
+
+function removeEditSplitRow(idx) {
+  if (editSplitRows.length <= 2) return;
+  editSplitRows.splice(idx, 1);
+  renderEditSplitRows();
+  announceNVDA(`Konto entfernt. Noch ${editSplitRows.length} Konten im Split.`);
+}
+
+function onEditSplitAccountChange(idx, val) {
+  if (editSplitRows[idx]) {
+    editSplitRows[idx].account = val;
+  }
+}
+
+function onEditSplitAmountInput(idx, val) {
+  if (editSplitRows[idx]) {
+    editSplitRows[idx].amount = val;
+    updateEditSplitSummary();
+  }
+}
+
+function updateEditSplitSummary() {
+  const summaryEl = document.getElementById('edit-tx-split-summary');
+  if (!summaryEl) return;
+
+  const totalAmt = parseFloat(document.getElementById('edit-tx-amount').value) || 0;
+  const currentSum = Math.round(editSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0) * 100) / 100;
+  const diff = Math.round((totalAmt - currentSum) * 100) / 100;
+
+  if (Math.abs(diff) < 0.01 && totalAmt > 0) {
+    summaryEl.style.background = '#E8F5E9';
+    summaryEl.style.borderColor = '#4CAF50';
+    summaryEl.style.color = '#1B5E20';
+    summaryEl.innerHTML = `✅ Perfekt aufgeteilt: ${formatCurrency(currentSum)} von ${formatCurrency(totalAmt)}`;
+  } else if (diff > 0) {
+    summaryEl.style.background = '#FFF3E0';
+    summaryEl.style.borderColor = '#FF9800';
+    summaryEl.style.color = '#E65100';
+    summaryEl.innerHTML = `⚠️ Noch offen: ${formatCurrency(diff)} (Summe: ${formatCurrency(currentSum)} / Ziel: ${formatCurrency(totalAmt)})`;
+  } else {
+    summaryEl.style.background = '#FFEBEE';
+    summaryEl.style.borderColor = '#F44336';
+    summaryEl.style.color = '#B71C1C';
+    summaryEl.innerHTML = `❌ Zu viel aufgeteilt: ${formatCurrency(Math.abs(diff))} über Ziel (Summe: ${formatCurrency(currentSum)} / Ziel: ${formatCurrency(totalAmt)})`;
   }
 }
 
@@ -12400,16 +12581,46 @@ function openEditModal(txId) {
   if (!tx) return;
 
   document.getElementById('edit-tx-id').value = tx.id;
-  document.getElementById('edit-tx-amount').value = tx.amount;
   document.getElementById('edit-tx-date').value = tx.date;
   document.getElementById('edit-tx-type').value = tx.type || 'expense';
   document.getElementById('edit-tx-planned').value = tx.isPlanned ? 'true' : 'false';
 
+  const splitToggle = document.getElementById('edit-tx-split-toggle');
+  const splitSec = document.getElementById('edit-tx-split-section');
+  const singleAccGroup = document.getElementById('edit-tx-single-account-group');
+
   if (tx.type === 'transfer') {
+    document.getElementById('edit-tx-amount').value = tx.amount;
     document.getElementById('edit-tx-from').value = tx.fromAccount || 'bank';
     document.getElementById('edit-tx-to').value = tx.toAccount || 'savings';
+    if (splitToggle) splitToggle.checked = false;
+    if (splitSec) splitSec.style.display = 'none';
   } else {
-    document.getElementById('edit-tx-account').value = tx.account || 'bank';
+    // Prüfen, ob dies Teil einer Split-Buchung ist
+    const isSplit = Boolean(tx.splitId);
+    if (isSplit) {
+      const splitSiblings = appState.transactions.filter(t => t.splitId === tx.splitId);
+      splitSiblings.sort((a, b) => (a.splitIndex || 0) - (b.splitIndex || 0));
+      const totalAmount = splitSiblings.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
+      document.getElementById('edit-tx-amount').value = totalAmount.toFixed(2);
+      
+      if (splitToggle) splitToggle.checked = true;
+      if (splitSec) splitSec.style.display = 'block';
+      if (singleAccGroup) singleAccGroup.style.display = 'none';
+
+      editSplitRows = splitSiblings.map(s => ({
+        account: s.account,
+        amount: parseFloat(s.amount) || 0
+      }));
+      renderEditSplitRows();
+    } else {
+      document.getElementById('edit-tx-amount').value = tx.amount;
+      document.getElementById('edit-tx-account').value = tx.account || 'bank';
+      if (splitToggle) splitToggle.checked = false;
+      if (splitSec) splitSec.style.display = 'none';
+      if (singleAccGroup) singleAccGroup.style.display = 'block';
+      editSplitRows = [];
+    }
   }
 
   onEditTxTypeChange();
@@ -12419,7 +12630,9 @@ function openEditModal(txId) {
     populateEditModalCategories(catType, tx.category, tx.subcategory);
   }
 
-  document.getElementById('edit-tx-desc').value = tx.description || '';
+  // Beschreibung bereinigen von "(Split X/Y: ...)" falls vorhanden
+  const cleanDesc = (tx.description || '').replace(/\s*\(Split \d+\/\d+:.*?\)/g, '').trim();
+  document.getElementById('edit-tx-desc').value = cleanDesc;
 
   currentEditReceipt = tx.receipt ? JSON.parse(JSON.stringify(tx.receipt)) : null;
   renderReceiptPreview('edit');
@@ -12447,43 +12660,121 @@ async function saveEditedTransaction(e) {
   const date = document.getElementById('edit-tx-date').value;
   const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
-
-  tx.type = type;
-  tx.amount = parseFloat(document.getElementById('edit-tx-amount').value);
-  tx.date = date;
-  
+  const totalAmount = parseFloat(document.getElementById('edit-tx-amount').value);
   const plannedVal = document.getElementById('edit-tx-planned').value;
-  tx.isPlanned = (plannedVal === 'true') || isFuture;
+  const isPlanned = (plannedVal === 'true') || isFuture;
+  const desc = document.getElementById('edit-tx-desc').value.trim();
 
-  if (type === 'transfer') {
-    tx.fromAccount = document.getElementById('edit-tx-from').value;
-    tx.toAccount = document.getElementById('edit-tx-to').value;
-    tx.account = undefined;
-    tx.category = 'Umbuchung';
-    tx.subcategory = '';
+  const isSplitToggle = document.getElementById('edit-tx-split-toggle')?.checked && type !== 'transfer';
+
+  if (isSplitToggle) {
+    const validRows = editSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    if (validRows.length < 2) {
+      alert('Bei einer Split-Zahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.');
+      return;
+    }
+    const splitSum = Math.round(validRows.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
+    const roundedTotal = Math.round(totalAmount * 100) / 100;
+    if (Math.abs(splitSum - roundedTotal) > 0.01) {
+      alert(`Die Summe der Teilbeträge (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamtbetrag (${formatCurrency(roundedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - roundedTotal))}`);
+      return;
+    }
+
+    const category = document.getElementById('edit-tx-category').value;
+    const subcategory = document.getElementById('edit-tx-subcategory').value;
+    const receiptToKeep = currentEditReceipt ? JSON.parse(JSON.stringify(currentEditReceipt)) : (tx.receipt ? JSON.parse(JSON.stringify(tx.receipt)) : null);
+
+    // Alle alten Split-Geschwister entfernen (oder das alte Einzel-Tx)
+    const oldSplitId = tx.splitId;
+    if (oldSplitId) {
+      appState.transactions = appState.transactions.filter(t => t.splitId !== oldSplitId);
+    } else {
+      appState.transactions = appState.transactions.filter(t => t.id !== id);
+    }
+
+    // Neue Split-Buchungen anlegen
+    const newSplitId = oldSplitId || (`split_${Date.now()}`);
+    validRows.forEach((row, idx) => {
+      const rowAmt = parseFloat(row.amount);
+      const accName = formatAccountName(row.account);
+      const partText = `(Split ${idx + 1}/${validRows.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+      const finalDesc = desc ? `${desc} ${partText}` : `Split-Zahlung ${partText}`;
+
+      const newTx = {
+        id: `tx_${Date.now()}_${idx}`,
+        splitId: newSplitId,
+        splitIndex: idx + 1,
+        splitTotalCount: validRows.length,
+        splitTotalAmount: roundedTotal,
+        type: type,
+        account: row.account,
+        amount: rowAmt,
+        category: category,
+        subcategory: subcategory,
+        description: finalDesc,
+        isPlanned: isPlanned,
+        date: date
+      };
+      if (receiptToKeep) {
+        newTx.receipt = JSON.parse(JSON.stringify(receiptToKeep));
+      }
+      appState.transactions.push(newTx);
+    });
+
+    announceNVDA(`Split-Buchung über ${formatCurrency(roundedTotal)} aufgeteilt auf ${validRows.length} Konten erfolgreich aktualisiert!`);
   } else {
-    tx.account = document.getElementById('edit-tx-account').value;
-    tx.fromAccount = undefined;
-    tx.toAccount = undefined;
-    tx.category = document.getElementById('edit-tx-category').value;
-    tx.subcategory = document.getElementById('edit-tx-subcategory').value;
+    // Normale Einzelbuchung (oder vorherige Split-Buchung zu Einzelbuchung zusammenführen)
+    if (tx.splitId) {
+      // Vorher war es ein Split, jetzt wurde Split abgewählt: Geschwister entfernen
+      appState.transactions = appState.transactions.filter(t => t.splitId !== tx.splitId || t.id === tx.id);
+      delete tx.splitId;
+      delete tx.splitIndex;
+      delete tx.splitTotalCount;
+      delete tx.splitTotalAmount;
+    }
+
+    tx.type = type;
+    tx.amount = totalAmount;
+    tx.date = date;
+    tx.isPlanned = isPlanned;
+
+    if (type === 'transfer') {
+      tx.fromAccount = document.getElementById('edit-tx-from').value;
+      tx.toAccount = document.getElementById('edit-tx-to').value;
+      tx.account = undefined;
+      tx.category = 'Umbuchung';
+      tx.subcategory = '';
+    } else {
+      tx.account = document.getElementById('edit-tx-account').value;
+      tx.fromAccount = undefined;
+      tx.toAccount = undefined;
+      tx.category = document.getElementById('edit-tx-category').value;
+      tx.subcategory = document.getElementById('edit-tx-subcategory').value;
+    }
+
+    tx.description = desc;
+
+    if (currentEditReceipt) {
+      tx.receipt = currentEditReceipt;
+    } else {
+      delete tx.receipt;
+    }
+
+    announceNVDA('Buchung erfolgreich aktualisiert!');
   }
 
-  tx.description = document.getElementById('edit-tx-desc').value.trim();
-
-  if (currentEditReceipt) {
-    tx.receipt = currentEditReceipt;
-  } else {
-    delete tx.receipt;
-  }
   currentEditReceipt = null;
   renderReceiptPreview('edit');
-
   await saveStateToEncryptedStorage();
   closeEditModal();
   updateOverview();
-  announceNVDA('Buchung erfolgreich aktualisiert!');
 }
+
+window.toggleEditSplitPayment = toggleEditSplitPayment;
+window.addEditSplitRow = addEditSplitRow;
+window.removeEditSplitRow = removeEditSplitRow;
+window.onEditSplitAccountChange = onEditSplitAccountChange;
+window.onEditSplitAmountInput = onEditSplitAmountInput;
 
 async function deleteTransaction(txId) {
   const idx = appState.transactions.findIndex(t => t.id === txId);
@@ -15270,6 +15561,7 @@ function renderOverviewPeerLoans() {
     const typeLabel = isLent ? '🟢 Ich habe verliehen (Forderung / Mir wird geschuldet)' : '🔴 Ich habe mir geliehen (Verbindlichkeit / Ich schulde)';
     const typeColor = isLent ? '#2E7D32' : '#D32F2F';
     const dueDateNotice = loan.dueDate ? ` • 📅 Rückzahlung bis: <strong>${formatDateGerman(loan.dueDate)}</strong>` : '';
+    const repaymentsList = Array.isArray(loan.repayments) && loan.repayments.length > 0;
 
     html += `
       <div style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
@@ -15306,6 +15598,33 @@ function renderOverviewPeerLoans() {
           </div>
         ` : ''}
 
+        ${repaymentsList ? `
+          <details style="margin-top: 10px; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 10px;">
+            <summary style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--text-color);">
+              📋 Historie der Teilrückzahlungen (${loan.repayments.length}) anzeigen
+            </summary>
+            <div style="margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+              ${loan.repayments.map(rep => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color); font-size: 13px; flex-wrap: wrap; gap: 6px;">
+                  <div>
+                    <strong>${formatDateGerman(rep.date)}:</strong> <span style="font-weight: bold; color: ${isLent ? '#2E7D32' : '#D32F2F'};">${formatCurrency(rep.amount)}</span>
+                    ${rep.account ? `<span style="color: var(--text-muted, #666); font-size: 12px;"> (${escapeHTML(formatAccountName(rep.account))})</span>` : ''}
+                    ${rep.note ? `<div style="font-size: 12px; color: var(--text-muted, #666); font-style: italic;">„${escapeHTML(rep.note)}“</div>` : ''}
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                    <button type="button" class="btn btn-secondary" onclick="openPeerLoanRepayModal('${loan.id}', '${rep.id}')" style="font-size: 12px; padding: 3px 8px;" aria-label="Rückzahlung vom ${formatDateGerman(rep.date)} über ${formatCurrency(rep.amount)} bearbeiten">
+                      ✏️ Bearbeiten
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="deletePeerLoanRepayment('${loan.id}', '${rep.id}')" style="font-size: 12px; padding: 3px 8px; color: #D32F2F;" aria-label="Rückzahlung vom ${formatDateGerman(rep.date)} über ${formatCurrency(rep.amount)} löschen">
+                      🗑️ Löschen
+                    </button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        ` : ''}
+
         <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center;">
           <button type="button" class="btn btn-primary" onclick="settlePeerLoan('${loan.id}')" style="background-color: #2E7D32; font-size: 13px; padding: 6px 14px;" aria-label="Leihgabe mit ${escapeHTML(loan.person)} über ${formatCurrency(remaining)} als vollständig zurückgezahlt markieren">
             ✅ Vollständig zurückgezahlt
@@ -15323,6 +15642,43 @@ function renderOverviewPeerLoans() {
       </div>
     `;
   });
+
+  const settledLoans = (appState.peerLoans || []).filter(l => l.settled);
+  if (settledLoans.length > 0) {
+    html += `
+      <details style="margin-top: 14px; background: var(--bg-hover, #f8f9fa); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
+        <summary style="cursor: pointer; font-weight: bold; font-size: 14px; color: var(--text-color);">
+          📦 Archiv: Bereits vollständig beglichene Leihgaben (${settledLoans.length})
+        </summary>
+        <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+          ${settledLoans.map(sl => {
+            const slIsLent = sl.type === 'lent';
+            return `
+              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 6px;">
+                <div>
+                  <strong>👤 ${escapeHTML(sl.person || 'Unbekannt')}</strong>: ${formatCurrency(sl.amount)}
+                  <span style="color: var(--text-muted, #666); font-size: 12px;">(${slIsLent ? '🟢 Verliehen' : '🔴 Geliehen'} • Beglichen: ${formatDateGerman(sl.settledDate || sl.date)})</span>
+                  ${sl.note ? `<div style="font-size: 12px; color: var(--text-muted, #666); font-style: italic;">„${escapeHTML(sl.note)}“</div>` : ''}
+                </div>
+                <div style="display: flex; gap: 6px;">
+                  <button type="button" class="btn btn-secondary" onclick="reopenPeerLoan('${sl.id}')" style="font-size: 12px; padding: 4px 8px; border: 1px solid #8E24AA; color: #6A1B9A;" aria-label="Leihgabe mit ${escapeHTML(sl.person)} wieder öffnen">
+                    ↩️ Wieder öffnen
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal('${sl.id}')" style="font-size: 12px; padding: 4px 8px;" aria-label="Leihgabe mit ${escapeHTML(sl.person)} bearbeiten">
+                    ✏️ Bearbeiten
+                  </button>
+                  <button type="button" class="btn btn-secondary" onclick="deletePeerLoan('${sl.id}')" style="font-size: 12px; padding: 4px 8px; color: #D32F2F;" aria-label="Leihgabe mit ${escapeHTML(sl.person)} löschen">
+                    🗑️ Löschen
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </details>
+    `;
+  }
+
   html += '</div>';
   container.innerHTML = html;
 }
@@ -15390,6 +15746,7 @@ function openPeerLoanModal(loanId = null) {
   const autoBookChk = document.getElementById('peer-loan-auto-book');
   const noteInput = document.getElementById('peer-loan-note');
   const heading = document.getElementById('peer-loan-heading');
+  const saveBtn = document.getElementById('btn-save-peer-loan');
 
   if (loanId) {
     const loan = appState.peerLoans.find(l => l.id === loanId);
@@ -15397,6 +15754,7 @@ function openPeerLoanModal(loanId = null) {
 
     if (editIdInput) editIdInput.value = loan.id;
     if (heading) heading.textContent = '✏️ Leihgabe bearbeiten';
+    if (saveBtn) saveBtn.textContent = '💾 Änderungen speichern';
     const typeRadio = document.querySelector(`input[name="peer-loan-type"][value="${loan.type}"]`);
     if (typeRadio) typeRadio.checked = true;
     if (personInput) personInput.value = loan.person || '';
@@ -15412,6 +15770,7 @@ function openPeerLoanModal(loanId = null) {
   } else {
     if (editIdInput) editIdInput.value = '';
     if (heading) heading.textContent = '🤝 Geliehenes / Verliehenes Geld erfassen';
+    if (saveBtn) saveBtn.textContent = '💾 Speichern';
     const typeLent = document.getElementById('peer-type-lent');
     if (typeLent) typeLent.checked = true;
     if (personInput) personInput.value = '';
@@ -15432,7 +15791,8 @@ function openPeerLoanModal(loanId = null) {
 
 function closePeerLoanModal() {
   const modal = document.getElementById('peer-loan-modal');
-  if (modal) modal.style.display = 'none';
+  if (!modal) return;
+  modal.style.display = 'none';
 }
 
 async function handleSavePeerLoan(e) {
@@ -15472,13 +15832,36 @@ async function handleSavePeerLoan(e) {
       loan.account = account;
       loan.note = note;
       loan.updatedAt = Date.now();
+
+      // Status neu prüfen falls Betrag angepasst wurde
+      if (Number(loan.paidAmount || 0) >= amount) {
+        loan.settled = true;
+      } else {
+        loan.settled = false;
+        loan.settledDate = null;
+      }
+
+      // Falls verknüpfte Buchung vorhanden ist, diese auch aktualisieren
+      if (loan.txId) {
+        const linkedTx = appState.transactions.find(t => t.id === loan.txId);
+        if (linkedTx) {
+          linkedTx.amount = amount;
+          linkedTx.date = date;
+          if (account) linkedTx.account = account;
+          linkedTx.type = type === 'lent' ? 'expense' : 'income';
+          linkedTx.category = type === 'lent' ? 'Privat & Familie' : 'Sonstige Einnahmen';
+          linkedTx.subCategory = type === 'lent' ? 'Geld verliehen (an Freunde / Familie)' : 'Geld geliehen (von Freunden / Familie)';
+          linkedTx.description = type === 'lent' 
+            ? `Verliehen an ${person}${note ? ' (' + note + ')' : ''}`
+            : `Geliehen von ${person}${note ? ' (' + note + ')' : ''}`;
+        }
+      }
     }
   } else {
     // Wenn autoBook aktiv ist, buchen wir sofort eine reale Transaktion
     if (autoBook && account) {
       txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
       if (type === 'lent') {
-        // Ausgabe: Ich verleihe Geld (Geld geht ab)
         appState.transactions.push({
           id: txId,
           type: 'expense',
@@ -15486,14 +15869,12 @@ async function handleSavePeerLoan(e) {
           date: date,
           account: account,
           category: 'Privat & Familie',
-          subCategory: 'Geld verliehen (an Freunde / Familie)',
-          memo: `Verliehen an ${person}${note ? ' (' + note + ')' : ''}`,
+          subcategory: 'Geld verliehen (an Freunde / Familie)',
+          description: `Verliehen an ${person}${note ? ' (' + note + ')' : ''}`,
           isPlanned: false,
-          isRecurring: false,
-          receiptImage: null
+          isRecurring: false
         });
       } else {
-        // Einnahme: Ich leihe mir Geld (Geld kommt rein)
         appState.transactions.push({
           id: txId,
           type: 'income',
@@ -15501,11 +15882,10 @@ async function handleSavePeerLoan(e) {
           date: date,
           account: account,
           category: 'Sonstige Einnahmen',
-          subCategory: 'Geld geliehen (von Freunden / Familie)',
-          memo: `Geliehen von ${person}${note ? ' (' + note + ')' : ''}`,
+          subcategory: 'Geld geliehen (von Freunden / Familie)',
+          description: `Geliehen von ${person}${note ? ' (' + note + ')' : ''}`,
           isPlanned: false,
-          isRecurring: false,
-          receiptImage: null
+          isRecurring: false
         });
       }
     }
@@ -15535,15 +15915,17 @@ async function handleSavePeerLoan(e) {
   closePeerLoanModal();
   updateOverview();
 
-  const msg = isLent 
-    ? `Verliehenes Geld an ${person} über ${formatCurrency(amount)} gespeichert.`
-    : `Geliehenes Geld von ${person} über ${formatCurrency(amount)} gespeichert.`;
+  const msg = editId 
+    ? `Änderungen für ${person} erfolgreich gespeichert.`
+    : (isLent 
+        ? `Verliehenes Geld an ${person} über ${formatCurrency(amount)} gespeichert.`
+        : `Geliehenes Geld von ${person} über ${formatCurrency(amount)} gespeichert.`);
   announceNVDA(msg);
 }
 
 let activeRepayLoanId = null;
 
-function openPeerLoanRepayModal(loanId) {
+function openPeerLoanRepayModal(loanId, repayItemId = null) {
   ensurePeerLoansInitialized();
   const loan = appState.peerLoans.find(l => l.id === loanId);
   if (!loan) return;
@@ -15554,11 +15936,17 @@ function openPeerLoanRepayModal(loanId) {
 
   populatePeerLoanAccountsDropdown('peer-loan-repay-account');
 
+  const headingEl = document.getElementById('peer-loan-repay-heading');
   const infoEl = document.getElementById('peer-loan-repay-info');
   const repayIdInput = document.getElementById('peer-loan-repay-id');
+  const repayItemInput = document.getElementById('peer-loan-repay-item-id');
   const amountInput = document.getElementById('peer-loan-repay-amount');
   const dateInput = document.getElementById('peer-loan-repay-date');
+  const accountSelect = document.getElementById('peer-loan-repay-account');
+  const noteInput = document.getElementById('peer-loan-repay-note');
+  const autoBookChk = document.getElementById('peer-loan-repay-auto-book');
   const autoBookText = document.getElementById('peer-loan-repay-auto-book-text');
+  const submitBtn = document.getElementById('peer-loan-repay-submit-btn');
 
   const total = Number(loan.amount || 0);
   const paid = Number(loan.paidAmount || 0);
@@ -15566,30 +15954,76 @@ function openPeerLoanRepayModal(loanId) {
   const isLent = loan.type === 'lent';
 
   if (repayIdInput) repayIdInput.value = loan.id;
-  if (amountInput) {
-    amountInput.value = remaining.toFixed(2);
-    amountInput.max = remaining.toFixed(2);
-  }
-  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-  if (autoBookText) {
-    autoBookText.textContent = isLent
-      ? 'Gleich als Einnahme (Rückzahlung erhalten) auf dieses Konto buchen'
-      : 'Gleich als Ausgabe (Schuld zurückgezahlt) von diesem Konto buchen';
-  }
+  if (repayItemId && Array.isArray(loan.repayments)) {
+    // Bearbeitung einer bestehenden Teilrückzahlung
+    const rep = loan.repayments.find(r => r.id === repayItemId);
+    if (!rep) return;
 
-  if (infoEl) {
-    infoEl.innerHTML = `
-      <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
-        👤 ${escapeHTML(loan.person)} – ${isLent ? '🟢 Hat sich Geld geliehen' : '🔴 Du hast dir Geld geliehen'}
-      </div>
-      <div style="font-size: 13px; color: var(--text-color);">
-        Ursprünglich: <strong>${formatCurrency(total)}</strong> • Bereits zurückgezahlt: <strong>${formatCurrency(paid)}</strong>
-      </div>
-      <div style="font-size: 17px; font-weight: bold; color: ${isLent ? '#2E7D32' : '#D32F2F'}; margin-top: 4px;">
-        Aktuell noch offen: ${formatCurrency(remaining)}
-      </div>
-    `;
+    if (repayItemInput) repayItemInput.value = rep.id;
+    if (headingEl) headingEl.textContent = '✏️ Teilrückzahlung bearbeiten';
+    if (submitBtn) submitBtn.textContent = '💾 Änderungen speichern';
+    if (amountInput) {
+      amountInput.value = Number(rep.amount || 0).toFixed(2);
+      amountInput.removeAttribute('max');
+    }
+    if (dateInput) dateInput.value = rep.date || new Date().toISOString().split('T')[0];
+    if (accountSelect && rep.account) accountSelect.value = rep.account;
+    if (noteInput) noteInput.value = rep.note || '';
+    if (autoBookChk) {
+      autoBookChk.checked = Boolean(rep.txId);
+      autoBookChk.disabled = true; // Buchungsverknüpfung bleibt synchron
+    }
+    if (autoBookText) {
+      autoBookText.textContent = rep.txId 
+        ? 'Verknüpfte Buchung auf dem Konto wird automatisch aktualisiert'
+        : 'Keine direkte Kontobuchung verknüpft';
+    }
+
+    if (infoEl) {
+      infoEl.innerHTML = `
+        <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
+          👤 ${escapeHTML(loan.person)} – Teilrückzahlung bearbeiten
+        </div>
+        <div style="font-size: 13px; color: var(--text-color);">
+          Gesamtbetrag: <strong>${formatCurrency(total)}</strong> • Bisher erfasster Teilbetrag: <strong>${formatCurrency(rep.amount)}</strong>
+        </div>
+      `;
+    }
+  } else {
+    // Neue Teilrückzahlung erfassen
+    if (repayItemInput) repayItemInput.value = '';
+    if (headingEl) headingEl.textContent = '💵 Teilrückzahlung verbuchen';
+    if (submitBtn) submitBtn.textContent = '✅ Rückzahlung buchen';
+    if (amountInput) {
+      amountInput.value = remaining > 0 ? remaining.toFixed(2) : '';
+      amountInput.max = remaining > 0 ? remaining.toFixed(2) : '';
+    }
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (noteInput) noteInput.value = '';
+    if (autoBookChk) {
+      autoBookChk.checked = true;
+      autoBookChk.disabled = false;
+    }
+    if (autoBookText) {
+      autoBookText.textContent = isLent
+        ? 'Gleich als Einnahme (Rückzahlung erhalten) auf dieses Konto buchen'
+        : 'Gleich als Ausgabe (Schuld zurückgezahlt) von diesem Konto buchen';
+    }
+
+    if (infoEl) {
+      infoEl.innerHTML = `
+        <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
+          👤 ${escapeHTML(loan.person)} – ${isLent ? '🟢 Hat sich Geld geliehen' : '🔴 Du hast dir Geld geliehen'}
+        </div>
+        <div style="font-size: 13px; color: var(--text-color);">
+          Ursprünglich: <strong>${formatCurrency(total)}</strong> • Bereits zurückgezahlt: <strong>${formatCurrency(paid)}</strong>
+        </div>
+        <div style="font-size: 17px; font-weight: bold; color: ${isLent ? '#2E7D32' : '#D32F2F'}; margin-top: 4px;">
+          Aktuell noch offen: ${formatCurrency(remaining)}
+        </div>
+      `;
+    }
   }
 
   modal.style.display = 'flex';
@@ -15617,6 +16051,7 @@ async function handleConfirmPeerLoanRepay(e) {
   ensurePeerLoansInitialized();
 
   const loanId = document.getElementById('peer-loan-repay-id')?.value || activeRepayLoanId;
+  const repayItemId = document.getElementById('peer-loan-repay-item-id')?.value;
   const loan = appState.peerLoans.find(l => l.id === loanId);
   if (!loan) return;
 
@@ -15631,6 +16066,48 @@ async function handleConfirmPeerLoanRepay(e) {
     return;
   }
 
+  if (repayItemId && Array.isArray(loan.repayments)) {
+    // Bearbeitung einer bestehenden Rückzahlung
+    const rep = loan.repayments.find(r => r.id === repayItemId);
+    if (!rep) return;
+
+    const diff = repayAmount - Number(rep.amount || 0);
+    rep.amount = repayAmount;
+    rep.date = repayDate;
+    rep.account = repayAccount;
+    rep.note = repayNote;
+
+    loan.paidAmount = Math.max(0, Number(loan.paidAmount || 0) + diff);
+    if (loan.paidAmount >= Number(loan.amount || 0)) {
+      loan.settled = true;
+      loan.settledDate = repayDate;
+    } else {
+      loan.settled = false;
+      loan.settledDate = null;
+    }
+    loan.updatedAt = Date.now();
+
+    // Verknüpfte Buchung synchronisieren falls vorhanden
+    if (rep.txId) {
+      const linkedTx = appState.transactions.find(t => t.id === rep.txId);
+      if (linkedTx) {
+        linkedTx.amount = repayAmount;
+        linkedTx.date = repayDate;
+        if (repayAccount) linkedTx.account = repayAccount;
+        linkedTx.description = loan.type === 'lent'
+          ? `Rückzahlung von ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`
+          : `Rückzahlung an ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`;
+      }
+    }
+
+    await saveStateToEncryptedStorage();
+    closePeerLoanRepayModal();
+    updateOverview();
+    announceNVDA(`Rückzahlung über ${formatCurrency(repayAmount)} für ${loan.person} erfolgreich aktualisiert.`);
+    return;
+  }
+
+  // Neue Rückzahlung verbuchen
   const remainingBefore = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
   if (repayAmount > remainingBefore + 0.01) {
     if (!confirm(`Der eingegebene Betrag (${formatCurrency(repayAmount)}) ist höher als die offene Restschuld (${formatCurrency(remainingBefore)}). Möchtest du ihn trotzdem so buchen?`)) {
@@ -15650,11 +16127,10 @@ async function handleConfirmPeerLoanRepay(e) {
         date: repayDate,
         account: repayAccount,
         category: 'Sonstige Einnahmen',
-        subCategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
-        memo: `Rückzahlung von ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
+        subcategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
+        description: `Rückzahlung von ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
         isPlanned: false,
-        isRecurring: false,
-        receiptImage: null
+        isRecurring: false
       });
     } else {
       // Ausgabe: Ich zahle geliehenes Geld an Freund zurück
@@ -15665,18 +16141,17 @@ async function handleConfirmPeerLoanRepay(e) {
         date: repayDate,
         account: repayAccount,
         category: 'Privat & Familie',
-        subCategory: 'Rückzahlung geliehenes Geld',
-        memo: `Rückzahlung an ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
+        subcategory: 'Rückzahlung geliehenes Geld',
+        description: `Rückzahlung an ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
         isPlanned: false,
-        isRecurring: false,
-        receiptImage: null
+        isRecurring: false
       });
     }
   }
 
   if (!Array.isArray(loan.repayments)) loan.repayments = [];
   loan.repayments.push({
-    id: 'repay_' + Date.now(),
+    id: 'repay_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
     amount: repayAmount,
     date: repayDate,
     account: repayAccount,
@@ -15702,6 +16177,55 @@ async function handleConfirmPeerLoanRepay(e) {
   announceNVDA(msg);
 }
 
+async function deletePeerLoanRepayment(loanId, repayItemId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan || !Array.isArray(loan.repayments)) return;
+  const repIdx = loan.repayments.findIndex(r => r.id === repayItemId);
+  if (repIdx === -1) return;
+  const rep = loan.repayments[repIdx];
+
+  if (!confirm(`Möchtest du diese Teilrückzahlung über ${formatCurrency(rep.amount)} vom ${formatDateGerman(rep.date)} wirklich löschen?`)) {
+    return;
+  }
+
+  // Falls verknüpfte Buchung existiert, diese auch löschen
+  if (rep.txId) {
+    appState.transactions = appState.transactions.filter(t => t.id !== rep.txId);
+  }
+
+  loan.paidAmount = Math.max(0, Number(loan.paidAmount || 0) - Number(rep.amount || 0));
+  if (loan.paidAmount < Number(loan.amount || 0)) {
+    loan.settled = false;
+    loan.settledDate = null;
+  }
+  loan.repayments.splice(repIdx, 1);
+  loan.updatedAt = Date.now();
+
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Rückzahlung über ${formatCurrency(rep.amount)} gelöscht. Neuer Restbetrag: ${formatCurrency(Math.max(0, loan.amount - loan.paidAmount))}.`);
+}
+
+async function reopenPeerLoan(loanId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  loan.settled = false;
+  loan.settledDate = null;
+  if (Array.isArray(loan.repayments) && loan.repayments.length > 0) {
+    loan.paidAmount = loan.repayments.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+  } else {
+    loan.paidAmount = 0;
+  }
+  loan.updatedAt = Date.now();
+
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Leihgabe mit ${loan.person} wieder geöffnet.`);
+}
+
 async function settlePeerLoan(loanId) {
   ensurePeerLoansInitialized();
   const loan = appState.peerLoans.find(l => l.id === loanId);
@@ -15718,8 +16242,7 @@ async function settlePeerLoan(loanId) {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // Optional fragen nach Kontogutschrift/Abbuchung
-  const bookAccount = confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
+  const bookAccount = remaining > 0 && confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
   if (bookAccount) {
     const acc = loan.account || (appState.accounts && appState.accounts[0] ? appState.accounts[0].id : 'bank');
     const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -15731,11 +16254,10 @@ async function settlePeerLoan(loanId) {
         date: todayStr,
         account: acc,
         category: 'Sonstige Einnahmen',
-        subCategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
-        memo: `Vollständige Rückzahlung von ${loan.person}`,
+        subcategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
+        description: `Vollständige Rückzahlung von ${loan.person}`,
         isPlanned: false,
-        isRecurring: false,
-        receiptImage: null
+        isRecurring: false
       });
     } else {
       appState.transactions.push({
@@ -15745,11 +16267,10 @@ async function settlePeerLoan(loanId) {
         date: todayStr,
         account: acc,
         category: 'Privat & Familie',
-        subCategory: 'Rückzahlung geliehenes Geld',
-        memo: `Vollständige Rückzahlung an ${loan.person}`,
+        subcategory: 'Rückzahlung geliehenes Geld',
+        description: `Vollständige Rückzahlung an ${loan.person}`,
         isPlanned: false,
-        isRecurring: false,
-        receiptImage: null
+        isRecurring: false
       });
     }
   }
@@ -15773,6 +16294,18 @@ async function deletePeerLoan(loanId) {
     return;
   }
 
+  // Verknüpfte Buchungen entfernen falls vorhanden
+  const txIdsToDelete = new Set();
+  if (loan.txId) txIdsToDelete.add(loan.txId);
+  if (Array.isArray(loan.repayments)) {
+    loan.repayments.forEach(r => { if (r.txId) txIdsToDelete.add(r.txId); });
+  }
+  if (txIdsToDelete.size > 0) {
+    if (confirm(`Sollen auch die ${txIdsToDelete.size} verknüpfte(n) Buchung(en) auf deinen Konten gelöscht werden?`)) {
+      appState.transactions = appState.transactions.filter(t => !txIdsToDelete.has(t.id));
+    }
+  }
+
   appState.peerLoans = appState.peerLoans.filter(l => l.id !== loanId);
   await saveStateToEncryptedStorage();
   updateOverview();
@@ -15789,6 +16322,8 @@ window.openPeerLoanRepayModal = openPeerLoanRepayModal;
 window.closePeerLoanRepayModal = closePeerLoanRepayModal;
 window.setPeerLoanRepayFull = setPeerLoanRepayFull;
 window.handleConfirmPeerLoanRepay = handleConfirmPeerLoanRepay;
+window.deletePeerLoanRepayment = deletePeerLoanRepayment;
+window.reopenPeerLoan = reopenPeerLoan;
 window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
 

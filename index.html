@@ -21,19 +21,18 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.5)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.6)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
 <div style="background: rgba(142, 36, 170, 0.08); border-left: 6px solid #8E24AA; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.5 (Bedarfsgesteuerte Übersicht &amp; Geliehenes/Verliehenes Geld)</h3>
+<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.6 (Split-Zahlungen bearbeiten &amp; Leihgaben-Verwaltung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-<li><strong>🤝 Geliehenes &amp; Verliehenes Geld erfassen:</strong> Neue barrierefreie Karte für private Leihgaben unter Freunden und Familie. Zeigt übersichtlich Forderungen (Geld, das dir geschuldet wird) und Verbindlichkeiten (Geld, das du schuldest).</li>
-<li><strong>💵 Teilrückzahlungen &amp; Fortschritt:</strong> Leihgaben können mit einem Klick vollständig beglichen oder mit flexiblen Teilbeträgen und Fortschrittsbalken abbezahlt werden – auf Wunsch mit automatischer Gegenbuchung auf dein Konto.</li>
-<li><strong>🧹 Bedarfsgesteuerte Monatsübersicht:</strong> Leere Bereiche nehmen keinen Platz mehr weg. Die Karten für Kredite (0 Kredite), Umbuchungen (0 Umbuchungen im Monat) und Geliehenes Geld (0 offene Posten) werden automatisch ausgeblendet und erscheinen nur bei Bedarf.</li>
-<li><strong>📱 E2E-Postfach-Sync für Leihgaben:</strong> Alle geliehenen und verliehenen Beträge werden Ende-zu-Ende verschlüsselt und automatisch mit dem Smartphone abgeglichen.</li>
+<li><strong>🔀 Split-Zahlungen in Buchungsbearbeitung:</strong> Jede bestehende Buchung kann nun im Bearbeiten-Dialog in eine Split-Zahlung über mehrere Konten (z. B. Teil Bar und Teil Girokonto) umgewandelt werden. Bestehende Split-Buchungen lassen sich mit Live-Summenprüfung anpassen oder wieder zu einer Einzelbuchung vereinen.</li>
+<li><strong>🤝 Vollständige Bearbeitung &amp; Historie von Leihgaben:</strong> Geliehenes und verliehenes Geld kann jederzeit nachträglich editiert werden – inklusive automatischer Aktualisierung verknüpfter Kontobuchungen. Alle Teilrückzahlungen bieten eine eigene Historie zum Bearbeiten und Löschen. Beglichene Leihgaben können im Archiv eingesehen oder wieder geöffnet werden.</li>
+<li><strong>🧹 Bedarfsgesteuerte Monatsübersicht:</strong> Kredite, Umbuchungen und Leihgaben werden nur eingeblendet, wenn tatsächlich Daten vorhanden sind.</li>
 </ul>
 </div>
 
@@ -715,6 +714,32 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     <option value="savings">Tagesgeldkonto</option>
     <option value="cash">Bargeld</option>
   </select>
+</div>
+
+<!-- SPLIT-ZAHLUNG IN BEARBEITUNG -->
+<div id="edit-tx-split-toggle-group" class="form-group" style="margin-top: 4px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px; background: rgba(33, 150, 243, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(33, 150, 243, 0.3);">
+    <input type="checkbox" id="edit-tx-split-toggle" onchange="toggleEditSplitPayment()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-tx-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-color);">
+      🔀 Betrag auf mehrere Konten aufteilen (Split-Zahlung, z. B. Teil Bar &amp; Teil Girokonto)
+    </label>
+  </div>
+</div>
+
+<div id="edit-tx-split-section" class="settings-box" style="display: none; border-left: 8px solid #1976D2; background: rgba(33, 150, 243, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung auf Konten anpassen</h4>
+  <p class="field-hint" style="margin-bottom: 12px;">Passe die Beträge und Konten an. Die Summe aller Teilbeträge muss genau dem Gesamtbetrag entsprechen:</p>
+  <div id="edit-tx-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
+    <!-- Befüllt per JavaScript -->
+  </div>
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
+    <button type="button" id="edit-tx-split-add-btn" class="btn btn-secondary" onclick="addEditSplitRow()" style="font-size: 13px; padding: 6px 12px;">
+      ➕ Weiteres Konto hinzufügen
+    </button>
+    <div id="edit-tx-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #90CAF9; color: #0D47A1;">
+      Summe der Teile: 0,00 € / Gesamt: 0,00 €
+    </div>
+  </div>
 </div>
 
 <div id="edit-tx-transfer-accounts-group" class="form-row-2" style="display: none;">
@@ -1843,6 +1868,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <form id="peer-loan-repay-form" onsubmit="handleConfirmPeerLoanRepay(event)" class="accessible-form">
     <input type="hidden" id="peer-loan-repay-id" value="">
+    <input type="hidden" id="peer-loan-repay-item-id" value="">
 
     <div class="form-group">
       <label for="peer-loan-repay-amount" class="field-label"><strong>Rückzahlungsbetrag (€):</strong></label>
@@ -1879,7 +1905,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
     <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
       <button type="button" class="btn btn-secondary" onclick="closePeerLoanRepayModal()">Abbrechen</button>
-      <button type="submit" class="btn btn-primary" style="background-color: #2E7D32;">✅ Rückzahlung buchen</button>
+      <button type="submit" id="peer-loan-repay-submit-btn" class="btn btn-primary" style="background-color: #2E7D32;">✅ Rückzahlung buchen</button>
     </div>
   </form>
 </div>
