@@ -2276,6 +2276,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <h2 class="view-heading" tabindex="-1" id="heading-expense-view" data-emoji="🔴">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
 <p class="view-sub">Trage hier getätigte Ausgaben oder<strong>geplante Anschaffungen für die Zukunft</strong>ein.</p>
 
+<div style="background: rgba(142, 36, 170, 0.08); border: 2px solid rgba(142, 36, 170, 0.3); border-left: 6px solid #8E24AA; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+  <div style="font-size: 14px; color: var(--text-color);">
+    🤝 <strong>Geld an jemanden verliehen?</strong> Halte fest, wer es dir schuldet, und verfolge Teilrückzahlungen.
+  </div>
+  <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal(null, 'lent')" style="font-size: 13px; padding: 6px 14px; border: 2px solid #8E24AA; color: #6A1B9A; font-weight: bold; background: white; border-radius: 6px;" aria-label="Geld an jemanden verliehen als Leihgabe erfassen">
+    🤝 Als Leihgabe erfassen
+  </button>
+</div>
+
 <form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
 <div class="form-group">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -2758,6 +2767,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-income-view" data-emoji="🟢">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
 <p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
+
+<div style="background: rgba(142, 36, 170, 0.08); border: 2px solid rgba(142, 36, 170, 0.3); border-left: 6px solid #8E24AA; padding: 10px 14px; border-radius: 8px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+  <div style="font-size: 14px; color: var(--text-color);">
+    🤝 <strong>Geld von jemandem geliehen?</strong> Halte fest, wem du es schuldest, und plane deine Rückzahlung.
+  </div>
+  <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal(null, 'borrowed')" style="font-size: 13px; padding: 6px 14px; border: 2px solid #8E24AA; color: #6A1B9A; font-weight: bold; background: white; border-radius: 6px;" aria-label="Geld von jemandem geliehen als Leihgabe erfassen">
+    🤝 Als Leihgabe erfassen
+  </button>
+</div>
 
 <form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
 <div class="form-group">

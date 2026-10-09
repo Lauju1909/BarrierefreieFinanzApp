@@ -419,6 +419,7 @@ const CATEGORIES_DB = {
     ],
     "Sonstige Ausgaben & Bargeld": [
       "Bargeldabhebung am Geldautomaten",
+      "Geld an Freunde / Familie verliehen (Leihgabe)",
       "Ausweisgebühren & Bürgeramt",
       "Passfotos",
       "Lotto, Rubbellose & Glücksspiel",
@@ -533,6 +534,8 @@ const CATEGORIES_DB = {
     ],
     "Sonstige Einnahmen": [
       "Bargeldeinzahlung aufs Konto / Kleingeld eingezahlt",
+      "Geld von Freunden / Familie geliehen",
+      "Rückzahlung von geliehenem Geld erhalten",
       "Einmalige Gutschrift",
       "Entschädigung (Bahnverspätung, Flugausfall)",
       "Aufwandsentschädigung (Wahlhelfer, Ehrenamt)",
@@ -9664,7 +9667,7 @@ function setPeerLoanDateQuick(when) {
   announceNVDA(`Datum gesetzt auf: ${formatDateGerman(dateInput.value)}`);
 }
 
-function openPeerLoanModal(loanId = null) {
+function openPeerLoanModal(loanId = null, defaultType = null) {
   ensurePeerLoansInitialized();
   const modal = document.getElementById('peer-loan-modal');
   if (!modal) return;
@@ -9705,10 +9708,29 @@ function openPeerLoanModal(loanId = null) {
     if (editIdInput) editIdInput.value = '';
     if (heading) heading.textContent = '🤝 Geliehenes / Verliehenes Geld erfassen';
     if (saveBtn) saveBtn.textContent = '💾 Speichern';
-    const typeLent = document.getElementById('peer-type-lent');
-    if (typeLent) typeLent.checked = true;
+
+    const useType = defaultType || 'lent';
+    const typeRadio = document.querySelector(`input[name="peer-loan-type"][value="${useType}"]`);
+    if (typeRadio) typeRadio.checked = true;
+
+    // Falls aus Ausgabe- oder Einnahme-Ansicht geöffnet, Betrag & Konto übernehmen
+    let prefilledAmt = '';
+    let prefilledAcc = '';
+    if (useType === 'lent') {
+      const expAmt = document.getElementById('exp-amount')?.value;
+      if (expAmt && parseFloat(expAmt) > 0) prefilledAmt = parseFloat(expAmt).toFixed(2);
+      const expAcc = document.getElementById('exp-account')?.value;
+      if (expAcc) prefilledAcc = expAcc;
+    } else if (useType === 'borrowed') {
+      const incAmt = document.getElementById('inc-amount')?.value;
+      if (incAmt && parseFloat(incAmt) > 0) prefilledAmt = parseFloat(incAmt).toFixed(2);
+      const incAcc = document.getElementById('inc-account')?.value;
+      if (incAcc) prefilledAcc = incAcc;
+    }
+
     if (personInput) personInput.value = '';
-    if (amountInput) amountInput.value = '';
+    if (amountInput) amountInput.value = prefilledAmt;
+    if (accountSelect && prefilledAcc) accountSelect.value = prefilledAcc;
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     if (dueDateInput) dueDateInput.value = '';
     if (autoBookChk) {
