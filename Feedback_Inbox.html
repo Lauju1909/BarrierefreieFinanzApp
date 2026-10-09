@@ -424,7 +424,7 @@
       let messages = [];
 
       try {
-        const res = await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback/json?poll=1');
+        const res = await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback/json?poll=1&since=all');
         if (res.ok) {
           const text = await res.text();
           const lines = text.trim().split('\n');
