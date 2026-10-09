@@ -6479,11 +6479,19 @@ function onEditTxTypeChange() {
   const splitToggleGroup = document.getElementById('edit-tx-split-toggle-group');
   const splitToggle = document.getElementById('edit-tx-split-toggle');
   const splitSec = document.getElementById('edit-tx-split-section');
+  const loanToggleGroup = document.getElementById('edit-tx-loan-toggle-group');
+  const loanToggle = document.getElementById('edit-tx-loan-toggle');
+  const loanSec = document.getElementById('edit-tx-loan-section');
+  const loanLabel = document.getElementById('edit-tx-loan-label');
+  const loanPersonLabel = document.getElementById('edit-tx-loan-person-label');
 
   if (type === 'transfer') {
     if (splitToggleGroup) splitToggleGroup.style.display = 'none';
     if (splitToggle) splitToggle.checked = false;
     if (splitSec) splitSec.style.display = 'none';
+    if (loanToggleGroup) loanToggleGroup.style.display = 'none';
+    if (loanToggle) loanToggle.checked = false;
+    if (loanSec) loanSec.style.display = 'none';
     if (singleAcc) singleAcc.style.display = 'none';
     if (trfAcc) trfAcc.style.display = 'grid';
     if (catSection) catSection.style.display = 'none';
@@ -6494,8 +6502,41 @@ function onEditTxTypeChange() {
     if (splitSec) splitSec.style.display = isSplit ? 'block' : 'none';
     if (trfAcc) trfAcc.style.display = 'none';
     if (catSection) catSection.style.display = 'block';
+
+    if (loanToggleGroup) loanToggleGroup.style.display = 'block';
+    const isLoan = loanToggle && loanToggle.checked;
+    if (loanSec) loanSec.style.display = isLoan ? 'block' : 'none';
+    if (loanLabel) {
+      loanLabel.textContent = (type === 'income')
+        ? '🤝 Geld von jemandem geliehen (als Leihgabe / Schuld erfassen)'
+        : '🤝 Geld an jemanden verliehen (als Leihgabe / Forderung erfassen)';
+    }
+    if (loanPersonLabel) {
+      loanPersonLabel.textContent = (type === 'income')
+        ? 'Von wem geliehen? (Name der Person):'
+        : 'An wen verliehen? (Name der Person):';
+    }
+
     const catType = (type === 'income') ? 'inc' : 'exp';
     populateEditModalCategories(catType);
+  }
+}
+
+function toggleEditLoanFields() {
+  const toggle = document.getElementById('edit-tx-loan-toggle');
+  const sec = document.getElementById('edit-tx-loan-section');
+  const isLoan = toggle && toggle.checked;
+  if (sec) sec.style.display = isLoan ? 'block' : 'none';
+  if (isLoan) {
+    const personInput = document.getElementById('edit-tx-loan-person');
+    if (personInput) personInput.focus();
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details für Buchung eingeblendet. Bitte gib den Namen der Person ein.');
+    }
+  } else {
+    if (typeof announceNVDA === 'function') {
+      announceNVDA('Leihgabe-Details ausgeblendet.');
+    }
   }
 }
 
@@ -6736,6 +6777,29 @@ function openEditModal(txId) {
 
   onEditTxTypeChange();
 
+  // Prüfen, ob eine verknüpfte Leihgabe existiert
+  ensurePeerLoansInitialized();
+  const linkedLoan = (appState.peerLoans || []).find(l => l.txId === tx.id || (tx.splitId && l.txId === tx.splitId));
+  const loanToggle = document.getElementById('edit-tx-loan-toggle');
+  const loanSec = document.getElementById('edit-tx-loan-section');
+  const loanPersonInput = document.getElementById('edit-tx-loan-person');
+  const loanDueDateInput = document.getElementById('edit-tx-loan-due-date');
+  const loanNoteInput = document.getElementById('edit-tx-loan-note');
+
+  if (linkedLoan && tx.type !== 'transfer') {
+    if (loanToggle) loanToggle.checked = true;
+    if (loanSec) loanSec.style.display = 'block';
+    if (loanPersonInput) loanPersonInput.value = linkedLoan.person || '';
+    if (loanDueDateInput) loanDueDateInput.value = linkedLoan.dueDate || '';
+    if (loanNoteInput) loanNoteInput.value = linkedLoan.note || '';
+  } else {
+    if (loanToggle) loanToggle.checked = false;
+    if (loanSec) loanSec.style.display = 'none';
+    if (loanPersonInput) loanPersonInput.value = '';
+    if (loanDueDateInput) loanDueDateInput.value = '';
+    if (loanNoteInput) loanNoteInput.value = '';
+  }
+
   if (tx.type !== 'transfer') {
     const catType = (tx.type === 'income') ? 'inc' : 'exp';
     populateEditModalCategories(catType, tx.category, tx.subcategory);
@@ -6874,6 +6938,63 @@ async function saveEditedTransaction(e) {
     announceNVDA('Buchung erfolgreich aktualisiert!');
   }
 
+  // Leihgabe-Synchronisation beim Bearbeiten der Buchung
+  const isLoanToggle = document.getElementById('edit-tx-loan-toggle')?.checked && type !== 'transfer';
+  ensurePeerLoansInitialized();
+  const linkedLoan = (appState.peerLoans || []).find(l => l.txId === id || (tx.splitId && l.txId === tx.splitId));
+
+  if (isLoanToggle) {
+    const loanPerson = document.getElementById('edit-tx-loan-person')?.value.trim();
+    if (!loanPerson) {
+      alert('Bitte gib den Namen der Person für die Leihgabe ein.');
+      document.getElementById('edit-tx-loan-person')?.focus();
+      return;
+    }
+    const loanDueDate = document.getElementById('edit-tx-loan-due-date')?.value || '';
+    const loanNote = document.getElementById('edit-tx-loan-note')?.value.trim() || '';
+    const loanType = (type === 'income') ? 'borrowed' : 'lent';
+    const loanAcc = tx.account || (isSplitToggle ? editSplitRows[0]?.account : 'bank');
+
+    if (linkedLoan) {
+      linkedLoan.person = loanPerson;
+      linkedLoan.type = loanType;
+      linkedLoan.amount = totalAmount;
+      linkedLoan.date = date;
+      linkedLoan.dueDate = loanDueDate;
+      linkedLoan.account = loanAcc;
+      linkedLoan.note = loanNote;
+      linkedLoan.updatedAt = Date.now();
+      if (Number(linkedLoan.paidAmount || 0) >= totalAmount) {
+        linkedLoan.settled = true;
+      } else {
+        linkedLoan.settled = false;
+        linkedLoan.settledDate = null;
+      }
+    } else {
+      appState.peerLoans.push({
+        id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+        type: loanType,
+        person: loanPerson,
+        amount: totalAmount,
+        paidAmount: 0,
+        date: date,
+        dueDate: loanDueDate,
+        account: loanAcc,
+        autoBooked: true,
+        txId: isSplitToggle ? (tx.splitId || id) : id,
+        note: loanNote || desc,
+        settled: false,
+        settledDate: null,
+        repayments: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+    }
+  } else if (linkedLoan) {
+    // Häkchen wurde entfernt: Leihgabe entfernen
+    appState.peerLoans = appState.peerLoans.filter(l => l.id !== linkedLoan.id);
+  }
+
   currentEditReceipt = null;
   renderReceiptPreview('edit');
   await saveStateToEncryptedStorage();
@@ -6882,6 +7003,7 @@ async function saveEditedTransaction(e) {
 }
 
 window.toggleEditSplitPayment = toggleEditSplitPayment;
+window.toggleEditLoanFields = toggleEditLoanFields;
 window.addEditSplitRow = addEditSplitRow;
 window.removeEditSplitRow = removeEditSplitRow;
 window.onEditSplitAccountChange = onEditSplitAccountChange;

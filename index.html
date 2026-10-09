@@ -742,6 +742,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
+<!-- OPTIONALE LEIHGABE IN BUCHUNGS-BEARBEITUNG -->
+<div id="edit-tx-loan-toggle-group" class="form-group" style="margin-top: 4px; margin-bottom: 12px;">
+  <div style="display: flex; align-items: center; gap: 10px; background: rgba(142, 36, 170, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(142, 36, 170, 0.3);">
+    <input type="checkbox" id="edit-tx-loan-toggle" onchange="toggleEditLoanFields()" style="width: 20px; height: 20px; cursor: pointer;">
+    <label for="edit-tx-loan-toggle" id="edit-tx-loan-label" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: #6A1B9A;">
+      🤝 Als Leihgabe erfassen (Geliehenes oder verliehenes Geld)
+    </label>
+  </div>
+</div>
+
+<div id="edit-tx-loan-section" class="settings-box" style="display: none; border-left: 8px solid #8E24AA; background: rgba(142, 36, 170, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
+  <h4 style="margin: 0 0 6px 0; color: #6A1B9A;">🤝 Leihgabe-Details erfassen &amp; anpassen</h4>
+  <p class="field-hint" style="margin-bottom: 12px;">Wird automatisch mit deiner Leihgaben-Übersicht synchronisiert:</p>
+
+  <div class="form-row-2">
+    <div class="form-group">
+      <label for="edit-tx-loan-person" class="field-label"><strong id="edit-tx-loan-person-label">Person / Name:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="edit-tx-loan-person" class="large-input" placeholder="z. B. Peter, Markus, Mama">
+    </div>
+    <div class="form-group">
+      <label for="edit-tx-loan-due-date" class="field-label"><strong>Rückzahlung fällig bis (optional):</strong></label>
+      <input type="date" id="edit-tx-loan-due-date" class="large-input">
+    </div>
+  </div>
+  <div class="form-group" style="margin-bottom: 0;">
+    <label for="edit-tx-loan-note" class="field-label"><strong>Notiz zur Leihgabe (optional):</strong></label>
+    <input type="text" id="edit-tx-loan-note" class="large-input" placeholder="z. B. Kinokarten ausgelegt...">
+  </div>
+</div>
+
 <div id="edit-tx-transfer-accounts-group" class="form-row-2" style="display: none;">
   <div class="form-group">
     <label for="edit-tx-from" class="field-label"><strong>Von Konto:</strong></label>
