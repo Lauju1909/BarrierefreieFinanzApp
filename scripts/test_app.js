@@ -540,7 +540,74 @@ if (missingHtmlFuncs.length > 0) {
 }
 console.log(`All ${calledFuncs.size} HTML inline function calls successfully verified!`);
 
+// 9. Test Peer Loans & Dynamic Overview Card Visibility Integration
+console.log('Testing Peer Loans & Dynamic Overview Card Visibility...');
+const expectedPeerLoanIds = [
+  'section-credit-container',
+  'section-transfer-container',
+  'section-peer-loans-container',
+  'section-peer-loans-heading',
+  'peer-loans-summary-subtext',
+  'card-month-peer-loans',
+  'details-peer-loans-list',
+  'details-peer-loans-summary-text',
+  'overview-peer-loans-feed',
+  'peer-loan-modal',
+  'peer-loan-heading',
+  'peer-loan-person',
+  'peer-loan-amount',
+  'peer-loan-date',
+  'peer-loan-due-date',
+  'peer-loan-account',
+  'peer-loan-auto-book',
+  'peer-loan-note',
+  'peer-loan-repay-modal',
+  'peer-loan-repay-amount',
+  'peer-loan-repay-date',
+  'peer-loan-repay-account'
+];
+
+expectedPeerLoanIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing expected Peer Loan ID in HTML: ${id}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedPeerLoanIds.length} Peer Loan and Container IDs present in HTML.`);
+
+const expectedPeerLoanFns = [
+  'ensurePeerLoansInitialized',
+  'renderOverviewPeerLoans',
+  'openPeerLoanModal',
+  'closePeerLoanModal',
+  'handlePeerLoanTypeChange',
+  'setPeerLoanDateQuick',
+  'handleSavePeerLoan',
+  'openPeerLoanRepayModal',
+  'closePeerLoanRepayModal',
+  'setPeerLoanRepayFull',
+  'handleConfirmPeerLoanRepay',
+  'settlePeerLoan',
+  'deletePeerLoan'
+];
+
+expectedPeerLoanFns.forEach(fn => {
+  const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
+  if (!isFound) {
+    console.error(`Missing expected Peer Loan function in app.js: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedPeerLoanFns.length} Peer Loan functions present in app.js.`);
+
+// Verify dynamic visibility code patterns exist
+if (!appJs.includes("section-credit-container") || !appJs.includes("section-transfer-container") || !appJs.includes("section-peer-loans-container")) {
+  console.error("Missing container ID checks in app.js");
+  process.exit(1);
+}
+console.log("Dynamic overview visibility logic verified!");
+
 console.log('\n======================================');
-console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.4)');
+console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.5)');
 console.log('======================================');
 

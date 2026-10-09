@@ -21,14 +21,24 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.4)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.5)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(142, 36, 170, 0.08); border-left: 6px solid #8E24AA; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.5 (Bedarfsgesteuerte Übersicht &amp; Geliehenes/Verliehenes Geld)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>🤝 Geliehenes &amp; Verliehenes Geld erfassen:</strong> Neue barrierefreie Karte für private Leihgaben unter Freunden und Familie. Zeigt übersichtlich Forderungen (Geld, das dir geschuldet wird) und Verbindlichkeiten (Geld, das du schuldest).</li>
+<li><strong>💵 Teilrückzahlungen &amp; Fortschritt:</strong> Leihgaben können mit einem Klick vollständig beglichen oder mit flexiblen Teilbeträgen und Fortschrittsbalken abbezahlt werden – auf Wunsch mit automatischer Gegenbuchung auf dein Konto.</li>
+<li><strong>🧹 Bedarfsgesteuerte Monatsübersicht:</strong> Leere Bereiche nehmen keinen Platz mehr weg. Die Karten für Kredite (0 Kredite), Umbuchungen (0 Umbuchungen im Monat) und Geliehenes Geld (0 offene Posten) werden automatisch ausgeblendet und erscheinen nur bei Bedarf.</li>
+<li><strong>📱 E2E-Postfach-Sync für Leihgaben:</strong> Alle geliehenen und verliehenen Beträge werden Ende-zu-Ende verschlüsselt und automatisch mit dem Smartphone abgeglichen.</li>
+</ul>
+</div>
+
 <div style="background: rgba(46, 125, 50, 0.08); border-left: 6px solid #2e7d32; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #1b5e20; font-size: 20px;">⚡ Neu in Version 6.9.4 (Übersicht-Listen & Bank-CSV-Import repariert)</h3>
+<h3 style="margin: 0 0 8px 0; color: #1b5e20; font-size: 20px;">⚡ Version 6.9.4 (Übersicht-Listen &amp; Bank-CSV-Import repariert)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
 <li><strong>📊 Zuverlässige Buchungsanzeige beim Ausklappen:</strong> Alle Akkordeons in der Übersicht (Einnahmen, Ausgaben, Umbuchungen) öffnen sich wieder blitzschnell und listen alle Buchungen mit Details auf.</li>
 <li><strong>🏦 Bank-Kontoauszug / CSV-Import:</strong> Kontoauszüge im CSV-Format können wieder bequem über die Einstellungen eingelesen und mit automatischer Kategorie-Zuordnung verbucht werden.</li>
@@ -1736,6 +1746,145 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- =========================================================================
+ MODAL DIALOG: GELIEHENES ODER VERLIEHENES GELD EINTRAGEN / BEARBEITEN
+ ========================================================================= -->
+<div id="peer-loan-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="peer-loan-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 640px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="peer-loan-heading" tabindex="-1" style="margin: 0; font-size: 22px;">🤝 Geliehenes / Verliehenes Geld erfassen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closePeerLoanModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  <p class="field-hint" id="peer-loan-hint">Halte fest, wem du Geld geliehen hast oder von wem du dir Geld geliehen hast:</p>
+
+  <form id="peer-loan-form" onsubmit="handleSavePeerLoan(event)" class="accessible-form" style="margin-top: 12px;">
+    <input type="hidden" id="peer-loan-edit-id" value="">
+
+    <div class="form-group">
+      <label class="field-label"><strong>Art der Leihgabe:</strong></label>
+      <div style="display: flex; gap: 12px; margin-top: 4px; flex-wrap: wrap;">
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 8px; flex: 1; min-width: 200px;" id="lbl-peer-type-lent">
+          <input type="radio" name="peer-loan-type" id="peer-type-lent" value="lent" checked onchange="handlePeerLoanTypeChange()">
+          <span>🟢 <strong>Ich habe verliehen</strong><br><small style="color: var(--text-muted, #666);">Mir wird Geld geschuldet (+)</small></span>
+        </label>
+        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 10px 14px; border: 2px solid var(--border-color); border-radius: 8px; flex: 1; min-width: 200px;" id="lbl-peer-type-borrowed">
+          <input type="radio" name="peer-loan-type" id="peer-type-borrowed" value="borrowed" onchange="handlePeerLoanTypeChange()">
+          <span>🔴 <strong>Ich habe mir geliehen</strong><br><small style="color: var(--text-muted, #666);">Ich schulde jemandem Geld (-)</small></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="peer-loan-person" class="field-label"><strong id="peer-loan-person-label">Person / Name (Freund, Familie, Bekannter):</strong></label>
+        <input type="text" id="peer-loan-person" class="large-input" placeholder="z. B. Peter, Mama, Markus" required>
+      </div>
+      <div class="form-group">
+        <label for="peer-loan-amount" class="field-label"><strong>Geliehener Betrag (€):</strong></label>
+        <input type="number" step="0.01" min="0.01" id="peer-loan-amount" class="large-input" placeholder="0,00 €" required>
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="peer-loan-date" class="field-label"><strong>Datum:</strong></label>
+        <input type="date" id="peer-loan-date" class="large-input" required>
+        <div style="display: flex; gap: 6px; margin-top: 4px;">
+          <button type="button" class="btn btn-secondary" onclick="setPeerLoanDateQuick('today')" style="padding: 2px 8px; font-size: 12px;">Heute</button>
+          <button type="button" class="btn btn-secondary" onclick="setPeerLoanDateQuick('yesterday')" style="padding: 2px 8px; font-size: 12px;">Gestern</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="peer-loan-due-date" class="field-label"><strong>Rückzahlung geplant bis (optional):</strong></label>
+        <input type="date" id="peer-loan-due-date" class="large-input">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="peer-loan-account" class="field-label"><strong>Konto für Zahlung / Gegenbuchung:</strong></label>
+      <select id="peer-loan-account" class="large-select">
+        <!-- Dynamisch befüllt -->
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-top: -4px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+        <input type="checkbox" id="peer-loan-auto-book" checked>
+        <span id="peer-loan-auto-book-text">Gleich als Geldbewegung von/auf dieses Konto buchen</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="peer-loan-note" class="field-label"><strong>Notiz / Verwendungszweck (optional):</strong></label>
+      <input type="text" id="peer-loan-note" class="large-input" placeholder="z. B. Kinokarten ausgelegt, Werkstattrechnung...">
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="closePeerLoanModal()">Abbrechen</button>
+      <button type="submit" class="btn btn-primary" id="btn-save-peer-loan">💾 Speichern</button>
+    </div>
+  </form>
+</div>
+</div>
+
+<!-- =========================================================================
+ MODAL DIALOG: RÜCKZAHLUNG FÜR GELIEHENES/VERLIEHENES GELD ERFASSEN
+ ========================================================================= -->
+<div id="peer-loan-repay-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="peer-loan-repay-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 580px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="peer-loan-repay-heading" tabindex="-1" style="margin: 0; font-size: 22px;">💵 Rückzahlung verbuchen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closePeerLoanRepayModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  
+  <div id="peer-loan-repay-info" style="background: rgba(142, 36, 170, 0.08); border-left: 5px solid #8E24AA; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px;">
+    <!-- Befüllt per JS: Wer, Gesamt, Bisher bezahlt, Noch offen -->
+  </div>
+
+  <form id="peer-loan-repay-form" onsubmit="handleConfirmPeerLoanRepay(event)" class="accessible-form">
+    <input type="hidden" id="peer-loan-repay-id" value="">
+
+    <div class="form-group">
+      <label for="peer-loan-repay-amount" class="field-label"><strong>Rückzahlungsbetrag (€):</strong></label>
+      <input type="number" step="0.01" min="0.01" id="peer-loan-repay-amount" class="large-input" required>
+      <div style="display: flex; gap: 6px; margin-top: 4px;">
+        <button type="button" class="btn btn-secondary" onclick="setPeerLoanRepayFull()" style="padding: 2px 8px; font-size: 12px;">Restbetrag voll zurückzahlen</button>
+      </div>
+    </div>
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="peer-loan-repay-date" class="field-label"><strong>Datum der Rückzahlung:</strong></label>
+        <input type="date" id="peer-loan-repay-date" class="large-input" required>
+      </div>
+      <div class="form-group">
+        <label for="peer-loan-repay-account" class="field-label"><strong>Konto für Gutschrift/Zahlung:</strong></label>
+        <select id="peer-loan-repay-account" class="large-select">
+          <!-- Dynamisch befüllt -->
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top: -4px;">
+      <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
+        <input type="checkbox" id="peer-loan-repay-auto-book" checked>
+        <span id="peer-loan-repay-auto-book-text">Als Einnahme/Ausgabe auf das ausgewählte Konto buchen</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label for="peer-loan-repay-note" class="field-label"><strong>Notiz (optional):</strong></label>
+      <input type="text" id="peer-loan-repay-note" class="large-input" placeholder="z. B. Erste Rate, Rest kommt nächsten Monat...">
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="closePeerLoanRepayModal()">Abbrechen</button>
+      <button type="submit" class="btn btn-primary" style="background-color: #2E7D32;">✅ Rückzahlung buchen</button>
+    </div>
+  </form>
+</div>
+</div>
+
 
 
 <!-- =========================================================================
@@ -1849,8 +1998,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-overview" class="view-panel" role="tabpanel" aria-labelledby="tab-overview">
  
 <div class="month-banner">
-<h2 id="overview-month-title" class="month-banner-title">Monatsübersicht für September 2026</h2>
-<p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+  <div>
+    <h2 id="overview-month-title" class="month-banner-title">Monatsübersicht für September 2026</h2>
+    <p class="month-banner-sub" id="overview-banner-subtitle">Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis.</p>
+  </div>
+  <div>
+    <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 8px 14px; background: rgba(255,255,255,0.9); border: 2px solid #8E24AA; color: #6A1B9A; font-weight: bold; border-radius: 8px;" aria-label="Geliehenes oder verliehenes Geld erfassen">🤝 Geld leihen / verleihen</button>
+  </div>
+</div>
 </div>
 
 <!-- LIQUIDITÄTS- & KONTODECKUNGS-WARNUNG -->
@@ -1996,7 +2152,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 3b. DANN: LAUFENDE KREDITE & RATENKÄUFE -->
-<section class="overview-section" aria-labelledby="section-credit-heading">
+<section class="overview-section" id="section-credit-container" aria-labelledby="section-credit-heading">
 <div class="section-card">
   <div class="card-header-flex">
     <div>
@@ -2018,7 +2174,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 3c. DANN: UMBUCHUNGEN, SPARPLÄNE & DAUERAUFTRÄGE -->
-<section class="overview-section" aria-labelledby="section-transfer-heading">
+<section class="overview-section" id="section-transfer-container" aria-labelledby="section-transfer-heading">
 <div class="section-card card-transfer-wrap" style="border-left: 8px solid var(--accent-action, #0288D1);">
   <div class="card-header-flex">
     <div>
@@ -2033,6 +2189,31 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <span>📋<strong id="details-transfer-summary-text">Alle Umbuchungen &amp; Sparpläne anzeigen (mit Von/Nach-Konto, Bearbeiten &amp; Löschen)</strong></span>
     </summary>
     <div class="accordion-content" id="overview-transfer-items-feed" style="padding-top: 10px;">
+      <!-- Wird per JS befüllt -->
+    </div>
+  </details>
+</div>
+</section>
+
+<!-- 3d. DANN: GELIEHENES & VERLIEHENES GELD -->
+<section class="overview-section" id="section-peer-loans-container" aria-labelledby="section-peer-loans-heading" style="display: none;">
+<div class="section-card" style="border-left: 8px solid #8E24AA;">
+  <div class="card-header-flex">
+    <div>
+      <h3 id="section-peer-loans-heading" class="section-title" style="margin-bottom: 2px;">🤝 Geliehenes &amp; Verliehenes Geld</h3>
+      <span class="sub-counter" id="peer-loans-summary-subtext">0 offene Einträge</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+      <div class="stat-big-val" id="card-month-peer-loans" style="color: #8E24AA;">0,00 €</div>
+      <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 6px 14px; border: 2px solid #8E24AA; color: #8E24AA; font-weight: bold;" aria-label="Neues geliehenes oder verliehenes Geld eintragen">➕ Neuer Eintrag</button>
+    </div>
+  </div>
+
+  <details class="accessible-accordion" id="details-peer-loans-list">
+    <summary class="accordion-summary" aria-label="Alle geliehenen und verliehenen Beträge ausklappen oder einklappen">
+      <span>📋<strong id="details-peer-loans-summary-text">Offene Schulden &amp; Forderungen anzeigen</strong></span>
+    </summary>
+    <div class="accordion-content" id="overview-peer-loans-feed" style="padding-top: 10px;">
       <!-- Wird per JS befüllt -->
     </div>
   </details>

@@ -879,6 +879,7 @@ const SyncEngine = {
         recurring: appState.recurring || [],
         savingPots: appState.savingPots || [],
         shoppingList: appState.shoppingList || [],
+        peerLoans: appState.peerLoans || [],
         budgets: appState.budgets || {},
         customCategories: appState.customCategories || {}
       };
@@ -1002,6 +1003,8 @@ const SyncEngine = {
           initialBalances: incoming.initialBalances || { bank: 0, paypal: 0, savings: 0, cash: 0 },
           transactions: incoming.transactions || incomingData.transactions || [],
           recurring: incoming.recurring || incomingData.recurring || [],
+          shoppingList: incoming.shoppingList || incomingData.shoppingList || [],
+          peerLoans: incoming.peerLoans || incomingData.peerLoans || [],
           budgets: incoming.budgets || {},
           customCategories: incoming.customCategories || { exp: {}, inc: {}, trf: {} },
           wishlist: incoming.wishlist || incomingData.wishlist || []
@@ -1129,6 +1132,22 @@ const SyncEngine = {
       if (s && s.id && !existingShopIds.has(String(s.id))) {
         appState.shoppingList.push(s);
         existingShopIds.add(String(s.id));
+      }
+    }
+
+    // Geliehenes & Verliehenes Geld (Peer Loans)
+    if (!Array.isArray(appState.peerLoans)) appState.peerLoans = [];
+    const existingLoanMap = new Map(appState.peerLoans.map(l => [String(l.id), l]));
+    const incomingLoans = incoming.peerLoans || [];
+    for (const l of incomingLoans) {
+      if (l && l.id) {
+        const existing = existingLoanMap.get(String(l.id));
+        if (!existing) {
+          appState.peerLoans.push(l);
+          existingLoanMap.set(String(l.id), l);
+        } else if ((l.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, l);
+        }
       }
     }
 

@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.8.2';
+const CURRENT_APP_VERSION = 'v6.9.5';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -624,7 +624,8 @@ let appState = {
   budgets: {},
   customCategories: { exp: {}, inc: {}, trf: {} },
   wishlist: [],
-  shoppingList: []
+  shoppingList: [],
+  peerLoans: []
 };
 
 // ============================================================================
@@ -4431,6 +4432,8 @@ function updateOverview() {
     renderExpenseRankings(dayStats.expenseList);
     checkLiquidityWarning(dayStats.balances);
     renderBudgetsList();
+    renderOverviewCreditAccordion();
+    renderOverviewPeerLoans();
     return;
   }
 
@@ -4504,6 +4507,8 @@ function updateOverview() {
     renderExpenseRankings(allTx.filter(t => t.type === 'expense'));
     checkLiquidityWarning(weekBalances);
     renderBudgetsList();
+    renderOverviewCreditAccordion();
+    renderOverviewPeerLoans();
     return;
   }
 
@@ -4544,6 +4549,7 @@ function updateOverview() {
     checkLiquidityWarning(stats.balances);
     renderBudgetsList();
     renderOverviewCreditAccordion();
+    renderOverviewPeerLoans();
     return;
   }
 
@@ -4638,6 +4644,7 @@ function updateOverview() {
   checkLiquidityWarning(periodEndBalances);
   renderBudgetsList();
   renderOverviewCreditAccordion();
+  renderOverviewPeerLoans();
 }
 
 function renderAccountCardBalances(balances) {
@@ -4670,6 +4677,13 @@ function renderAccountCardBalances(balances) {
 function renderTransactionList(list, containerId, emptyText) {
   const container = document.getElementById(containerId);
   if (!container) return;
+
+  if (containerId === 'overview-transfer-items-feed') {
+    const secTrf = document.getElementById('section-transfer-container');
+    if (secTrf) {
+      secTrf.style.display = (list && list.length > 0) ? '' : 'none';
+    }
+  }
 
   if (list.length === 0) {
     container.innerHTML = `<p class="empty-state">${emptyText}</p>`;
@@ -9094,18 +9108,23 @@ function renderOverviewCreditAccordion() {
   const container = document.getElementById('overview-credit-items-feed');
   const subText = document.getElementById('credit-summary-subtext');
   const monthCreditEl = document.getElementById('card-month-credit');
+  const sectionCredit = document.getElementById('section-credit-container');
   if (!container) return;
 
   const plans = (appState.recurring || []).filter(r => r.isInstallment && r.active);
   const totalRemaining = plans.reduce((sum, p) => sum + Number(p.installmentRemaining || 0), 0);
 
-  if (subText) subText.textContent = `${plans.length} aktive Kredite & Raten`;
-  if (monthCreditEl) monthCreditEl.textContent = formatCurrency(totalRemaining) + ' Rest';
-
   if (plans.length === 0) {
+    if (sectionCredit) sectionCredit.style.display = 'none';
+    if (subText) subText.textContent = '0 aktive Kredite & Raten';
+    if (monthCreditEl) monthCreditEl.textContent = '0,00 € Rest';
     container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Aktuell keine laufenden Kredite oder Ratenkäufe vorhanden.</p>';
     return;
   }
+
+  if (sectionCredit) sectionCredit.style.display = '';
+  if (subText) subText.textContent = `${plans.length} aktive Kredite & Raten`;
+  if (monthCreditEl) monthCreditEl.textContent = formatCurrency(totalRemaining) + ' Rest';
 
   let html = '<div style="display: flex; flex-direction: column; gap: 8px;">';
   plans.forEach(plan => {
@@ -9138,6 +9157,600 @@ function renderOverviewCreditAccordion() {
   html += '</div>';
   container.innerHTML = html;
 }
+
+// ============================================================================
+// 1f. GELIEHENES & VERLIEHENES GELD (PEER LOANS & SCHULDEN)
+// ============================================================================
+
+function ensurePeerLoansInitialized() {
+  if (!appState.peerLoans || !Array.isArray(appState.peerLoans)) {
+    appState.peerLoans = [];
+  }
+}
+
+function renderOverviewPeerLoans() {
+  ensurePeerLoansInitialized();
+  const secPeer = document.getElementById('section-peer-loans-container');
+  const container = document.getElementById('overview-peer-loans-feed');
+  const subText = document.getElementById('peer-loans-summary-subtext');
+  const totalEl = document.getElementById('card-month-peer-loans');
+  if (!container) return;
+
+  const activeLoans = (appState.peerLoans || []).filter(l => !l.settled);
+
+  // Verstecken, wenn keine offenen Leihgaben vorhanden sind (so wie bei Krediten & Umbuchungen)
+  if (activeLoans.length === 0) {
+    if (secPeer) secPeer.style.display = 'none';
+    container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Aktuell keine offenen geliehenen oder verliehenen Beträge vorhanden.</p>';
+    if (subText) subText.textContent = '0 offene Einträge';
+    if (totalEl) totalEl.textContent = '0,00 €';
+    return;
+  }
+
+  if (secPeer) secPeer.style.display = '';
+
+  let lentRemainingTotal = 0;
+  let borrowedRemainingTotal = 0;
+
+  activeLoans.forEach(l => {
+    const rem = Math.max(0, Number(l.amount || 0) - Number(l.paidAmount || 0));
+    if (l.type === 'lent') {
+      lentRemainingTotal += rem;
+    } else {
+      borrowedRemainingTotal += rem;
+    }
+  });
+
+  const net = lentRemainingTotal - borrowedRemainingTotal;
+  if (totalEl) {
+    if (net > 0) {
+      totalEl.textContent = `+ ${formatCurrency(net)} Forderung`;
+      totalEl.style.color = 'var(--accent-income, #2E7D32)';
+    } else if (net < 0) {
+      totalEl.textContent = `- ${formatCurrency(Math.abs(net))} Verbindlichkeit`;
+      totalEl.style.color = '#D32F2F';
+    } else {
+      totalEl.textContent = '0,00 € ausgeglichen';
+      totalEl.style.color = '#8E24AA';
+    }
+  }
+
+  if (subText) {
+    subText.textContent = `${activeLoans.length} offene Leihgabe(n) (Verliehen: ${formatCurrency(lentRemainingTotal)} | Geliehen: ${formatCurrency(borrowedRemainingTotal)})`;
+  }
+
+  let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+  activeLoans.forEach(loan => {
+    const isLent = loan.type === 'lent';
+    const total = Number(loan.amount || 0);
+    const paid = Number(loan.paidAmount || 0);
+    const remaining = Math.max(0, total - paid);
+    const percent = total > 0 ? Math.min(100, Math.round((paid / total) * 100)) : 0;
+    const dateFormatted = formatDateGerman(loan.date);
+    const typeLabel = isLent ? '🟢 Ich habe verliehen (Forderung / Mir wird geschuldet)' : '🔴 Ich habe mir geliehen (Verbindlichkeit / Ich schulde)';
+    const typeColor = isLent ? '#2E7D32' : '#D32F2F';
+    const dueDateNotice = loan.dueDate ? ` • 📅 Rückzahlung bis: <strong>${formatDateGerman(loan.dueDate)}</strong>` : '';
+
+    html += `
+      <div style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <div style="font-size: 13px; font-weight: bold; color: ${typeColor}; margin-bottom: 2px;">
+              ${typeLabel}
+            </div>
+            <div style="font-size: 18px; font-weight: bold; color: var(--text-color);">
+              👤 ${escapeHTML(loan.person || 'Unbekannt')}
+            </div>
+            <div style="font-size: 13px; color: var(--text-muted, #666); margin-top: 3px;">
+              Ausgegeben / Erhalten am: <strong>${dateFormatted}</strong>${dueDateNotice}
+              ${loan.note ? ` • <span style="font-style: italic;">„${escapeHTML(loan.note)}“</span>` : ''}
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-size: 12px; color: var(--text-muted, #666);">Ursprünglich: ${formatCurrency(total)}</div>
+            <div style="font-size: 19px; font-weight: bold; color: ${typeColor}; margin-top: 2px;">
+              Offen: ${formatCurrency(remaining)}
+            </div>
+          </div>
+        </div>
+
+        ${paid > 0 ? `
+          <div style="margin-top: 10px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #666); margin-bottom: 4px;">
+              <span>Bereits zurückgezahlt: <strong>${formatCurrency(paid)}</strong> (${percent}%)</span>
+              <span>Noch offen: <strong>${formatCurrency(remaining)}</strong></span>
+            </div>
+            <div style="background: #e0e0e0; border-radius: 4px; height: 8px; overflow: hidden;">
+              <div style="width: ${percent}%; height: 100%; background: #4CAF50;"></div>
+            </div>
+          </div>
+        ` : ''}
+
+        <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center;">
+          <button type="button" class="btn btn-primary" onclick="settlePeerLoan('${loan.id}')" style="background-color: #2E7D32; font-size: 13px; padding: 6px 14px;" aria-label="Leihgabe mit ${escapeHTML(loan.person)} über ${formatCurrency(remaining)} als vollständig zurückgezahlt markieren">
+            ✅ Vollständig zurückgezahlt
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="openPeerLoanRepayModal('${loan.id}')" style="font-size: 13px; padding: 6px 14px; border: 2px solid #8E24AA; color: #6A1B9A; font-weight: bold;" aria-label="Teilrückzahlung für ${escapeHTML(loan.person)} erfassen">
+            💵 Teilrückzahlung
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal('${loan.id}')" style="font-size: 13px; padding: 6px 12px;" aria-label="Leihgabe mit ${escapeHTML(loan.person)} bearbeiten">
+            ✏️ Bearbeiten
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="deletePeerLoan('${loan.id}')" style="font-size: 13px; padding: 6px 12px; color: #D32F2F;" aria-label="Leihgabe mit ${escapeHTML(loan.person)} löschen">
+            🗑️ Löschen
+          </button>
+        </div>
+      </div>
+    `;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function populatePeerLoanAccountsDropdown(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  ensureAccountsInitialized();
+  sel.innerHTML = (appState.accounts || []).map(acc => {
+    return `<option value="${escapeHTML(acc.id)}">💳 ${escapeHTML(acc.name)}</option>`;
+  }).join('');
+}
+
+function handlePeerLoanTypeChange() {
+  const isLent = document.getElementById('peer-type-lent')?.checked;
+  const lblLent = document.getElementById('lbl-peer-type-lent');
+  const lblBorrowed = document.getElementById('lbl-peer-type-borrowed');
+  const personLabel = document.getElementById('peer-loan-person-label');
+  const autoBookText = document.getElementById('peer-loan-auto-book-text');
+
+  if (lblLent) {
+    lblLent.style.borderColor = isLent ? '#2E7D32' : 'var(--border-color)';
+    lblLent.style.background = isLent ? 'rgba(46,125,50,0.08)' : 'transparent';
+  }
+  if (lblBorrowed) {
+    lblBorrowed.style.borderColor = !isLent ? '#D32F2F' : 'var(--border-color)';
+    lblBorrowed.style.background = !isLent ? 'rgba(211,47,47,0.08)' : 'transparent';
+  }
+  if (personLabel) {
+    personLabel.textContent = isLent 
+      ? 'An wen hast du das Geld geliehen? (Name):' 
+      : 'Von wem hast du dir das Geld geliehen? (Name):';
+  }
+  if (autoBookText) {
+    autoBookText.textContent = isLent
+      ? 'Gleich als Geldausgang (Ausgabe) von diesem Konto buchen'
+      : 'Gleich als Geldeingang (Einnahme) auf dieses Konto buchen';
+  }
+}
+
+function setPeerLoanDateQuick(when) {
+  const dateInput = document.getElementById('peer-loan-date');
+  if (!dateInput) return;
+  const now = new Date();
+  if (when === 'yesterday') {
+    now.setDate(now.getDate() - 1);
+  }
+  dateInput.value = now.toISOString().split('T')[0];
+  announceNVDA(`Datum gesetzt auf: ${formatDateGerman(dateInput.value)}`);
+}
+
+function openPeerLoanModal(loanId = null) {
+  ensurePeerLoansInitialized();
+  const modal = document.getElementById('peer-loan-modal');
+  if (!modal) return;
+
+  populatePeerLoanAccountsDropdown('peer-loan-account');
+
+  const editIdInput = document.getElementById('peer-loan-edit-id');
+  const personInput = document.getElementById('peer-loan-person');
+  const amountInput = document.getElementById('peer-loan-amount');
+  const dateInput = document.getElementById('peer-loan-date');
+  const dueDateInput = document.getElementById('peer-loan-due-date');
+  const accountSelect = document.getElementById('peer-loan-account');
+  const autoBookChk = document.getElementById('peer-loan-auto-book');
+  const noteInput = document.getElementById('peer-loan-note');
+  const heading = document.getElementById('peer-loan-heading');
+
+  if (loanId) {
+    const loan = appState.peerLoans.find(l => l.id === loanId);
+    if (!loan) return;
+
+    if (editIdInput) editIdInput.value = loan.id;
+    if (heading) heading.textContent = '✏️ Leihgabe bearbeiten';
+    const typeRadio = document.querySelector(`input[name="peer-loan-type"][value="${loan.type}"]`);
+    if (typeRadio) typeRadio.checked = true;
+    if (personInput) personInput.value = loan.person || '';
+    if (amountInput) amountInput.value = Number(loan.amount || 0).toFixed(2);
+    if (dateInput) dateInput.value = loan.date || new Date().toISOString().split('T')[0];
+    if (dueDateInput) dueDateInput.value = loan.dueDate || '';
+    if (accountSelect && loan.account) accountSelect.value = loan.account;
+    if (autoBookChk) {
+      autoBookChk.checked = false;
+      autoBookChk.disabled = true; // Bei Bearbeitung keine Doppelbuchung
+    }
+    if (noteInput) noteInput.value = loan.note || '';
+  } else {
+    if (editIdInput) editIdInput.value = '';
+    if (heading) heading.textContent = '🤝 Geliehenes / Verliehenes Geld erfassen';
+    const typeLent = document.getElementById('peer-type-lent');
+    if (typeLent) typeLent.checked = true;
+    if (personInput) personInput.value = '';
+    if (amountInput) amountInput.value = '';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (dueDateInput) dueDateInput.value = '';
+    if (autoBookChk) {
+      autoBookChk.checked = true;
+      autoBookChk.disabled = false;
+    }
+    if (noteInput) noteInput.value = '';
+  }
+
+  handlePeerLoanTypeChange();
+  modal.style.display = 'flex';
+  if (personInput) personInput.focus();
+}
+
+function closePeerLoanModal() {
+  const modal = document.getElementById('peer-loan-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleSavePeerLoan(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  ensurePeerLoansInitialized();
+
+  const editId = document.getElementById('peer-loan-edit-id')?.value;
+  const isLent = document.getElementById('peer-type-lent')?.checked;
+  const type = isLent ? 'lent' : 'borrowed';
+  const person = document.getElementById('peer-loan-person')?.value.trim();
+  const amount = parseFloat(document.getElementById('peer-loan-amount')?.value);
+  const date = document.getElementById('peer-loan-date')?.value || new Date().toISOString().split('T')[0];
+  const dueDate = document.getElementById('peer-loan-due-date')?.value || '';
+  const account = document.getElementById('peer-loan-account')?.value || '';
+  const autoBook = document.getElementById('peer-loan-auto-book')?.checked;
+  const note = document.getElementById('peer-loan-note')?.value.trim() || '';
+
+  if (!person) {
+    alert('Bitte gib den Namen der Person ein.');
+    return;
+  }
+  if (!amount || isNaN(amount) || amount <= 0) {
+    alert('Bitte gib einen gültigen Geldbetrag größer als 0 ein.');
+    return;
+  }
+
+  let txId = null;
+
+  if (editId) {
+    const loan = appState.peerLoans.find(l => l.id === editId);
+    if (loan) {
+      loan.type = type;
+      loan.person = person;
+      loan.amount = amount;
+      loan.date = date;
+      loan.dueDate = dueDate;
+      loan.account = account;
+      loan.note = note;
+      loan.updatedAt = Date.now();
+    }
+  } else {
+    // Wenn autoBook aktiv ist, buchen wir sofort eine reale Transaktion
+    if (autoBook && account) {
+      txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      if (type === 'lent') {
+        // Ausgabe: Ich verleihe Geld (Geld geht ab)
+        appState.transactions.push({
+          id: txId,
+          type: 'expense',
+          amount: amount,
+          date: date,
+          account: account,
+          category: 'Privat & Familie',
+          subCategory: 'Geld verliehen (an Freunde / Familie)',
+          memo: `Verliehen an ${person}${note ? ' (' + note + ')' : ''}`,
+          isPlanned: false,
+          isRecurring: false,
+          receiptImage: null
+        });
+      } else {
+        // Einnahme: Ich leihe mir Geld (Geld kommt rein)
+        appState.transactions.push({
+          id: txId,
+          type: 'income',
+          amount: amount,
+          date: date,
+          account: account,
+          category: 'Sonstige Einnahmen',
+          subCategory: 'Geld geliehen (von Freunden / Familie)',
+          memo: `Geliehen von ${person}${note ? ' (' + note + ')' : ''}`,
+          isPlanned: false,
+          isRecurring: false,
+          receiptImage: null
+        });
+      }
+    }
+
+    const newLoan = {
+      id: 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+      type: type,
+      person: person,
+      amount: amount,
+      paidAmount: 0,
+      date: date,
+      dueDate: dueDate,
+      account: account,
+      autoBooked: Boolean(autoBook),
+      txId: txId,
+      note: note,
+      settled: false,
+      settledDate: null,
+      repayments: [],
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    };
+    appState.peerLoans.push(newLoan);
+  }
+
+  await saveStateToEncryptedStorage();
+  closePeerLoanModal();
+  updateOverview();
+
+  const msg = isLent 
+    ? `Verliehenes Geld an ${person} über ${formatCurrency(amount)} gespeichert.`
+    : `Geliehenes Geld von ${person} über ${formatCurrency(amount)} gespeichert.`;
+  announceNVDA(msg);
+}
+
+let activeRepayLoanId = null;
+
+function openPeerLoanRepayModal(loanId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  activeRepayLoanId = loanId;
+  const modal = document.getElementById('peer-loan-repay-modal');
+  if (!modal) return;
+
+  populatePeerLoanAccountsDropdown('peer-loan-repay-account');
+
+  const infoEl = document.getElementById('peer-loan-repay-info');
+  const repayIdInput = document.getElementById('peer-loan-repay-id');
+  const amountInput = document.getElementById('peer-loan-repay-amount');
+  const dateInput = document.getElementById('peer-loan-repay-date');
+  const autoBookText = document.getElementById('peer-loan-repay-auto-book-text');
+
+  const total = Number(loan.amount || 0);
+  const paid = Number(loan.paidAmount || 0);
+  const remaining = Math.max(0, total - paid);
+  const isLent = loan.type === 'lent';
+
+  if (repayIdInput) repayIdInput.value = loan.id;
+  if (amountInput) {
+    amountInput.value = remaining.toFixed(2);
+    amountInput.max = remaining.toFixed(2);
+  }
+  if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+  if (autoBookText) {
+    autoBookText.textContent = isLent
+      ? 'Gleich als Einnahme (Rückzahlung erhalten) auf dieses Konto buchen'
+      : 'Gleich als Ausgabe (Schuld zurückgezahlt) von diesem Konto buchen';
+  }
+
+  if (infoEl) {
+    infoEl.innerHTML = `
+      <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">
+        👤 ${escapeHTML(loan.person)} – ${isLent ? '🟢 Hat sich Geld geliehen' : '🔴 Du hast dir Geld geliehen'}
+      </div>
+      <div style="font-size: 13px; color: var(--text-color);">
+        Ursprünglich: <strong>${formatCurrency(total)}</strong> • Bereits zurückgezahlt: <strong>${formatCurrency(paid)}</strong>
+      </div>
+      <div style="font-size: 17px; font-weight: bold; color: ${isLent ? '#2E7D32' : '#D32F2F'}; margin-top: 4px;">
+        Aktuell noch offen: ${formatCurrency(remaining)}
+      </div>
+    `;
+  }
+
+  modal.style.display = 'flex';
+  if (amountInput) amountInput.focus();
+}
+
+function closePeerLoanRepayModal() {
+  const modal = document.getElementById('peer-loan-repay-modal');
+  if (modal) modal.style.display = 'none';
+  activeRepayLoanId = null;
+}
+
+function setPeerLoanRepayFull() {
+  ensurePeerLoansInitialized();
+  if (!activeRepayLoanId) return;
+  const loan = appState.peerLoans.find(l => l.id === activeRepayLoanId);
+  if (!loan) return;
+  const remaining = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
+  const amountInput = document.getElementById('peer-loan-repay-amount');
+  if (amountInput) amountInput.value = remaining.toFixed(2);
+}
+
+async function handleConfirmPeerLoanRepay(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  ensurePeerLoansInitialized();
+
+  const loanId = document.getElementById('peer-loan-repay-id')?.value || activeRepayLoanId;
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  const repayAmount = parseFloat(document.getElementById('peer-loan-repay-amount')?.value);
+  const repayDate = document.getElementById('peer-loan-repay-date')?.value || new Date().toISOString().split('T')[0];
+  const repayAccount = document.getElementById('peer-loan-repay-account')?.value || '';
+  const autoBook = document.getElementById('peer-loan-repay-auto-book')?.checked;
+  const repayNote = document.getElementById('peer-loan-repay-note')?.value.trim() || '';
+
+  if (!repayAmount || isNaN(repayAmount) || repayAmount <= 0) {
+    alert('Bitte gib einen gültigen Rückzahlungsbetrag größer als 0 ein.');
+    return;
+  }
+
+  const remainingBefore = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
+  if (repayAmount > remainingBefore + 0.01) {
+    if (!confirm(`Der eingegebene Betrag (${formatCurrency(repayAmount)}) ist höher als die offene Restschuld (${formatCurrency(remainingBefore)}). Möchtest du ihn trotzdem so buchen?`)) {
+      return;
+    }
+  }
+
+  let txId = null;
+  if (autoBook && repayAccount) {
+    txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    if (loan.type === 'lent') {
+      // Einnahme: Freund zahlt Geld an mich zurück
+      appState.transactions.push({
+        id: txId,
+        type: 'income',
+        amount: repayAmount,
+        date: repayDate,
+        account: repayAccount,
+        category: 'Sonstige Einnahmen',
+        subCategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
+        memo: `Rückzahlung von ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
+        isPlanned: false,
+        isRecurring: false,
+        receiptImage: null
+      });
+    } else {
+      // Ausgabe: Ich zahle geliehenes Geld an Freund zurück
+      appState.transactions.push({
+        id: txId,
+        type: 'expense',
+        amount: repayAmount,
+        date: repayDate,
+        account: repayAccount,
+        category: 'Privat & Familie',
+        subCategory: 'Rückzahlung geliehenes Geld',
+        memo: `Rückzahlung an ${loan.person}${repayNote ? ' (' + repayNote + ')' : ''}`,
+        isPlanned: false,
+        isRecurring: false,
+        receiptImage: null
+      });
+    }
+  }
+
+  if (!Array.isArray(loan.repayments)) loan.repayments = [];
+  loan.repayments.push({
+    id: 'repay_' + Date.now(),
+    amount: repayAmount,
+    date: repayDate,
+    account: repayAccount,
+    note: repayNote,
+    txId: txId
+  });
+
+  loan.paidAmount = Number(loan.paidAmount || 0) + repayAmount;
+  if (loan.paidAmount >= Number(loan.amount || 0)) {
+    loan.settled = true;
+    loan.settledDate = repayDate;
+  }
+  loan.updatedAt = Date.now();
+
+  await saveStateToEncryptedStorage();
+  closePeerLoanRepayModal();
+  updateOverview();
+
+  const isComplete = loan.settled;
+  const msg = isComplete
+    ? `Rückzahlung über ${formatCurrency(repayAmount)} verbucht. Die Leihgabe mit ${loan.person} ist nun vollständig beglichen!`
+    : `Rückzahlung über ${formatCurrency(repayAmount)} von ${loan.person} verbucht. Neuer Restbetrag: ${formatCurrency(Math.max(0, loan.amount - loan.paidAmount))}.`;
+  announceNVDA(msg);
+}
+
+async function settlePeerLoan(loanId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  const remaining = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
+  const isLent = loan.type === 'lent';
+
+  const confirmMsg = isLent
+    ? `Möchtest du die Leihgabe mit "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`
+    : `Möchtest du deine Schuld bei "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`;
+
+  if (!confirm(confirmMsg)) return;
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // Optional fragen nach Kontogutschrift/Abbuchung
+  const bookAccount = confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
+  if (bookAccount) {
+    const acc = loan.account || (appState.accounts && appState.accounts[0] ? appState.accounts[0].id : 'bank');
+    const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    if (isLent) {
+      appState.transactions.push({
+        id: txId,
+        type: 'income',
+        amount: remaining,
+        date: todayStr,
+        account: acc,
+        category: 'Sonstige Einnahmen',
+        subCategory: 'Rückzahlung von geliehenem Geld (Freunde / Familie)',
+        memo: `Vollständige Rückzahlung von ${loan.person}`,
+        isPlanned: false,
+        isRecurring: false,
+        receiptImage: null
+      });
+    } else {
+      appState.transactions.push({
+        id: txId,
+        type: 'expense',
+        amount: remaining,
+        date: todayStr,
+        account: acc,
+        category: 'Privat & Familie',
+        subCategory: 'Rückzahlung geliehenes Geld',
+        memo: `Vollständige Rückzahlung an ${loan.person}`,
+        isPlanned: false,
+        isRecurring: false,
+        receiptImage: null
+      });
+    }
+  }
+
+  loan.paidAmount = loan.amount;
+  loan.settled = true;
+  loan.settledDate = todayStr;
+  loan.updatedAt = Date.now();
+
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Leihgabe mit ${loan.person} als vollständig zurückgezahlt markiert.`);
+}
+
+async function deletePeerLoan(loanId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  if (!confirm(`Möchtest du den Eintrag für "${loan.person}" über ${formatCurrency(loan.amount)} wirklich löschen?`)) {
+    return;
+  }
+
+  appState.peerLoans = appState.peerLoans.filter(l => l.id !== loanId);
+  await saveStateToEncryptedStorage();
+  updateOverview();
+  announceNVDA(`Eintrag für ${loan.person} gelöscht.`);
+}
+
+// Global functions attached to window for inline HTML onclick handlers
+window.openPeerLoanModal = openPeerLoanModal;
+window.closePeerLoanModal = closePeerLoanModal;
+window.handlePeerLoanTypeChange = handlePeerLoanTypeChange;
+window.setPeerLoanDateQuick = setPeerLoanDateQuick;
+window.handleSavePeerLoan = handleSavePeerLoan;
+window.openPeerLoanRepayModal = openPeerLoanRepayModal;
+window.closePeerLoanRepayModal = closePeerLoanRepayModal;
+window.setPeerLoanRepayFull = setPeerLoanRepayFull;
+window.handleConfirmPeerLoanRepay = handleConfirmPeerLoanRepay;
+window.settlePeerLoan = settlePeerLoan;
+window.deletePeerLoan = deletePeerLoan;
 
 
 function handleTransferAccountsChange() {
