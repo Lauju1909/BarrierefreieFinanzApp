@@ -810,6 +810,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </select>
     </div>
   </div>
+  <div style="margin-top: -6px; margin-bottom: 14px;">
+    <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('edit-tx')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #1976D2; color: #0D47A1; background: rgba(25, 118, 210, 0.05);" aria-label="Neue Kategorie oder neues Geschäft direkt hier anlegen">
+      ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+    </button>
+  </div>
 </div>
 
 <div class="form-group">
@@ -996,6 +1001,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <select id="edit-rec-subcategory" class="large-select">
       </select>
     </div>
+  </div>
+  <div style="margin-top: -6px; margin-bottom: 14px;">
+    <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('edit-rec')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #1976D2; color: #0D47A1; background: rgba(25, 118, 210, 0.05);" aria-label="Neue Kategorie oder neues Geschäft für Dauerauftrag anlegen">
+      ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+    </button>
   </div>
 </div>
 
@@ -1944,6 +1954,78 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
 <!-- =========================================================================
+ MODAL DIALOG: KATEGORIE ODER LADEN SCHNELL ANLEGEN
+ ========================================================================= -->
+<div id="quick-add-category-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quick-add-cat-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 580px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="quick-add-cat-heading" tabindex="-1" style="margin: 0; font-size: 22px;">➕ Kategorie oder Laden hinzufügen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeQuickCategoryModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  <p class="field-hint" id="quick-add-cat-hint">Füge blitzschnell eine neue Kategorie oder ein neues Geschäft hinzu, ohne die Einstellungen öffnen zu müssen:</p>
+
+  <form id="quick-add-cat-form" onsubmit="handleQuickAddCategorySubmit(event)" class="accessible-form" style="margin-top: 12px;">
+    <input type="hidden" id="quick-cat-target-context" value="exp">
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="quick-cat-type" class="field-label"><strong>Buchungsart:</strong></label>
+        <select id="quick-cat-type" class="large-select" onchange="onQuickCatTypeChange()">
+          <option value="exp">Ausgabe</option>
+          <option value="inc">Einnahme</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="quick-cat-mode" class="field-label"><strong>Was möchtest du anlegen?</strong></label>
+        <select id="quick-cat-mode" class="large-select" onchange="onQuickCatModeChange()">
+          <option value="sub">Neues Geschäft / Unterkategorie</option>
+          <option value="main">Komplett neue Hauptkategorie</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Modus: Unterkategorie -->
+    <div id="quick-cat-parent-group" class="form-group">
+      <label for="quick-cat-parent-select" class="field-label"><strong>Bestehende Hauptkategorie auswählen:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <select id="quick-cat-parent-select" class="large-select">
+        <!-- Dynamisch befüllt -->
+      </select>
+    </div>
+
+    <div id="quick-cat-sub-name-group" class="form-group">
+      <label for="quick-cat-sub-name" class="field-label"><strong>Name des Geschäfts / der Unterkategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="quick-cat-sub-name" class="large-input" placeholder="z. B. Späti am Eck, Tante Emma, Kiosk 24h, Pfandflaschen...">
+    </div>
+
+    <!-- Modus: Hauptkategorie -->
+    <div id="quick-cat-main-group" class="form-group" style="display: none;">
+      <div class="form-row-2">
+        <div class="form-group" style="flex: 0 0 90px;">
+          <label for="quick-cat-main-icon" class="field-label"><strong>Symbol:</strong></label>
+          <input type="text" id="quick-cat-main-icon" class="large-input" placeholder="🏪" value="📦" maxlength="4" style="text-align: center; font-size: 20px;">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label for="quick-cat-main-name" class="field-label"><strong>Name der neuen Hauptkategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="text" id="quick-cat-main-name" class="large-input" placeholder="z. B. Hobbys &amp; Sammlerstücke">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 8px;">
+        <label for="quick-cat-first-sub" class="field-label"><strong>Erste Unterkategorie dazu (optional):</strong></label>
+        <input type="text" id="quick-cat-first-sub" class="large-input" placeholder="z. B. Allgemein oder spezieller Laden">
+      </div>
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="closeQuickCategoryModal()">Abbrechen</button>
+      <button type="submit" class="btn btn-primary" style="background-color: #7B1FA2;">💾 Jetzt anlegen &amp; auswählen</button>
+    </div>
+  </form>
+</div>
+</div>
+
+
+
+<!-- =========================================================================
  4. HAUPTANWENDUNG
  ========================================================================= -->
 <div id="app-wrapper" style="display: none;">
@@ -2530,12 +2612,16 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </label>
 <select id="exp-category" class="large-select" onchange="onMainCategoryChange('exp')" required>
 <option value="Lebensmittel, Supermarkt & Discounter">Lebensmittel, Supermarkt & Discounter</option>
+<option value="Kiosk, Späti, Tabak & Zeitschriften">Kiosk, Späti, Tabak & Zeitschriften</option>
+<option value="Automaten, SB-Stationen & Verpflegung unterwegs">Automaten, SB-Stationen & Verpflegung unterwegs</option>
+<option value="Bäckerei, Café & Snacks unterwegs">Bäckerei, Café & Snacks unterwegs</option>
 <option value="Miete, Wohnen & Nebenkosten">Miete, Wohnen & Nebenkosten</option>
 <option value="Haushalt, Möbel, Garten & Handwerker">Haushalt, Möbel, Garten & Handwerker</option>
 <option value="Mobilität, Auto & Kraftfahrzeuge">Mobilität, Auto & Kraftfahrzeuge</option>
 <option value="ÖPNV, Bahn, Bus, Flug & Reisen">ÖPNV, Bahn, Bus, Flug & Reisen</option>
 <option value="Restaurants, Cafés & Gastronomie">Restaurants, Cafés & Gastronomie</option>
 <option value="Lieferdienste & Essen bestellen">Lieferdienste & Essen bestellen</option>
+<option value="Post, Pakete, Briefmarken & Schreibwaren">Post, Pakete, Briefmarken & Schreibwaren</option>
 <option value="Streaming, Musik, TV & Unterhaltung">Streaming, Musik, TV & Unterhaltung</option>
 <option value="Gaming, Computer & Konsolen">Gaming, Computer & Konsolen</option>
 <option value="Elektronik, Internet, Handy & Software">Elektronik, Internet, Handy & Software</option>
@@ -2550,6 +2636,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Familie, Kinder & Babybedarf">Familie, Kinder & Babybedarf</option>
 <option value="Schule, Ausbildung & Studium">Schule, Ausbildung & Studium</option>
 <option value="Sport, Fitness, Verein & Hobbys">Sport, Fitness, Verein & Hobbys</option>
+<option value="Glücksspiel, Lotto & Wetten">Glücksspiel, Lotto & Wetten</option>
 <option value="Spenden, Gemeinnütziges & Zuwendungen">Spenden, Gemeinnütziges & Zuwendungen</option>
 <option value="Sonstige Ausgaben & Bargeld">Sonstige Ausgaben & Bargeld</option>
 </select>
@@ -2573,6 +2660,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Getränkemarkt / Trinkgut">Getränkemarkt / Trinkgut</option>
 </select>
 </div>
+</div>
+
+<div style="margin-top: -6px; margin-bottom: 14px;">
+  <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('exp')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #7B1FA2; color: #6A1B9A; background: rgba(123, 31, 162, 0.05);" aria-label="Neue Kategorie oder neues Geschäft schnell anlegen">
+    ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+  </button>
 </div>
 
 <div class="form-group" id="exp-date-group">
@@ -2932,13 +3025,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <select id="inc-category" class="large-select" onchange="onMainCategoryChange('inc')" required>
 <option value="Gehalt, Lohn & Beruf">Gehalt, Lohn & Beruf</option>
 <option value="Staatliche Leistungen, Hilfen & Zuschüsse">Staatliche Leistungen, Hilfen & Zuschüsse</option>
+<option value="Pfand, Leergut & Recycling-Einnahmen">Pfand, Leergut & Recycling-Einnahmen</option>
+<option value="Trinkgeld, Kaffeekasse & Ehrenamt">Trinkgeld, Kaffeekasse & Ehrenamt</option>
+<option value="Fundgeld, Glücksfunde & Kleingeld-Erlöse">Fundgeld, Glücksfunde & Kleingeld-Erlöse</option>
 <option value="Taschengeld & Private Unterstützung">Taschengeld & Private Unterstützung</option>
 <option value="Spenden, Zuwendungen & Förderungen">Spenden, Zuwendungen & Förderungen</option>
 <option value="Geschenke, Boni & Gewinne">Geschenke, Boni & Gewinne</option>
 <option value="Rente, Pension & Versorgung">Rente, Pension & Versorgung</option>
 <option value="Verkäufe, Gebrauchtwaren & Erstattungen">Verkäufe, Gebrauchtwaren & Erstattungen</option>
 <option value="Zinsen, Dividenden, Miete & Kapital">Zinsen, Dividenden, Miete & Kapital</option>
-<option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
 <option value="Nebenjob, Minijob & Freiberufliche Projekte">Nebenjob, Minijob & Freiberufliche Projekte</option>
 <option value="Kreatives, Musik, Kunst & Content Creation">Kreatives, Musik, Kunst & Content Creation</option>
 <option value="Krypto, Staking & Web3-Erträge">Krypto, Staking & Web3-Erträge</option>
@@ -2946,6 +3041,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Erstattungen, Steuern & Kautionen">Erstattungen, Steuern & Kautionen</option>
 <option value="Private Rückzahlungen & Kostenbeteiligungen">Private Rückzahlungen & Kostenbeteiligungen</option>
 <option value="Vermietung, Verpachtung & Carsharing">Vermietung, Verpachtung & Carsharing</option>
+<option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
 </select>
 </div>
 
@@ -2969,6 +3065,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Praktikumsvergütung">Praktikumsvergütung</option>
 </select>
 </div>
+</div>
+
+<div style="margin-top: -6px; margin-bottom: 14px;">
+  <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('inc')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #2E7D32; color: #1B5E20; background: rgba(46, 125, 50, 0.05);" aria-label="Neue Einnahme-Kategorie schnell anlegen">
+    ➕ <strong>Neue Einnahme-Kategorie schnell anlegen</strong>
+  </button>
 </div>
 
 <div class="form-group" id="inc-date-group">

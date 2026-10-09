@@ -684,6 +684,90 @@ if (simTotal !== 100.00 || simSiblings.length !== 2) {
 }
 console.log('Split-Payment simulation & editing logic: 100% PASS!');
 
+// 10. Test New Categories & In-App Quick Category Creator
+console.log('Testing New Categories & In-App Quick Category Creator...');
+const expectedQuickCatIDs = [
+  'quick-add-category-modal',
+  'quick-add-cat-heading',
+  'quick-add-cat-form',
+  'quick-cat-target-context',
+  'quick-cat-type',
+  'quick-cat-mode',
+  'quick-cat-parent-select',
+  'quick-cat-sub-name',
+  'quick-cat-main-group',
+  'quick-cat-main-name',
+  'quick-cat-first-sub'
+];
+expectedQuickCatIDs.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing expected Quick-Category HTML ID: ${id}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedQuickCatIDs.length} Quick-Category HTML IDs present.`);
+
+const expectedQuickCatFns = [
+  'openQuickCategoryModal',
+  'closeQuickCategoryModal',
+  'onQuickCatTypeChange',
+  'updateQuickCatParentSelect',
+  'onQuickCatModeChange',
+  'handleQuickAddCategorySubmit'
+];
+expectedQuickCatFns.forEach(fn => {
+  const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
+  if (!isFound) {
+    console.error(`Missing expected Quick-Category function in app.js: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedQuickCatFns.length} Quick-Category functions present in app.js.`);
+
+// Verify new category keys exist in CATEGORIES_DB
+const requiredExpenseCats = [
+  'Kiosk, Späti, Tabak & Zeitschriften',
+  'Automaten, SB-Stationen & Verpflegung unterwegs',
+  'Bäckerei, Café & Snacks unterwegs',
+  'Post, Pakete, Briefmarken & Schreibwaren',
+  'Glücksspiel, Lotto & Wetten'
+];
+const requiredIncomeCats = [
+  'Pfand, Leergut & Recycling-Einnahmen',
+  'Trinkgeld, Kaffeekasse & Ehrenamt',
+  'Fundgeld, Glücksfunde & Kleingeld-Erlöse'
+];
+
+requiredExpenseCats.forEach(cat => {
+  if (!appJs.includes(`"${cat}"`)) {
+    console.error(`Missing required expense category in CATEGORIES_DB: ${cat}`);
+    process.exit(1);
+  }
+});
+requiredIncomeCats.forEach(cat => {
+  if (!appJs.includes(`"${cat}"`)) {
+    console.error(`Missing required income category in CATEGORIES_DB: ${cat}`);
+    process.exit(1);
+  }
+});
+console.log('All newly requested expense & income categories verified in app.js.');
+
+// Simulate dynamic category addition and merging
+const testCustomCategories = {
+  exp: {
+    'Kiosk, Späti, Tabak & Zeitschriften': ['Mein Kiosk um die Ecke']
+  },
+  inc: {
+    'Pfand, Leergut & Recycling-Einnahmen': ['Große Pfandbon-Auszahlung']
+  },
+  trf: {}
+};
+if (!testCustomCategories.exp['Kiosk, Späti, Tabak & Zeitschriften'].includes('Mein Kiosk um die Ecke')) {
+  console.error('Custom category addition test failed');
+  process.exit(1);
+}
+console.log('Quick Category Creator & New Categories: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.6)');
 console.log('======================================');

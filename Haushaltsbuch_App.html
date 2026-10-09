@@ -1700,6 +1700,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </select>
     </div>
   </div>
+  <div style="margin-top: -6px; margin-bottom: 14px;">
+    <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('edit-tx')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #1976D2; color: #0D47A1; background: rgba(25, 118, 210, 0.05);" aria-label="Neue Kategorie oder neues Geschäft direkt hier anlegen">
+      ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+    </button>
+  </div>
 </div>
 
 <div class="form-group">
@@ -1886,6 +1891,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <select id="edit-rec-subcategory" class="large-select">
       </select>
     </div>
+  </div>
+  <div style="margin-top: -6px; margin-bottom: 14px;">
+    <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('edit-rec')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #1976D2; color: #0D47A1; background: rgba(25, 118, 210, 0.05);" aria-label="Neue Kategorie oder neues Geschäft für Dauerauftrag anlegen">
+      ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+    </button>
   </div>
 </div>
 
@@ -2834,6 +2844,78 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
 <!-- =========================================================================
+ MODAL DIALOG: KATEGORIE ODER LADEN SCHNELL ANLEGEN
+ ========================================================================= -->
+<div id="quick-add-category-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="quick-add-cat-heading" style="display: none;">
+<div class="modal-dialog-box" style="max-width: 580px;">
+  <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 14px;">
+    <h2 id="quick-add-cat-heading" tabindex="-1" style="margin: 0; font-size: 22px;">➕ Kategorie oder Laden hinzufügen</h2>
+    <button type="button" class="btn btn-secondary" onclick="closeQuickCategoryModal()" aria-label="Schließen" style="padding: 4px 10px;">✕</button>
+  </div>
+  <p class="field-hint" id="quick-add-cat-hint">Füge blitzschnell eine neue Kategorie oder ein neues Geschäft hinzu, ohne die Einstellungen öffnen zu müssen:</p>
+
+  <form id="quick-add-cat-form" onsubmit="handleQuickAddCategorySubmit(event)" class="accessible-form" style="margin-top: 12px;">
+    <input type="hidden" id="quick-cat-target-context" value="exp">
+
+    <div class="form-row-2">
+      <div class="form-group">
+        <label for="quick-cat-type" class="field-label"><strong>Buchungsart:</strong></label>
+        <select id="quick-cat-type" class="large-select" onchange="onQuickCatTypeChange()">
+          <option value="exp">Ausgabe</option>
+          <option value="inc">Einnahme</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="quick-cat-mode" class="field-label"><strong>Was möchtest du anlegen?</strong></label>
+        <select id="quick-cat-mode" class="large-select" onchange="onQuickCatModeChange()">
+          <option value="sub">Neues Geschäft / Unterkategorie</option>
+          <option value="main">Komplett neue Hauptkategorie</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Modus: Unterkategorie -->
+    <div id="quick-cat-parent-group" class="form-group">
+      <label for="quick-cat-parent-select" class="field-label"><strong>Bestehende Hauptkategorie auswählen:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <select id="quick-cat-parent-select" class="large-select">
+        <!-- Dynamisch befüllt -->
+      </select>
+    </div>
+
+    <div id="quick-cat-sub-name-group" class="form-group">
+      <label for="quick-cat-sub-name" class="field-label"><strong>Name des Geschäfts / der Unterkategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+      <input type="text" id="quick-cat-sub-name" class="large-input" placeholder="z. B. Späti am Eck, Tante Emma, Kiosk 24h, Pfandflaschen...">
+    </div>
+
+    <!-- Modus: Hauptkategorie -->
+    <div id="quick-cat-main-group" class="form-group" style="display: none;">
+      <div class="form-row-2">
+        <div class="form-group" style="flex: 0 0 90px;">
+          <label for="quick-cat-main-icon" class="field-label"><strong>Symbol:</strong></label>
+          <input type="text" id="quick-cat-main-icon" class="large-input" placeholder="🏪" value="📦" maxlength="4" style="text-align: center; font-size: 20px;">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label for="quick-cat-main-name" class="field-label"><strong>Name der neuen Hauptkategorie:</strong><span class="required-star" aria-hidden="true">*</span></label>
+          <input type="text" id="quick-cat-main-name" class="large-input" placeholder="z. B. Hobbys &amp; Sammlerstücke">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 8px;">
+        <label for="quick-cat-first-sub" class="field-label"><strong>Erste Unterkategorie dazu (optional):</strong></label>
+        <input type="text" id="quick-cat-first-sub" class="large-input" placeholder="z. B. Allgemein oder spezieller Laden">
+      </div>
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+      <button type="button" class="btn btn-secondary" onclick="closeQuickCategoryModal()">Abbrechen</button>
+      <button type="submit" class="btn btn-primary" style="background-color: #7B1FA2;">💾 Jetzt anlegen &amp; auswählen</button>
+    </div>
+  </form>
+</div>
+</div>
+
+
+
+<!-- =========================================================================
  4. HAUPTANWENDUNG
  ========================================================================= -->
 <div id="app-wrapper" style="display: none;">
@@ -3420,12 +3502,16 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </label>
 <select id="exp-category" class="large-select" onchange="onMainCategoryChange('exp')" required>
 <option value="Lebensmittel, Supermarkt & Discounter">Lebensmittel, Supermarkt & Discounter</option>
+<option value="Kiosk, Späti, Tabak & Zeitschriften">Kiosk, Späti, Tabak & Zeitschriften</option>
+<option value="Automaten, SB-Stationen & Verpflegung unterwegs">Automaten, SB-Stationen & Verpflegung unterwegs</option>
+<option value="Bäckerei, Café & Snacks unterwegs">Bäckerei, Café & Snacks unterwegs</option>
 <option value="Miete, Wohnen & Nebenkosten">Miete, Wohnen & Nebenkosten</option>
 <option value="Haushalt, Möbel, Garten & Handwerker">Haushalt, Möbel, Garten & Handwerker</option>
 <option value="Mobilität, Auto & Kraftfahrzeuge">Mobilität, Auto & Kraftfahrzeuge</option>
 <option value="ÖPNV, Bahn, Bus, Flug & Reisen">ÖPNV, Bahn, Bus, Flug & Reisen</option>
 <option value="Restaurants, Cafés & Gastronomie">Restaurants, Cafés & Gastronomie</option>
 <option value="Lieferdienste & Essen bestellen">Lieferdienste & Essen bestellen</option>
+<option value="Post, Pakete, Briefmarken & Schreibwaren">Post, Pakete, Briefmarken & Schreibwaren</option>
 <option value="Streaming, Musik, TV & Unterhaltung">Streaming, Musik, TV & Unterhaltung</option>
 <option value="Gaming, Computer & Konsolen">Gaming, Computer & Konsolen</option>
 <option value="Elektronik, Internet, Handy & Software">Elektronik, Internet, Handy & Software</option>
@@ -3440,6 +3526,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Familie, Kinder & Babybedarf">Familie, Kinder & Babybedarf</option>
 <option value="Schule, Ausbildung & Studium">Schule, Ausbildung & Studium</option>
 <option value="Sport, Fitness, Verein & Hobbys">Sport, Fitness, Verein & Hobbys</option>
+<option value="Glücksspiel, Lotto & Wetten">Glücksspiel, Lotto & Wetten</option>
 <option value="Spenden, Gemeinnütziges & Zuwendungen">Spenden, Gemeinnütziges & Zuwendungen</option>
 <option value="Sonstige Ausgaben & Bargeld">Sonstige Ausgaben & Bargeld</option>
 </select>
@@ -3463,6 +3550,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Getränkemarkt / Trinkgut">Getränkemarkt / Trinkgut</option>
 </select>
 </div>
+</div>
+
+<div style="margin-top: -6px; margin-bottom: 14px;">
+  <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('exp')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #7B1FA2; color: #6A1B9A; background: rgba(123, 31, 162, 0.05);" aria-label="Neue Kategorie oder neues Geschäft schnell anlegen">
+    ➕ <strong>Neue Kategorie / Laden schnell anlegen</strong>
+  </button>
 </div>
 
 <div class="form-group" id="exp-date-group">
@@ -3822,13 +3915,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <select id="inc-category" class="large-select" onchange="onMainCategoryChange('inc')" required>
 <option value="Gehalt, Lohn & Beruf">Gehalt, Lohn & Beruf</option>
 <option value="Staatliche Leistungen, Hilfen & Zuschüsse">Staatliche Leistungen, Hilfen & Zuschüsse</option>
+<option value="Pfand, Leergut & Recycling-Einnahmen">Pfand, Leergut & Recycling-Einnahmen</option>
+<option value="Trinkgeld, Kaffeekasse & Ehrenamt">Trinkgeld, Kaffeekasse & Ehrenamt</option>
+<option value="Fundgeld, Glücksfunde & Kleingeld-Erlöse">Fundgeld, Glücksfunde & Kleingeld-Erlöse</option>
 <option value="Taschengeld & Private Unterstützung">Taschengeld & Private Unterstützung</option>
 <option value="Spenden, Zuwendungen & Förderungen">Spenden, Zuwendungen & Förderungen</option>
 <option value="Geschenke, Boni & Gewinne">Geschenke, Boni & Gewinne</option>
 <option value="Rente, Pension & Versorgung">Rente, Pension & Versorgung</option>
 <option value="Verkäufe, Gebrauchtwaren & Erstattungen">Verkäufe, Gebrauchtwaren & Erstattungen</option>
 <option value="Zinsen, Dividenden, Miete & Kapital">Zinsen, Dividenden, Miete & Kapital</option>
-<option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
 <option value="Nebenjob, Minijob & Freiberufliche Projekte">Nebenjob, Minijob & Freiberufliche Projekte</option>
 <option value="Kreatives, Musik, Kunst & Content Creation">Kreatives, Musik, Kunst & Content Creation</option>
 <option value="Krypto, Staking & Web3-Erträge">Krypto, Staking & Web3-Erträge</option>
@@ -3836,6 +3931,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Erstattungen, Steuern & Kautionen">Erstattungen, Steuern & Kautionen</option>
 <option value="Private Rückzahlungen & Kostenbeteiligungen">Private Rückzahlungen & Kostenbeteiligungen</option>
 <option value="Vermietung, Verpachtung & Carsharing">Vermietung, Verpachtung & Carsharing</option>
+<option value="Sonstige Einnahmen">Sonstige Einnahmen</option>
 </select>
 </div>
 
@@ -3859,6 +3955,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="Praktikumsvergütung">Praktikumsvergütung</option>
 </select>
 </div>
+</div>
+
+<div style="margin-top: -6px; margin-bottom: 14px;">
+  <button type="button" class="btn btn-secondary" onclick="openQuickCategoryModal('inc')" style="font-size: 13px; padding: 6px 12px; border: 1px dashed #2E7D32; color: #1B5E20; background: rgba(46, 125, 50, 0.05);" aria-label="Neue Einnahme-Kategorie schnell anlegen">
+    ➕ <strong>Neue Einnahme-Kategorie schnell anlegen</strong>
+  </button>
 </div>
 
 <div class="form-group" id="inc-date-group">
@@ -6185,12 +6287,17 @@ const MONTH_NAMES = [
 const CATEGORY_ICONS = {
   // Ausgaben
   "Lebensmittel, Supermarkt & Discounter": "🛒",
+  "Kiosk, Späti, Tabak & Zeitschriften": "🏪",
+  "Automaten, SB-Stationen & Verpflegung unterwegs": "🎰",
+  "Bäckerei, Café & Snacks unterwegs": "🥐",
+  "Restaurants, Cafés & Gastronomie": "🍽️",
+  "Lieferdienste & Essen bestellen": "🛵",
+  "Post, Pakete, Briefmarken & Schreibwaren": "📮",
   "Miete, Wohnen & Nebenkosten": "🏠",
   "Haushalt, Möbel, Garten & Handwerker": "🛋️",
   "Mobilität, Auto & Kraftfahrzeuge": "🚗",
   "ÖPNV, Bahn, Bus, Flug & Reisen": "🚆",
-  "Restaurants, Cafés & Gastronomie": "🍽️",
-  "Lieferdienste & Essen bestellen": "🛵",
+  "Glücksspiel, Lotto & Wetten": "🎲",
   "Streaming, Musik, TV & Unterhaltung": "📺",
   "Gaming, Computer & Konsolen": "🎮",
   "Elektronik, Internet, Handy & Software": "💻",
@@ -6211,12 +6318,22 @@ const CATEGORY_ICONS = {
   // Einnahmen
   "Gehalt, Lohn & Beruf": "💼",
   "Staatliche Leistungen, Hilfen & Zuschüsse": "🏛️",
+  "Pfand, Leergut & Recycling-Einnahmen": "♻️",
+  "Trinkgeld, Kaffeekasse & Ehrenamt": "☕",
+  "Fundgeld, Glücksfunde & Kleingeld-Erlöse": "🪙",
   "Taschengeld & Private Unterstützung": "👛",
+  "Nebenjob, Minijob & Freiberufliche Projekte": "🛠️",
   "Spenden, Zuwendungen & Förderungen": "❤️",
   "Geschenke, Boni & Gewinne": "🎁",
   "Rente, Pension & Versorgung": "👴",
   "Verkäufe, Gebrauchtwaren & Erstattungen": "🏷️",
   "Zinsen, Dividenden, Miete & Kapital": "📈",
+  "Cashback, Prämien & Treueprogramme": "🎁",
+  "Erstattungen, Steuern & Kautionen": "💶",
+  "Private Rückzahlungen & Kostenbeteiligungen": "🤝",
+  "Vermietung, Verpachtung & Carsharing": "🔑",
+  "Kreatives, Musik, Kunst & Content Creation": "🎨",
+  "Krypto, Staking & Web3-Erträge": "🪙",
   "Sonstige Einnahmen": "💰"
 };
 
@@ -6251,6 +6368,54 @@ const CATEGORIES_DB = {
       "Hofladen / Bauernhof",
       "Getränkemarkt / Trinkgut",
       "Sonstiger Supermarkt"
+    ],
+    "Kiosk, Späti, Tabak & Zeitschriften": [
+      "Gesamt / Kiosk allgemein",
+      "Kiosk / Trinkhalle / Büdchen",
+      "Späti / Spätkauf / Nachtkiosk",
+      "Tabakwaren & Zigaretten",
+      "Zigarettendrehtabak, Filter & Blättchen",
+      "E-Zigaretten, Vapes & Liquids",
+      "Zigarren & Zigarillos",
+      "Zeitschriften, Zeitungen & Magazine",
+      "Comics, Rätselhefte & Programmzeitschriften",
+      "Kaffee to Go & Heißgetränke am Kiosk",
+      "Energy Drinks, Softdrinks & Kaltgetränke",
+      "Bier, Spirituosen & Feierabendgetränke",
+      "Süßigkeiten, Schokolade, Chips & Kaugummi",
+      "Eis & Wassereis am Kiosk",
+      "Lottoannahmestelle & Rubbellose",
+      "Guthaben- & Prepaid-Karten (Google Play, Paysafe, Apple etc.)"
+    ],
+    "Automaten, SB-Stationen & Verpflegung unterwegs": [
+      "Gesamt / Automaten allgemein",
+      "Snackautomat & Süßigkeitenautomat",
+      "Getränkeautomat (Dosen & Flaschen)",
+      "Kaffeeautomat & Heißgetränkeautomat",
+      "Zigarettenautomat",
+      "Fahrkartenautomat (Bahn, Bus, Straßenbahn)",
+      "Parkscheinautomat & Parkuhr",
+      "Pfandautomat / Leergutautomat",
+      "Passbildautomat & Fotoautomat",
+      "Geldspielautomat / Unterhaltungsautomat",
+      "Geldwechselautomat & Münzwechsler",
+      "Milchtankstelle & Regiomat (Hofladen-Automat)",
+      "Fleischautomat & Grillfleisch-Automat",
+      "Eisautomat",
+      "SB-Waschsalon / Waschautomat & Trockner",
+      "SB-Autowäsche (Waschbox & SB-Staubsauger)",
+      "Fahrradschlauch-Automat",
+      "Kaugummiautomat & Spielzeugautomat"
+    ],
+    "Bäckerei, Café & Snacks unterwegs": [
+      "Gesamt / Bäckerei allgemein",
+      "Bäckerei (Brötchen, Brot & Teilchen)",
+      "Kaffee & Gebäck to Go",
+      "Belegte Brötchen & Snacks unterwegs",
+      "Konditorei (Kuchen, Torten & Feingebäck)",
+      "Eisdiele & Eiscafé",
+      "Metzgerei-Imbiss & Heißtheke (Leberkäse, Frikadelle)",
+      "Foodtruck & Imbisswagen"
     ],
     "Miete, Wohnen & Nebenkosten": [
       "Kaltmiete",
@@ -6342,6 +6507,16 @@ const CATEGORIES_DB = {
       "Burger & Döner Lieferservice",
       "Getränke-Lieferdienst (Flaschenpost)",
       "Kochboxen (HelloFresh, Marley Spoon)"
+    ],
+    "Post, Pakete, Briefmarken & Schreibwaren": [
+      "Gesamt / Post & Pakete allgemein",
+      "Briefmarken & Postkarten (Deutsche Post)",
+      "Paketmarken & Porto (DHL, Hermes, DPD, GLS, UPS)",
+      "Einschreiben, Prio & Behördenbriefe",
+      "Packmaterial (Kartons, Polsterfolie, Klebeband)",
+      "Schreibwaren, Ordner, Hefte, Blöcke & Stifte",
+      "Kopieren, Scannen & Drucken (Copyshop)",
+      "Postfiliale & Postbank Schaltergebühren"
     ],
     "Streaming, Musik, TV & Unterhaltung": [
       "Netflix",
@@ -6573,6 +6748,15 @@ const CATEGORIES_DB = {
       "Wikipedia & Open-Source Spenden",
       "Trinkgeld gegeben"
     ],
+    "Glücksspiel, Lotto & Wetten": [
+      "Gesamt / Glücksspiel allgemein",
+      "Lotto (Lotto 6aus49, Eurojackpot, GlücksSpirale)",
+      "Rubbellose & Losbriefe",
+      "Aktion Mensch, Fernsehlotterie & Traumhausverlosung",
+      "Sportwetten (Tipico, bwin, Oddset etc.)",
+      "Spielhalle & Spielbank",
+      "Online-Casino & Poker"
+    ],
     "Sonstige Ausgaben & Bargeld": [
       "Bargeldabhebung am Geldautomaten",
       "Geld an Freunde / Familie verliehen (Leihgabe)",
@@ -6628,6 +6812,34 @@ const CATEGORIES_DB = {
       "Hilfe zum Lebensunterhalt (Sozialhilfe)",
       "Heizkostenzuschuss / Einmalige Beihilfe",
       "Eingliederungshilfe / Persönliches Budget"
+    ],
+    "Pfand, Leergut & Recycling-Einnahmen": [
+      "Gesamt / Pfand & Leergut allgemein",
+      "Pfandflaschen & Dosen (Einwegpfand 0,25 €)",
+      "Mehrwegflaschen & Bierkästen (Mehrwegpfand)",
+      "Pfandbon bar an Supermarktkasse ausgezahlt",
+      "Altmetall & Schrottverkauf Erlöse",
+      "Altpapier & Wertstoffhof Erlöse",
+      "Kabel- & Elektronik-Recycling Erlöse",
+      "Batterie- & Autobatterie-Pfand Rückerstattung"
+    ],
+    "Trinkgeld, Kaffeekasse & Ehrenamt": [
+      "Gesamt / Trinkgeld allgemein",
+      "Trinkgeld bar erhalten (Beruf, Service & Gastronomie)",
+      "Trinkgeld-Anteil aus Teamkasse / Tronc",
+      "Aufwandsentschädigung Ehrenamt (Übungsleiterpauschale)",
+      "Aufwandsentschädigung Wahlhelfer / Schöffe",
+      "Aufwandsentschädigung Blutspende / Plasmaspende",
+      "Aufwandsentschädigung medizinische Studien",
+      "Dankeschön / Trinkgeld privat erhalten"
+    ],
+    "Fundgeld, Glücksfunde & Kleingeld-Erlöse": [
+      "Gesamt / Fundgeld & Kleingeld allgemein",
+      "Gefundenes Bargeld (Münzen / Geldscheine)",
+      "Kleingeld-Spardose eingezahlt / bei Bank umgetauscht",
+      "Einkaufswagen-Münze / Chip behalten",
+      "Guthabenkarten Restbetrag / Pfandkarten bar ausgezahlt",
+      "Tombola / Verlosung Bargeldgewinn"
     ],
     "Taschengeld & Private Unterstützung": [
       "Reguläres Taschengeld (Monatlich / Wöchentlich)",
@@ -9609,6 +9821,214 @@ async function ensureCategoryExists(type, mainCatName, subCatName) {
   return created;
 }
 
+// =============================================================================
+// SCHNELLES KATEGORIE-MENÜ (IN-FORM QUICK ADD OHNE EINSTELLUNGEN ZU ÖFFNEN)
+// =============================================================================
+function openQuickCategoryModal(context) {
+  const modal = document.getElementById('quick-add-category-modal');
+  if (!modal) return;
+
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+  if (targetCtxInput) targetCtxInput.value = context || 'exp';
+
+  const typeSel = document.getElementById('quick-cat-type');
+  let defaultType = 'exp';
+  if (context === 'inc') {
+    defaultType = 'inc';
+  } else if (context === 'edit-tx') {
+    const txType = document.getElementById('edit-tx-type') ? document.getElementById('edit-tx-type').value : 'expense';
+    defaultType = (txType === 'income') ? 'inc' : 'exp';
+  } else if (context === 'edit-rec') {
+    const recType = document.getElementById('edit-rec-type') ? document.getElementById('edit-rec-type').value : 'expense';
+    defaultType = (recType === 'income') ? 'inc' : 'exp';
+  }
+
+  if (typeSel) {
+    typeSel.value = defaultType;
+  }
+
+  updateQuickCatParentSelect(defaultType, context);
+
+  const modeSel = document.getElementById('quick-cat-mode');
+  if (modeSel) {
+    modeSel.value = 'sub';
+    onQuickCatModeChange();
+  }
+
+  const subInput = document.getElementById('quick-cat-sub-name');
+  if (subInput) subInput.value = '';
+  const mainInput = document.getElementById('quick-cat-main-name');
+  if (mainInput) mainInput.value = '';
+  const firstSubInput = document.getElementById('quick-cat-first-sub');
+  if (firstSubInput) firstSubInput.value = '';
+
+  modal.style.display = 'flex';
+  const heading = document.getElementById('quick-add-cat-heading');
+  if (heading) heading.focus();
+  setTimeout(() => {
+    if (subInput) subInput.focus();
+  }, 100);
+
+  announceNVDA('Schnellmenü für neue Kategorie geöffnet.');
+}
+
+function closeQuickCategoryModal() {
+  const modal = document.getElementById('quick-add-category-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function onQuickCatTypeChange() {
+  const typeSel = document.getElementById('quick-cat-type');
+  const type = typeSel ? typeSel.value : 'exp';
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+  const context = targetCtxInput ? targetCtxInput.value : 'exp';
+  updateQuickCatParentSelect(type, context);
+}
+
+function updateQuickCatParentSelect(type, context) {
+  const parentSel = document.getElementById('quick-cat-parent-select');
+  if (!parentSel) return;
+
+  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
+  const mainCats = Object.keys(db);
+
+  parentSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+  applySymbolsToOptions(parentSel);
+
+  let preselectVal = null;
+  if (context === 'exp') {
+    const el = document.getElementById('exp-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'inc') {
+    const el = document.getElementById('inc-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'edit-tx') {
+    const el = document.getElementById('edit-tx-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'edit-rec') {
+    const el = document.getElementById('edit-rec-category');
+    if (el) preselectVal = el.value;
+  }
+
+  if (preselectVal && db[preselectVal]) {
+    parentSel.value = preselectVal;
+  }
+}
+
+function onQuickCatModeChange() {
+  const modeSel = document.getElementById('quick-cat-mode');
+  const mode = modeSel ? modeSel.value : 'sub';
+  const parentGroup = document.getElementById('quick-cat-parent-group');
+  const subGroup = document.getElementById('quick-cat-sub-name-group');
+  const mainGroup = document.getElementById('quick-cat-main-group');
+  const subInput = document.getElementById('quick-cat-sub-name');
+  const mainInput = document.getElementById('quick-cat-main-name');
+
+  if (mode === 'main') {
+    if (parentGroup) parentGroup.style.display = 'none';
+    if (subGroup) subGroup.style.display = 'none';
+    if (mainGroup) mainGroup.style.display = 'block';
+    if (subInput) subInput.required = false;
+    if (mainInput) mainInput.required = true;
+  } else {
+    if (parentGroup) parentGroup.style.display = 'block';
+    if (subGroup) subGroup.style.display = 'block';
+    if (mainGroup) mainGroup.style.display = 'none';
+    if (subInput) subInput.required = true;
+    if (mainInput) mainInput.required = false;
+  }
+}
+
+async function handleQuickAddCategorySubmit(e) {
+  e.preventDefault();
+  const typeSel = document.getElementById('quick-cat-type');
+  const modeSel = document.getElementById('quick-cat-mode');
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+
+  const type = typeSel ? typeSel.value : 'exp';
+  const mode = modeSel ? modeSel.value : 'sub';
+  const context = targetCtxInput ? targetCtxInput.value : 'exp';
+
+  let mainCatName = '';
+  let subCatName = '';
+
+  if (mode === 'sub') {
+    const parentSel = document.getElementById('quick-cat-parent-select');
+    const subInput = document.getElementById('quick-cat-sub-name');
+    mainCatName = parentSel ? parentSel.value.trim() : '';
+    subCatName = subInput ? subInput.value.trim() : '';
+    if (!subCatName) {
+      alert('Bitte gib den Namen des Geschäfts oder der Unterkategorie ein.');
+      return;
+    }
+  } else {
+    const mainInput = document.getElementById('quick-cat-main-name');
+    const firstSubInput = document.getElementById('quick-cat-first-sub');
+    const iconInput = document.getElementById('quick-cat-main-icon');
+    mainCatName = mainInput ? mainInput.value.trim() : '';
+    subCatName = firstSubInput ? firstSubInput.value.trim() : 'Gesamt / Allgemein';
+    if (!subCatName) subCatName = 'Gesamt / Allgemein';
+    if (!mainCatName) {
+      alert('Bitte gib den Namen der Hauptkategorie ein.');
+      return;
+    }
+    const icon = iconInput ? iconInput.value.trim() : '';
+    if (icon && typeof CATEGORY_ICONS !== 'undefined') {
+      CATEGORY_ICONS[mainCatName] = icon;
+    }
+  }
+
+  if (!appState.customCategories) {
+    appState.customCategories = { exp: {}, inc: {}, trf: {} };
+  }
+  if (!appState.customCategories[type]) {
+    appState.customCategories[type] = {};
+  }
+  if (!appState.customCategories[type][mainCatName]) {
+    appState.customCategories[type][mainCatName] = [];
+  }
+  if (!appState.customCategories[type][mainCatName].includes(subCatName)) {
+    appState.customCategories[type][mainCatName].push(subCatName);
+  }
+
+  mergeCustomCategoriesIntoDB();
+  populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  populateBudgetCategoryDropdown();
+  populateShoppingDropdowns();
+  renderShoppingCart();
+  renderAccountsViewList();
+  initCustomCatSettingsForm();
+  await saveStateToEncryptedStorage();
+
+  closeQuickCategoryModal();
+
+  if (context === 'exp' && type === 'exp') {
+    const expMain = document.getElementById('exp-category');
+    if (expMain) {
+      expMain.value = mainCatName;
+      onMainCategoryChange('exp');
+      const expSub = document.getElementById('exp-subcategory');
+      if (expSub) expSub.value = subCatName;
+    }
+  } else if (context === 'inc' && type === 'inc') {
+    const incMain = document.getElementById('inc-category');
+    if (incMain) {
+      incMain.value = mainCatName;
+      onMainCategoryChange('inc');
+      const incSub = document.getElementById('inc-subcategory');
+      if (incSub) incSub.value = subCatName;
+    }
+  } else if (context === 'edit-tx') {
+    populateEditModalCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+  } else if (context === 'edit-rec') {
+    populateEditRecCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+  }
+
+  announceNVDA('Kategorie ' + subCatName + ' unter ' + mainCatName + ' erfolgreich angelegt und ausgewählt.');
+  alert('✅ Fertig! "' + subCatName + '" (' + mainCatName + ') wurde angelegt und direkt ausgewählt.');
+}
+
 function populateCategoriesDropdowns() {
   mergeCustomCategoriesIntoDB();
   initCustomCatSettingsForm();
@@ -9616,10 +10036,14 @@ function populateCategoriesDropdowns() {
     const mainSel = document.getElementById(type + '-category');
     if (!mainSel) return;
 
+    const prevVal = mainSel.value;
     const db = CATEGORIES_DB[type];
     const mainCats = Object.keys(db);
 
     mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+    if (prevVal && db[prevVal]) {
+      mainSel.value = prevVal;
+    }
     onMainCategoryChange(type);
     applySymbolsToOptions(mainSel);
   });
@@ -12613,7 +13037,8 @@ function populateEditModalCategories(type, selectedMain, selectedSub) {
   }
   if (catSection) catSection.style.display = 'block';
 
-  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
+  const safeType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
+  const db = CATEGORIES_DB[safeType] || CATEGORIES_DB['exp'];
   const mainCats = Object.keys(db);
 
   mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
@@ -12631,7 +13056,7 @@ function onEditMainCategoryChange(preferredSub) {
   const subSel = document.getElementById('edit-tx-subcategory');
   if (!mainSel || !subSel) return;
 
-  const currentType = (type === 'income') ? 'inc' : 'exp';
+  const currentType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
   const selectedMain = mainSel.value;
   const db = CATEGORIES_DB[currentType];
   const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
@@ -16820,6 +17245,11 @@ window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
 window.toggleExpenseLoanFields = toggleExpenseLoanFields;
 window.toggleIncomeLoanFields = toggleIncomeLoanFields;
+window.openQuickCategoryModal = openQuickCategoryModal;
+window.closeQuickCategoryModal = closeQuickCategoryModal;
+window.onQuickCatTypeChange = onQuickCatTypeChange;
+window.onQuickCatModeChange = onQuickCatModeChange;
+window.handleQuickAddCategorySubmit = handleQuickAddCategorySubmit;
 
 
 function handleTransferAccountsChange() {

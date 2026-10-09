@@ -29,12 +29,17 @@ const MONTH_NAMES = [
 const CATEGORY_ICONS = {
   // Ausgaben
   "Lebensmittel, Supermarkt & Discounter": "🛒",
+  "Kiosk, Späti, Tabak & Zeitschriften": "🏪",
+  "Automaten, SB-Stationen & Verpflegung unterwegs": "🎰",
+  "Bäckerei, Café & Snacks unterwegs": "🥐",
+  "Restaurants, Cafés & Gastronomie": "🍽️",
+  "Lieferdienste & Essen bestellen": "🛵",
+  "Post, Pakete, Briefmarken & Schreibwaren": "📮",
   "Miete, Wohnen & Nebenkosten": "🏠",
   "Haushalt, Möbel, Garten & Handwerker": "🛋️",
   "Mobilität, Auto & Kraftfahrzeuge": "🚗",
   "ÖPNV, Bahn, Bus, Flug & Reisen": "🚆",
-  "Restaurants, Cafés & Gastronomie": "🍽️",
-  "Lieferdienste & Essen bestellen": "🛵",
+  "Glücksspiel, Lotto & Wetten": "🎲",
   "Streaming, Musik, TV & Unterhaltung": "📺",
   "Gaming, Computer & Konsolen": "🎮",
   "Elektronik, Internet, Handy & Software": "💻",
@@ -55,12 +60,22 @@ const CATEGORY_ICONS = {
   // Einnahmen
   "Gehalt, Lohn & Beruf": "💼",
   "Staatliche Leistungen, Hilfen & Zuschüsse": "🏛️",
+  "Pfand, Leergut & Recycling-Einnahmen": "♻️",
+  "Trinkgeld, Kaffeekasse & Ehrenamt": "☕",
+  "Fundgeld, Glücksfunde & Kleingeld-Erlöse": "🪙",
   "Taschengeld & Private Unterstützung": "👛",
+  "Nebenjob, Minijob & Freiberufliche Projekte": "🛠️",
   "Spenden, Zuwendungen & Förderungen": "❤️",
   "Geschenke, Boni & Gewinne": "🎁",
   "Rente, Pension & Versorgung": "👴",
   "Verkäufe, Gebrauchtwaren & Erstattungen": "🏷️",
   "Zinsen, Dividenden, Miete & Kapital": "📈",
+  "Cashback, Prämien & Treueprogramme": "🎁",
+  "Erstattungen, Steuern & Kautionen": "💶",
+  "Private Rückzahlungen & Kostenbeteiligungen": "🤝",
+  "Vermietung, Verpachtung & Carsharing": "🔑",
+  "Kreatives, Musik, Kunst & Content Creation": "🎨",
+  "Krypto, Staking & Web3-Erträge": "🪙",
   "Sonstige Einnahmen": "💰"
 };
 
@@ -95,6 +110,54 @@ const CATEGORIES_DB = {
       "Hofladen / Bauernhof",
       "Getränkemarkt / Trinkgut",
       "Sonstiger Supermarkt"
+    ],
+    "Kiosk, Späti, Tabak & Zeitschriften": [
+      "Gesamt / Kiosk allgemein",
+      "Kiosk / Trinkhalle / Büdchen",
+      "Späti / Spätkauf / Nachtkiosk",
+      "Tabakwaren & Zigaretten",
+      "Zigarettendrehtabak, Filter & Blättchen",
+      "E-Zigaretten, Vapes & Liquids",
+      "Zigarren & Zigarillos",
+      "Zeitschriften, Zeitungen & Magazine",
+      "Comics, Rätselhefte & Programmzeitschriften",
+      "Kaffee to Go & Heißgetränke am Kiosk",
+      "Energy Drinks, Softdrinks & Kaltgetränke",
+      "Bier, Spirituosen & Feierabendgetränke",
+      "Süßigkeiten, Schokolade, Chips & Kaugummi",
+      "Eis & Wassereis am Kiosk",
+      "Lottoannahmestelle & Rubbellose",
+      "Guthaben- & Prepaid-Karten (Google Play, Paysafe, Apple etc.)"
+    ],
+    "Automaten, SB-Stationen & Verpflegung unterwegs": [
+      "Gesamt / Automaten allgemein",
+      "Snackautomat & Süßigkeitenautomat",
+      "Getränkeautomat (Dosen & Flaschen)",
+      "Kaffeeautomat & Heißgetränkeautomat",
+      "Zigarettenautomat",
+      "Fahrkartenautomat (Bahn, Bus, Straßenbahn)",
+      "Parkscheinautomat & Parkuhr",
+      "Pfandautomat / Leergutautomat",
+      "Passbildautomat & Fotoautomat",
+      "Geldspielautomat / Unterhaltungsautomat",
+      "Geldwechselautomat & Münzwechsler",
+      "Milchtankstelle & Regiomat (Hofladen-Automat)",
+      "Fleischautomat & Grillfleisch-Automat",
+      "Eisautomat",
+      "SB-Waschsalon / Waschautomat & Trockner",
+      "SB-Autowäsche (Waschbox & SB-Staubsauger)",
+      "Fahrradschlauch-Automat",
+      "Kaugummiautomat & Spielzeugautomat"
+    ],
+    "Bäckerei, Café & Snacks unterwegs": [
+      "Gesamt / Bäckerei allgemein",
+      "Bäckerei (Brötchen, Brot & Teilchen)",
+      "Kaffee & Gebäck to Go",
+      "Belegte Brötchen & Snacks unterwegs",
+      "Konditorei (Kuchen, Torten & Feingebäck)",
+      "Eisdiele & Eiscafé",
+      "Metzgerei-Imbiss & Heißtheke (Leberkäse, Frikadelle)",
+      "Foodtruck & Imbisswagen"
     ],
     "Miete, Wohnen & Nebenkosten": [
       "Kaltmiete",
@@ -186,6 +249,16 @@ const CATEGORIES_DB = {
       "Burger & Döner Lieferservice",
       "Getränke-Lieferdienst (Flaschenpost)",
       "Kochboxen (HelloFresh, Marley Spoon)"
+    ],
+    "Post, Pakete, Briefmarken & Schreibwaren": [
+      "Gesamt / Post & Pakete allgemein",
+      "Briefmarken & Postkarten (Deutsche Post)",
+      "Paketmarken & Porto (DHL, Hermes, DPD, GLS, UPS)",
+      "Einschreiben, Prio & Behördenbriefe",
+      "Packmaterial (Kartons, Polsterfolie, Klebeband)",
+      "Schreibwaren, Ordner, Hefte, Blöcke & Stifte",
+      "Kopieren, Scannen & Drucken (Copyshop)",
+      "Postfiliale & Postbank Schaltergebühren"
     ],
     "Streaming, Musik, TV & Unterhaltung": [
       "Netflix",
@@ -417,6 +490,15 @@ const CATEGORIES_DB = {
       "Wikipedia & Open-Source Spenden",
       "Trinkgeld gegeben"
     ],
+    "Glücksspiel, Lotto & Wetten": [
+      "Gesamt / Glücksspiel allgemein",
+      "Lotto (Lotto 6aus49, Eurojackpot, GlücksSpirale)",
+      "Rubbellose & Losbriefe",
+      "Aktion Mensch, Fernsehlotterie & Traumhausverlosung",
+      "Sportwetten (Tipico, bwin, Oddset etc.)",
+      "Spielhalle & Spielbank",
+      "Online-Casino & Poker"
+    ],
     "Sonstige Ausgaben & Bargeld": [
       "Bargeldabhebung am Geldautomaten",
       "Geld an Freunde / Familie verliehen (Leihgabe)",
@@ -472,6 +554,34 @@ const CATEGORIES_DB = {
       "Hilfe zum Lebensunterhalt (Sozialhilfe)",
       "Heizkostenzuschuss / Einmalige Beihilfe",
       "Eingliederungshilfe / Persönliches Budget"
+    ],
+    "Pfand, Leergut & Recycling-Einnahmen": [
+      "Gesamt / Pfand & Leergut allgemein",
+      "Pfandflaschen & Dosen (Einwegpfand 0,25 €)",
+      "Mehrwegflaschen & Bierkästen (Mehrwegpfand)",
+      "Pfandbon bar an Supermarktkasse ausgezahlt",
+      "Altmetall & Schrottverkauf Erlöse",
+      "Altpapier & Wertstoffhof Erlöse",
+      "Kabel- & Elektronik-Recycling Erlöse",
+      "Batterie- & Autobatterie-Pfand Rückerstattung"
+    ],
+    "Trinkgeld, Kaffeekasse & Ehrenamt": [
+      "Gesamt / Trinkgeld allgemein",
+      "Trinkgeld bar erhalten (Beruf, Service & Gastronomie)",
+      "Trinkgeld-Anteil aus Teamkasse / Tronc",
+      "Aufwandsentschädigung Ehrenamt (Übungsleiterpauschale)",
+      "Aufwandsentschädigung Wahlhelfer / Schöffe",
+      "Aufwandsentschädigung Blutspende / Plasmaspende",
+      "Aufwandsentschädigung medizinische Studien",
+      "Dankeschön / Trinkgeld privat erhalten"
+    ],
+    "Fundgeld, Glücksfunde & Kleingeld-Erlöse": [
+      "Gesamt / Fundgeld & Kleingeld allgemein",
+      "Gefundenes Bargeld (Münzen / Geldscheine)",
+      "Kleingeld-Spardose eingezahlt / bei Bank umgetauscht",
+      "Einkaufswagen-Münze / Chip behalten",
+      "Guthabenkarten Restbetrag / Pfandkarten bar ausgezahlt",
+      "Tombola / Verlosung Bargeldgewinn"
     ],
     "Taschengeld & Private Unterstützung": [
       "Reguläres Taschengeld (Monatlich / Wöchentlich)",
@@ -3453,6 +3563,214 @@ async function ensureCategoryExists(type, mainCatName, subCatName) {
   return created;
 }
 
+// =============================================================================
+// SCHNELLES KATEGORIE-MENÜ (IN-FORM QUICK ADD OHNE EINSTELLUNGEN ZU ÖFFNEN)
+// =============================================================================
+function openQuickCategoryModal(context) {
+  const modal = document.getElementById('quick-add-category-modal');
+  if (!modal) return;
+
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+  if (targetCtxInput) targetCtxInput.value = context || 'exp';
+
+  const typeSel = document.getElementById('quick-cat-type');
+  let defaultType = 'exp';
+  if (context === 'inc') {
+    defaultType = 'inc';
+  } else if (context === 'edit-tx') {
+    const txType = document.getElementById('edit-tx-type') ? document.getElementById('edit-tx-type').value : 'expense';
+    defaultType = (txType === 'income') ? 'inc' : 'exp';
+  } else if (context === 'edit-rec') {
+    const recType = document.getElementById('edit-rec-type') ? document.getElementById('edit-rec-type').value : 'expense';
+    defaultType = (recType === 'income') ? 'inc' : 'exp';
+  }
+
+  if (typeSel) {
+    typeSel.value = defaultType;
+  }
+
+  updateQuickCatParentSelect(defaultType, context);
+
+  const modeSel = document.getElementById('quick-cat-mode');
+  if (modeSel) {
+    modeSel.value = 'sub';
+    onQuickCatModeChange();
+  }
+
+  const subInput = document.getElementById('quick-cat-sub-name');
+  if (subInput) subInput.value = '';
+  const mainInput = document.getElementById('quick-cat-main-name');
+  if (mainInput) mainInput.value = '';
+  const firstSubInput = document.getElementById('quick-cat-first-sub');
+  if (firstSubInput) firstSubInput.value = '';
+
+  modal.style.display = 'flex';
+  const heading = document.getElementById('quick-add-cat-heading');
+  if (heading) heading.focus();
+  setTimeout(() => {
+    if (subInput) subInput.focus();
+  }, 100);
+
+  announceNVDA('Schnellmenü für neue Kategorie geöffnet.');
+}
+
+function closeQuickCategoryModal() {
+  const modal = document.getElementById('quick-add-category-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function onQuickCatTypeChange() {
+  const typeSel = document.getElementById('quick-cat-type');
+  const type = typeSel ? typeSel.value : 'exp';
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+  const context = targetCtxInput ? targetCtxInput.value : 'exp';
+  updateQuickCatParentSelect(type, context);
+}
+
+function updateQuickCatParentSelect(type, context) {
+  const parentSel = document.getElementById('quick-cat-parent-select');
+  if (!parentSel) return;
+
+  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
+  const mainCats = Object.keys(db);
+
+  parentSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+  applySymbolsToOptions(parentSel);
+
+  let preselectVal = null;
+  if (context === 'exp') {
+    const el = document.getElementById('exp-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'inc') {
+    const el = document.getElementById('inc-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'edit-tx') {
+    const el = document.getElementById('edit-tx-category');
+    if (el) preselectVal = el.value;
+  } else if (context === 'edit-rec') {
+    const el = document.getElementById('edit-rec-category');
+    if (el) preselectVal = el.value;
+  }
+
+  if (preselectVal && db[preselectVal]) {
+    parentSel.value = preselectVal;
+  }
+}
+
+function onQuickCatModeChange() {
+  const modeSel = document.getElementById('quick-cat-mode');
+  const mode = modeSel ? modeSel.value : 'sub';
+  const parentGroup = document.getElementById('quick-cat-parent-group');
+  const subGroup = document.getElementById('quick-cat-sub-name-group');
+  const mainGroup = document.getElementById('quick-cat-main-group');
+  const subInput = document.getElementById('quick-cat-sub-name');
+  const mainInput = document.getElementById('quick-cat-main-name');
+
+  if (mode === 'main') {
+    if (parentGroup) parentGroup.style.display = 'none';
+    if (subGroup) subGroup.style.display = 'none';
+    if (mainGroup) mainGroup.style.display = 'block';
+    if (subInput) subInput.required = false;
+    if (mainInput) mainInput.required = true;
+  } else {
+    if (parentGroup) parentGroup.style.display = 'block';
+    if (subGroup) subGroup.style.display = 'block';
+    if (mainGroup) mainGroup.style.display = 'none';
+    if (subInput) subInput.required = true;
+    if (mainInput) mainInput.required = false;
+  }
+}
+
+async function handleQuickAddCategorySubmit(e) {
+  e.preventDefault();
+  const typeSel = document.getElementById('quick-cat-type');
+  const modeSel = document.getElementById('quick-cat-mode');
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+
+  const type = typeSel ? typeSel.value : 'exp';
+  const mode = modeSel ? modeSel.value : 'sub';
+  const context = targetCtxInput ? targetCtxInput.value : 'exp';
+
+  let mainCatName = '';
+  let subCatName = '';
+
+  if (mode === 'sub') {
+    const parentSel = document.getElementById('quick-cat-parent-select');
+    const subInput = document.getElementById('quick-cat-sub-name');
+    mainCatName = parentSel ? parentSel.value.trim() : '';
+    subCatName = subInput ? subInput.value.trim() : '';
+    if (!subCatName) {
+      alert('Bitte gib den Namen des Geschäfts oder der Unterkategorie ein.');
+      return;
+    }
+  } else {
+    const mainInput = document.getElementById('quick-cat-main-name');
+    const firstSubInput = document.getElementById('quick-cat-first-sub');
+    const iconInput = document.getElementById('quick-cat-main-icon');
+    mainCatName = mainInput ? mainInput.value.trim() : '';
+    subCatName = firstSubInput ? firstSubInput.value.trim() : 'Gesamt / Allgemein';
+    if (!subCatName) subCatName = 'Gesamt / Allgemein';
+    if (!mainCatName) {
+      alert('Bitte gib den Namen der Hauptkategorie ein.');
+      return;
+    }
+    const icon = iconInput ? iconInput.value.trim() : '';
+    if (icon && typeof CATEGORY_ICONS !== 'undefined') {
+      CATEGORY_ICONS[mainCatName] = icon;
+    }
+  }
+
+  if (!appState.customCategories) {
+    appState.customCategories = { exp: {}, inc: {}, trf: {} };
+  }
+  if (!appState.customCategories[type]) {
+    appState.customCategories[type] = {};
+  }
+  if (!appState.customCategories[type][mainCatName]) {
+    appState.customCategories[type][mainCatName] = [];
+  }
+  if (!appState.customCategories[type][mainCatName].includes(subCatName)) {
+    appState.customCategories[type][mainCatName].push(subCatName);
+  }
+
+  mergeCustomCategoriesIntoDB();
+  populateCategoriesDropdowns();
+  populateAllAccountDropdowns();
+  populateBudgetCategoryDropdown();
+  populateShoppingDropdowns();
+  renderShoppingCart();
+  renderAccountsViewList();
+  initCustomCatSettingsForm();
+  await saveStateToEncryptedStorage();
+
+  closeQuickCategoryModal();
+
+  if (context === 'exp' && type === 'exp') {
+    const expMain = document.getElementById('exp-category');
+    if (expMain) {
+      expMain.value = mainCatName;
+      onMainCategoryChange('exp');
+      const expSub = document.getElementById('exp-subcategory');
+      if (expSub) expSub.value = subCatName;
+    }
+  } else if (context === 'inc' && type === 'inc') {
+    const incMain = document.getElementById('inc-category');
+    if (incMain) {
+      incMain.value = mainCatName;
+      onMainCategoryChange('inc');
+      const incSub = document.getElementById('inc-subcategory');
+      if (incSub) incSub.value = subCatName;
+    }
+  } else if (context === 'edit-tx') {
+    populateEditModalCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+  } else if (context === 'edit-rec') {
+    populateEditRecCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+  }
+
+  announceNVDA('Kategorie ' + subCatName + ' unter ' + mainCatName + ' erfolgreich angelegt und ausgewählt.');
+  alert('✅ Fertig! "' + subCatName + '" (' + mainCatName + ') wurde angelegt und direkt ausgewählt.');
+}
+
 function populateCategoriesDropdowns() {
   mergeCustomCategoriesIntoDB();
   initCustomCatSettingsForm();
@@ -3460,10 +3778,14 @@ function populateCategoriesDropdowns() {
     const mainSel = document.getElementById(type + '-category');
     if (!mainSel) return;
 
+    const prevVal = mainSel.value;
     const db = CATEGORIES_DB[type];
     const mainCats = Object.keys(db);
 
     mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
+    if (prevVal && db[prevVal]) {
+      mainSel.value = prevVal;
+    }
     onMainCategoryChange(type);
     applySymbolsToOptions(mainSel);
   });
@@ -6457,7 +6779,8 @@ function populateEditModalCategories(type, selectedMain, selectedSub) {
   }
   if (catSection) catSection.style.display = 'block';
 
-  const db = CATEGORIES_DB[type] || CATEGORIES_DB['exp'];
+  const safeType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
+  const db = CATEGORIES_DB[safeType] || CATEGORIES_DB['exp'];
   const mainCats = Object.keys(db);
 
   mainSel.innerHTML = mainCats.map(cat => '<option value="' + escapeHTML(cat) + '">' + escapeHTML(cat) + '</option>').join('');
@@ -6475,7 +6798,7 @@ function onEditMainCategoryChange(preferredSub) {
   const subSel = document.getElementById('edit-tx-subcategory');
   if (!mainSel || !subSel) return;
 
-  const currentType = (type === 'income') ? 'inc' : 'exp';
+  const currentType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
   const selectedMain = mainSel.value;
   const db = CATEGORIES_DB[currentType];
   const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
@@ -10664,6 +10987,11 @@ window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
 window.toggleExpenseLoanFields = toggleExpenseLoanFields;
 window.toggleIncomeLoanFields = toggleIncomeLoanFields;
+window.openQuickCategoryModal = openQuickCategoryModal;
+window.closeQuickCategoryModal = closeQuickCategoryModal;
+window.onQuickCatTypeChange = onQuickCatTypeChange;
+window.onQuickCatModeChange = onQuickCatModeChange;
+window.handleQuickAddCategorySubmit = handleQuickAddCategorySubmit;
 
 
 function handleTransferAccountsChange() {
