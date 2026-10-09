@@ -768,6 +768,43 @@ if (!testCustomCategories.exp['Kiosk, Späti, Tabak & Zeitschriften'].includes('
 }
 console.log('Quick Category Creator & New Categories: 100% PASS!');
 
+// 11. Test GitHub Cloud Categories Sync & categories.json
+console.log('Testing GitHub Cloud Categories Sync & categories.json...');
+if (!fs.existsSync('categories.json')) {
+  console.error('Missing categories.json file!');
+  process.exit(1);
+}
+const catJsonContent = JSON.parse(fs.readFileSync('categories.json', 'utf8'));
+if (!catJsonContent.exp || !catJsonContent.inc) {
+  console.error('Invalid categories.json schema!');
+  process.exit(1);
+}
+console.log('categories.json verified and valid.');
+
+const expectedSyncFns = [
+  'mergeCloudCategoriesIntoDB',
+  'initCloudCategoriesSync',
+  'syncCategoriesFromGitHub'
+];
+expectedSyncFns.forEach(fn => {
+  const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
+  if (!isFound) {
+    console.error(`Missing expected Cloud Sync function in app.js: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log('All Cloud Sync functions present in app.js.');
+
+const expectedSyncIDs = ['btn-sync-cloud-cats', 'cloud-cat-sync-status'];
+expectedSyncIDs.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing expected Cloud Sync HTML ID: ${id}`);
+    process.exit(1);
+  }
+});
+console.log('All Cloud Sync HTML IDs present.');
+console.log('GitHub Cloud Categories Sync Engine: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.6)');
 console.log('======================================');

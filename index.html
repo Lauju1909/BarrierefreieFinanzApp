@@ -3508,6 +3508,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </button>
 </div>
 </form>
+
+<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+  <button type="button" class="btn btn-secondary" onclick="syncCategoriesFromGitHub(true)" id="btn-sync-cloud-cats" style="width: 100%; border: 1px solid #FF9800; color: #E65100; font-weight: bold;">
+    <span>🔄 <strong>Kategorien-Katalog von GitHub aktualisieren</strong></span>
+  </button>
+  <p class="field-hint" style="font-size: 13px; margin: 0;" id="cloud-cat-sync-status">Lädt die neuesten Kategorien &amp; Geschäfte direkt aus dem zentralen Online-Katalog herunter, ohne App-Update.</p>
+</div>
 </section>
 
 <!-- 4. FEEDBACK & NEUE FUNKTIONEN VORSCHLAGEN -->

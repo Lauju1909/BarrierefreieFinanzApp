@@ -4398,6 +4398,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </button>
 </div>
 </form>
+
+<div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 8px;">
+  <button type="button" class="btn btn-secondary" onclick="syncCategoriesFromGitHub(true)" id="btn-sync-cloud-cats" style="width: 100%; border: 1px solid #FF9800; color: #E65100; font-weight: bold;">
+    <span>🔄 <strong>Kategorien-Katalog von GitHub aktualisieren</strong></span>
+  </button>
+  <p class="field-hint" style="font-size: 13px; margin: 0;" id="cloud-cat-sync-status">Lädt die neuesten Kategorien &amp; Geschäfte direkt aus dem zentralen Online-Katalog herunter, ohne App-Update.</p>
+</div>
 </section>
 
 <!-- 4. FEEDBACK & NEUE FUNKTIONEN VORSCHLAGEN -->
@@ -9634,6 +9641,132 @@ function mergeCustomCategoriesIntoDB() {
   });
 }
 
+// =============================================================================
+// ZENTRALER KATEGORIEN-SYNC (GITHUB CLOUD-KATALOG OHNE APP-UPDATE)
+// =============================================================================
+const GITHUB_CATEGORIES_URL = 'https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main/categories.json';
+
+function mergeCloudCategoriesIntoDB(cloudData) {
+  if (!cloudData || typeof cloudData !== 'object') return 0;
+  let addedCount = 0;
+
+  ['exp', 'inc', 'trf'].forEach(type => {
+    if (!cloudData[type]) return;
+    if (!CATEGORIES_DB[type]) CATEGORIES_DB[type] = {};
+
+    for (const [mainCat, subs] of Object.entries(cloudData[type])) {
+      if (!CATEGORIES_DB[type][mainCat]) {
+        CATEGORIES_DB[type][mainCat] = [];
+        addedCount++;
+      }
+      if (Array.isArray(subs)) {
+        subs.forEach(s => {
+          if (!CATEGORIES_DB[type][mainCat].includes(s)) {
+            CATEGORIES_DB[type][mainCat].push(s);
+            addedCount++;
+          }
+        });
+      }
+    }
+  });
+
+  if (cloudData.icons && typeof CATEGORY_ICONS !== 'undefined') {
+    Object.assign(CATEGORY_ICONS, cloudData.icons);
+  }
+
+  mergeCustomCategoriesIntoDB();
+  return addedCount;
+}
+
+function initCloudCategoriesSync() {
+  try {
+    const cached = localStorage.getItem('cached_cloud_categories');
+    if (cached) {
+      const data = JSON.parse(cached);
+      mergeCloudCategoriesIntoDB(data);
+    }
+  } catch(e) {}
+
+  const lastSyncStr = localStorage.getItem('last_cloud_categories_sync');
+  const lastSync = lastSyncStr ? parseInt(lastSyncStr, 10) : 0;
+  const now = Date.now();
+
+  if (!lastSync || (now - lastSync > 24 * 3600 * 1000)) {
+    setTimeout(() => {
+      syncCategoriesFromGitHub(false);
+    }, 2000);
+  }
+}
+
+async function syncCategoriesFromGitHub(force = false) {
+  const syncBtn = document.getElementById('btn-sync-cloud-cats');
+  const statusEl = document.getElementById('cloud-cat-sync-status');
+  if (syncBtn && force) {
+    syncBtn.disabled = true;
+    syncBtn.innerHTML = '<span>⏳ <strong>Katalog wird geladen...</strong></span>';
+  }
+
+  let success = false;
+  let addedCount = 0;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    const resp = await fetch(GITHUB_CATEGORIES_URL + '?t=' + Date.now(), {
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (resp.ok) {
+      const cloudData = await resp.json();
+      if (cloudData && (cloudData.exp || cloudData.inc)) {
+        addedCount = mergeCloudCategoriesIntoDB(cloudData);
+        localStorage.setItem('cached_cloud_categories', JSON.stringify(cloudData));
+        localStorage.setItem('last_cloud_categories_sync', String(Date.now()));
+        populateCategoriesDropdowns();
+        success = true;
+      }
+    }
+  } catch(e) {
+    try {
+      const port = window.__LOCAL_PORT__ || 48123;
+      const resp = await fetch('http://127.0.0.1:' + port + '/categories.json?t=' + Date.now());
+      if (resp.ok) {
+        const localData = await resp.json();
+        if (localData && (localData.exp || localData.inc)) {
+          addedCount = mergeCloudCategoriesIntoDB(localData);
+          localStorage.setItem('cached_cloud_categories', JSON.stringify(localData));
+          populateCategoriesDropdowns();
+          success = true;
+        }
+      }
+    } catch(e2) {}
+  } finally {
+    if (syncBtn && force) {
+      syncBtn.disabled = false;
+      syncBtn.innerHTML = '<span>🔄 <strong>Kategorien-Katalog von GitHub aktualisieren</strong></span>';
+    }
+  }
+
+  if (force) {
+    if (success) {
+      const msg = '✅ Kategorien-Katalog erfolgreich von GitHub aktualisiert!';
+      announceNVDA(msg, true);
+      alert(msg);
+      if (statusEl) {
+        statusEl.textContent = 'Zuletzt aktualisiert: ' + new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE') + '.';
+      }
+    } else {
+      const errMsg = '⚠️ Der Online-Katalog konnte gerade nicht erreicht werden. Deine bestehenden Kategorien bleiben vollständig erhalten.';
+      announceNVDA(errMsg, true);
+      alert(errMsg);
+    }
+  }
+
+  return success;
+}
+
 function initCustomCatSettingsForm() {
   const typeSel = document.getElementById('custom-cat-type');
   const mainSel = document.getElementById('custom-cat-main-select');
@@ -10136,6 +10269,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDatePickers();
   setupGlobalKeyboardShortcuts();
   setupReceiptPasteAndDropListeners();
+  initCloudCategoriesSync();
   populateCategoriesDropdowns();
   populateAllAccountDropdowns();
   populateBudgetCategoryDropdown();
@@ -17250,6 +17384,8 @@ window.closeQuickCategoryModal = closeQuickCategoryModal;
 window.onQuickCatTypeChange = onQuickCatTypeChange;
 window.onQuickCatModeChange = onQuickCatModeChange;
 window.handleQuickAddCategorySubmit = handleQuickAddCategorySubmit;
+window.syncCategoriesFromGitHub = syncCategoriesFromGitHub;
+window.initCloudCategoriesSync = initCloudCategoriesSync;
 
 
 function handleTransferAccountsChange() {

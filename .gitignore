@@ -2,6 +2,7 @@
 # Ensure no financial data, backups, profiles or keys are ever committed to git
 *.json
 !version.json
+!categories.json
 *.vault
 *.vault.bak
 *.enc
@@ -18,5 +19,6 @@ backups/
 private/
 Profile/
 Profile_Feedback/
+Profile_Kategorien/
 Feedback_Archiv.txt
 tmp_*
