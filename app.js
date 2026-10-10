@@ -5849,6 +5849,13 @@ function onExpenseSplitTypeChange(idx, newType) {
     expenseSplitRows[idx].account = acc1;
   }
   renderExpenseSplitRows();
+
+  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
+  const selectEl = document.getElementById(`exp-split-type-${idx}`);
+  if (selectEl) {
+    selectEl.focus();
+  }
+
   if (typeof announceNVDA === 'function') {
     const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
     announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
@@ -6617,6 +6624,13 @@ function onIncomeSplitTypeChange(idx, newType) {
     incomeSplitRows[idx].account = acc1;
   }
   renderIncomeSplitRows();
+
+  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
+  const selectEl = document.getElementById(`inc-split-type-${idx}`);
+  if (selectEl) {
+    selectEl.focus();
+  }
+
   if (typeof announceNVDA === 'function') {
     const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_borrowed' ? 'Geliehen von Person mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
     announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
@@ -7364,6 +7378,13 @@ function onEditSplitTypeChange(idx, newType) {
     editSplitRows[idx].account = acc1;
   }
   renderEditSplitRows();
+
+  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
+  const selectEl = document.getElementById(`edit-split-type-${idx}`);
+  if (selectEl) {
+    selectEl.focus();
+  }
+
   if (typeof announceNVDA === 'function') {
     announceNVDA(`Teil ${idx + 1} Art geändert.`);
   }
