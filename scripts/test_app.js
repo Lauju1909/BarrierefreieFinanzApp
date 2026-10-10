@@ -636,9 +636,15 @@ const expectedSplitEditFns = [
   'removeEditSplitRow',
   'onEditSplitAccountChange',
   'onEditSplitAmountInput',
+  'onEditSplitTypeChange',
+  'onEditSplitPersonInput',
   'updateEditSplitSummary',
   'openEditModal',
-  'saveEditedTransaction'
+  'saveEditedTransaction',
+  'onExpenseSplitTypeChange',
+  'onExpenseSplitPersonInput',
+  'onIncomeSplitTypeChange',
+  'onIncomeSplitPersonInput'
 ];
 expectedSplitEditFns.forEach(fn => {
   const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
@@ -649,40 +655,64 @@ expectedSplitEditFns.forEach(fn => {
 });
 console.log(`All ${expectedSplitEditFns.length} Split-Payment Edit functions present in app.js.`);
 
-// Simulation of Split Payment Creation, Multi-Account Splitting and Editing
+// Simulation of Split Payment Creation, Multi-Account Splitting and Editing with Loans & Shared Costs
 const splitSimTx1 = {
   id: 'tx_split_sim_1',
   splitId: 'split_sim_999',
   splitIndex: 1,
-  splitTotalCount: 2,
+  splitTotalCount: 3,
   splitTotalAmount: 100.00,
+  splitType: 'account',
   type: 'expense',
   account: 'bank',
-  amount: 60.00,
+  amount: 50.00,
   category: 'Lebensmittel',
-  description: 'Wocheneinkauf (Split 1/2: 60,00 € von Girokonto)'
+  description: 'Wocheneinkauf (Split 1/3: 50,00 € von Girokonto)'
 };
 const splitSimTx2 = {
   id: 'tx_split_sim_2',
   splitId: 'split_sim_999',
   splitIndex: 2,
-  splitTotalCount: 2,
+  splitTotalCount: 3,
   splitTotalAmount: 100.00,
+  splitType: 'loan_lent',
+  splitPerson: 'Peter',
   type: 'expense',
-  account: 'cash',
-  amount: 40.00,
+  account: 'bank',
+  amount: 30.00,
   category: 'Lebensmittel',
-  description: 'Wocheneinkauf (Split 2/2: 40,00 € von Bargeld)'
+  peerLoanId: 'loan_sim_1',
+  description: 'Wocheneinkauf (Split 2/3: 🤝 30,00 € verliehen an Peter)'
+};
+const splitSimTx3 = {
+  id: 'tx_split_sim_3',
+  splitId: 'split_sim_999',
+  splitIndex: 3,
+  splitTotalCount: 3,
+  splitTotalAmount: 100.00,
+  splitType: 'shared_no_repay',
+  splitPerson: 'Lisa',
+  type: 'expense',
+  account: 'bank',
+  amount: 20.00,
+  category: 'Lebensmittel',
+  description: 'Wocheneinkauf (Split 3/3: 👥 20,00 € geteilt mit Lisa ohne Rückzahlung)'
 };
 
-const simTransactions = [splitSimTx1, splitSimTx2];
+const simTransactions = [splitSimTx1, splitSimTx2, splitSimTx3];
 const simSiblings = simTransactions.filter(t => t.splitId === 'split_sim_999');
 const simTotal = simSiblings.reduce((sum, s) => sum + s.amount, 0);
-if (simTotal !== 100.00 || simSiblings.length !== 2) {
+if (simTotal !== 100.00 || simSiblings.length !== 3) {
   console.error('Split simulation sibling validation failed');
   process.exit(1);
 }
-console.log('Split-Payment simulation & editing logic: 100% PASS!');
+const loanPart = simSiblings.find(s => s.splitType === 'loan_lent');
+const sharedPart = simSiblings.find(s => s.splitType === 'shared_no_repay');
+if (!loanPart || loanPart.splitPerson !== 'Peter' || !sharedPart || sharedPart.splitPerson !== 'Lisa') {
+  console.error('Advanced Split row types validation failed');
+  process.exit(1);
+}
+console.log('Split-Payment simulation & editing logic (inkl. Leihgabe & Geteilte Kosten): 100% PASS!');
 
 // 10. Test New Categories & In-App Quick Category Creator
 console.log('Testing New Categories & In-App Quick Category Creator...');

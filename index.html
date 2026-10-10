@@ -721,20 +721,20 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <div style="display: flex; align-items: center; gap: 10px; background: rgba(33, 150, 243, 0.08); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(33, 150, 243, 0.3);">
     <input type="checkbox" id="edit-tx-split-toggle" onchange="toggleEditSplitPayment()" style="width: 20px; height: 20px; cursor: pointer;">
     <label for="edit-tx-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 14px; margin: 0; color: var(--text-color);">
-      🔀 Betrag auf mehrere Konten aufteilen (Split-Zahlung, z. B. Teil Bar &amp; Teil Girokonto)
+      🔀 Betrag aufsplitten (Mehrere Konten, Leihgabe an/von Person oder geteilte Kosten ohne Rückzahlung)
     </label>
   </div>
 </div>
 
 <div id="edit-tx-split-section" class="settings-box" style="display: none; border-left: 8px solid #1976D2; background: rgba(33, 150, 243, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung auf Konten anpassen</h4>
-  <p class="field-hint" style="margin-bottom: 12px;">Passe die Beträge und Konten an. Die Summe aller Teilbeträge muss genau dem Gesamtbetrag entsprechen:</p>
+  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung, Leihgabe &amp; Geteilte Kosten anpassen</h4>
+  <p class="field-hint" style="margin-bottom: 12px;">Passe die Beträge, Konten, Leihgaben und geteilten Kosten an. Die Summe aller Teilbeträge muss genau dem Gesamtbetrag entsprechen:</p>
   <div id="edit-tx-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
     <!-- Befüllt per JavaScript -->
   </div>
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px;">
     <button type="button" id="edit-tx-split-add-btn" class="btn btn-secondary" onclick="addEditSplitRow()" style="font-size: 13px; padding: 6px 12px;">
-      ➕ Weiteres Konto hinzufügen
+      ➕ Weiteren Teilbetrag hinzufügen
     </button>
     <div id="edit-tx-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #90CAF9; color: #0D47A1;">
       Summe der Teile: 0,00 € / Gesamt: 0,00 €
@@ -2540,19 +2540,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 
-<!-- OPTIONALE SPLIT-ZAHLUNG: AUSGABE AUF MEHRERE KONTEN AUFTEILEN -->
+<!-- OPTIONALE SPLIT-ZAHLUNG: AUSGABE AUF MEHRERE KONTEN, LEIHGABEN ODER GETEILTE KOSTEN AUFTEILEN -->
 <div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
   <div style="display: flex; align-items: center; gap: 10px;">
     <input type="checkbox" id="exp-split-toggle" onchange="toggleExpenseSplitPayment()" style="width: 22px; height: 22px; cursor: pointer;">
     <label for="exp-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: var(--text-primary);">
-      🔀 Betrag auf mehrere Konten aufteilen (Split-Zahlung, z. B. Teil Bar &amp; Teil Girokonto)
+      🔀 Betrag aufsplitten (Mehrere Konten, Leihgabe an Person oder geteilte Kosten ohne Rückzahlung)
     </label>
   </div>
 </div>
 
 <div id="exp-split-section" class="settings-box" style="display: none; border-left: 8px solid #1976D2; background: rgba(33, 150, 243, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung auf Konten</h4>
-  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege fest, wie viel Euro von welchem Konto bezahlt werden. Die Summe aller Konten muss genau dem Gesamtkaufpreis entsprechen:</p>
+  <h4 style="margin: 0 0 6px 0; color: #1565C0;">🔀 Split-Zahlung: Aufteilung, Leihgabe &amp; Geteilte Kosten</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege pro Zeile fest, ob der Teilbetrag von einem deiner Konten bezahlt wurde, an eine Person <strong>verliehen</strong> wurde (Leihgabe mit Rückzahlung) oder mit einer Person <strong>geteilt</strong> wurde (z.&nbsp;B. Kostenbeteiligung ohne Rückzahlung). Die Summe muss genau dem Gesamtkaufpreis entsprechen:</p>
 
   <div id="exp-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
     <!-- Wird dynamisch befüllt -->
@@ -2560,7 +2560,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
     <button type="button" id="exp-split-add-btn" class="btn btn-secondary" onclick="addExpenseSplitRow()" style="font-size: 13px; padding: 6px 12px;">
-      ➕ <strong>Weiteres Konto hinzufügen</strong>
+      ➕ <strong>Weiteren Teilbetrag hinzufügen</strong>
     </button>
     <div id="exp-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #90CAF9; color: #0D47A1;">
       Aufgeteilt: 0,00 € von 0,00 €
@@ -2952,19 +2952,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 
-<!-- OPTIONALE SPLIT-EINZAHLUNG: EINNAHME AUF MEHRERE KONTEN AUFTEILEN -->
+<!-- OPTIONALE SPLIT-EINZAHLUNG: EINNAHME AUF MEHRERE KONTEN, LEIHGABE ODER GETEILTE EINNAHMEN AUFTEILEN -->
 <div class="form-group" style="margin-top: 10px; margin-bottom: 12px;">
   <div style="display: flex; align-items: center; gap: 10px;">
     <input type="checkbox" id="inc-split-toggle" onchange="toggleIncomeSplitPayment()" style="width: 22px; height: 22px; cursor: pointer;">
     <label for="inc-split-toggle" style="cursor: pointer; font-weight: bold; font-size: 15px; margin: 0; color: var(--text-primary);">
-      🔀 Betrag auf mehrere Konten aufteilen (Split-Einzahlung, z. B. Teil Girokonto &amp; Teil Sparkonto)
+      🔀 Betrag aufsplitten (Mehrere Konten, Geliehen von Person oder geteilter Betrag ohne Rückzahlung)
     </label>
   </div>
 </div>
 
 <div id="inc-split-section" class="settings-box" style="display: none; border-left: 8px solid #2E7D32; background: rgba(76, 175, 80, 0.05); padding: 14px; border-radius: 8px; margin-bottom: 16px;">
-  <h4 style="margin: 0 0 6px 0; color: #1B5E20;">🔀 Split-Einzahlung: Aufteilung auf Konten</h4>
-  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege fest, wie viel Euro auf welches Konto eingezahlt oder gutgeschrieben werden. Die Summe aller Konten muss genau dem Gesamteinnahmebetrag entsprechen:</p>
+  <h4 style="margin: 0 0 6px 0; color: #1B5E20;">🔀 Split-Einzahlung: Aufteilung, Geliehenes Geld &amp; Geteilte Einnahmen</h4>
+  <p style="font-size: 13px; margin: 0 0 12px 0;">Lege pro Zeile fest, auf welches deiner Konten der Teilbetrag gutgeschrieben wurde, von einer Person <strong>geliehen</strong> wurde (Leihgabe / Schuld mit Rückzahlung) oder mit einer Person <strong>geteilt</strong> wurde (z.&nbsp;B. Kostenbeteiligung / Zuschuss ohne Rückzahlung). Die Summe muss genau dem Gesamteinnahmebetrag entsprechen:</p>
 
   <div id="inc-split-rows-container" style="display: flex; flex-direction: column; gap: 10px;">
     <!-- Wird dynamisch befüllt -->
@@ -2972,7 +2972,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; flex-wrap: wrap; gap: 8px;">
     <button type="button" id="inc-split-add-btn" class="btn btn-secondary" onclick="addIncomeSplitRow()" style="font-size: 13px; padding: 6px 12px;">
-      ➕ <strong>Weiteres Konto hinzufügen</strong>
+      ➕ <strong>Weiteren Teilbetrag hinzufügen</strong>
     </button>
     <div id="inc-split-summary" aria-live="polite" style="font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 6px; background: #fff; border: 2px solid #A5D6A7; color: #1B5E20;">
       Aufgeteilt: 0,00 € von 0,00 €

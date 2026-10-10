@@ -5774,8 +5774,8 @@ function initExpenseSplitRows() {
   const rest = Math.round((totalAmt - half) * 100) / 100;
 
   expenseSplitRows = [
-    { account: acc1, amount: half > 0 ? half : '' },
-    { account: acc2, amount: rest > 0 ? rest : '' }
+    { type: 'account', account: acc1, person: '', amount: half > 0 ? half : '' },
+    { type: 'account', account: acc2, person: '', amount: rest > 0 ? rest : '' }
   ];
   renderExpenseSplitRows();
 }
@@ -5786,24 +5786,51 @@ function renderExpenseSplitRows() {
 
   container.innerHTML = expenseSplitRows.map((row, idx) => {
     const canRemove = expenseSplitRows.length > 2;
+    const rowType = row.type || 'account';
+    const isAccount = rowType === 'account';
+    const isLoan = rowType === 'loan_lent';
+    const isShared = rowType === 'shared_no_repay';
+
     return `
-      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
-        <div style="flex: 2; min-width: 160px;">
-          <label for="exp-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
-            <strong>Konto ${idx + 1}:</strong>
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 170px;">
+          <label for="exp-split-type-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teil ${idx + 1} Art:</strong>
           </label>
-          <select id="exp-split-acc-${idx}" class="large-select" onchange="onExpenseSplitAccountChange(${idx}, this.value)">
-            ${getExpenseSplitAccountOptionsHtml(row.account)}
+          <select id="exp-split-type-${idx}" class="large-select" onchange="onExpenseSplitTypeChange(${idx}, this.value)">
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto</option>
+            <option value="loan_lent" ${isLoan ? 'selected' : ''}>🤝 Verliehen (Leihgabe mit Rückzahlung)</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Kostenbeteiligung ohne Rückzahlung)</option>
           </select>
         </div>
+
+        ${isAccount ? `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="exp-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Konto:</strong>
+            </label>
+            <select id="exp-split-acc-${idx}" class="large-select" onchange="onExpenseSplitAccountChange(${idx}, this.value)">
+              ${getExpenseSplitAccountOptionsHtml(row.account)}
+            </select>
+          </div>
+        ` : `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="exp-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+            </label>
+            <input type="text" id="exp-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="${isLoan ? 'z. B. Peter, Anna' : 'z. B. Mitbewohner, Freund'}" oninput="onExpenseSplitPersonInput(${idx}, this.value)">
+          </div>
+        `}
+
         <div style="flex: 1; min-width: 120px;">
           <label for="exp-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
           <input type="number" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
         </div>
+
         ${canRemove ? `
-          <button type="button" class="btn btn-secondary" onclick="removeExpenseSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Konto ${idx + 1} entfernen">
+          <button type="button" class="btn btn-secondary" onclick="removeExpenseSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Teil ${idx + 1} entfernen">
             🗑️
           </button>
         ` : ''}
@@ -5814,24 +5841,46 @@ function renderExpenseSplitRows() {
   updateExpenseSplitSummary();
 }
 
+function onExpenseSplitTypeChange(idx, newType) {
+  if (!expenseSplitRows[idx]) return;
+  expenseSplitRows[idx].type = newType;
+  if (newType === 'account' && !expenseSplitRows[idx].account) {
+    const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
+    expenseSplitRows[idx].account = acc1;
+  }
+  renderExpenseSplitRows();
+  if (typeof announceNVDA === 'function') {
+    const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
+    announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
+  }
+}
+
+function onExpenseSplitPersonInput(idx, val) {
+  if (expenseSplitRows[idx]) {
+    expenseSplitRows[idx].person = val;
+  }
+}
+
 function addExpenseSplitRow() {
   ensureAccountsInitialized();
   const totalAmt = parseFloat(document.getElementById('exp-amount').value) || 0;
   const currentSum = expenseSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
   const diff = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
 
-  const usedAccs = expenseSplitRows.map(r => r.account);
+  const usedAccs = expenseSplitRows.filter(r => (r.type || 'account') === 'account').map(r => r.account);
   const unusedAcc = appState.accounts.find(a => !usedAccs.includes(a.id));
   const newAccId = unusedAcc ? unusedAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
 
   expenseSplitRows.push({
+    type: 'account',
     account: newAccId,
+    person: '',
     amount: diff > 0 ? diff : ''
   });
 
   renderExpenseSplitRows();
   if (typeof announceNVDA === 'function') {
-    announceNVDA(`Konto ${expenseSplitRows.length} hinzugefügt.`);
+    announceNVDA(`Teil ${expenseSplitRows.length} hinzugefügt.`);
   }
 }
 
@@ -5840,7 +5889,7 @@ function removeExpenseSplitRow(idx) {
   expenseSplitRows.splice(idx, 1);
   renderExpenseSplitRows();
   if (typeof announceNVDA === 'function') {
-    announceNVDA(`Konto entfernt. Verbleibend: ${expenseSplitRows.length} Konten.`);
+    announceNVDA(`Teilbetrag entfernt. Verbleibend: ${expenseSplitRows.length} Teile.`);
   }
 }
 
@@ -5933,17 +5982,26 @@ async function handleAddExpense(e) {
   }
 
   if (isSplit) {
-    splitRowsValid = expenseSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    splitRowsValid = expenseSplitRows.filter(r => {
+      const amt = parseFloat(r.amount);
+      if (isNaN(amt) || amt <= 0) return false;
+      const type = r.type || 'account';
+      if (type === 'account') return Boolean(r.account);
+      if (type === 'loan_lent') return Boolean((r.person || '').trim());
+      if (type === 'shared_no_repay') return true;
+      return false;
+    });
+
     if (splitRowsValid.length < 2) {
-      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Zahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.', true);
-      alert('⚠️ Bitte gib mindestens 2 Konten mit Beträgen für die Aufteilung an.');
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Zahlung müssen mindestens 2 gültige Teilbeträge mit Konto oder Person angegeben werden.', true);
+      alert('⚠️ Bitte gib mindestens 2 gültige Teilbeträge mit Konto bzw. Person für die Aufteilung an.');
       return;
     }
     const splitSum = Math.round(splitRowsValid.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
     const expectedTotal = Math.round(amount * 100) / 100;
     if (Math.abs(splitSum - expectedTotal) > 0.01) {
-      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Kaufbetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
-      alert(`⚠️ Die Summe der aufgeteilten Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamtkaufpreis (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
+      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Teilbeträge (${formatCurrency(splitSum)}) stimmt nicht mit dem Kaufbetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
+      alert(`⚠️ Die Summe der aufgeteilten Beträge (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamtkaufpreis (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
       return;
     }
   }
@@ -6197,10 +6255,31 @@ async function handleAddExpense(e) {
     let expenseSplitId = null;
     if (isSplit) {
       expenseSplitId = `split_${Date.now()}`;
+      ensurePeerLoansInitialized();
+
+      // Fallback-Konto für Leihgaben / geteilte Kosten ermitteln
+      const firstAccRow = splitRowsValid.find(r => (r.type || 'account') === 'account');
+      const fallbackAccount = firstAccRow ? firstAccRow.account : (account || (appState.accounts[0] ? appState.accounts[0].id : 'bank'));
+
       splitRowsValid.forEach((row, idx) => {
         const rowAmt = parseFloat(row.amount);
-        const accName = formatAccountName(row.account);
-        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+        const rowType = row.type || 'account';
+        const rowAccount = (rowType === 'account') ? (row.account || fallbackAccount) : fallbackAccount;
+        let partText = '';
+
+        if (rowType === 'loan_lent') {
+          const personName = (row.person || '').trim() || 'Unbekannt';
+          partText = `(Split ${idx + 1}/${splitRowsValid.length}: 🤝 ${formatCurrency(rowAmt)} verliehen an ${personName})`;
+        } else if (rowType === 'shared_no_repay') {
+          const personName = (row.person || '').trim();
+          partText = personName
+            ? `(Split ${idx + 1}/${splitRowsValid.length}: 👥 ${formatCurrency(rowAmt)} geteilt mit ${personName} ohne Rückzahlung)`
+            : `(Split ${idx + 1}/${splitRowsValid.length}: 👥 ${formatCurrency(rowAmt)} geteilte Kosten ohne Rückzahlung)`;
+        } else {
+          const accName = formatAccountName(rowAccount);
+          partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+        }
+
         const finalDesc = desc ? `${desc} ${partText}` : `Split-Zahlung ${partText}`;
 
         const splitTx = {
@@ -6209,8 +6288,10 @@ async function handleAddExpense(e) {
           splitIndex: idx + 1,
           splitTotalCount: splitRowsValid.length,
           splitTotalAmount: amount,
+          splitType: rowType,
+          splitPerson: (row.person || '').trim(),
           type: 'expense',
-          account: row.account,
+          account: rowAccount,
           amount: rowAmt,
           category: category,
           subcategory: subcategory,
@@ -6218,12 +6299,40 @@ async function handleAddExpense(e) {
           isPlanned: isPlanned,
           date: date
         };
+
         if (currentExpenseReceipt) {
           splitTx.receipt = JSON.parse(JSON.stringify(currentExpenseReceipt));
         }
+
+        // Wenn dieser Teilbetrag eine Leihgabe an eine Person ist: PeerLoan anlegen
+        if (rowType === 'loan_lent') {
+          const personName = (row.person || '').trim() || 'Unbekannt';
+          const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+          splitTx.peerLoanId = loanId;
+          appState.peerLoans.push({
+            id: loanId,
+            type: 'lent',
+            person: personName,
+            amount: rowAmt,
+            paidAmount: 0,
+            date: date,
+            dueDate: expLoanDueDate || '',
+            account: rowAccount,
+            autoBooked: true,
+            txId: splitTx.id,
+            note: expLoanNote ? `${expLoanNote} (Split)` : `Aus Split-Zahlung für ${category}`,
+            settled: false,
+            settledDate: null,
+            repayments: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+        }
+
         appState.transactions.push(splitTx);
       });
-      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
+
+      announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Teile ${isPlanned ? 'geplant' : 'gebucht'}!`);
     } else {
       // Auto-Deckung (wie bei PayPal):
       // REGEL: Nur belasten, wenn auf dem Primärkonto wirklich nicht genug Geld vorhanden ist!
@@ -6296,32 +6405,37 @@ async function handleAddExpense(e) {
     }
   }
 
+  // Wenn allgemeine Leihgabe aktiviert war UND Split aktiv war (ohne dass zeilenbasierte Leihgaben gewählt wurden):
+  // Nur anlegen, falls in splitRowsValid noch keine zeilenbasierten Leihgaben existieren
   if (isExpLoan && isSplit) {
-    ensurePeerLoansInitialized();
-    const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    appState.peerLoans.push({
-      id: loanId,
-      type: 'lent',
-      person: expLoanPerson,
-      amount: amount,
-      paidAmount: 0,
-      date: date,
-      dueDate: expLoanDueDate,
-      account: splitRowsValid[0]?.account || account,
-      autoBooked: true,
-      txId: expenseSplitId,
-      note: expLoanNote || desc,
-      settled: false,
-      settledDate: null,
-      repayments: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    });
-    // Set peerLoanId on all split transactions
-    appState.transactions.forEach(t => {
-      if (t.splitId === expenseSplitId) t.peerLoanId = loanId;
-    });
-    announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+    const hasRowLoan = splitRowsValid.some(r => (r.type || 'account') === 'loan_lent');
+    if (!hasRowLoan) {
+      ensurePeerLoansInitialized();
+      const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      appState.peerLoans.push({
+        id: loanId,
+        type: 'lent',
+        person: expLoanPerson,
+        amount: amount,
+        paidAmount: 0,
+        date: date,
+        dueDate: expLoanDueDate,
+        account: splitRowsValid[0]?.account || account,
+        autoBooked: true,
+        txId: expenseSplitId,
+        note: expLoanNote || desc,
+        settled: false,
+        settledDate: null,
+        repayments: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      // Set peerLoanId on all split transactions
+      appState.transactions.forEach(t => {
+        if (t.splitId === expenseSplitId) t.peerLoanId = loanId;
+      });
+      announceNVDA(`Leihgabe an ${expLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+    }
   }
 
   await saveStateToEncryptedStorage();
@@ -6428,8 +6542,8 @@ function initIncomeSplitRows() {
   const rest = Math.round((totalAmt - half) * 100) / 100;
 
   incomeSplitRows = [
-    { account: acc1, amount: half > 0 ? half : '' },
-    { account: acc2, amount: rest > 0 ? rest : '' }
+    { type: 'account', account: acc1, person: '', amount: half > 0 ? half : '' },
+    { type: 'account', account: acc2, person: '', amount: rest > 0 ? rest : '' }
   ];
   renderIncomeSplitRows();
 }
@@ -6440,24 +6554,51 @@ function renderIncomeSplitRows() {
 
   container.innerHTML = incomeSplitRows.map((row, idx) => {
     const canRemove = incomeSplitRows.length > 2;
+    const rowType = row.type || 'account';
+    const isAccount = rowType === 'account';
+    const isLoan = rowType === 'loan_borrowed';
+    const isShared = rowType === 'shared_no_repay';
+
     return `
-      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
-        <div style="flex: 2; min-width: 160px;">
-          <label for="inc-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
-            <strong>Ziel-Konto ${idx + 1}:</strong>
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 170px;">
+          <label for="inc-split-type-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teil ${idx + 1} Art:</strong>
           </label>
-          <select id="inc-split-acc-${idx}" class="large-select" onchange="onIncomeSplitAccountChange(${idx}, this.value)">
-            ${getIncomeSplitAccountOptionsHtml(row.account)}
+          <select id="inc-split-type-${idx}" class="large-select" onchange="onIncomeSplitTypeChange(${idx}, this.value)">
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Ziel-Konto</option>
+            <option value="loan_borrowed" ${isLoan ? 'selected' : ''}>🤝 Geliehen (Leihgabe / Schuld mit Rückzahlung)</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Zuschuss / Beteiligung ohne Rückzahlung)</option>
           </select>
         </div>
+
+        ${isAccount ? `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="inc-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Ziel-Konto:</strong>
+            </label>
+            <select id="inc-split-acc-${idx}" class="large-select" onchange="onIncomeSplitAccountChange(${idx}, this.value)">
+              ${getIncomeSplitAccountOptionsHtml(row.account)}
+            </select>
+          </div>
+        ` : `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="inc-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+            </label>
+            <input type="text" id="inc-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="${isLoan ? 'z. B. Markus, Mama' : 'z. B. Partner, Freund'}" oninput="onIncomeSplitPersonInput(${idx}, this.value)">
+          </div>
+        `}
+
         <div style="flex: 1; min-width: 120px;">
           <label for="inc-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
           <input type="number" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
         </div>
+
         ${canRemove ? `
-          <button type="button" class="btn btn-secondary" onclick="removeIncomeSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Ziel-Konto ${idx + 1} entfernen">
+          <button type="button" class="btn btn-secondary" onclick="removeIncomeSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Teil ${idx + 1} entfernen">
             🗑️
           </button>
         ` : ''}
@@ -6468,24 +6609,46 @@ function renderIncomeSplitRows() {
   updateIncomeSplitSummary();
 }
 
+function onIncomeSplitTypeChange(idx, newType) {
+  if (!incomeSplitRows[idx]) return;
+  incomeSplitRows[idx].type = newType;
+  if (newType === 'account' && !incomeSplitRows[idx].account) {
+    const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
+    incomeSplitRows[idx].account = acc1;
+  }
+  renderIncomeSplitRows();
+  if (typeof announceNVDA === 'function') {
+    const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_borrowed' ? 'Geliehen von Person mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
+    announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
+  }
+}
+
+function onIncomeSplitPersonInput(idx, val) {
+  if (incomeSplitRows[idx]) {
+    incomeSplitRows[idx].person = val;
+  }
+}
+
 function addIncomeSplitRow() {
   ensureAccountsInitialized();
   const totalAmt = parseFloat(document.getElementById('inc-amount').value) || 0;
   const currentSum = incomeSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
   const diff = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
 
-  const usedAccs = incomeSplitRows.map(r => r.account);
+  const usedAccs = incomeSplitRows.filter(r => (r.type || 'account') === 'account').map(r => r.account);
   const unusedAcc = appState.accounts.find(a => !usedAccs.includes(a.id));
   const newAccId = unusedAcc ? unusedAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
 
   incomeSplitRows.push({
+    type: 'account',
     account: newAccId,
+    person: '',
     amount: diff > 0 ? diff : ''
   });
 
   renderIncomeSplitRows();
   if (typeof announceNVDA === 'function') {
-    announceNVDA(`Ziel-Konto ${incomeSplitRows.length} hinzugefügt.`);
+    announceNVDA(`Teil ${incomeSplitRows.length} hinzugefügt.`);
   }
 }
 
@@ -6494,7 +6657,7 @@ function removeIncomeSplitRow(idx) {
   incomeSplitRows.splice(idx, 1);
   renderIncomeSplitRows();
   if (typeof announceNVDA === 'function') {
-    announceNVDA(`Konto entfernt. Verbleibend: ${incomeSplitRows.length} Konten.`);
+    announceNVDA(`Teilbetrag entfernt. Verbleibend: ${incomeSplitRows.length} Teile.`);
   }
 }
 
@@ -6587,17 +6750,26 @@ async function handleAddIncome(e) {
   }
 
   if (isSplit) {
-    splitRowsValid = incomeSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    splitRowsValid = incomeSplitRows.filter(r => {
+      const amt = parseFloat(r.amount);
+      if (isNaN(amt) || amt <= 0) return false;
+      const type = r.type || 'account';
+      if (type === 'account') return Boolean(r.account);
+      if (type === 'loan_borrowed') return Boolean((r.person || '').trim());
+      if (type === 'shared_no_repay') return true;
+      return false;
+    });
+
     if (splitRowsValid.length < 2) {
-      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Einzahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.', true);
-      alert('⚠️ Bitte gib mindestens 2 Konten mit Beträgen für die Aufteilung der Einnahme an.');
+      if (typeof announceNVDA === 'function') announceNVDA('Fehler: Für eine Split-Einzahlung müssen mindestens 2 gültige Teilbeträge mit Konto oder Person angegeben werden.', true);
+      alert('⚠️ Bitte gib mindestens 2 gültige Teilbeträge mit Konto bzw. Person für die Aufteilung der Einnahme an.');
       return;
     }
     const splitSum = Math.round(splitRowsValid.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
     const expectedTotal = Math.round(amount * 100) / 100;
     if (Math.abs(splitSum - expectedTotal) > 0.01) {
-      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
-      alert(`⚠️ Die Summe der aufgeteilten Konten (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
+      if (typeof announceNVDA === 'function') announceNVDA(`Fehler: Die Summe der Teilbeträge (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein. Differenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`, true);
+      alert(`⚠️ Die Summe der aufgeteilten Beträge (${formatCurrency(splitSum)}) stimmt nicht mit dem Gesamteinnahmebetrag (${formatCurrency(expectedTotal)}) überein!\n\nDifferenz: ${formatCurrency(Math.abs(splitSum - expectedTotal))}`);
       return;
     }
   }
@@ -6619,7 +6791,9 @@ async function handleAddIncome(e) {
       const splitId = `split_rec_inc_${Date.now()}`;
       splitRowsValid.forEach((row, idx) => {
         const rowAmt = parseFloat(row.amount);
-        const accName = formatAccountName(row.account);
+        const rowType = row.type || 'account';
+        const rowAccount = (rowType === 'account') ? row.account : (account || (appState.accounts[0] ? appState.accounts[0].id : 'bank'));
+        const accName = formatAccountName(rowAccount);
         const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
         const recName = desc ? `${desc} ${partText}` : `${category} ${partText}`;
 
@@ -6629,8 +6803,10 @@ async function handleAddIncome(e) {
           splitIndex: idx + 1,
           splitTotalCount: splitRowsValid.length,
           splitTotalAmount: amount,
+          splitType: rowType,
+          splitPerson: (row.person || '').trim(),
           type: 'income',
-          account: row.account,
+          account: rowAccount,
           amount: rowAmt,
           category: category,
           subcategory: subcategory,
@@ -6643,7 +6819,7 @@ async function handleAddIncome(e) {
           active: true
         });
       });
-      announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten gespeichert!`);
+      announceNVDA(`Dauerhafte Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Teile gespeichert!`);
     } else {
       appState.recurring.push({
         id: `rec_${Date.now()}`,
@@ -6666,10 +6842,31 @@ async function handleAddIncome(e) {
     let incomeSplitId = null;
     if (isSplit) {
       incomeSplitId = `split_inc_${Date.now()}`;
+      ensurePeerLoansInitialized();
+
+      // Fallback-Konto für Leihgaben / geteilte Einnahmen ermitteln
+      const firstAccRow = splitRowsValid.find(r => (r.type || 'account') === 'account');
+      const fallbackAccount = firstAccRow ? firstAccRow.account : (account || (appState.accounts[0] ? appState.accounts[0].id : 'bank'));
+
       splitRowsValid.forEach((row, idx) => {
         const rowAmt = parseFloat(row.amount);
-        const accName = formatAccountName(row.account);
-        const partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
+        const rowType = row.type || 'account';
+        const rowAccount = (rowType === 'account') ? (row.account || fallbackAccount) : fallbackAccount;
+        let partText = '';
+
+        if (rowType === 'loan_borrowed') {
+          const personName = (row.person || '').trim() || 'Unbekannt';
+          partText = `(Split ${idx + 1}/${splitRowsValid.length}: 🤝 ${formatCurrency(rowAmt)} geliehen von ${personName})`;
+        } else if (rowType === 'shared_no_repay') {
+          const personName = (row.person || '').trim();
+          partText = personName
+            ? `(Split ${idx + 1}/${splitRowsValid.length}: 👥 ${formatCurrency(rowAmt)} geteilt mit ${personName} ohne Rückzahlung)`
+            : `(Split ${idx + 1}/${splitRowsValid.length}: 👥 ${formatCurrency(rowAmt)} geteilter Betrag ohne Rückzahlung)`;
+        } else {
+          const accName = formatAccountName(rowAccount);
+          partText = `(Split ${idx + 1}/${splitRowsValid.length}: ${formatCurrency(rowAmt)} auf ${accName})`;
+        }
+
         const finalDesc = desc ? `${desc} ${partText}` : `Split-Einzahlung ${partText}`;
 
         const splitTx = {
@@ -6678,8 +6875,10 @@ async function handleAddIncome(e) {
           splitIndex: idx + 1,
           splitTotalCount: splitRowsValid.length,
           splitTotalAmount: amount,
+          splitType: rowType,
+          splitPerson: (row.person || '').trim(),
           type: 'income',
-          account: row.account,
+          account: rowAccount,
           amount: rowAmt,
           category: category,
           subcategory: subcategory,
@@ -6687,12 +6886,40 @@ async function handleAddIncome(e) {
           isPlanned: isPlanned,
           date: date
         };
+
         if (currentIncomeReceipt) {
           splitTx.receipt = JSON.parse(JSON.stringify(currentIncomeReceipt));
         }
+
+        // Wenn dieser Teilbetrag eine Leihgabe von einer Person ist: PeerLoan anlegen
+        if (rowType === 'loan_borrowed') {
+          const personName = (row.person || '').trim() || 'Unbekannt';
+          const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+          splitTx.peerLoanId = loanId;
+          appState.peerLoans.push({
+            id: loanId,
+            type: 'borrowed',
+            person: personName,
+            amount: rowAmt,
+            paidAmount: 0,
+            date: date,
+            dueDate: incLoanDueDate || '',
+            account: rowAccount,
+            autoBooked: true,
+            txId: splitTx.id,
+            note: incLoanNote ? `${incLoanNote} (Split)` : `Aus Split-Einzahlung für ${category}`,
+            settled: false,
+            settledDate: null,
+            repayments: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          });
+        }
+
         appState.transactions.push(splitTx);
       });
-      announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Konten ${isPlanned ? 'geplant' : 'gebucht'}!`);
+
+      announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Teile ${isPlanned ? 'geplant' : 'gebucht'}!`);
     } else {
       const newTx = {
         id: `tx_${Date.now()}`,
@@ -6738,32 +6965,37 @@ async function handleAddIncome(e) {
     }
   }
 
+  // Wenn allgemeine Leihgabe aktiviert war UND Split aktiv war (ohne dass zeilenbasierte Leihgaben gewählt wurden):
+  // Nur anlegen, falls in splitRowsValid noch keine zeilenbasierten Leihgaben existieren
   if (isIncLoan && isSplit) {
-    ensurePeerLoansInitialized();
-    const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-    appState.peerLoans.push({
-      id: loanId,
-      type: 'borrowed',
-      person: incLoanPerson,
-      amount: amount,
-      paidAmount: 0,
-      date: date,
-      dueDate: incLoanDueDate,
-      account: splitRowsValid[0]?.account || account,
-      autoBooked: true,
-      txId: incomeSplitId,
-      note: incLoanNote || desc,
-      settled: false,
-      settledDate: null,
-      repayments: [],
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    });
-    // Set peerLoanId on all split transactions
-    appState.transactions.forEach(t => {
-      if (t.splitId === incomeSplitId) t.peerLoanId = loanId;
-    });
-    announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+    const hasRowLoan = splitRowsValid.some(r => (r.type || 'account') === 'loan_borrowed');
+    if (!hasRowLoan) {
+      ensurePeerLoansInitialized();
+      const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+      appState.peerLoans.push({
+        id: loanId,
+        type: 'borrowed',
+        person: incLoanPerson,
+        amount: amount,
+        paidAmount: 0,
+        date: date,
+        dueDate: incLoanDueDate,
+        account: splitRowsValid[0]?.account || account,
+        autoBooked: true,
+        txId: incomeSplitId,
+        note: incLoanNote || desc,
+        settled: false,
+        settledDate: null,
+        repayments: [],
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+      // Set peerLoanId on all split transactions
+      appState.transactions.forEach(t => {
+        if (t.splitId === incomeSplitId) t.peerLoanId = loanId;
+      });
+      announceNVDA(`Geliehenes Geld von ${incLoanPerson} über ${formatCurrency(amount)} in deiner Übersicht gespeichert!`);
+    }
   }
 
   await saveStateToEncryptedStorage();
@@ -7051,8 +7283,8 @@ function initEditSplitRows() {
   const rest = Math.round((totalAmt - half) * 100) / 100;
 
   editSplitRows = [
-    { account: acc1, amount: half > 0 ? half : '' },
-    { account: acc2, amount: rest > 0 ? rest : '' }
+    { type: 'account', account: acc1, person: '', amount: half > 0 ? half : '' },
+    { type: 'account', account: acc2, person: '', amount: rest > 0 ? rest : '' }
   ];
   renderEditSplitRows();
 }
@@ -7061,26 +7293,59 @@ function renderEditSplitRows() {
   const container = document.getElementById('edit-tx-split-rows-container');
   if (!container) return;
 
+  const type = document.getElementById('edit-tx-type')?.value || 'expense';
+  const isIncome = type === 'income';
+
   container.innerHTML = editSplitRows.map((row, idx) => {
     const canRemove = editSplitRows.length > 2;
+    const rowType = row.type || 'account';
+    const isAccount = rowType === 'account';
+    const isLoan = (rowType === 'loan_lent' || rowType === 'loan_borrowed');
+    const isShared = rowType === 'shared_no_repay';
+
+    const optLoanValue = isIncome ? 'loan_borrowed' : 'loan_lent';
+    const optLoanLabel = isIncome ? '🤝 Geliehen (Leihgabe mit Rückzahlung)' : '🤝 Verliehen (Leihgabe mit Rückzahlung)';
+
     return `
-      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
-        <div style="flex: 2; min-width: 160px;">
-          <label for="edit-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
-            <strong>Konto ${idx + 1}:</strong>
+      <div class="split-row" data-index="${idx}" style="display: flex; gap: 8px; align-items: flex-end; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color, #ccc); flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 170px;">
+          <label for="edit-split-type-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+            <strong>Teil ${idx + 1} Art:</strong>
           </label>
-          <select id="edit-split-acc-${idx}" class="large-select" onchange="onEditSplitAccountChange(${idx}, this.value)">
-            ${getEditSplitAccountOptionsHtml(row.account)}
+          <select id="edit-split-type-${idx}" class="large-select" onchange="onEditSplitTypeChange(${idx}, this.value)">
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto</option>
+            <option value="${optLoanValue}" ${isLoan ? 'selected' : ''}>${optLoanLabel}</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (ohne Rückzahlung)</option>
           </select>
         </div>
+
+        ${isAccount ? `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="edit-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Konto:</strong>
+            </label>
+            <select id="edit-split-acc-${idx}" class="large-select" onchange="onEditSplitAccountChange(${idx}, this.value)">
+              ${getEditSplitAccountOptionsHtml(row.account)}
+            </select>
+          </div>
+        ` : `
+          <div style="flex: 2; min-width: 160px;">
+            <label for="edit-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+              <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+            </label>
+            <input type="text" id="edit-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="z. B. Peter, Anna" oninput="onEditSplitPersonInput(${idx}, this.value)">
+          </div>
+        `}
+
         <div style="flex: 1; min-width: 120px;">
           <label for="edit-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
           <input type="number" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
         </div>
+
         ${canRemove ? `
-          <button type="button" class="btn btn-secondary" onclick="removeEditSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Konto ${idx + 1} entfernen">
+          <button type="button" class="btn btn-secondary" onclick="removeEditSplitRow(${idx})" style="padding: 10px 12px; margin-bottom: 2px; color: #D32F2F;" aria-label="Teil ${idx + 1} entfernen">
             🗑️
           </button>
         ` : ''}
@@ -7091,26 +7356,50 @@ function renderEditSplitRows() {
   updateEditSplitSummary();
 }
 
+function onEditSplitTypeChange(idx, newType) {
+  if (!editSplitRows[idx]) return;
+  editSplitRows[idx].type = newType;
+  if (newType === 'account' && !editSplitRows[idx].account) {
+    const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
+    editSplitRows[idx].account = acc1;
+  }
+  renderEditSplitRows();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Teil ${idx + 1} Art geändert.`);
+  }
+}
+
+function onEditSplitPersonInput(idx, val) {
+  if (editSplitRows[idx]) {
+    editSplitRows[idx].person = val;
+  }
+}
+
 function addEditSplitRow() {
   ensureAccountsInitialized();
   const totalAmt = parseFloat(document.getElementById('edit-tx-amount').value) || 0;
   const currentSum = editSplitRows.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0);
   const remaining = Math.max(0, Math.round((totalAmt - currentSum) * 100) / 100);
 
-  const usedAccs = new Set(editSplitRows.map(r => r.account));
+  const usedAccs = new Set(editSplitRows.filter(r => (r.type || 'account') === 'account').map(r => r.account));
   const freeAcc = appState.accounts.find(a => !usedAccs.has(a.id));
   const newAcc = freeAcc ? freeAcc.id : (appState.accounts[0] ? appState.accounts[0].id : 'bank');
 
-  editSplitRows.push({ account: newAcc, amount: remaining > 0 ? remaining : '' });
+  editSplitRows.push({
+    type: 'account',
+    account: newAcc,
+    person: '',
+    amount: remaining > 0 ? remaining : ''
+  });
   renderEditSplitRows();
-  announceNVDA(`Weiteres Konto für Split hinzugefügt. Jetzt ${editSplitRows.length} Konten.`);
+  announceNVDA(`Weiterer Teilbetrag hinzugefügt. Jetzt ${editSplitRows.length} Teile.`);
 }
 
 function removeEditSplitRow(idx) {
   if (editSplitRows.length <= 2) return;
   editSplitRows.splice(idx, 1);
   renderEditSplitRows();
-  announceNVDA(`Konto entfernt. Noch ${editSplitRows.length} Konten im Split.`);
+  announceNVDA(`Teilbetrag entfernt. Noch ${editSplitRows.length} Teile im Split.`);
 }
 
 function onEditSplitAccountChange(idx, val) {
@@ -7226,10 +7515,39 @@ function openEditModal(txId) {
       if (splitSec) splitSec.style.display = 'block';
       if (singleAccGroup) singleAccGroup.style.display = 'none';
 
-      editSplitRows = splitSiblings.map(s => ({
-        account: s.account,
-        amount: parseFloat(s.amount) || 0
-      }));
+      editSplitRows = splitSiblings.map(s => {
+        let rType = s.splitType;
+        let rPerson = s.splitPerson || '';
+        if (!rType) {
+          if (s.peerLoanId) {
+            rType = (s.type === 'income') ? 'loan_borrowed' : 'loan_lent';
+            const matchedLoan = (appState.peerLoans || []).find(l => l.id === s.peerLoanId);
+            if (matchedLoan && matchedLoan.person) rPerson = matchedLoan.person;
+          } else if (s.description && s.description.includes('verliehen an ')) {
+            rType = 'loan_lent';
+            const m = s.description.match(/verliehen an ([^)]+)/i);
+            if (m) rPerson = m[1].trim();
+          } else if (s.description && s.description.includes('geliehen von ')) {
+            rType = 'loan_borrowed';
+            const m = s.description.match(/geliehen von ([^)]+)/i);
+            if (m) rPerson = m[1].trim();
+          } else if (s.description && s.description.includes('geteilt mit ')) {
+            rType = 'shared_no_repay';
+            const m = s.description.match(/geteilt mit ([^)]+)/i);
+            if (m) rPerson = m[1].trim();
+          } else if (s.description && s.description.includes('geteilte Kosten')) {
+            rType = 'shared_no_repay';
+          } else {
+            rType = 'account';
+          }
+        }
+        return {
+          type: rType,
+          account: s.account || (appState.accounts[0] ? appState.accounts[0].id : 'bank'),
+          person: rPerson,
+          amount: parseFloat(s.amount) || 0
+        };
+      });
       renderEditSplitRows();
     } else {
       document.getElementById('edit-tx-amount').value = tx.amount;
@@ -7359,9 +7677,18 @@ async function saveEditedTransaction(e) {
 
   let newSplitId = null;
   if (isSplitToggle) {
-    const validRows = editSplitRows.filter(r => r.account && parseFloat(r.amount) > 0);
+    const validRows = editSplitRows.filter(r => {
+      const amt = parseFloat(r.amount);
+      if (isNaN(amt) || amt <= 0) return false;
+      const rType = r.type || 'account';
+      if (rType === 'account') return Boolean(r.account);
+      if (rType === 'loan_lent' || rType === 'loan_borrowed') return Boolean((r.person || '').trim());
+      if (rType === 'shared_no_repay') return true;
+      return false;
+    });
+
     if (validRows.length < 2) {
-      alert('Bei einer Split-Zahlung müssen mindestens 2 Konten mit Beträgen angegeben werden.');
+      alert('Bei einer Split-Zahlung müssen mindestens 2 gültige Teilbeträge mit Konto bzw. Person angegeben werden.');
       return;
     }
     const splitSum = Math.round(validRows.reduce((sum, r) => sum + parseFloat(r.amount), 0) * 100) / 100;
@@ -7375,20 +7702,51 @@ async function saveEditedTransaction(e) {
     const subcategory = document.getElementById('edit-tx-subcategory').value;
     const receiptToKeep = currentEditReceipt ? JSON.parse(JSON.stringify(currentEditReceipt)) : (tx.receipt ? JSON.parse(JSON.stringify(tx.receipt)) : null);
 
-    // Alle alten Split-Geschwister entfernen (oder das alte Einzel-Tx)
+    // Alle alten Split-Geschwister ermitteln und deren verknüpfte zeilenbasierte Leihgaben bereinigen
     const oldSplitId = tx.splitId;
     if (oldSplitId) {
+      const oldSiblings = appState.transactions.filter(t => t.splitId === oldSplitId);
+      const oldLoanIds = oldSiblings.map(s => s.peerLoanId).filter(Boolean);
+      if (oldLoanIds.length > 0) {
+        appState.peerLoans = (appState.peerLoans || []).filter(l => !oldLoanIds.includes(l.id));
+      }
       appState.transactions = appState.transactions.filter(t => t.splitId !== oldSplitId);
     } else {
+      if (tx.peerLoanId) {
+        appState.peerLoans = (appState.peerLoans || []).filter(l => l.id !== tx.peerLoanId);
+      }
       appState.transactions = appState.transactions.filter(t => t.id !== id);
     }
 
     // Neue Split-Buchungen anlegen
     newSplitId = oldSplitId || (`split_${Date.now()}`);
+    ensurePeerLoansInitialized();
+
+    const firstAccRow = validRows.find(r => (r.type || 'account') === 'account');
+    const fallbackAccount = firstAccRow ? firstAccRow.account : (document.getElementById('edit-tx-account')?.value || (appState.accounts[0] ? appState.accounts[0].id : 'bank'));
+
     validRows.forEach((row, idx) => {
       const rowAmt = parseFloat(row.amount);
-      const accName = formatAccountName(row.account);
-      const partText = `(Split ${idx + 1}/${validRows.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+      const rowType = row.type || 'account';
+      const rowAccount = (rowType === 'account') ? (row.account || fallbackAccount) : fallbackAccount;
+      let partText = '';
+
+      if (rowType === 'loan_lent') {
+        const personName = (row.person || '').trim() || 'Unbekannt';
+        partText = `(Split ${idx + 1}/${validRows.length}: 🤝 ${formatCurrency(rowAmt)} verliehen an ${personName})`;
+      } else if (rowType === 'loan_borrowed') {
+        const personName = (row.person || '').trim() || 'Unbekannt';
+        partText = `(Split ${idx + 1}/${validRows.length}: 🤝 ${formatCurrency(rowAmt)} geliehen von ${personName})`;
+      } else if (rowType === 'shared_no_repay') {
+        const personName = (row.person || '').trim();
+        partText = personName
+          ? `(Split ${idx + 1}/${validRows.length}: 👥 ${formatCurrency(rowAmt)} geteilt mit ${personName} ohne Rückzahlung)`
+          : `(Split ${idx + 1}/${validRows.length}: 👥 ${formatCurrency(rowAmt)} geteilter Betrag ohne Rückzahlung)`;
+      } else {
+        const accName = formatAccountName(rowAccount);
+        partText = `(Split ${idx + 1}/${validRows.length}: ${formatCurrency(rowAmt)} von ${accName})`;
+      }
+
       const finalDesc = desc ? `${desc} ${partText}` : `Split-Zahlung ${partText}`;
 
       const newTx = {
@@ -7397,8 +7755,10 @@ async function saveEditedTransaction(e) {
         splitIndex: idx + 1,
         splitTotalCount: validRows.length,
         splitTotalAmount: roundedTotal,
+        splitType: rowType,
+        splitPerson: (row.person || '').trim(),
         type: type,
-        account: row.account,
+        account: rowAccount,
         amount: rowAmt,
         category: category,
         subcategory: subcategory,
@@ -7406,13 +7766,41 @@ async function saveEditedTransaction(e) {
         isPlanned: isPlanned,
         date: date
       };
+
       if (receiptToKeep) {
         newTx.receipt = JSON.parse(JSON.stringify(receiptToKeep));
       }
+
+      // Wenn diese Zeile eine Leihgabe ist: PeerLoan anlegen
+      if (rowType === 'loan_lent' || rowType === 'loan_borrowed') {
+        const personName = (row.person || '').trim() || 'Unbekannt';
+        const loanId = 'loan_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        const pType = (rowType === 'loan_borrowed' || type === 'income') ? 'borrowed' : 'lent';
+        newTx.peerLoanId = loanId;
+        appState.peerLoans.push({
+          id: loanId,
+          type: pType,
+          person: personName,
+          amount: rowAmt,
+          paidAmount: 0,
+          date: date,
+          dueDate: loanDueDate || '',
+          account: rowAccount,
+          autoBooked: true,
+          txId: newTx.id,
+          note: loanNote ? `${loanNote} (Split)` : `Aus Split-Buchung für ${category}`,
+          settled: false,
+          settledDate: null,
+          repayments: [],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+      }
+
       appState.transactions.push(newTx);
     });
 
-    announceNVDA(`Split-Buchung über ${formatCurrency(roundedTotal)} aufgeteilt auf ${validRows.length} Konten erfolgreich aktualisiert!`);
+    announceNVDA(`Split-Buchung über ${formatCurrency(roundedTotal)} aufgeteilt auf ${validRows.length} Teile erfolgreich aktualisiert!`);
   } else {
     // Normale Einzelbuchung (oder vorherige Split-Buchung zu Einzelbuchung zusammenführen)
     if (tx.splitId) {
@@ -7542,6 +7930,12 @@ window.addEditSplitRow = addEditSplitRow;
 window.removeEditSplitRow = removeEditSplitRow;
 window.onEditSplitAccountChange = onEditSplitAccountChange;
 window.onEditSplitAmountInput = onEditSplitAmountInput;
+window.onEditSplitTypeChange = onEditSplitTypeChange;
+window.onEditSplitPersonInput = onEditSplitPersonInput;
+window.onExpenseSplitTypeChange = onExpenseSplitTypeChange;
+window.onExpenseSplitPersonInput = onExpenseSplitPersonInput;
+window.onIncomeSplitTypeChange = onIncomeSplitTypeChange;
+window.onIncomeSplitPersonInput = onIncomeSplitPersonInput;
 
 async function deleteTransaction(txId) {
   const idx = appState.transactions.findIndex(t => t.id === txId);
