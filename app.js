@@ -4733,6 +4733,11 @@ function calculateBalancesUpToDate(targetDateStr) {
 
   appState.transactions.forEach(tx => {
     if (tx.date <= targetDateStr) {
+      // Wenn ein Teilbetrag als 'shared_no_repay' markiert ist (Fremdanteil, den die andere Person selbst gezahlt hat):
+      // Nicht vom eigenen Konto abbuchen!
+      if (tx.splitType === 'shared_no_repay') {
+        return;
+      }
       const amt = Number(tx.amount || 0);
       if (tx.type === 'income' && tx.account && balances[tx.account] !== undefined) {
         balances[tx.account] += amt;
@@ -5191,8 +5196,16 @@ function renderTransactionList(list, containerId, emptyText) {
     let accountBadgeText = '';
     if (isTransfer) {
       accountBadgeText = `${dateFormatted} | Von: ${formatAccountName(tx.fromAccount)} ➔ An: ${formatAccountName(tx.toAccount)}`;
+    } else if (tx.splitType === 'shared_no_repay') {
+      const personStr = tx.splitPerson ? ` (Anteil ${escapeHTML(tx.splitPerson)})` : '';
+      accountBadgeText = `${dateFormatted} | 👥 Geteilt${personStr} • Nicht vom Konto abgebucht`;
     } else {
       accountBadgeText = `${dateFormatted} | ${formatAccountName(tx.account)}`;
+    }
+
+    let sharedBadge = '';
+    if (tx.splitType === 'shared_no_repay') {
+      sharedBadge = '<span class="status-badge" style="background: rgba(103, 58, 183, 0.12); color: #512DA8; border: 1px solid rgba(103, 58, 183, 0.35);">👥 Fremdanteil</span>';
     }
 
     html += `
@@ -5203,6 +5216,7 @@ function renderTransactionList(list, containerId, emptyText) {
             <span class="tx-cat-name">${categoryDisplayHtml}</span>
             <span class="tx-account-badge">${accountBadgeText}</span>
             ${statusBadge}
+            ${sharedBadge}
             ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
             ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
           </div>
@@ -5864,9 +5878,9 @@ function renderExpenseSplitRows() {
             <strong>Teil ${idx + 1} Art:</strong>
           </label>
           <select id="exp-split-type-${idx}" class="large-select" onchange="onExpenseSplitTypeChange(${idx}, this.value)">
-            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto</option>
-            <option value="loan_lent" ${isLoan ? 'selected' : ''}>🤝 Verliehen (Leihgabe mit Rückzahlung)</option>
-            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Kostenbeteiligung ohne Rückzahlung)</option>
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto (Mein Anteil, wird abgebucht)</option>
+            <option value="loan_lent" ${isLoan ? 'selected' : ''}>🤝 Verliehen (Leihgabe mit Rückzahlung, alles vorgestreckt)</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Fremdanteil, nicht von meinem Konto abbuchen)</option>
           </select>
         </div>
 
@@ -5938,7 +5952,7 @@ function onExpenseSplitTypeChange(idx, newType) {
 
   updateExpenseSplitSummary();
 
-  const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
+  const label = (newType === 'account') ? 'Eigenes Konto (wird abgebucht)' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung (nicht vom Konto abbuchen)');
   if (typeof speakAccessibility === 'function') {
     speakAccessibility(label);
   } else if (typeof announceNVDA === 'function') {
@@ -6677,9 +6691,9 @@ function renderIncomeSplitRows() {
             <strong>Teil ${idx + 1} Art:</strong>
           </label>
           <select id="inc-split-type-${idx}" class="large-select" onchange="onIncomeSplitTypeChange(${idx}, this.value)">
-            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Ziel-Konto</option>
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Ziel-Konto (Wird gutgeschrieben)</option>
             <option value="loan_borrowed" ${isLoan ? 'selected' : ''}>🤝 Geliehen (Leihgabe / Schuld mit Rückzahlung)</option>
-            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Zuschuss / Beteiligung ohne Rückzahlung)</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Fremdanteil, nicht auf mein Konto buchen)</option>
           </select>
         </div>
 
@@ -7435,9 +7449,9 @@ function renderEditSplitRows() {
             <strong>Teil ${idx + 1} Art:</strong>
           </label>
           <select id="edit-split-type-${idx}" class="large-select" onchange="onEditSplitTypeChange(${idx}, this.value)">
-            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto</option>
+            <option value="account" ${isAccount ? 'selected' : ''}>🏦 Eigenes Konto (Wird verbucht)</option>
             <option value="${optLoanValue}" ${isLoan ? 'selected' : ''}>${optLoanLabel}</option>
-            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (ohne Rückzahlung)</option>
+            <option value="shared_no_repay" ${isShared ? 'selected' : ''}>👥 Geteilt (Fremdanteil, nicht vom Konto buchen)</option>
           </select>
         </div>
 
