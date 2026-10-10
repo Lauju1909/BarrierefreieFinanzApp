@@ -7941,9 +7941,40 @@ async function deleteTransaction(txId) {
   const idx = appState.transactions.findIndex(t => t.id === txId);
   if (idx !== -1) {
     const deleted = appState.transactions.splice(idx, 1)[0];
+
+    // Auch dazu gehörende Leihgaben (geliehenes / verliehenes Geld) automatisch löschen
+    ensurePeerLoansInitialized();
+    if (appState.peerLoans && Array.isArray(appState.peerLoans)) {
+      const beforeCount = appState.peerLoans.length;
+      appState.peerLoans = appState.peerLoans.filter(l => {
+        // 1. Direkt per txId verknüpft
+        if (l.txId && l.txId === txId) return false;
+        // 2. Per peerLoanId auf der Buchung verknüpft
+        if (deleted.peerLoanId && l.id === deleted.peerLoanId) return false;
+        // 3. Wenn Buchung Teil eines Splits mit Leihgabe war
+        if (deleted.splitId && l.txId && l.txId.startsWith('tx_') && l.splitId === deleted.splitId) return false;
+        return true;
+      });
+
+      // Auch falls diese Buchung eine Teilrückzahlung einer Leihgabe war, diese entfernen & Stand aktualisieren
+      appState.peerLoans.forEach(l => {
+        if (Array.isArray(l.repayments)) {
+          const repIdx = l.repayments.findIndex(r => r.txId === txId);
+          if (repIdx !== -1) {
+            l.repayments.splice(repIdx, 1);
+            l.paidAmount = l.repayments.reduce((sum, r) => sum + (Number(r.amount) || 0), 0);
+            if (l.paidAmount < Number(l.amount || 0)) {
+              l.settled = false;
+              l.settledDate = null;
+            }
+          }
+        }
+      });
+    }
+
     await saveStateToEncryptedStorage();
     updateOverview();
-    announceNVDA(`Buchung über ${formatCurrency(deleted.amount)} gelöscht.`);
+    announceNVDA(`Buchung über ${formatCurrency(deleted.amount)} und zugehörige Leihgaben gelöscht.`);
   }
 }
 
