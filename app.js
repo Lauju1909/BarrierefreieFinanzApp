@@ -5870,23 +5870,21 @@ function renderExpenseSplitRows() {
           </select>
         </div>
 
-        ${isAccount ? `
-          <div style="flex: 2; min-width: 160px;">
+        <div id="exp-split-target-col-${idx}" style="flex: 2; min-width: 160px;">
+          ${isAccount ? `
             <label for="exp-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Konto:</strong>
             </label>
             <select id="exp-split-acc-${idx}" class="large-select" onchange="onExpenseSplitAccountChange(${idx}, this.value)">
               ${getExpenseSplitAccountOptionsHtml(row.account)}
             </select>
-          </div>
-        ` : `
-          <div style="flex: 2; min-width: 160px;">
+          ` : `
             <label for="exp-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
             </label>
             <input type="text" id="exp-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="${isLoan ? 'z. B. Peter, Anna' : 'z. B. Mitbewohner, Freund'}" oninput="onExpenseSplitPersonInput(${idx}, this.value)">
-          </div>
-        `}
+          `}
+        </div>
 
         <div style="flex: 1; min-width: 120px;">
           <label for="exp-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
@@ -5914,17 +5912,37 @@ function onExpenseSplitTypeChange(idx, newType) {
     const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
     expenseSplitRows[idx].account = acc1;
   }
-  renderExpenseSplitRows();
 
-  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
-  const selectEl = document.getElementById(`exp-split-type-${idx}`);
-  if (selectEl) {
-    selectEl.focus();
+  // Statt den gesamten DOM-Container neu zu bauen (was Fokus und Screenreader zurücksetzt),
+  // aktualisieren wir gezielt nur die Ziel-Spalte (Konto oder Person) für diesen Teil:
+  const targetCol = document.getElementById(`exp-split-target-col-${idx}`);
+  if (targetCol) {
+    const isAccount = newType === 'account';
+    const isLoan = newType === 'loan_lent';
+    targetCol.innerHTML = isAccount ? `
+      <label for="exp-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Konto:</strong>
+      </label>
+      <select id="exp-split-acc-${idx}" class="large-select" onchange="onExpenseSplitAccountChange(${idx}, this.value)">
+        ${getExpenseSplitAccountOptionsHtml(expenseSplitRows[idx].account)}
+      </select>
+    ` : `
+      <label for="exp-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+      </label>
+      <input type="text" id="exp-split-person-${idx}" class="large-input" value="${escapeHTML(expenseSplitRows[idx].person || '')}" placeholder="${isLoan ? 'z. B. Peter, Anna' : 'z. B. Mitbewohner, Freund'}" oninput="onExpenseSplitPersonInput(${idx}, this.value)">
+    `;
+  } else {
+    renderExpenseSplitRows();
   }
 
-  if (typeof announceNVDA === 'function') {
-    const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
-    announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
+  updateExpenseSplitSummary();
+
+  const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
+  if (typeof speakAccessibility === 'function') {
+    speakAccessibility(label);
+  } else if (typeof announceNVDA === 'function') {
+    announceNVDA(label);
   }
 }
 
@@ -6665,23 +6683,21 @@ function renderIncomeSplitRows() {
           </select>
         </div>
 
-        ${isAccount ? `
-          <div style="flex: 2; min-width: 160px;">
+        <div id="inc-split-target-col-${idx}" style="flex: 2; min-width: 160px;">
+          ${isAccount ? `
             <label for="inc-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Ziel-Konto:</strong>
             </label>
             <select id="inc-split-acc-${idx}" class="large-select" onchange="onIncomeSplitAccountChange(${idx}, this.value)">
               ${getIncomeSplitAccountOptionsHtml(row.account)}
             </select>
-          </div>
-        ` : `
-          <div style="flex: 2; min-width: 160px;">
+          ` : `
             <label for="inc-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
             </label>
             <input type="text" id="inc-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="${isLoan ? 'z. B. Markus, Mama' : 'z. B. Partner, Freund'}" oninput="onIncomeSplitPersonInput(${idx}, this.value)">
-          </div>
-        `}
+          `}
+        </div>
 
         <div style="flex: 1; min-width: 120px;">
           <label for="inc-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
@@ -6709,17 +6725,37 @@ function onIncomeSplitTypeChange(idx, newType) {
     const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
     incomeSplitRows[idx].account = acc1;
   }
-  renderIncomeSplitRows();
 
-  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
-  const selectEl = document.getElementById(`inc-split-type-${idx}`);
-  if (selectEl) {
-    selectEl.focus();
+  // Statt den gesamten DOM-Container neu zu bauen (was Fokus und Screenreader zurücksetzt),
+  // aktualisieren wir gezielt nur die Ziel-Spalte (Konto oder Person) für diesen Teil:
+  const targetCol = document.getElementById(`inc-split-target-col-${idx}`);
+  if (targetCol) {
+    const isAccount = newType === 'account';
+    const isLoan = newType === 'loan_borrowed';
+    targetCol.innerHTML = isAccount ? `
+      <label for="inc-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Ziel-Konto:</strong>
+      </label>
+      <select id="inc-split-acc-${idx}" class="large-select" onchange="onIncomeSplitAccountChange(${idx}, this.value)">
+        ${getIncomeSplitAccountOptionsHtml(incomeSplitRows[idx].account)}
+      </select>
+    ` : `
+      <label for="inc-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+      </label>
+      <input type="text" id="inc-split-person-${idx}" class="large-input" value="${escapeHTML(incomeSplitRows[idx].person || '')}" placeholder="${isLoan ? 'z. B. Markus, Mama' : 'z. B. Partner, Freund'}" oninput="onIncomeSplitPersonInput(${idx}, this.value)">
+    `;
+  } else {
+    renderIncomeSplitRows();
   }
 
-  if (typeof announceNVDA === 'function') {
-    const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_borrowed' ? 'Geliehen von Person mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
-    announceNVDA(`Teil ${idx + 1} auf "${label}" geändert.`);
+  updateIncomeSplitSummary();
+
+  const label = (newType === 'account') ? 'Eigenes Ziel-Konto' : (newType === 'loan_borrowed' ? 'Geliehen von Person mit Rückzahlung' : 'Geteilt ohne Rückzahlung');
+  if (typeof speakAccessibility === 'function') {
+    speakAccessibility(label);
+  } else if (typeof announceNVDA === 'function') {
+    announceNVDA(label);
   }
 }
 
@@ -7405,23 +7441,21 @@ function renderEditSplitRows() {
           </select>
         </div>
 
-        ${isAccount ? `
-          <div style="flex: 2; min-width: 160px;">
+        <div id="edit-split-target-col-${idx}" style="flex: 2; min-width: 160px;">
+          ${isAccount ? `
             <label for="edit-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Konto:</strong>
             </label>
             <select id="edit-split-acc-${idx}" class="large-select" onchange="onEditSplitAccountChange(${idx}, this.value)">
               ${getEditSplitAccountOptionsHtml(row.account)}
             </select>
-          </div>
-        ` : `
-          <div style="flex: 2; min-width: 160px;">
+          ` : `
             <label for="edit-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
               <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
             </label>
             <input type="text" id="edit-split-person-${idx}" class="large-input" value="${escapeHTML(row.person || '')}" placeholder="z. B. Peter, Anna" oninput="onEditSplitPersonInput(${idx}, this.value)">
-          </div>
-        `}
+          `}
+        </div>
 
         <div style="flex: 1; min-width: 120px;">
           <label for="edit-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
@@ -7449,16 +7483,37 @@ function onEditSplitTypeChange(idx, newType) {
     const acc1 = appState.accounts[0] ? appState.accounts[0].id : 'bank';
     editSplitRows[idx].account = acc1;
   }
-  renderEditSplitRows();
 
-  // Fokus direkt im Auswahlfeld behalten, damit man nicht mit Tab zurückspringen muss
-  const selectEl = document.getElementById(`edit-split-type-${idx}`);
-  if (selectEl) {
-    selectEl.focus();
+  // Statt den gesamten DOM-Container neu zu bauen (was Fokus und Screenreader zurücksetzt),
+  // aktualisieren wir gezielt nur die Ziel-Spalte (Konto oder Person) für diesen Teil:
+  const targetCol = document.getElementById(`edit-split-target-col-${idx}`);
+  if (targetCol) {
+    const isAccount = newType === 'account';
+    const isLoan = (newType === 'loan_lent' || newType === 'loan_borrowed');
+    targetCol.innerHTML = isAccount ? `
+      <label for="edit-split-acc-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Konto:</strong>
+      </label>
+      <select id="edit-split-acc-${idx}" class="large-select" onchange="onEditSplitAccountChange(${idx}, this.value)">
+        ${getEditSplitAccountOptionsHtml(editSplitRows[idx].account)}
+      </select>
+    ` : `
+      <label for="edit-split-person-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
+        <strong>Person / Name:${isLoan ? '<span class="required-star" aria-hidden="true">*</span>' : ''}</strong>
+      </label>
+      <input type="text" id="edit-split-person-${idx}" class="large-input" value="${escapeHTML(editSplitRows[idx].person || '')}" placeholder="z. B. Peter, Anna" oninput="onEditSplitPersonInput(${idx}, this.value)">
+    `;
+  } else {
+    renderEditSplitRows();
   }
 
-  if (typeof announceNVDA === 'function') {
-    announceNVDA(`Teil ${idx + 1} Art geändert.`);
+  updateEditSplitSummary();
+
+  const label = (newType === 'account') ? 'Eigenes Konto' : (newType === 'loan_lent' ? 'Verliehen mit Rückzahlung' : (newType === 'loan_borrowed' ? 'Geliehen mit Rückzahlung' : 'Geteilt ohne Rückzahlung'));
+  if (typeof speakAccessibility === 'function') {
+    speakAccessibility(label);
+  } else if (typeof announceNVDA === 'function') {
+    announceNVDA(label);
   }
 }
 
