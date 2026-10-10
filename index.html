@@ -21,14 +21,23 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.6)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.7)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(46, 125, 50, 0.08); border-left: 6px solid #2e7d32; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #1b5e20; font-size: 20px;">⚡ Neu in Version 6.9.7 (Auto-Reset für Split &amp; Leihgaben &amp; Fokus-Optimierung)</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>🔄 Automatischer Formular-Reset:</strong> Nach dem Eintragen einer Ausgabe oder Einnahme sowie beim Wechseln des Reiters werden vorherige Split-Zahlungen und Leihgaben-Optionen standardmäßig sauber zurückgesetzt, sodass keine Werte oder Häkchen ungewollt in die nächste Buchung übernommen werden.</li>
+<li><strong>🎯 Fokus-Optimierung bei Split-Zahlungen:</strong> Beim Umschalten zwischen „Eigenes Konto“ und „Leihgabe / Geteilt“ bleibt der Fokus direkt im Auswahlfeld, sodass man mit Screenreader oder Tab-Taste nicht mehr zurückspringen muss.</li>
+<li><strong>📱 Versions-Synchronisation für Android:</strong> Einheitliche Versionsnummer v6.9.7 auf Desktop und Smartphone.</li>
+</ul>
+</div>
+
 <div style="background: rgba(142, 36, 170, 0.08); border-left: 6px solid #8E24AA; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Neu in Version 6.9.6 (Split-Zahlungen bearbeiten &amp; Leihgaben-Verwaltung)</h3>
+<h3 style="margin: 0 0 8px 0; color: #6A1B9A; font-size: 20px;">⚡ Version 6.9.6 (Split-Zahlungen bearbeiten &amp; Leihgaben-Verwaltung)</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
 <li><strong>🔀 Split-Zahlungen in Buchungsbearbeitung:</strong> Jede bestehende Buchung kann nun im Bearbeiten-Dialog in eine Split-Zahlung über mehrere Konten (z. B. Teil Bar und Teil Girokonto) umgewandelt werden. Bestehende Split-Buchungen lassen sich mit Live-Summenprüfung anpassen oder wieder zu einer Einzelbuchung vereinen.</li>
 <li><strong>🤝 Vollständige Bearbeitung &amp; Historie von Leihgaben:</strong> Geliehenes und verliehenes Geld kann jederzeit nachträglich editiert werden – inklusive automatischer Aktualisierung verknüpfter Kontobuchungen. Alle Teilrückzahlungen bieten eine eigene Historie zum Bearbeiten und Löschen. Beglichene Leihgaben können im Archiv eingesehen oder wieder geöffnet werden.</li>
@@ -3366,7 +3375,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.9.4</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.9.7</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -4158,7 +4167,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p><strong>Barrierefreie Finanzen v6.9.4</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
+<p><strong>Barrierefreie Finanzen v6.9.7</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
 <p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 

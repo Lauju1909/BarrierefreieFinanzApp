@@ -644,7 +644,9 @@ const expectedSplitEditFns = [
   'onExpenseSplitTypeChange',
   'onExpenseSplitPersonInput',
   'onIncomeSplitTypeChange',
-  'onIncomeSplitPersonInput'
+  'onIncomeSplitPersonInput',
+  'resetExpenseFormState',
+  'resetIncomeFormState'
 ];
 expectedSplitEditFns.forEach(fn => {
   const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
@@ -836,7 +838,7 @@ console.log('All Cloud Sync HTML IDs present.');
 console.log('GitHub Cloud Categories Sync Engine: 100% PASS!');
 
 console.log('\n======================================');
-console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.6)');
+console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');
 
 

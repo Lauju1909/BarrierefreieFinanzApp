@@ -1,8 +1,10 @@
 {
-  "version": "6.9.6",
+  "version": "6.9.7",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-10-09",
+  "buildDate": "2026-10-10",
   "features": [
+    "🔄 Automatischer Formular-Reset für Split & Leihgaben: Beim Buchen neuer Ausgaben oder Einnahmen sowie beim Reiterwechsel werden Split-Zahlungen und Leihgaben-Optionen standardmäßig sauber zurückgesetzt, sodass keine Vorbelegungen ungewollt in Folge-Buchungen übernommen werden",
+    "🎯 Optimierter Tastatur-Fokus bei Split-Auswahl: Beim Umschalten zwischen 'Eigenes Konto' und 'Leihgabe / Geteilt' bleibt der Fokus für Screenreader und Tastatur direkt im Auswahlfeld erhalten",
     "🔀 Split-Zahlung in der Buchungsbearbeitung: Jede Buchung kann im Bearbeiten-Dialog nachträglich auf mehrere Konten aufgeteilt werden (z. B. Teil Bar & Teil Girokonto), bestehende Split-Buchungen lassen sich flexibel anpassen oder wieder zu Einzelbuchungen vereinen",
     "🤝 Vollständige Bearbeitbarkeit & Verwaltung von Leihgaben: Geliehenes und verliehenes Geld (Freunde & Familie) kann jederzeit editiert werden (inkl. automatischer Aktualisierung verknüpfter Kontobuchungen). Detaillierte Historie aller Teilrückzahlungen mit Bearbeiten & Löschen. Archiv für beglichene Leihgaben mit Reaktivierung/Wiederöffnen",
     "🧹 Bedarfsgesteuerte Monatsübersicht: Intelligentes Ausblenden leerer Bereiche in Reiter 1. 'Laufende Kredite & Raten' (bei 0 Krediten), 'Umbuchungen & Sparpläne' (bei 0 Umbuchungen im Monat) und 'Geliehenes Geld' (bei 0 offenen Leihgaben) nehmen keinen Platz mehr weg und erscheinen nur bei Bedarf",

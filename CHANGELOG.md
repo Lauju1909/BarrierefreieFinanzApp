@@ -1,8 +1,29 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
-## ⚡ Version 6.9.4 (Übersicht-Listen, Bank-CSV-Import & Einkaufslisten-Buchung repariert)
-*Datum: 05. Oktober 2026*
+## ⚡ Version 6.9.7 (Auto-Reset für Split & Leihgaben, Fokus-Optimierung & Android-Synchronisation)
+*Datum: 10. Oktober 2026*
+
+### 🔄 1. Zuverlässiger Formular-Reset für Split-Zahlungen & Leihgaben
+- **Keine ungewollte Übernahme:** Beim Speichern einer Ausgabe oder Einnahme sowie beim Wechseln auf die Eingabereiter werden vorherige Split-Zahlungen und Leihgaben-Checkboxen standardmäßig vollständig zurückgesetzt.
+- **Saubere Initialisierung:** Neue Buchungen starten standardmäßig immer als normale Einzelbuchung ohne aktive Unterteilungen oder geliehene/verliehene Zusatzfelder.
+
+### 🎯 2. Tastatur- und Screenreader-Fokus bei Split-Auswahl
+- **Kein Wegspringen des Fokus:** Beim Ändern des Typs eines Teilbetrags im Split-Editor (z. B. zwischen „Eigenes Konto“, „Verliehen mit Rückzahlung“ und „Geteilt ohne Rückzahlung“) bleibt der Fokus direkt im Auswahlfeld erhalten, sodass man nicht mehr mit Tab zurück navigieren muss.
+
+### 📱 3. Versionskonsistenz Android & Desktop
+- Android-App auf Version `6.9.7` (`versionCode 19`) aktualisiert und mit allen Plattformen synchronisiert.
+
+---
+
+## ⚡ Version 6.9.6 (Split-Zahlungen bearbeiten & Leihgaben-Verwaltung)
+*Datum: 09. Oktober 2026*
+
+- **Split-Zahlungen in Buchungsbearbeitung:** Jede bestehende Buchung kann nun im Bearbeiten-Dialog nachträglich auf mehrere Konten aufgeteilt werden.
+- **Leihgaben-Historie & Archiv:** Bearbeitbarkeit aller offenen und beglichenen Leihgaben mit Reaktivierung.
+- **Bedarfsgesteuerte Übersicht:** Dynamisches Ein- und Ausblenden leerer Monatsbereiche.
+
+---
 
 ### 📊 1. Wiederherstellung Buchungsanzeige in der Übersicht (Reiter 1)
 - **Fehlerfreies Ausklappen:** Behebt das Problem, dass beim Klick auf „Alle Einnahmen / Ausgaben / Umbuchungen ausklappen“ keine Buchungen gerendert wurden.

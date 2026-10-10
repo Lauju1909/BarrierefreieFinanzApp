@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.9.6';
+const CURRENT_APP_VERSION = 'v6.9.7';
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -5740,6 +5740,11 @@ function toggleExpenseSplitPayment() {
       announceNVDA('Split-Zahlung aktiviert. Du kannst den Betrag nun auf mehrere Konten aufteilen.');
     }
   } else {
+    expenseSplitRows = [];
+    const splitContainer = document.getElementById('exp-split-rows-container');
+    if (splitContainer) splitContainer.innerHTML = '';
+    const summaryEl = document.getElementById('exp-split-summary');
+    if (summaryEl) summaryEl.style.display = 'none';
     if (typeof announceNVDA === 'function') {
       announceNVDA('Split-Zahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
     }
@@ -5758,10 +5763,71 @@ function toggleExpenseLoanFields() {
       announceNVDA('Leihgabe-Details für verliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
     }
   } else {
+    const personInput = document.getElementById('exp-loan-person');
+    if (personInput) personInput.value = '';
+    const dueInput = document.getElementById('exp-loan-due-date');
+    if (dueInput) dueInput.value = '';
+    const noteInput = document.getElementById('exp-loan-note');
+    if (noteInput) noteInput.value = '';
     if (typeof announceNVDA === 'function') {
       announceNVDA('Leihgabe-Details ausgeblendet.');
     }
   }
+}
+
+function resetExpenseFormState() {
+  const form = document.getElementById('form-add-expense');
+  if (form) form.reset();
+  const expDate = document.getElementById('exp-date');
+  if (expDate) expDate.value = new Date().toISOString().split('T')[0];
+
+  // Split-Zahlung vollständig und sauber zurücksetzen
+  const splitToggle = document.getElementById('exp-split-toggle');
+  if (splitToggle) splitToggle.checked = false;
+  const splitSec = document.getElementById('exp-split-section');
+  if (splitSec) splitSec.style.display = 'none';
+  const accGroup = document.getElementById('exp-account-group');
+  if (accGroup) accGroup.style.display = 'block';
+  const singleAcc = document.getElementById('exp-account');
+  if (singleAcc) singleAcc.required = true;
+  expenseSplitRows = [];
+  const splitContainer = document.getElementById('exp-split-rows-container');
+  if (splitContainer) splitContainer.innerHTML = '';
+  const splitSummary = document.getElementById('exp-split-summary');
+  if (splitSummary) splitSummary.style.display = 'none';
+
+  // Leihgabe vollständig zurücksetzen
+  const loanToggle = document.getElementById('exp-loan-toggle');
+  if (loanToggle) loanToggle.checked = false;
+  const loanSec = document.getElementById('exp-loan-section');
+  if (loanSec) loanSec.style.display = 'none';
+  const loanPerson = document.getElementById('exp-loan-person');
+  if (loanPerson) loanPerson.value = '';
+  const loanDue = document.getElementById('exp-loan-due-date');
+  if (loanDue) loanDue.value = '';
+  const loanNote = document.getElementById('exp-loan-note');
+  if (loanNote) loanNote.value = '';
+
+  // Wiederkehrende Zusatzoptionen zurücksetzen
+  const trialReset = document.getElementById('exp-rec-trial-toggle');
+  if (trialReset) {
+    trialReset.checked = false;
+    toggleTrialSection('exp');
+  }
+  const discountReset = document.getElementById('exp-rec-discount-toggle');
+  if (discountReset) {
+    discountReset.checked = false;
+    toggleDiscountSection('exp');
+  }
+  const contractReset = document.getElementById('exp-rec-contract-toggle');
+  if (contractReset) {
+    contractReset.checked = false;
+    toggleContractSection('exp');
+  }
+
+  currentExpenseReceipt = null;
+  renderReceiptPreview('exp');
+  toggleExpenseFrequencyFields();
 }
 
 function initExpenseSplitRows() {
@@ -6446,36 +6512,7 @@ async function handleAddExpense(e) {
   }
 
   await saveStateToEncryptedStorage();
-  document.getElementById('form-add-expense').reset();
-  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
-  const splitToggleReset = document.getElementById('exp-split-toggle');
-  if (splitToggleReset && splitToggleReset.checked) {
-    splitToggleReset.checked = false;
-    toggleExpenseSplitPayment();
-  }
-  const expLoanReset = document.getElementById('exp-loan-toggle');
-  if (expLoanReset && expLoanReset.checked) {
-    expLoanReset.checked = false;
-    toggleExpenseLoanFields();
-  }
-  const trialReset = document.getElementById('exp-rec-trial-toggle');
-  if (trialReset && trialReset.checked) {
-    trialReset.checked = false;
-    toggleTrialSection('exp');
-  }
-  const discountReset = document.getElementById('exp-rec-discount-toggle');
-  if (discountReset && discountReset.checked) {
-    discountReset.checked = false;
-    toggleDiscountSection('exp');
-  }
-  const contractReset = document.getElementById('exp-rec-contract-toggle');
-  if (contractReset && contractReset.checked) {
-    contractReset.checked = false;
-    toggleContractSection('exp');
-  }
-  currentExpenseReceipt = null;
-  renderReceiptPreview('exp');
-  toggleExpenseFrequencyFields();
+  resetExpenseFormState();
   updateOverview();
   switchView('overview');
 }
@@ -6515,6 +6552,11 @@ function toggleIncomeSplitPayment() {
       announceNVDA('Split-Einzahlung aktiviert. Du kannst den Betrag nun auf mehrere Konten aufteilen.');
     }
   } else {
+    incomeSplitRows = [];
+    const splitContainer = document.getElementById('inc-split-rows-container');
+    if (splitContainer) splitContainer.innerHTML = '';
+    const summaryEl = document.getElementById('inc-split-summary');
+    if (summaryEl) summaryEl.style.display = 'none';
     if (typeof announceNVDA === 'function') {
       announceNVDA('Split-Einzahlung deaktiviert. Einfache Kontoauswahl wieder aktiv.');
     }
@@ -6533,10 +6575,54 @@ function toggleIncomeLoanFields() {
       announceNVDA('Leihgabe-Details für geliehenes Geld eingeblendet. Bitte gib den Namen der Person ein.');
     }
   } else {
+    const personInput = document.getElementById('inc-loan-person');
+    if (personInput) personInput.value = '';
+    const dueInput = document.getElementById('inc-loan-due-date');
+    if (dueInput) dueInput.value = '';
+    const noteInput = document.getElementById('inc-loan-note');
+    if (noteInput) noteInput.value = '';
     if (typeof announceNVDA === 'function') {
       announceNVDA('Leihgabe-Details ausgeblendet.');
     }
   }
+}
+
+function resetIncomeFormState() {
+  const form = document.getElementById('form-add-income');
+  if (form) form.reset();
+  const incDate = document.getElementById('inc-date');
+  if (incDate) incDate.value = new Date().toISOString().split('T')[0];
+
+  // Split-Einzahlung sauber und vollständig zurücksetzen
+  const splitToggle = document.getElementById('inc-split-toggle');
+  if (splitToggle) splitToggle.checked = false;
+  const splitSec = document.getElementById('inc-split-section');
+  if (splitSec) splitSec.style.display = 'none';
+  const accGroup = document.getElementById('inc-account-group');
+  if (accGroup) accGroup.style.display = 'block';
+  const singleAcc = document.getElementById('inc-account');
+  if (singleAcc) singleAcc.required = true;
+  incomeSplitRows = [];
+  const splitContainer = document.getElementById('inc-split-rows-container');
+  if (splitContainer) splitContainer.innerHTML = '';
+  const splitSummary = document.getElementById('inc-split-summary');
+  if (splitSummary) splitSummary.style.display = 'none';
+
+  // Leihgabe sauber zurücksetzen
+  const loanToggle = document.getElementById('inc-loan-toggle');
+  if (loanToggle) loanToggle.checked = false;
+  const loanSec = document.getElementById('inc-loan-section');
+  if (loanSec) loanSec.style.display = 'none';
+  const loanPerson = document.getElementById('inc-loan-person');
+  if (loanPerson) loanPerson.value = '';
+  const loanDue = document.getElementById('inc-loan-due-date');
+  if (loanDue) loanDue.value = '';
+  const loanNote = document.getElementById('inc-loan-note');
+  if (loanNote) loanNote.value = '';
+
+  currentIncomeReceipt = null;
+  renderReceiptPreview('inc');
+  toggleIncomeFrequencyFields();
 }
 
 function initIncomeSplitRows() {
@@ -7013,21 +7099,7 @@ async function handleAddIncome(e) {
   }
 
   await saveStateToEncryptedStorage();
-  document.getElementById('form-add-income').reset();
-  document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
-  const splitToggleReset = document.getElementById('inc-split-toggle');
-  if (splitToggleReset && splitToggleReset.checked) {
-    splitToggleReset.checked = false;
-    toggleIncomeSplitPayment();
-  }
-  const incLoanReset = document.getElementById('inc-loan-toggle');
-  if (incLoanReset && incLoanReset.checked) {
-    incLoanReset.checked = false;
-    toggleIncomeLoanFields();
-  }
-  currentIncomeReceipt = null;
-  renderReceiptPreview('inc');
-  toggleIncomeFrequencyFields();
+  resetIncomeFormState();
   updateOverview();
   switchView('overview');
 }
@@ -7957,6 +8029,8 @@ window.onExpenseSplitTypeChange = onExpenseSplitTypeChange;
 window.onExpenseSplitPersonInput = onExpenseSplitPersonInput;
 window.onIncomeSplitTypeChange = onIncomeSplitTypeChange;
 window.onIncomeSplitPersonInput = onIncomeSplitPersonInput;
+window.resetExpenseFormState = resetExpenseFormState;
+window.resetIncomeFormState = resetIncomeFormState;
 
 async function deleteTransaction(txId) {
   const idx = appState.transactions.findIndex(t => t.id === txId);
@@ -9297,18 +9371,24 @@ function switchView(viewName) {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
     onMainCategoryChange('exp');
+    const expAmount = document.getElementById('exp-amount');
+    if (!expAmount || !expAmount.value) {
+      resetExpenseFormState();
+    }
     const expDate = document.getElementById('exp-date');
     if (expDate && !expDate.value) expDate.value = new Date().toISOString().split('T')[0];
-    const expAmount = document.getElementById('exp-amount');
     if (expAmount) expAmount.focus();
     announceNVDA('Ausgabe eintragen geöffnet.');
   } else if (viewName === 'income') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
     onMainCategoryChange('inc');
+    const incAmount = document.getElementById('inc-amount');
+    if (!incAmount || !incAmount.value) {
+      resetIncomeFormState();
+    }
     const incDate = document.getElementById('inc-date');
     if (incDate && !incDate.value) incDate.value = new Date().toISOString().split('T')[0];
-    const incAmount = document.getElementById('inc-amount');
     if (incAmount) incAmount.focus();
     announceNVDA('Einnahme eintragen geöffnet.');
   } else if (viewName === 'transfer') {
