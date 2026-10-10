@@ -727,7 +727,14 @@ if (dummyBal.bank !== 20.00) {
   console.error('Balance calculation test for shared_no_repay failed! Expected 20.00, got:', dummyBal.bank);
   process.exit(1);
 }
-console.log('Split-Payment simulation & editing logic (inkl. Leihgabe & Geteilte Kosten ohne Fremdabbuchung): 100% PASS!');
+// Verify that shared_no_repay is excluded from stats expense total
+const simExpenses = simTransactions.filter(t => t.type === 'expense');
+const simTotalExpense = simExpenses.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
+if (simTotalExpense !== 80.00) {
+  console.error('Stats total expense calculation for shared_no_repay failed! Expected 80.00, got:', simTotalExpense);
+  process.exit(1);
+}
+console.log('Split-Payment simulation & editing logic (inkl. Leihgabe, Geteilte Kosten & Statistik-Ausschluss): 100% PASS!');
 
 // 10. Test New Categories & In-App Quick Category Creator
 console.log('Testing New Categories & In-App Quick Category Creator...');

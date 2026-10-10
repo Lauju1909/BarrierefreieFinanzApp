@@ -799,6 +799,7 @@ function renderBudgetsList() {
   const currentStats = calculateMonthStats(targetYear, targetMonth);
   const expensesByCategory = {};
   currentStats.expenseList.forEach(tx => {
+    if (tx.splitType === 'shared_no_repay') return;
     const cat = tx.category || 'Sonstiges';
     expensesByCategory[cat] = (expensesByCategory[cat] || 0) + Number(tx.amount || 0);
   });
@@ -870,6 +871,7 @@ function renderExpenseRankings(expenseList) {
   const totalsByCat = {};
   let totalExpense = 0;
   expenseList.forEach(tx => {
+    if (tx.splitType === 'shared_no_repay') return;
     const cat = tx.category || 'Sonstiges';
     const amt = Number(tx.amount || 0);
     totalsByCat[cat] = (totalsByCat[cat] || 0) + amt;
@@ -2417,8 +2419,8 @@ function renderPrintReportContent(year, month) {
             <td style="padding: 6px 10px; border: 1px solid #ddd;">${formatDateGerman(tx.date)}</td>
             <td style="padding: 6px 10px; border: 1px solid #ddd;">${escapeHTML(tx.category)}${tx.subcategory ? ` (${escapeHTML(tx.subcategory)})` : ''}</td>
             <td style="padding: 6px 10px; border: 1px solid #ddd;">${escapeHTML(tx.description || '-')}</td>
-            <td style="padding: 6px 10px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: ${tx.type === 'income' ? '#2E7D32' : '#C62828'};">
-              ${tx.type === 'income' ? '+' : '-'} ${formatCurrency(tx.amount)}
+            <td style="padding: 6px 10px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: ${tx.splitType === 'shared_no_repay' ? '#512DA8' : (tx.type === 'income' ? '#2E7D32' : '#C62828')};">
+              ${tx.splitType === 'shared_no_repay' ? '👥 ' : (tx.type === 'income' ? '+ ' : '- ')}${formatCurrency(tx.amount)}${tx.splitType === 'shared_no_repay' ? ' (Fremdanteil)' : ''}
             </td>
           </tr>
         `).join('')}
@@ -4792,8 +4794,8 @@ function calculateDayStats(dayStr) {
   const expenseList = allDay.filter(t => t.type === 'expense');
   const transferList = allDay.filter(t => t.type === 'transfer');
 
-  const dayIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const dayExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const dayIncome = incomeList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
+  const dayExpense = expenseList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
   const dayTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const dayLeftover = dayIncome - dayExpense;
 
@@ -4814,8 +4816,8 @@ function calculateMonthStats(year, month) {
   const expenseList = allMonth.filter(t => t.type === 'expense');
   const transferList = allMonth.filter(t => t.type === 'transfer');
 
-  const totalIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-  const totalExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+  const totalIncome = incomeList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
+  const totalExpense = expenseList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
   const totalTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
   const leftover = totalIncome - totalExpense;
 
@@ -4928,8 +4930,8 @@ function updateOverview() {
     const expenseList = allTx.filter(t => t.type === 'expense');
     const transferList = allTx.filter(t => t.type === 'transfer');
 
-    const weekIncome = incomeList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
-    const weekExpense = expenseList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
+    const weekIncome = incomeList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
+    const weekExpense = expenseList.reduce((sum, t) => sum + (t.splitType === 'shared_no_repay' ? 0 : Number(t.amount || 0)), 0);
     const weekTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const weekLeftover = weekIncome - weekExpense;
 
@@ -5154,9 +5156,10 @@ function renderTransactionList(list, containerId, emptyText) {
   sorted.forEach(tx => {
     const isIncome = tx.type === 'income';
     const isTransfer = tx.type === 'transfer';
-    const sign = isIncome ? '+' : (isTransfer ? '🔄' : '-');
-    const colorClass = isIncome ? 'income' : (isTransfer ? 'transfer' : 'expense');
-    const icon = isIncome ? '📥' : (isTransfer ? '🔄' : '📤');
+    const isSharedNoRepay = tx.splitType === 'shared_no_repay';
+    const sign = isSharedNoRepay ? '👥' : (isIncome ? '+' : (isTransfer ? '🔄' : '-'));
+    const colorClass = isSharedNoRepay ? 'transfer' : (isIncome ? 'income' : (isTransfer ? 'transfer' : 'expense'));
+    const icon = isSharedNoRepay ? '👥' : (isIncome ? '📥' : (isTransfer ? '🔄' : '📤'));
     const dateFormatted = formatDateGerman(tx.date);
 
     const todayStr = new Date().toISOString().split('T')[0];
