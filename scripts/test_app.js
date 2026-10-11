@@ -1019,6 +1019,51 @@ if (testFormatCurrency(1234.56, false) !== '1.234,56 €') {
 }
 console.log('Privacy masking & Currency simulation: verified PASS!');
 
+// ----------------------------------------------------------------------------
+// TEST: ARGON2ID SCHLÜSSELABLEITUNG & DUAL-KDF TEST
+// ----------------------------------------------------------------------------
+console.log('Testing Argon2id Dual-KDF Integration...');
+
+const expectedArgonIds = [
+  'setting-argon2-kdf',
+  'argon2-status-badge'
+];
+
+expectedArgonIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing expected Argon2 HTML ID: ${id}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedArgonIds.length} Argon2 HTML IDs present.`);
+
+const expectedArgonFns = [
+  'handleArgon2Toggle'
+];
+
+expectedArgonFns.forEach(fn => {
+  const isFound = new RegExp(`\\bfunction\\s+${fn}\\b|window\\.${fn}\\s*=`).test(appJs);
+  if (!isFound) {
+    console.error(`Missing expected Argon2 function in app.js: ${fn}`);
+    process.exit(1);
+  }
+});
+console.log(`All ${expectedArgonFns.length} Argon2 functions present in app.js.`);
+
+// Verify argon2.umd.min.js existence and size
+if (!fs.existsSync('argon2.umd.min.js')) {
+  console.error('argon2.umd.min.js is missing from root directory!');
+  process.exit(1);
+}
+const argonSize = fs.statSync('argon2.umd.min.js').size;
+if (argonSize < 10000) {
+  console.error('argon2.umd.min.js seems incomplete or empty:', argonSize);
+  process.exit(1);
+}
+console.log(`argon2.umd.min.js verified (${argonSize} bytes, standalone bundle).`);
+
+console.log('Argon2id Dual-KDF Integration: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');

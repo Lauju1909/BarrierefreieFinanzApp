@@ -10123,21 +10123,27 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
       return false;
     }
 
-    // Vorhandenen Datensafe entsperren
-    currentSaltBase64 = saltBase64;
-    const saltBuffer = base64ToArrayBuffer(saltBase64);
-    const salt = new Uint8Array(saltBuffer);
-    
-    let decrypted = null;
-    let healedFrom1234 = false;
+    // Vorhandenen Datensafe entsperren: Versuche zuerst den konfigurierten KDF (PBKDF2 oder Argon2id),
+    // und falls nötig das alternative Verfahren (100% automatische Abwärtskompatibilität ohne Fehlversuch-Zähler).
+    const configuredKdf = localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2';
+    const candidateKdfs = configuredKdf === 'argon2id' ? ['argon2id', 'pbkdf2'] : ['pbkdf2', 'argon2id'];
 
-    // Nur das Entschlüsseln mit der eingegebenen PIN (und ggf. Schlüsseldatei) entscheidet über die Richtigkeit
-    try {
-      const key = await deriveKey(enteredPin, salt, activeKeyFileContent);
-      decrypted = await decryptData(storedData, key);
-      cryptoKey = key;
-    } catch (decryptErr) {
-      // PIN oder Schlüsseldatei ist falsch!
+    for (const kdfCandidate of candidateKdfs) {
+      try {
+        const candidateKey = await deriveKey(enteredPin, salt, activeKeyFileContent, kdfCandidate);
+        const result = await decryptData(storedData, candidateKey);
+        decrypted = result;
+        cryptoKey = candidateKey;
+        // Speichere das erfolgreich erkannte KDF-Verfahren
+        localStorage.setItem('haushaltsbuch_kdf_algo', kdfCandidate);
+        break;
+      } catch (e) {
+        // Nächsten KDF versuchen
+      }
+    }
+
+    if (!decrypted) {
+      // Weder mit PBKDF2 noch mit Argon2id konnte entschlüsselt werden -> PIN oder Schlüsseldatei wirklich falsch!
       let attempts = getFailedAttempts() + 1;
       setFailedAttempts(attempts);
 
@@ -10387,13 +10393,30 @@ async function handleChangePin(e) {
   try {
     const saltBuffer = base64ToArrayBuffer(saltBase64);
     const salt = new Uint8Array(saltBuffer);
-    const oldKey = await deriveKey(oldPin, salt, activeKeyFileContent);
+    
+    // Altes Kennwort entschlüsseln (mit automatischem KDF-Fallback)
+    const configuredKdf = localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2';
+    const candidateKdfs = configuredKdf === 'argon2id' ? ['argon2id', 'pbkdf2'] : ['pbkdf2', 'argon2id'];
+    let oldKey = null;
 
-    await decryptData(storedData, oldKey);
+    for (const kdfCandidate of candidateKdfs) {
+      try {
+        const testKey = await deriveKey(oldPin, salt, activeKeyFileContent, kdfCandidate);
+        await decryptData(storedData, testKey);
+        oldKey = testKey;
+        break;
+      } catch (e) {}
+    }
+
+    if (!oldKey) {
+      announceNVDA('Aktuelle PIN war nicht korrekt.', true);
+      return;
+    }
 
     const newSalt = crypto.getRandomValues(new Uint8Array(16));
     const newSaltBase64 = arrayBufferToBase64(newSalt.buffer);
-    const newKey = await deriveKey(newPin, newSalt, activeKeyFileContent);
+    const targetKdf = localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2';
+    const newKey = await deriveKey(newPin, newSalt, activeKeyFileContent, targetKdf);
 
     cryptoKey = newKey;
     window.__ACTIVE_PIN__ = newPin;
@@ -13604,6 +13627,23 @@ function updateSecuritySettingsUI() {
     if (el) el.checked = !!sec[k];
   });
 
+  // Argon2 Checkbox & Statusbadge
+  const currentKdf = localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2';
+  const argonCheckbox = document.getElementById('setting-argon2-kdf');
+  const argonBadge = document.getElementById('argon2-status-badge');
+  if (argonCheckbox) {
+    argonCheckbox.checked = (currentKdf === 'argon2id');
+  }
+  if (argonBadge) {
+    if (currentKdf === 'argon2id') {
+      argonBadge.textContent = 'Status: 🛡️ Argon2id AKTIV (KeePass-Standard: 64 MB RAM, speicherhart)';
+      argonBadge.style.color = '#1B5E20';
+    } else {
+      argonBadge.textContent = 'Status: PBKDF2 aktiv (100.000 Runden SHA-256)';
+      argonBadge.style.color = 'var(--accent-action)';
+    }
+  }
+
   // Header Privacy Button Zustand aktualisieren
   const btnPrivacy = document.getElementById('btn-header-privacy-toggle');
   const iconPrivacy = document.getElementById('header-privacy-icon');
@@ -13840,6 +13880,61 @@ function clearScrambledPin() {
   updatePinStrengthUI('pin-input', 'lock-pin-strength-bar', 'lock-pin-strength-text');
 }
 
+async function handleArgon2Toggle(enable) {
+  if (!cryptoKey || !appState) {
+    alert('Bitte entsperre zuerst deinen Tresor, um das Verschlüsselungsverfahren zu ändern.');
+    return;
+  }
+
+  const targetKdf = enable ? 'argon2id' : 'pbkdf2';
+  const targetLabel = enable ? 'Argon2id (KeePass 2 Standard)' : 'PBKDF2 (100.000 Runden SHA-256)';
+
+  // Bestätigung vom Benutzer einholen
+  const pinPrompt = prompt(`🔐 Schlüsselableitung umstellen auf: ${targetLabel}\n\nBitte gib zur Bestätigung deine aktuelle PIN ein:`);
+  if (!pinPrompt) {
+    updateSecuritySettingsUI();
+    return;
+  }
+
+  try {
+    const saltBase64 = localStorage.getItem(STORAGE_SALT_KEY);
+    const saltBuffer = base64ToArrayBuffer(saltBase64);
+    const salt = new Uint8Array(saltBuffer);
+
+    // Prüfen, ob eingegebene PIN korrekt ist (mit aktuellem Key entschlüsseln)
+    const storedData = localStorage.getItem(STORAGE_DATA_KEY);
+    const checkKey = await deriveKey(pinPrompt.trim(), salt, activeKeyFileContent);
+    await decryptData(storedData, checkKey);
+
+    // Neuer Salt generieren
+    const newSalt = crypto.getRandomValues(new Uint8Array(16));
+    const newSaltBase64 = arrayBufferToBase64(newSalt.buffer);
+
+    // Neuen Key mit neuem KDF erzeugen
+    const newCryptoKey = await deriveKey(pinPrompt.trim(), newSalt, activeKeyFileContent, targetKdf);
+
+    // Aktualisiere KDF Einstellung & Salt
+    localStorage.setItem('haushaltsbuch_kdf_algo', targetKdf);
+    localStorage.setItem(STORAGE_SALT_KEY, newSaltBase64);
+    currentSaltBase64 = newSaltBase64;
+    cryptoKey = newCryptoKey;
+
+    // Tresor neu verschlüsseln & abspeichern
+    await saveStateToEncryptedStorage();
+
+    updateSecuritySettingsUI();
+    const successMsg = `Erfolgreich auf ${targetLabel} umgestellt und Tresor neu verschlüsselt!`;
+    alert(`✅ ${successMsg}`);
+    announceNVDA(successMsg, true);
+  } catch(err) {
+    console.error('Fehler beim Umstellen des KDF:', err);
+    alert('❌ Falsche PIN oder Fehler beim Umstellen! Die Verschlüsselung wurde unverändert beibehalten.');
+    updateSecuritySettingsUI();
+    announceNVDA('Fehler beim Umstellen der Schlüsselableitung.', true);
+  }
+}
+
+window.handleArgon2Toggle = handleArgon2Toggle;
 window.computeSha256Hex = computeSha256Hex;
 window.getSecuritySettings = getSecuritySettings;
 window.toggleSecuritySetting = toggleSecuritySetting;
