@@ -16726,6 +16726,13 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
 
     // Vorhandenen Datensafe entsperren: Versuche zuerst den konfigurierten KDF (PBKDF2 oder Argon2id),
     // und falls nötig das alternative Verfahren (100% automatische Abwärtskompatibilität ohne Fehlversuch-Zähler).
+    currentSaltBase64 = saltBase64;
+    const saltBuffer = base64ToArrayBuffer(saltBase64);
+    const salt = new Uint8Array(saltBuffer);
+
+    let decrypted = null;
+    let healedFrom1234 = false;
+
     const configuredKdf = localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2';
     const candidateKdfs = configuredKdf === 'argon2id' ? ['argon2id', 'pbkdf2'] : ['pbkdf2', 'argon2id'];
 
@@ -16740,6 +16747,25 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
         break;
       } catch (e) {
         // Nächsten KDF versuchen
+      }
+    }
+
+    // AUTO-HEALING: Prüfen, ob der Tresor versehentlich mit Default-PIN '1234' verschlüsselt war
+    if (!decrypted && enteredPin !== '1234') {
+      for (const kdfCandidate of candidateKdfs) {
+        try {
+          const fallbackKey = await deriveKey('1234', salt, activeKeyFileContent, kdfCandidate);
+          const fallbackResult = await decryptData(storedData, fallbackKey);
+          if (fallbackResult) {
+            decrypted = fallbackResult;
+            healedFrom1234 = true;
+            cryptoKey = await deriveKey(enteredPin, salt, activeKeyFileContent, kdfCandidate);
+            appState = decrypted;
+            await saveStateToEncryptedStorage();
+            console.log('[Auto-Healing] Tresor erfolgreich von 1234 auf Nutzer-PIN repariert!');
+            break;
+          }
+        } catch (e2) {}
       }
     }
 
