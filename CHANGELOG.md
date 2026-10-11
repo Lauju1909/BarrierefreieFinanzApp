@@ -1,6 +1,47 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## 🛡️ KeePass 2 Sicherheits-Suite & Argon2id Schlüsselableitung
+*Datum: 11. Oktober 2026*
+
+### ⚡ 1. Argon2id Schlüsselableitung (KeePass 2 KDF-Standard)
+- **Höchster kryptografischer Schutz:** Modernste Memory-Hard Key Derivation Function (`Argon2id` mit 64 MB Arbeitsspeicher und 3 Iterationen) sichert den Tresor gegen Wörterbuch-Angriffe sowie hardwarebeschleunigtes Knacken per GPU/FPGA/ASIC ab.
+- **Nahtlose Dual-Engine & 100% Abwärtskompatibilität:** Beim Entsperren oder Ändern der PIN prüft die App automatisch, ob der Tresor mit Argon2id oder PBKDF2 (100.000 Runden) verschlüsselt ist. Bestehende Tresore funktionieren ohne Konvertierungszwang nahtlos weiter. In den Einstellungen (Reiter 5) kann Argon2id jederzeit per Umschalter aktiviert werden.
+
+### 📂 2. Strukturierte Einstellungs-Kategorien (7 Filter-Reiter)
+- **Übersichtliche Navigation:** Die Einstellungen in Reiter 5 wurden mit barrierefreien Kategorie-Tabs gegliedert:
+  1. `[📂 Alle]` – Vollständige Gesamtsicht
+  2. `[🛡️ Sicherheit & Tresor]` – Argon2id, Auto-Lock, Scrambled PIN, Verschlüsselung, Backup-Prüfung
+  3. `[🎨 Darstellung & Design]` – Farbschemata, Schriftgrößen, NVDA-Klartextmodus
+  4. `[💾 Datensicherung]` – Verschlüsselte Backups, E2E-Sync, CSV-Export
+  5. `[🎯 Monats-Budgets]` – Budgetgrenzen & Warnschwellen
+  6. `[🏷️ Eigene Kategorien]` – Eigene Geschäfte & Kategorien
+  7. `[📜 Info & System]` – Audit-Log, Systemstatus, Tastenkürzel
+
+### 🔒 3. Automatisches Sperren bei Bildschirmsperre & Standby (Zeroization)
+- **Schutz bei Abwesenheit:** Sperrt der Benutzer Windows (`Win + L`) oder wechselt das Betriebssystem in den Standby-/Ruhezustand, verriegelt die App den Tresor sofort.
+- **Arbeitsspeicher-Bereinigung:** Alle temporären Krypto-Schlüssel und entschlüsselten Buchungsdaten im RAM werden sofort überschrieben (Zeroization).
+
+### ⌨️ 4. Sofort-Sperre per Tastenkürzel (`Strg + L` / `L`)
+- **Sekundenschnelle Verriegelung:** Über `Strg + L` (oder die Taste `L` außerhalb aktiver Texteingabefelder) kann das Haushaltsbuch blitzschnell gesperrt werden.
+
+### 👁️ 5. Privatsphäre-Maske & Diskretionsmodus (`Strg + H`)
+- **Schutz vor neugierigen Blicken:** Mit `Strg + H` oder über das Diskretions-Symbol in der Kopfzeile werden alle Kontostände, Beträge und Summen mit Sternchen (`•••• €`) maskiert. Ideal für unterwegs oder in Büroumgebungen.
+
+### 🎲 6. Gescrambeltes PIN-Pad (Anti-Keylogger & Smudge-Attack-Schutz)
+- **Zufällige Ziffernanordnung:** Auf Wunsch werden die Ziffern 0–9 auf dem Sperrbildschirm bei jeder Anzeige neu gemischt, um Rekonstruktion anhand von Fingerabdrücken oder Tastenpositionen zu verhindern.
+
+### 🛡️ 7. Kryptografische SHA-256 Prüfsummen für Backups
+- **Manipulations- und Beschädigungsschutz:** Backup-Dateien erhalten beim Export ein SHA-256-Prüfsiegel. Beim Import wird die Datei vorab auf Unversehrtheit geprüft.
+
+### 📊 8. PIN- & Passwort-Entropie-Messer
+- **Live-Feedback zur Sicherheit:** Zeigt bei der PIN-Vergabe die kryptografische Entropie (in Bit) mit farblicher Ampel und Screenreader-Live-Meldung an.
+
+### 📜 9. Sicherheits-Audit-Protokoll
+- **Vollständige Transparenz:** Protokolliert den letzten erfolgreichen Login, die Gesamtzahl aller Tresor-Öffnungen und Fehlversuche direkt im Einstellungsbereich.
+
+---
+
 ## ⚡ Version 6.9.7 (Auto-Reset für Split & Leihgaben, Fokus-Optimierung & Android-Synchronisation)
 *Datum: 10. Oktober 2026*
 
