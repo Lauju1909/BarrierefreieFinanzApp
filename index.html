@@ -567,9 +567,23 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div id="pin-error-msg" class="error-box" role="alert" style="display: none;"></div>
 
+<div id="keyfile-input-group" style="margin-top: 12px; display: none; background: rgba(63, 81, 181, 0.08); border: 2px solid #3F51B5; border-radius: 8px; padding: 10px 12px; text-align: left;">
+<label for="keyfile-input" class="field-label" style="font-size: 13px; font-weight: bold; color: #1A237E; margin-bottom: 4px; display: block;">
+<strong>🔑 Schlüsseldatei (.key) auswählen:</strong>
+</label>
+<input type="file" id="keyfile-input" class="large-input" accept=".key,.bin,.txt" onchange="handleKeyFileSelect(event)" style="font-size: 13px; padding: 6px; width: 100%; box-sizing: border-box;" aria-label="Schlüsseldatei vom Computer oder USB-Stick auswählen">
+<div id="keyfile-status-hint" style="font-size: 12px; margin-top: 4px; color: var(--text-muted, #555);" aria-live="polite">Keine Schlüsseldatei geladen</div>
+</div>
+
+<div style="margin-top: 8px;">
+  <button type="button" id="btn-toggle-keyfile" class="btn btn-secondary" onclick="toggleKeyFileInput()" style="width: 100%; font-size: 13px; padding: 8px 10px;">
+    <span id="btn-toggle-keyfile-text">🔑 <strong>Mit Schlüsseldatei (Key-File) entsperren</strong></span>
+  </button>
+</div>
+
 <div class="lock-actions" style="margin-top: 14px;">
 <button type="submit" class="btn btn-primary" id="btn-unlock" style="width: 100%;">
-<span id="btn-unlock-text">🔓<strong>Entschlüsseln & Öffnen</strong>(Enter)</span>
+<span id="btn-unlock-text">🔓 <strong>Entschlüsseln &amp; Öffnen</strong> (Enter)</span>
 </button>
 </div>
 <div style="margin-top: 10px;">
@@ -3584,6 +3598,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </section>
 
+<!-- 5c. KEEPASS-SICHERHEIT: SCHLÜSSELDATEI (KEY-FILE) -->
+<section id="settings-keyfile-section" class="settings-box" aria-labelledby="set-keyfile-heading" style="border-left: 8px solid #3F51B5; margin-top: 18px;">
+  <h3 id="set-keyfile-heading" data-emoji="🔑">🔑 Schlüsseldatei (2-Faktor-Schutz wie KeePass 2)</h3>
+  <p class="field-hint">Schütze deinen Tresor doppelt: Nur wer <strong>PIN UND Schlüsseldatei</strong> (z. B. auf einem USB-Stick) besitzt, kann den Tresor öffnen:</p>
+  
+  <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px;">
+    <div id="keyfile-active-status" style="font-size: 14px; font-weight: bold; color: var(--text-muted, #555);" aria-live="polite">
+      Status: Aktuell wird nur die PIN zum Entsperren benötigt.
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <button type="button" class="btn btn-secondary" onclick="generateAndDownloadKeyFile()" style="flex: 1; min-width: 200px;">
+        <span>💾 <strong>Neue Schlüsseldatei generieren</strong> (.key)</span>
+      </button>
+      <button type="button" id="btn-toggle-require-keyfile" class="btn btn-secondary" onclick="toggleRequireKeyFile()" style="flex: 1; min-width: 200px;">
+        <span>🔒 <strong>Schlüsseldatei-Zwang aktivieren</strong></span>
+      </button>
+    </div>
+    <p class="field-hint" style="margin: 0; font-size: 12px;">Tipp: Speichere die Datei <code>haushaltsbuch.key</code> auf einem separaten USB-Stick und ziehe ihn nach dem Öffnen der App ab.</p>
+  </div>
+</section>
+
+<!-- 5d. NOTFALLBLATT (EMERGENCY SHEET) -->
+<section class="settings-box" aria-labelledby="set-emergency-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
+  <h3 id="set-emergency-heading" data-emoji="📄">📄 Notfall-Datenblatt drucken (KeePass Emergency Sheet)</h3>
+  <p class="field-hint">Drucke ein Notfall-Dokument aus, um deine Tresor-Zugangsdaten offline sicher an einem geschützten Ort (z. B. Dokumentenmappe, Tresor) aufzubewahren:</p>
+  <div style="margin-top: 10px;">
+    <button type="button" class="btn btn-secondary" onclick="printEmergencySheet()" style="width: 100%;">
+      <span>🖨️ <strong>Sicherheits-Notfallblatt drucken / als PDF speichern</strong></span>
+    </button>
+  </div>
+</section>
 
 <!-- 6. ÄNDERUNGSPROTOKOLL EINSTELLUNG -->
 <section class="settings-box" aria-labelledby="changelog-settings-heading" style="border-left: 8px solid #009688; margin-top: 18px;">

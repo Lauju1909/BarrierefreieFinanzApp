@@ -9475,6 +9475,7 @@ function switchView(viewName) {
     populateBudgetCategoryDropdown();
     renderBudgetsList();
     renderSettingsInstallmentsList();
+    updateKeyFileUI();
     announceNVDA('Einstellungen geöffnet.');
   } else if (viewName === 'accounts') {
     renderAccountsViewList();
@@ -9503,11 +9504,238 @@ function switchView(viewName) {
 // ----------------------------------------------------------------------------
 // 16. AES-256 WEB CRYPTO ENGINE & MULTI-LAYER SELBST-REPARATUR
 // ----------------------------------------------------------------------------
-async function deriveKey(password, salt) {
+// 16. AES-256 WEB CRYPTO ENGINE & MULTI-LAYER KEEPASS-SICHERHEIT
+// ----------------------------------------------------------------------------
+let activeKeyFileContent = null;
+let activeKeyFileName = '';
+
+function toggleKeyFileInput() {
+  const group = document.getElementById('keyfile-input-group');
+  const btnText = document.getElementById('btn-toggle-keyfile-text');
+  if (!group) return;
+  const isHidden = group.style.display === 'none' || !group.style.display;
+  group.style.display = isHidden ? 'block' : 'none';
+  if (btnText) {
+    btnText.textContent = isHidden ? '❌ Schlüsseldatei-Eingabe schließen' : '🔑 Mit Schlüsseldatei (Key-File) entsperren';
+  }
+  if (isHidden) {
+    const fileInput = document.getElementById('keyfile-input');
+    if (fileInput) fileInput.focus();
+    if (typeof announceNVDA === 'function') announceNVDA('Schlüsseldatei-Auswahl geöffnet.');
+  }
+}
+
+function handleKeyFileSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  const hint = document.getElementById('keyfile-status-hint');
+  if (!file) {
+    activeKeyFileContent = null;
+    activeKeyFileName = '';
+    if (hint) {
+      hint.textContent = 'Keine Schlüsseldatei geladen';
+      hint.style.color = 'var(--text-muted, #555)';
+    }
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    activeKeyFileContent = e.target.result;
+    activeKeyFileName = file.name;
+    if (hint) {
+      hint.textContent = `✅ Schlüsseldatei geladen: ${file.name}`;
+      hint.style.color = '#2E7D32';
+    }
+    if (typeof announceNVDA === 'function') announceNVDA(`Schlüsseldatei ${file.name} erfolgreich ausgewählt.`);
+  };
+  reader.onerror = () => {
+    activeKeyFileContent = null;
+    activeKeyFileName = '';
+    if (hint) {
+      hint.textContent = '❌ Fehler beim Lesen der Schlüsseldatei';
+      hint.style.color = '#C62828';
+    }
+    if (typeof announceNVDA === 'function') announceNVDA('Fehler beim Lesen der Schlüsseldatei', true);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function generateAndDownloadKeyFile() {
+  const keyBytes = crypto.getRandomValues(new Uint8Array(32));
+  const hex = Array.from(keyBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  const content = `--- HAUSHALTSBUCH KEYFILE (KEEPASS-STYLE) ---\n` +
+    `# Erstellt am: ${new Date().toISOString()}\n` +
+    `# ACHTUNG: Bewahre diese Datei getrennt von deinen Daten auf (z. B. auf einem USB-Stick)!\n` +
+    `KEY: ${hex}\n`;
+  const blob = new Blob([content], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'haushaltsbuch.key';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (typeof announceNVDA === 'function') announceNVDA('Schlüsseldatei haushaltsbuch.key wurde generiert und heruntergeladen.');
+  alert('✅ Schlüsseldatei "haushaltsbuch.key" wurde heruntergeladen! Speichere sie z. B. auf einem USB-Stick.');
+}
+
+async function toggleRequireKeyFile() {
+  const current = localStorage.getItem('haushaltsbuch_requires_keyfile') === 'true';
+  if (!current) {
+    if (!activeKeyFileContent) {
+      alert('⚠️ Bitte wähle zuerst deine Schlüsseldatei (z. B. haushaltsbuch.key) aus, bevor du den Zwang aktivierst.');
+      const group = document.getElementById('keyfile-input-group');
+      if (group) group.style.display = 'block';
+      const fileInput = document.getElementById('keyfile-input');
+      if (fileInput) fileInput.focus();
+      return;
+    }
+    if (!confirm('🔒 Möchtest du den Schlüsseldatei-Zwang aktivieren?\n\nDein Tresor lässt sich künftig NUR NOCH öffnen, wenn PIN UND die Schlüsseldatei gleichzeitig vorhanden sind!\n\nFortfahren?')) {
+      return;
+    }
+    localStorage.setItem('haushaltsbuch_requires_keyfile', 'true');
+    await saveStateToEncryptedStorage();
+    updateKeyFileUI();
+    if (typeof announceNVDA === 'function') announceNVDA('Schlüsseldatei-Zwang erfolgreich aktiviert.');
+  } else {
+    if (!confirm('🔓 Möchtest du den Schlüsseldatei-Zwang wirklich deaktivieren?\n\nDer Tresor wird künftig wieder allein durch deine PIN geschützt.\n\nFortfahren?')) {
+      return;
+    }
+    localStorage.removeItem('haushaltsbuch_requires_keyfile');
+    activeKeyFileContent = null;
+    await saveStateToEncryptedStorage();
+    updateKeyFileUI();
+    if (typeof announceNVDA === 'function') announceNVDA('Schlüsseldatei-Zwang deaktiviert. Tresor wird wieder allein per PIN geschützt.');
+  }
+}
+
+function updateKeyFileUI() {
+  const requiresKeyFile = localStorage.getItem('haushaltsbuch_requires_keyfile') === 'true';
+  const statusEl = document.getElementById('keyfile-active-status');
+  const btnToggle = document.getElementById('btn-toggle-require-keyfile');
+
+  if (statusEl) {
+    if (requiresKeyFile) {
+      statusEl.textContent = 'Status: 🔒 Schlüsseldatei-Zwang ist AKTIV (PIN + Schlüsseldatei zwingend erforderlich).';
+      statusEl.style.color = '#2E7D32';
+    } else {
+      statusEl.textContent = 'Status: Aktuell wird nur die PIN zum Entsperren benötigt.';
+      statusEl.style.color = 'var(--text-muted, #555)';
+    }
+  }
+
+  if (btnToggle) {
+    btnToggle.innerHTML = requiresKeyFile
+      ? '<span>🔓 <strong>Schlüsseldatei-Zwang deaktivieren (nur noch PIN)</strong></span>'
+      : '<span>🔒 <strong>Schlüsseldatei-Zwang aktivieren</strong></span>';
+    btnToggle.style.color = requiresKeyFile ? '#D32F2F' : '';
+  }
+}
+
+function updateKeyFileLockScreen() {
+  const requiresKeyFile = localStorage.getItem('haushaltsbuch_requires_keyfile') === 'true';
+  const group = document.getElementById('keyfile-input-group');
+  const btnToggle = document.getElementById('btn-toggle-keyfile');
+  const btnToggleText = document.getElementById('btn-toggle-keyfile-text');
+  const hint = document.getElementById('keyfile-status-hint');
+
+  if (requiresKeyFile) {
+    if (group) group.style.display = 'block';
+    if (btnToggle) btnToggle.style.display = 'none';
+    if (hint && !activeKeyFileContent) {
+      hint.textContent = '🔒 WICHTIG: Dieser Tresor erfordert deine Schlüsseldatei (.key)';
+      hint.style.color = '#C62828';
+    }
+  } else {
+    if (btnToggle) btnToggle.style.display = 'block';
+    if (!activeKeyFileContent && group) {
+      group.style.display = 'none';
+    }
+    if (btnToggleText) {
+      btnToggleText.textContent = activeKeyFileContent ? '🔑 Schlüsseldatei ändern' : '🔑 Mit Schlüsseldatei (Key-File) entsperren';
+    }
+  }
+}
+
+function printEmergencySheet() {
+  const today = new Date().toLocaleDateString('de-DE');
+  const requiresKey = localStorage.getItem('haushaltsbuch_requires_keyfile') === 'true';
+  const printWin = window.open('', '_blank');
+  if (!printWin) {
+    alert('Bitte erlaube Popups im Browser, um das Notfallblatt anzuzeigen.');
+    return;
+  }
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="UTF-8">
+      <title>Sicherheits-Notfallblatt - Barrierefreie FinanzApp</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 24px; color: #111; line-height: 1.5; max-width: 750px; margin: 0 auto; }
+        h1 { font-size: 22px; border-bottom: 2px solid #333; padding-bottom: 6px; }
+        .box { border: 2px solid #555; border-radius: 8px; padding: 16px; margin: 20px 0; background: #fafafa; }
+        .field { margin: 14px 0; border-bottom: 1px dotted #999; padding-bottom: 6px; }
+        .field strong { display: inline-block; width: 260px; }
+        .warning { background: #fff3cd; border: 1px solid #ffeeba; padding: 12px; border-radius: 6px; font-weight: bold; margin: 20px 0; }
+        @media print { button { display: none; } }
+      </style>
+    </head>
+    <body>
+      <h1>🛡️ Sicherheits-Notfallblatt (KeePass-Standard)</h1>
+      <p>Dieses Dokument enthält die Notfall-Informationen für deinen verschlüsselten Haushaltsbuch-Datensafe. <strong>Bewahre es an einem sicheren, physischen Ort auf (z. B. Dokumentenmappe, Tresor).</strong></p>
+      
+      <div class="box">
+        <div class="field"><strong>Erstellungsdatum:</strong> ${today}</div>
+        <div class="field"><strong>Verschlüsselung:</strong> AES-GCM 256-Bit + PBKDF2 (SHA-256)</div>
+        <div class="field"><strong>Tresor-Standort:</strong> Haushaltsbuch_Daten.vault (lokale Festplatte / App-Ordner)</div>
+        <div class="field"><strong>Schlüsseldatei erforderlich?</strong> ${requiresKey ? 'JA (haushaltsbuch.key)' : 'NEIN (nur PIN)'}</div>
+        <div class="field" style="margin-top: 24px;"><strong>PIN / Master-Passwort (Notiz/Merkhilfe):</strong> ___________________________________</div>
+        <div class="field" style="margin-top: 18px;"><strong>Ablageort der Schlüsseldatei (z.B. USB-Stick):</strong> ___________________________________</div>
+      </div>
+
+      <div class="warning">
+        ⚠️ WICHTIG: Wenn du deine PIN vergisst und keine Schlüsseldatei oder Backup hast, können deine Daten von niemandem wiederhergestellt werden (Null-Wissens-Architektur).
+      </div>
+
+      <div style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" style="padding: 12px 24px; font-size: 16px; font-weight: bold; cursor: pointer;">🖨️ Notfallblatt jetzt ausdrucken</button>
+      </div>
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+  if (typeof announceNVDA === 'function') announceNVDA('Notfall-Datenblatt geöffnet.');
+}
+
+async function deriveKey(password, salt, keyFileContent = null) {
   const enc = new TextEncoder();
+  let keyMaterialBytes;
+
+  if (keyFileContent) {
+    let keyBytes;
+    if (typeof keyFileContent === 'string') {
+      keyBytes = enc.encode(keyFileContent);
+    } else if (keyFileContent instanceof ArrayBuffer) {
+      keyBytes = new Uint8Array(keyFileContent);
+    } else if (ArrayBuffer.isView(keyFileContent)) {
+      keyBytes = new Uint8Array(keyFileContent.buffer, keyFileContent.byteOffset, keyFileContent.byteLength);
+    } else {
+      keyBytes = enc.encode(String(keyFileContent));
+    }
+    const passBytes = enc.encode(password);
+    const total = new Uint8Array(passBytes.length + keyBytes.length + 2);
+    total.set(passBytes, 0);
+    total.set([0x3a, 0x3a], passBytes.length); // separator '::'
+    total.set(keyBytes, passBytes.length + 2);
+    keyMaterialBytes = await crypto.subtle.digest('SHA-256', total);
+  } else {
+    keyMaterialBytes = enc.encode(password);
+  }
+
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
-    enc.encode(password),
+    keyMaterialBytes,
     { name: 'PBKDF2' },
     false,
     ['deriveKey']
@@ -9685,6 +9913,7 @@ function updateLockScreenUI(isFirstTime) {
         }
       });
     }
+    updateKeyFileLockScreen();
   }, 100);
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
@@ -9780,7 +10009,7 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
       localStorage.setItem(STORAGE_SALT_KEY, saltBase64);
       localStorage.setItem('haushaltsbuch_vault_salt', saltBase64);
 
-      cryptoKey = await deriveKey(enteredPin, salt);
+      cryptoKey = await deriveKey(enteredPin, salt, activeKeyFileContent);
       appState = {
         initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
         transactions: [],
@@ -9806,6 +10035,22 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
       return true;
     }
 
+    // Prüfen, ob für diesen Datensafe eine Schlüsseldatei zwingend erforderlich ist
+    const requiresKeyFile = localStorage.getItem('haushaltsbuch_requires_keyfile') === 'true';
+    if (requiresKeyFile && !activeKeyFileContent) {
+      const group = document.getElementById('keyfile-input-group');
+      if (group) group.style.display = 'block';
+      const fileInput = document.getElementById('keyfile-input');
+      if (fileInput) fileInput.focus();
+      const msg = 'Dieser Tresor erfordert deine Schlüsseldatei (.key)! Bitte wähle deine Schlüsseldatei aus.';
+      if (errorMsg) {
+        errorMsg.textContent = '❌ ' + msg;
+        errorMsg.style.display = 'block';
+      }
+      announceNVDA(msg, true);
+      return false;
+    }
+
     // Vorhandenen Datensafe entsperren
     currentSaltBase64 = saltBase64;
     const saltBuffer = base64ToArrayBuffer(saltBase64);
@@ -9814,13 +10059,13 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
     let decrypted = null;
     let healedFrom1234 = false;
 
-    // Nur das Entschlüsseln mit der eingegebenen PIN entscheidet über die Richtigkeit
+    // Nur das Entschlüsseln mit der eingegebenen PIN (und ggf. Schlüsseldatei) entscheidet über die Richtigkeit
     try {
-      const key = await deriveKey(enteredPin, salt);
+      const key = await deriveKey(enteredPin, salt, activeKeyFileContent);
       decrypted = await decryptData(storedData, key);
       cryptoKey = key;
     } catch (decryptErr) {
-      // PIN ist tatsächlich falsch!
+      // PIN oder Schlüsseldatei ist falsch!
       let attempts = getFailedAttempts() + 1;
       setFailedAttempts(attempts);
 
@@ -9831,15 +10076,18 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
         announceNVDA('5 Fehlversuche erreicht! Der Zugriff ist für 2 Stunden gesperrt.', true);
       } else {
         const remainingAttempts = MAX_FAILED_ATTEMPTS - attempts;
+        const errDetail = activeKeyFileContent 
+          ? 'Falsche PIN oder unpassende Schlüsseldatei!'
+          : 'Falsche PIN oder Passwort!';
         if (errorMsg) {
-          errorMsg.textContent = `❌ Falsche PIN oder Passwort! Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
+          errorMsg.textContent = `❌ ${errDetail} Zugriff verweigert. (Noch ${remainingAttempts} Versuch(e) übrig)`;
           errorMsg.style.display = 'block';
         }
         if (pinInput) {
           pinInput.value = '';
           pinInput.focus();
         }
-        announceNVDA(`Falsche PIN. Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
+        announceNVDA(`${errDetail} Zugriff verweigert. Noch ${remainingAttempts} Versuch(e) übrig. Bitte erneut eingeben.`, true);
       }
       return false;
     }
@@ -9991,9 +10239,47 @@ function unlockApp() {
   }
 }
 
+function zeroizeMemory() {
+  if (appState) {
+    try {
+      if (Array.isArray(appState.transactions)) appState.transactions.length = 0;
+      if (Array.isArray(appState.recurring)) appState.recurring.length = 0;
+      if (Array.isArray(appState.wishlist)) appState.wishlist.length = 0;
+      if (Array.isArray(appState.shoppingList)) appState.shoppingList.length = 0;
+      if (Array.isArray(appState.peerLoans)) appState.peerLoans.length = 0;
+      if (Array.isArray(appState.savingPots)) appState.savingPots.length = 0;
+      appState.initialBalances = null;
+      appState.accounts = null;
+      appState.budgets = null;
+      appState.customCategories = null;
+    } catch(e) {}
+    appState = null;
+  }
+  activeKeyFileContent = null;
+  activeKeyFileName = '';
+
+  const sensitiveFeedIds = [
+    'overview-income-items-feed',
+    'overview-expense-items-feed',
+    'overview-transfer-items-feed',
+    'tab-accounts-list',
+    'budgets-overview-container',
+    'overview-expense-rankings',
+    'tab-wishlist-list',
+    'tab-saving-pots-list',
+    'shopping-list-items',
+    'shopping-cart-items'
+  ];
+  sensitiveFeedIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = '';
+  });
+}
+
 function lockApp() {
   cryptoKey = null;
   window.__ACTIVE_PIN__ = null;
+  zeroizeMemory();
   const lockScreen = document.getElementById('lock-screen');
   const appWrapper = document.getElementById('app-wrapper');
   const pinInput = document.getElementById('pin-input');
@@ -10009,7 +10295,8 @@ function lockApp() {
 
   checkVaultStatus();
   checkLockoutStatus();
-  announceNVDA('App gesperrt.');
+  updateKeyFileLockScreen();
+  announceNVDA('App gesperrt. Sensibler Arbeitsspeicher wurde bereinigt.');
 }
 
 async function handleChangePin(e) {
@@ -10025,13 +10312,13 @@ async function handleChangePin(e) {
   try {
     const saltBuffer = base64ToArrayBuffer(saltBase64);
     const salt = new Uint8Array(saltBuffer);
-    const oldKey = await deriveKey(oldPin, salt);
+    const oldKey = await deriveKey(oldPin, salt, activeKeyFileContent);
 
     await decryptData(storedData, oldKey);
 
     const newSalt = crypto.getRandomValues(new Uint8Array(16));
     const newSaltBase64 = arrayBufferToBase64(newSalt.buffer);
-    const newKey = await deriveKey(newPin, newSalt);
+    const newKey = await deriveKey(newPin, newSalt, activeKeyFileContent);
 
     cryptoKey = newKey;
     window.__ACTIVE_PIN__ = newPin;
@@ -13073,17 +13360,43 @@ window.spellOutText = function(text, label) {
   }
 };
 
-window.copyToClipboard = function(text, label) {
+let clipboardClearTimer = null;
+
+window.copyToClipboard = function(text, label = 'Inhalt') {
   if (!text || text === '---' || text === '--- ---') return;
-  const finishMsg = `${label} ${text} in die Zwischenablage kopiert.`;
+  const finishMsg = `${label} in die Zwischenablage kopiert. (Wird aus Sicherheitsgründen nach 30 Sekunden automatisch geleert)`;
   
+  const scheduleClipboardClear = (copiedText) => {
+    if (clipboardClearTimer) clearTimeout(clipboardClearTimer);
+    clipboardClearTimer = setTimeout(async () => {
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const current = await navigator.clipboard.readText();
+          if (current === copiedText) {
+            await navigator.clipboard.writeText('');
+            if (typeof announceNVDA === 'function') announceNVDA('Zwischenablage wurde aus Sicherheitsgründen nach 30 Sekunden geleert.');
+          }
+        } else {
+          fallbackCopy('', '');
+        }
+      } catch(e) {
+        try { await navigator.clipboard.writeText(''); } catch(err) {}
+      }
+    }, 30000);
+  };
+
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(() => {
       if (typeof announceNVDA === 'function') announceNVDA(finishMsg, true);
       if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
-    }).catch(() => fallbackCopy(text, finishMsg));
+      scheduleClipboardClear(text);
+    }).catch(() => {
+      fallbackCopy(text, finishMsg);
+      scheduleClipboardClear(text);
+    });
   } else {
     fallbackCopy(text, finishMsg);
+    scheduleClipboardClear(text);
   }
 };
 
@@ -13095,10 +13408,19 @@ function fallbackCopy(text, msg) {
     t.select();
     document.execCommand('copy');
     document.body.removeChild(t);
-    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+    if (msg && typeof announceNVDA === 'function') announceNVDA(msg, true);
     if (window.navigator && window.navigator.vibrate) try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
   } catch(e) {}
 }
+
+window.toggleKeyFileInput = toggleKeyFileInput;
+window.handleKeyFileSelect = handleKeyFileSelect;
+window.generateAndDownloadKeyFile = generateAndDownloadKeyFile;
+window.toggleRequireKeyFile = toggleRequireKeyFile;
+window.updateKeyFileUI = updateKeyFileUI;
+window.updateKeyFileLockScreen = updateKeyFileLockScreen;
+window.printEmergencySheet = printEmergencySheet;
+window.zeroizeMemory = zeroizeMemory;
 
 function setAccessibleCodeValue(el, val, label) {
   if (!el) return;
