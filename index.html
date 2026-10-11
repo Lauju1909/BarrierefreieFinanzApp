@@ -2005,6 +2005,62 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 
+<!-- =========================================================================
+     MODAL DIALOG: GELIEHENES / VERLIEHENES GELD LÖSCHEN (BARRIEREFREI)
+     ========================================================================= -->
+<div id="delete-peer-loan-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-peer-loan-heading" style="display: none;">
+  <div class="modal-dialog-box" style="max-width: 540px; border-top: 8px solid #D32F2F;">
+    <h2 id="delete-peer-loan-heading" tabindex="-1" style="margin: 0 0 10px 0; color: #C62828; font-size: 22px;">
+      🗑️ Leihgabe löschen
+    </h2>
+    <p id="delete-peer-loan-desc" style="font-size: 15px; color: var(--text-primary); margin: 0 0 16px 0;">
+      Möchtest du diesen Eintrag wirklich löschen?
+    </p>
+    <input type="hidden" id="delete-peer-loan-id">
+
+    <div id="delete-peer-loan-tx-box" style="display: none; background: rgba(244, 67, 54, 0.08); border-left: 5px solid #F44336; padding: 12px 14px; border-radius: 6px; margin-bottom: 18px;">
+      <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px; color: var(--text-primary);">
+        <input type="checkbox" id="delete-peer-loan-delete-txs" checked style="margin-top: 3px;">
+        <span id="delete-peer-loan-tx-label">Verknüpfte Buchungen auf deinen Konten ebenfalls löschen</span>
+      </label>
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+      <button type="button" class="btn btn-secondary" onclick="closeDeletePeerLoanModal()" style="padding: 10px 18px;">
+        Abbrechen
+      </button>
+      <button type="button" class="btn btn-primary" onclick="confirmDeletePeerLoanFromModal()" style="background-color: #D32F2F; border-color: #B71C1C; padding: 10px 18px;">
+        🗑️ Ja, Eintrag löschen
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODAL DIALOG: TEILRÜCKZAHLUNG LÖSCHEN (BARRIEREFREI)
+     ========================================================================= -->
+<div id="delete-peer-repay-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-peer-repay-heading" style="display: none;">
+  <div class="modal-dialog-box" style="max-width: 520px; border-top: 8px solid #D32F2F;">
+    <h2 id="delete-peer-repay-heading" tabindex="-1" style="margin: 0 0 10px 0; color: #C62828; font-size: 20px;">
+      🗑️ Teilrückzahlung löschen
+    </h2>
+    <p id="delete-peer-repay-desc" style="font-size: 15px; color: var(--text-primary); margin: 0 0 16px 0;">
+      Möchtest du diese Teilrückzahlung wirklich löschen?
+    </p>
+    <input type="hidden" id="delete-peer-repay-loan-id">
+    <input type="hidden" id="delete-peer-repay-item-id">
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+      <button type="button" class="btn btn-secondary" onclick="closeDeletePeerRepayModal()" style="padding: 10px 18px;">
+        Abbrechen
+      </button>
+      <button type="button" class="btn btn-primary" onclick="confirmDeletePeerRepayFromModal()" style="background-color: #D32F2F; border-color: #B71C1C; padding: 10px 18px;">
+        🗑️ Ja, Rückzahlung löschen
+      </button>
+    </div>
+  </div>
+</div>
+
 
 
 <!-- =========================================================================

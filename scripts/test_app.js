@@ -708,7 +708,15 @@ const expectedPeerLoanIds = [
   'peer-loan-repay-modal',
   'peer-loan-repay-amount',
   'peer-loan-repay-date',
-  'peer-loan-repay-account'
+  'peer-loan-repay-account',
+  'delete-peer-loan-modal',
+  'delete-peer-loan-id',
+  'delete-peer-loan-desc',
+  'delete-peer-loan-delete-txs',
+  'delete-peer-repay-modal',
+  'delete-peer-repay-loan-id',
+  'delete-peer-repay-item-id',
+  'delete-peer-repay-desc'
 ];
 
 expectedPeerLoanIds.forEach(id => {
@@ -732,9 +740,15 @@ const expectedPeerLoanFns = [
   'setPeerLoanRepayFull',
   'handleConfirmPeerLoanRepay',
   'deletePeerLoanRepayment',
+  'openDeletePeerRepayModal',
+  'closeDeletePeerRepayModal',
+  'confirmDeletePeerRepayFromModal',
   'reopenPeerLoan',
   'settlePeerLoan',
-  'deletePeerLoan'
+  'deletePeerLoan',
+  'openDeletePeerLoanModal',
+  'closeDeletePeerLoanModal',
+  'confirmDeletePeerLoanFromModal'
 ];
 
 expectedPeerLoanFns.forEach(fn => {

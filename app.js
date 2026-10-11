@@ -12111,16 +12111,54 @@ async function handleConfirmPeerLoanRepay(e) {
 }
 
 async function deletePeerLoanRepayment(loanId, repayItemId) {
+  openDeletePeerRepayModal(loanId, repayItemId);
+}
+
+function openDeletePeerRepayModal(loanId, repayItemId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan || !Array.isArray(loan.repayments)) return;
+  const rep = loan.repayments.find(r => r.id === repayItemId);
+  if (!rep) return;
+
+  const modal = document.getElementById('delete-peer-repay-modal');
+  const loanIdInput = document.getElementById('delete-peer-repay-loan-id');
+  const itemIdInput = document.getElementById('delete-peer-repay-item-id');
+  const descEl = document.getElementById('delete-peer-repay-desc');
+  const heading = document.getElementById('delete-peer-repay-heading');
+
+  if (loanIdInput) loanIdInput.value = loanId;
+  if (itemIdInput) itemIdInput.value = repayItemId;
+  if (descEl) {
+    descEl.textContent = `Möchtest du diese Teilrückzahlung über ${formatCurrency(rep.amount)} vom ${formatDateGerman(rep.date)} für „${loan.person}“ wirklich löschen?`;
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+    if (heading) heading.focus();
+  }
+}
+
+function closeDeletePeerRepayModal() {
+  const modal = document.getElementById('delete-peer-repay-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function confirmDeletePeerRepayFromModal() {
+  const loanIdInput = document.getElementById('delete-peer-repay-loan-id');
+  const itemIdInput = document.getElementById('delete-peer-repay-item-id');
+  if (!loanIdInput || !itemIdInput) return;
+  const loanId = loanIdInput.value;
+  const repayItemId = itemIdInput.value;
+
+  closeDeletePeerRepayModal();
+
   ensurePeerLoansInitialized();
   const loan = appState.peerLoans.find(l => l.id === loanId);
   if (!loan || !Array.isArray(loan.repayments)) return;
   const repIdx = loan.repayments.findIndex(r => r.id === repayItemId);
   if (repIdx === -1) return;
   const rep = loan.repayments[repIdx];
-
-  if (!confirm(`Möchtest du diese Teilrückzahlung über ${formatCurrency(rep.amount)} vom ${formatDateGerman(rep.date)} wirklich löschen?`)) {
-    return;
-  }
 
   // Falls verknüpfte Buchung existiert, diese auch löschen
   if (rep.txId) {
@@ -12172,11 +12210,25 @@ async function settlePeerLoan(loanId) {
     ? `Möchtest du die Leihgabe mit "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`
     : `Möchtest du deine Schuld bei "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`;
 
-  if (!confirm(confirmMsg)) return;
+  if (typeof confirm === 'function') {
+    try {
+      if (!confirm(confirmMsg)) return;
+    } catch (e) {
+      // WebView fallback
+    }
+  }
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  const bookAccount = remaining > 0 && confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
+  let bookAccount = false;
+  if (remaining > 0 && typeof confirm === 'function') {
+    try {
+      bookAccount = confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
+    } catch (e) {
+      bookAccount = false;
+    }
+  }
+
   if (bookAccount) {
     const acc = loan.account || (appState.accounts && appState.accounts[0] ? appState.accounts[0].id : 'bank');
     const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
@@ -12219,23 +12271,72 @@ async function settlePeerLoan(loanId) {
   announceNVDA(`Leihgabe mit ${loan.person} als vollständig zurückgezahlt markiert.`);
 }
 
-async function deletePeerLoan(loanId) {
+function openDeletePeerLoanModal(loanId) {
   ensurePeerLoansInitialized();
   const loan = appState.peerLoans.find(l => l.id === loanId);
   if (!loan) return;
 
-  if (!confirm(`Möchtest du den Eintrag für "${loan.person}" über ${formatCurrency(loan.amount)} wirklich löschen?`)) {
-    return;
+  const modal = document.getElementById('delete-peer-loan-modal');
+  const idInput = document.getElementById('delete-peer-loan-id');
+  const descEl = document.getElementById('delete-peer-loan-desc');
+  const heading = document.getElementById('delete-peer-loan-heading');
+  const txBox = document.getElementById('delete-peer-loan-tx-box');
+  const txLabel = document.getElementById('delete-peer-loan-tx-label');
+  const txCheckbox = document.getElementById('delete-peer-loan-delete-txs');
+
+  if (idInput) idInput.value = loanId;
+  if (descEl) {
+    descEl.textContent = `Möchtest du den Eintrag für „${loan.person}“ über ${formatCurrency(loan.amount)} (${loan.type === 'lent' ? 'Verliehen' : 'Geliehen'}) wirklich löschen?`;
   }
 
-  // Verknüpfte Buchungen entfernen falls vorhanden
+  // Prüfen, ob verknüpfte Buchungen existieren
   const txIdsToDelete = new Set();
   if (loan.txId) txIdsToDelete.add(loan.txId);
   if (Array.isArray(loan.repayments)) {
     loan.repayments.forEach(r => { if (r.txId) txIdsToDelete.add(r.txId); });
   }
-  if (txIdsToDelete.size > 0) {
-    if (confirm(`Sollen auch die ${txIdsToDelete.size} verknüpfte(n) Buchung(en) auf deinen Konten gelöscht werden?`)) {
+
+  if (txBox && txLabel) {
+    if (txIdsToDelete.size > 0) {
+      txBox.style.display = 'block';
+      txLabel.textContent = `Auch die ${txIdsToDelete.size} verknüpfte(n) Buchung(en) auf deinen Konten löschen`;
+      if (txCheckbox) txCheckbox.checked = true;
+    } else {
+      txBox.style.display = 'none';
+      if (txCheckbox) txCheckbox.checked = false;
+    }
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+    if (heading) heading.focus();
+  }
+}
+
+function closeDeletePeerLoanModal() {
+  const modal = document.getElementById('delete-peer-loan-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function confirmDeletePeerLoanFromModal() {
+  const idInput = document.getElementById('delete-peer-loan-id');
+  if (!idInput || !idInput.value) return;
+  const loanId = idInput.value;
+  const deleteTxs = document.getElementById('delete-peer-loan-delete-txs') ? document.getElementById('delete-peer-loan-delete-txs').checked : false;
+
+  closeDeletePeerLoanModal();
+
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  if (deleteTxs) {
+    const txIdsToDelete = new Set();
+    if (loan.txId) txIdsToDelete.add(loan.txId);
+    if (Array.isArray(loan.repayments)) {
+      loan.repayments.forEach(r => { if (r.txId) txIdsToDelete.add(r.txId); });
+    }
+    if (txIdsToDelete.size > 0) {
       txIdsToDelete.forEach(tId => trackDeletedEntity('transactions', tId));
       appState.transactions = appState.transactions.filter(t => !txIdsToDelete.has(t.id));
     }
@@ -12246,6 +12347,10 @@ async function deletePeerLoan(loanId) {
   await saveStateToEncryptedStorage();
   updateOverview();
   announceNVDA(`Eintrag für ${loan.person} gelöscht.`);
+}
+
+async function deletePeerLoan(loanId) {
+  openDeletePeerLoanModal(loanId);
 }
 
 // Global functions attached to window for inline HTML onclick handlers
@@ -12259,9 +12364,15 @@ window.closePeerLoanRepayModal = closePeerLoanRepayModal;
 window.setPeerLoanRepayFull = setPeerLoanRepayFull;
 window.handleConfirmPeerLoanRepay = handleConfirmPeerLoanRepay;
 window.deletePeerLoanRepayment = deletePeerLoanRepayment;
+window.openDeletePeerRepayModal = openDeletePeerRepayModal;
+window.closeDeletePeerRepayModal = closeDeletePeerRepayModal;
+window.confirmDeletePeerRepayFromModal = confirmDeletePeerRepayFromModal;
 window.reopenPeerLoan = reopenPeerLoan;
 window.settlePeerLoan = settlePeerLoan;
 window.deletePeerLoan = deletePeerLoan;
+window.openDeletePeerLoanModal = openDeletePeerLoanModal;
+window.closeDeletePeerLoanModal = closeDeletePeerLoanModal;
+window.confirmDeletePeerLoanFromModal = confirmDeletePeerLoanFromModal;
 window.toggleExpenseLoanFields = toggleExpenseLoanFields;
 window.toggleIncomeLoanFields = toggleIncomeLoanFields;
 window.openQuickCategoryModal = openQuickCategoryModal;
