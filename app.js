@@ -5226,16 +5226,20 @@ function renderAccountCardBalances(balances) {
     const colorClass = bal >= 0 ? 'income' : 'expense';
     const icon = acc.icon || ACCOUNT_TYPE_ICONS[acc.type] || '💳';
     const hintText = acc.hint || getAccountTypeDefaultHint(acc.type);
+    const balFormatted = formatCurrency(bal);
+
+    // Ausführliche, glasklare Ansage für Screenreader & TalkBack:
+    const accSpeech = `${acc.name}, Kontostand: ${balFormatted}${hintText ? '. ' + hintText : ''}`;
 
     return `
-      <div class="account-card" tabindex="0" aria-label="${escapeHTML(acc.name)}: ${formatCurrency(bal)}">
+      <li class="account-card" role="listitem" tabindex="0" aria-label="${escapeHTML(accSpeech)}">
         <div class="acc-header">
           <span class="acc-icon" aria-hidden="true">${icon}</span>
           <span class="acc-name">${escapeHTML(acc.name)}</span>
         </div>
-        <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}">${formatCurrency(bal)}</div>
-        <span class="acc-hint">${escapeHTML(hintText)}</span>
-      </div>
+        <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}" aria-label="${escapeHTML(balFormatted)}">${balFormatted}</div>
+        <span class="acc-hint" aria-hidden="true">${escapeHTML(hintText)}</span>
+      </li>
     `;
   }).join('');
 }
