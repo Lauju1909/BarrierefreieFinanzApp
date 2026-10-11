@@ -504,6 +504,49 @@ const SyncEngine = {
 
   async handleIncomingSyncRequest(request, topicResp, myCode, onStatusUpdate) {
     try {
+      const isForceOverwrite = Boolean(request.forceOverwrite || request.mode === 'FORCE_OVERWRITE');
+
+      if (isForceOverwrite) {
+        // 1. Smartphone wird KOMPLETT mit dem empfangenen PC-Stand überschrieben!
+        if (request.vault) {
+          await this.importSyncedVaultData(request.vault, onStatusUpdate, true);
+        }
+
+        // 2. Bestätigung ohne altes lokales Vault zurücksenden, damit PC nicht durch alte Handydaten verunreinigt wird!
+        const responsePayload = {
+          type: 'SYNC_RESPONSE',
+          mode: 'FORCE_OVERWRITE',
+          overwritten: true,
+          timestamp: Date.now(),
+          sender: this.getDeviceName()
+        };
+        const encrypted = await this.encrypt(responsePayload, myCode);
+        if (this.mqttClient && this.mqttClient.connected) {
+          this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
+        }
+
+        this.lastSyncTime = new Date();
+        localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+        localStorage.setItem('haushaltsbuch_sync_connected_device', request.sender || 'Computer');
+        if (myCode) {
+          localStorage.setItem('haushaltsbuch_sync_connected_code', myCode);
+        }
+        localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+        if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+        if (onStatusUpdate) {
+          const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
+          onStatusUpdate('success', `🎉 Smartphone wurde komplett mit PC-Stand überschrieben um ${timeStr}!`);
+        }
+        if (typeof announceNVDA === 'function') {
+          announceNVDA('Smartphone wurde komplett mit dem Stand des Computers überschrieben!', true);
+        }
+        if (window.navigator && window.navigator.vibrate) {
+          try { window.navigator.vibrate([100, 50, 100]); } catch(e) {}
+        }
+        return;
+      }
+
+      // Normaler 2-Wege-Sync:
       // 1. Lokale Tresordaten auslesen
       const vaultData = await this.exportCurrentVaultData();
 
@@ -553,7 +596,7 @@ const SyncEngine = {
   },
 
   // 6. PC: SYNCHRONISATION MIT HANDY STARTEN (INITIATOR)
-  async syncWithSmartphone(targetDeviceName, pairingCode, onStatusUpdate) {
+  async syncWithSmartphone(targetDeviceName, pairingCode, onStatusUpdate, forceOverwrite = false) {
     if (!targetDeviceName || !pairingCode) {
       throw new Error('Bitte Gerätename und Kopplungscode angeben!');
     }
@@ -563,8 +606,11 @@ const SyncEngine = {
     const topicReq = await this.getTopicForDevice(cleanTargetName);
     const topicResp = topicReq + '_resp';
 
-    if (onStatusUpdate) onStatusUpdate('connecting', `🔗 Verbinde mit Smartphone (${cleanTargetName})...`);
-    if (typeof announceNVDA === 'function') announceNVDA(`Verbinde mit Smartphone ${cleanTargetName}...`, true);
+    const connectMsg = forceOverwrite 
+      ? `🔗 Verbinde mit Smartphone (${cleanTargetName}) zum vollständigen Überschreiben...`
+      : `🔗 Verbinde mit Smartphone (${cleanTargetName})...`;
+    if (onStatusUpdate) onStatusUpdate('connecting', connectMsg);
+    if (typeof announceNVDA === 'function') announceNVDA(connectMsg, true);
 
     // 1. Temporären Initiator-Client verbinden
     const client = new MiniMqttClient(this.BROKERS);
@@ -580,12 +626,18 @@ const SyncEngine = {
           client.close();
           // Automatischer Fallback in das asynchrone E2E-Postfach!
           try {
-            if (onStatusUpdate) onStatusUpdate('syncing', '📬 Smartphone antwortet gerade nicht. Hinterlege Daten versiegelt im Postfach...');
-            await this.postToMailbox(onStatusUpdate, false);
-            const msg = `📬 Smartphone ist gerade offline. Deine Daten wurden versiegelt im Postfach hinterlegt und werden automatisch geladen, sobald das Smartphone gestartet wird!`;
+            if (onStatusUpdate) {
+              onStatusUpdate('syncing', forceOverwrite 
+                ? '📬 Smartphone antwortet gerade nicht. Hinterlege Master-Stand versiegelt im Postfach...' 
+                : '📬 Smartphone antwortet gerade nicht. Hinterlege Daten versiegelt im Postfach...');
+            }
+            await this.postToMailbox(onStatusUpdate, forceOverwrite);
+            const msg = forceOverwrite
+              ? `📬 Smartphone ist gerade offline. Dein PC-Stand wurde als Master im Postfach hinterlegt und überschreibt das Smartphone automatisch, sobald die App dort geöffnet wird!`
+              : `📬 Smartphone ist gerade offline. Deine Daten wurden versiegelt im Postfach hinterlegt und werden automatisch geladen, sobald das Smartphone gestartet wird!`;
             if (onStatusUpdate) onStatusUpdate('success', msg);
             if (typeof announceNVDA === 'function') announceNVDA(msg, true);
-            resolve({ type: 'MAILBOX_SAVED', vault: null });
+            resolve({ type: 'MAILBOX_SAVED', vault: null, overwritten: forceOverwrite });
           } catch(boxErr) {
             reject(new Error('Das Smartphone ist offline und das Postfach konnte nicht erreicht werden: ' + boxErr.message));
           }
@@ -612,13 +664,18 @@ const SyncEngine = {
     // Kurz warten, bis Subscription beim Broker registriert ist (~200ms)
     await new Promise(r => setTimeout(r, 250));
 
-    if (onStatusUpdate) onStatusUpdate('waiting_reply', '📡 Sende verschlüsselte Daten an Smartphone...');
-    if (typeof announceNVDA === 'function') announceNVDA('Sende Daten an Smartphone. Warte auf Antwort...', true);
+    const sendMsg = forceOverwrite 
+      ? '📡 Sende Master-Stand an Smartphone zum vollständigen Überschreiben...' 
+      : '📡 Sende verschlüsselte Daten an Smartphone...';
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', sendMsg);
+    if (typeof announceNVDA === 'function') announceNVDA(sendMsg, true);
 
     // 3. Eigene Tresordaten exportieren und Anfrage senden
     const localVault = await this.exportCurrentVaultData();
     const requestPayload = {
       type: 'SYNC_REQUEST',
+      mode: forceOverwrite ? 'FORCE_OVERWRITE' : 'MERGE',
+      forceOverwrite: Boolean(forceOverwrite),
       timestamp: Date.now(),
       sender: this.getDeviceName(),
       vault: localVault
@@ -633,8 +690,12 @@ const SyncEngine = {
     const response = await responsePromise;
     client.close(); // Temporären Client schließen
 
-    // Falls reguläre Antwort empfangen wurde: Daten mergen
-    if (response && response.type === 'SYNC_RESPONSE' && response.vault) {
+    // Falls Master-Overwrite: Keine alten Handydaten zurück auf den PC importieren!
+    if (forceOverwrite) {
+      const succMsg = '🎉 Smartphone wurde erfolgreich zu 100% mit deinen Computer-Daten überschrieben!';
+      if (onStatusUpdate) onStatusUpdate('success', succMsg);
+      if (typeof announceNVDA === 'function') announceNVDA(succMsg, true);
+    } else if (response && response.type === 'SYNC_RESPONSE' && response.vault) {
       if (onStatusUpdate) onStatusUpdate('syncing', '📦 Antwort empfangen. Aktualisiere lokale Daten...');
       await this.importSyncedVaultData(response.vault, onStatusUpdate);
     }
@@ -646,7 +707,7 @@ const SyncEngine = {
     localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
     
     // Auch Postfach aktualisieren, damit immer der neueste Stand im Briefkasten liegt
-    this.scheduleMailboxPush();
+    this.scheduleMailboxPush(forceOverwrite);
 
     // An den lokalen Desktop-Server senden zur dauerhaften Speicherung in Haushaltsbuch_Kopplung.json
     try {
@@ -677,7 +738,7 @@ const SyncEngine = {
   },
 
   // 6b. ASYNCHRONES E2E-POSTFACH: DATEN IM BRIEFKASTEN HINTERLEGEN (RETAINED)
-  async postToMailbox(onStatusUpdate, isManual = false) {
+  async postToMailbox(onStatusUpdate, forceOverwrite = false) {
     const code = this.getActivePairingCode();
     if (!code) {
       if (onStatusUpdate) onStatusUpdate('error', '⚠️ Noch kein Kopplungscode vorhanden.');
@@ -699,6 +760,8 @@ const SyncEngine = {
       const envelope = {
         type: 'MAILBOX_UPDATE',
         version: 2,
+        mode: forceOverwrite ? 'FORCE_OVERWRITE' : 'MERGE',
+        forceOverwrite: Boolean(forceOverwrite),
         timestamp: timestamp,
         sender: myDevice,
         vault: vaultData
@@ -732,9 +795,14 @@ const SyncEngine = {
       localStorage.setItem('haushaltsbuch_mailbox_last_sync', timeStr);
 
       if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
-      if (onStatusUpdate) onStatusUpdate('success', `📬 Daten versiegelt im Postfach hinterlegt (Stand: ${timeStr})!`);
-      if (isManual && typeof announceNVDA === 'function') {
-        announceNVDA('Finanzdaten erfolgreich im verschlüsselten Postfach hinterlegt!', true);
+      const statusMsg = forceOverwrite
+        ? `📬 Master-Stand versiegelt im Postfach hinterlegt (Stand: ${timeStr})! Handy übernimmt 1:1.`
+        : `📬 Daten versiegelt im Postfach hinterlegt (Stand: ${timeStr})!`;
+      if (onStatusUpdate) onStatusUpdate('success', statusMsg);
+      if (typeof announceNVDA === 'function') {
+        announceNVDA(forceOverwrite
+          ? 'Master-Finanzdaten erfolgreich im Postfach hinterlegt. Das Smartphone übernimmt diesen Stand zu 100%!'
+          : 'Finanzdaten erfolgreich im verschlüsselten Postfach hinterlegt!', true);
       }
       return true;
     } catch (err) {
@@ -746,12 +814,12 @@ const SyncEngine = {
     }
   },
 
-  scheduleMailboxPush() {
+  scheduleMailboxPush(forceOverwrite = false) {
     if (this.isImporting) return; // Nicht während eines laufenden Imports zurückfeuern
     if (!this.isPaired()) return;
     clearTimeout(this.mailboxPushTimer);
     this.mailboxPushTimer = setTimeout(() => {
-      this.postToMailbox(null, false).catch(() => {});
+      this.postToMailbox(null, forceOverwrite).catch(() => {});
     }, 800);
   },
 
@@ -844,16 +912,24 @@ const SyncEngine = {
     localStorage.setItem('haushaltsbuch_sync_connected_time', `${dateStr} um ${timeStr}`);
     localStorage.setItem('haushaltsbuch_mailbox_last_sync', timeStr);
 
+    const isForceOverwrite = Boolean(update.forceOverwrite || update.mode === 'FORCE_OVERWRITE');
+
     if (update.vault) {
-      if (onStatusUpdate) onStatusUpdate('syncing', `📬 Neue Daten von ${update.sender} im Postfach gefunden! Übernehme...`);
-      await this.importSyncedVaultData(update.vault, onStatusUpdate);
+      const notice = isForceOverwrite
+        ? `📬 Master-Stand von ${update.sender} im Postfach gefunden! Überschreibe lokales Gerät zu 100%...`
+        : `📬 Neue Daten von ${update.sender} im Postfach gefunden! Übernehme...`;
+      if (onStatusUpdate) onStatusUpdate('syncing', notice);
+      await this.importSyncedVaultData(update.vault, onStatusUpdate, isForceOverwrite);
     }
 
     this.lastSyncTime = new Date();
     if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
-    if (onStatusUpdate) onStatusUpdate('success', `✅ Postfach-Abgleich: Daten von ${update.sender} erfolgreich übernommen (Stand: ${timeStr})!`);
+    const succMsg = isForceOverwrite
+      ? `✅ Postfach-Abgleich: Gerät wurde 1:1 mit dem Master-Stand von ${update.sender} überschrieben (Stand: ${timeStr})!`
+      : `✅ Postfach-Abgleich: Daten von ${update.sender} erfolgreich übernommen (Stand: ${timeStr})!`;
+    if (onStatusUpdate) onStatusUpdate('success', succMsg);
     if (typeof announceNVDA === 'function') {
-      announceNVDA(`Neue Daten vom Postfach übernommen! Synchronisiert mit ${update.sender}.`, true);
+      announceNVDA(succMsg, true);
     }
     if (window.navigator && window.navigator.vibrate) {
       try { window.navigator.vibrate([40, 30, 40]); } catch(e) {}
@@ -901,12 +977,13 @@ const SyncEngine = {
   },
 
   // 8. TRESORDATEN IMPORTIEREN — Funktioniert immer (auch ohne PIN / bei Erststart!)
-  async importSyncedVaultData(incomingData, onStatusUpdate) {
+  async importSyncedVaultData(incomingData, onStatusUpdate, forceOverwrite = false) {
     if (!incomingData) return;
     this.isImporting = true;
 
     try {
       const incoming = incomingData.appState || incomingData;
+      const shouldOverwrite = Boolean(forceOverwrite || incomingData.forceOverwrite || incomingData.mode === 'FORCE_OVERWRITE');
 
       const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
       const storedEnc = localStorage.getItem('barrierefreie_finanzen_enc_v1') || 
@@ -930,9 +1007,13 @@ const SyncEngine = {
         }
       }
 
-      // FALL 1: GERÄT IST AKTUELL BEREITS ENTSPERRT -> DIREKT MERGEN & SPEICHERN
+      // FALL 1: GERÄT IST AKTUELL BEREITS ENTSPERRT -> DIREKT MERGEN/ÜBERSCHREIBEN & SPEICHERN
       if (isUnlocked && typeof appState !== 'undefined' && appState !== null) {
-        this.mergeIncomingIntoAppState(incoming);
+        if (shouldOverwrite) {
+          this.overwriteAppStateFromIncoming(incoming);
+        } else {
+          this.mergeIncomingIntoAppState(incoming);
+        }
         if (typeof saveStateToEncryptedStorage === 'function') {
           await saveStateToEncryptedStorage();
         }
@@ -950,13 +1031,15 @@ const SyncEngine = {
         if (typeof populateWishlistAccountDropdown === 'function') populateWishlistAccountDropdown();
 
         const txCount = appState.transactions ? appState.transactions.length : 0;
-        const msg = `Synchronisation erfolgreich! ${txCount} Buchungen synchronisiert.`;
+        const msg = shouldOverwrite 
+          ? `Gerät erfolgreich zu 100% überschrieben! ${txCount} Buchungen aktiv.`
+          : `Synchronisation erfolgreich! ${txCount} Buchungen synchronisiert.`;
         if (typeof announceNVDA === 'function') announceNVDA(msg, true);
         if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
         return;
       }
 
-      // FALL 2: GERÄT IST GESPERRT, ABER WIR KÖNNEN MIT BEKANNTER PIN (Z.B. BIOMETRIE) AUTOMATISCH ENTSPERREN & MERGEN
+      // FALL 2: GERÄT IST GESPERRT, ABER WIR KÖNNEN MIT BEKANNTER PIN (Z.B. BIOMETRIE) AUTOMATISCH ENTSPERREN & MERGEN/ÜBERSCHREIBEN
       if (!isUnlocked && hasVaultOnDisk && knownPin && typeof deriveKey === 'function' && typeof decryptData === 'function') {
         try {
           const saltBuffer = base64ToArrayBuffer(storedSalt);
@@ -966,7 +1049,11 @@ const SyncEngine = {
             cryptoKey = key;
             appState = decrypted;
             window.__ACTIVE_PIN__ = knownPin;
-            this.mergeIncomingIntoAppState(incoming);
+            if (shouldOverwrite) {
+              this.overwriteAppStateFromIncoming(incoming);
+            } else {
+              this.mergeIncomingIntoAppState(incoming);
+            }
             if (typeof saveStateToEncryptedStorage === 'function') {
               await saveStateToEncryptedStorage();
             }
@@ -974,7 +1061,9 @@ const SyncEngine = {
               unlockApp();
             }
             const txCount = appState.transactions ? appState.transactions.length : 0;
-            const msg = `Synchronisation erfolgreich! ${txCount} Buchungen geladen und Tresor entsperrt.`;
+            const msg = shouldOverwrite
+              ? `Gerät erfolgreich zu 100% überschrieben! ${txCount} Buchungen aktiv und Tresor entsperrt.`
+              : `Synchronisation erfolgreich! ${txCount} Buchungen geladen und Tresor entsperrt.`;
             if (typeof announceNVDA === 'function') announceNVDA(msg, true);
             if (onStatusUpdate) onStatusUpdate('success', '🎉 ' + msg);
             return;
@@ -986,11 +1075,16 @@ const SyncEngine = {
 
       // FALL 3: GERÄT IST GESPERRT UND HAT BEREITS EINEN TRESOR -> DATEN ZWISCHENSPEICHERN BIS PIN EINGEGEBEN WIRD
       if (!isUnlocked && hasVaultOnDisk) {
+        if (shouldOverwrite) {
+          incomingData.forceOverwrite = true;
+        }
         window.__PENDING_SYNC_DATA__ = incomingData;
         try {
           localStorage.setItem('haushaltsbuch_pending_sync_data', JSON.stringify(incomingData));
         } catch(e) {}
-        const msg = 'Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein.';
+        const msg = shouldOverwrite
+          ? 'Master-Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein, um das Gerät 1:1 zu überschreiben.'
+          : 'Daten empfangen! Bitte berühre den Fingerabdrucksensor oder gib deine PIN ein.';
         if (typeof announceNVDA === 'function') announceNVDA(msg, true);
         if (onStatusUpdate) onStatusUpdate('waiting_pin', '🔑 ' + msg);
         const lockStatusEl = document.getElementById('lock-sync-status');
@@ -1019,7 +1113,8 @@ const SyncEngine = {
           peerLoans: incoming.peerLoans || incomingData.peerLoans || [],
           budgets: incoming.budgets || {},
           customCategories: incoming.customCategories || { exp: {}, inc: {}, trf: {} },
-          wishlist: incoming.wishlist || incomingData.wishlist || []
+          wishlist: incoming.wishlist || incomingData.wishlist || [],
+          deletedEntities: incoming.deletedEntities || {}
         };
 
         if (typeof deriveKey === 'function' && typeof arrayBufferToBase64 === 'function') {
@@ -1070,6 +1165,39 @@ const SyncEngine = {
       throw new Error('Abgleich fehlgeschlagen: ' + err.message);
     } finally {
       this.isImporting = false;
+    }
+  },
+
+  // 8b. MASTER-OVERWRITE: APP-STATE 1:1 DURCH EINGEHENDE DATEN ERSETZEN
+  overwriteAppStateFromIncoming(incoming) {
+    if (!incoming) return;
+    if (typeof appState === 'undefined' || appState === null) {
+      appState = {};
+    }
+
+    // 1:1 Kopie aller Datenbereiche
+    appState.accounts = Array.isArray(incoming.accounts) ? JSON.parse(JSON.stringify(incoming.accounts)) : (appState.accounts || []);
+    appState.initialBalances = incoming.initialBalances ? JSON.parse(JSON.stringify(incoming.initialBalances)) : {};
+    appState.transactions = Array.isArray(incoming.transactions) ? JSON.parse(JSON.stringify(incoming.transactions)) : [];
+    appState.recurring = Array.isArray(incoming.recurring) ? JSON.parse(JSON.stringify(incoming.recurring)) : [];
+    appState.wishlist = Array.isArray(incoming.wishlist) ? JSON.parse(JSON.stringify(incoming.wishlist)) : [];
+    appState.shoppingList = Array.isArray(incoming.shoppingList) ? JSON.parse(JSON.stringify(incoming.shoppingList)) : [];
+    appState.savingPots = Array.isArray(incoming.savingPots) ? JSON.parse(JSON.stringify(incoming.savingPots)) : [];
+    appState.peerLoans = Array.isArray(incoming.peerLoans) ? JSON.parse(JSON.stringify(incoming.peerLoans)) : [];
+    appState.budgets = incoming.budgets ? JSON.parse(JSON.stringify(incoming.budgets)) : {};
+    appState.customCategories = incoming.customCategories ? JSON.parse(JSON.stringify(incoming.customCategories)) : { exp: {}, inc: {}, trf: {} };
+    appState.deletedEntities = incoming.deletedEntities ? JSON.parse(JSON.stringify(incoming.deletedEntities)) : {};
+
+    if (incoming.securitySettings) {
+      appState.securitySettings = JSON.parse(JSON.stringify(incoming.securitySettings));
+    }
+    if (incoming.securityAudit) {
+      appState.securityAudit = JSON.parse(JSON.stringify(incoming.securityAudit));
+    }
+
+    // Sortierung der Buchungen sicherstellen
+    if (Array.isArray(appState.transactions)) {
+      appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }
   },
 

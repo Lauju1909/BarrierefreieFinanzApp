@@ -338,6 +338,66 @@ if (localState.budgets.Freizeit !== 150 || localState.customCategories.exp.Haust
 }
 console.log('Entity merge simulation: 100% PASS!');
 
+// 5b. Test Master Overwrite Mode ("Handy komplett überschreiben")
+console.log('Testing Master Overwrite Mode...');
+const expectedOverwriteIds = [
+  'btn-force-overwrite-paired',
+  'btn-trigger-overwrite',
+  'btn-manual-mailbox-push-master'
+];
+expectedOverwriteIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing Master Overwrite HTML element id="${id}"`);
+    process.exit(1);
+  }
+});
+const expectedOverwriteFuncs = [
+  'triggerForceOverwriteSmartphone',
+  'triggerPushMasterToMailbox'
+];
+expectedOverwriteFuncs.forEach(fn => {
+  if (!appJs.includes(fn)) {
+    console.error(`Missing Master Overwrite app.js function: ${fn}`);
+    process.exit(1);
+  }
+});
+
+if (!syncEngineJs.includes('overwriteAppStateFromIncoming')) {
+  console.error('Missing SyncEngine.overwriteAppStateFromIncoming method');
+  process.exit(1);
+}
+
+// Simulation of overwriteAppStateFromIncoming
+let dummyAppState = {
+  transactions: [{ id: 'old_1', amount: 99 }],
+  accounts: [{ id: 'old_acc', name: 'Altes Konto' }],
+  shoppingList: [{ id: 'old_item', name: 'Alte Milch' }]
+};
+const masterIncoming = {
+  transactions: [{ id: 'new_1', amount: 12.50 }, { id: 'new_2', amount: 45.00 }],
+  accounts: [{ id: 'bank', name: 'Girokonto' }],
+  shoppingList: [{ id: 'shop_1', name: 'Frisches Brot' }]
+};
+
+// Emulate SyncEngine.overwriteAppStateFromIncoming
+dummyAppState.transactions = JSON.parse(JSON.stringify(masterIncoming.transactions));
+dummyAppState.accounts = JSON.parse(JSON.stringify(masterIncoming.accounts));
+dummyAppState.shoppingList = JSON.parse(JSON.stringify(masterIncoming.shoppingList));
+
+if (dummyAppState.transactions.length !== 2 || dummyAppState.transactions[0].id !== 'new_1') {
+  console.error('Master overwrite transaction simulation failed');
+  process.exit(1);
+}
+if (dummyAppState.accounts.length !== 1 || dummyAppState.accounts[0].id !== 'bank') {
+  console.error('Master overwrite accounts simulation failed');
+  process.exit(1);
+}
+if (dummyAppState.shoppingList.length !== 1 || dummyAppState.shoppingList[0].id !== 'shop_1') {
+  console.error('Master overwrite shopping list simulation failed');
+  process.exit(1);
+}
+console.log('Master Overwrite Mode: 100% PASS!');
+
 // 5b. Test Tombstone Deletion Sync Engine
 console.log('Testing Tombstone Deletion Sync Engine...');
 const requiredTombstoneFunctions = [

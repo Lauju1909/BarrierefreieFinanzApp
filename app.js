@@ -12980,7 +12980,70 @@ function triggerQuickSyncWithPaired() {
   if (targetDevInput && devName) targetDevInput.value = devName;
   if (targetCodeInput && code) targetCodeInput.value = code;
 
-  handleStartSync();
+  handleStartSync(null, false);
+}
+
+function triggerForceOverwriteSmartphone() {
+  const devName = localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
+  const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
+
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+
+  const finalName = (targetDevInput && targetDevInput.value.trim()) ? targetDevInput.value.trim() : devName;
+  const finalCode = (targetCodeInput && targetCodeInput.value.trim()) ? targetCodeInput.value.trim() : code;
+
+  if (!finalName || !finalCode) {
+    alert('Bitte gib zuerst den Smartphone-Namen und den Kopplungscode ein!');
+    return;
+  }
+
+  const confirmMsg = `ACHTUNG - SMARTPHONE KOMPLETT ÜBERSCHREIBEN:\n\nMöchtest du das Smartphone "${finalName}" wirklich zu 100% mit dem aktuellen Stand dieses Computers überschreiben?\n\nAlle abweichenden oder veralteten Daten auf dem Smartphone werden dabei restlos durch die exakten Daten dieses PCs ersetzt.`;
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  if (targetDevInput) targetDevInput.value = finalName;
+  if (targetCodeInput) targetCodeInput.value = finalCode;
+
+  handleStartSync(null, true);
+}
+
+async function triggerPushMasterToMailbox() {
+  if (typeof SyncEngine === 'undefined') return;
+  const statusEl = document.getElementById('sync-mailbox-last-status');
+  const btn = document.getElementById('btn-manual-mailbox-push-master');
+
+  const confirmMsg = "ACHTUNG - MASTER-STAND INS POSTFACH LEGEN:\n\nMöchtest du den aktuellen Stand dieses Computers als Master im Postfach hinterlegen?\n\nSobald das Smartphone das Postfach abfragt, wird es zu 100% mit deinen Computer-Daten überschrieben.";
+  if (!confirm(confirmMsg)) {
+    return;
+  }
+
+  if (btn) btn.disabled = true;
+  try {
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = '📤 Hinterlege Master-Stand versiegelt im Postfach...';
+      statusEl.style.color = '#0284c7';
+    }
+    await SyncEngine.postToMailbox((state, msg) => {
+      if (statusEl) {
+        statusEl.textContent = msg;
+        if (state === 'success') statusEl.style.color = '#15803d';
+        else if (state === 'error') statusEl.style.color = '#b91c1c';
+        else statusEl.style.color = '#0284c7';
+      }
+    }, true);
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = '⚠️ ' + err.message;
+      statusEl.style.color = '#b91c1c';
+    }
+  } finally {
+    setTimeout(() => {
+      if (btn) btn.disabled = false;
+    }, 1500);
+  }
 }
 
 function editSyncConnection() {
@@ -13094,13 +13157,15 @@ function generateNewSyncCode(silent = false) {
   }
 }
 
-async function handleStartSync(e) {
+async function handleStartSync(e, forceOverwrite = false) {
   if (e && e.preventDefault) e.preventDefault();
 
   const devInput = document.getElementById('input-target-device');
   const codeInput = document.getElementById('input-target-code');
   const statusBox = document.getElementById('sync-sender-status');
   const btnTrigger = document.getElementById('btn-trigger-sync');
+  const btnForce = document.getElementById('btn-trigger-overwrite');
+  const btnPairedForce = document.getElementById('btn-force-overwrite-paired');
 
   const targetName = devInput ? devInput.value.trim() : '';
   const targetCode = codeInput ? codeInput.value.trim() : '';
@@ -13130,12 +13195,16 @@ async function handleStartSync(e) {
 
   if (statusBox) {
     statusBox.style.display = 'block';
-    statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
-    statusBox.style.color = '#0284c7';
-    statusBox.textContent = '🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung...';
+    statusBox.style.background = forceOverwrite ? 'rgba(245, 158, 11, 0.15)' : 'rgba(33, 150, 243, 0.1)';
+    statusBox.style.color = forceOverwrite ? '#b45309' : '#0284c7';
+    statusBox.textContent = forceOverwrite 
+      ? '📲 Starte vollständiges Überschreiben des Smartphones mit PC-Stand...' 
+      : '🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung...';
   }
 
   if (btnTrigger) btnTrigger.disabled = true;
+  if (btnForce) btnForce.disabled = true;
+  if (btnPairedForce) btnPairedForce.disabled = true;
 
   try {
     await SyncEngine.syncWithSmartphone(targetName, targetCode, (state, msg) => {
@@ -13147,7 +13216,7 @@ async function handleStartSync(e) {
         }
       }
       announceNVDA(msg);
-    });
+    }, forceOverwrite);
   } catch(err) {
     if (statusBox) {
       statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -13157,6 +13226,8 @@ async function handleStartSync(e) {
     announceNVDA('Synchronisationsfehler: ' + err.message);
   } finally {
     if (btnTrigger) btnTrigger.disabled = false;
+    if (btnForce) btnForce.disabled = false;
+    if (btnPairedForce) btnPairedForce.disabled = false;
   }
 }
 

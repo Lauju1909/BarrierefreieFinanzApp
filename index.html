@@ -4191,9 +4191,14 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <div style="font-size: 14px; margin-bottom: 12px; color: #475569;">
         🕒 Letzter Postfach-Abgleich: <strong id="sync-mailbox-last-sync-time">Noch nie</strong>
       </div>
-      <button type="button" id="btn-manual-mailbox-sync" class="btn btn-primary" onclick="triggerManualMailboxSync()" style="width: 100%; font-size: 16px; padding: 12px 18px; background-color: #0284c7;">
-        📬 <strong>Jetzt Postfach prüfen &amp; abgleichen</strong>
-      </button>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button type="button" id="btn-manual-mailbox-sync" class="btn btn-primary" onclick="triggerManualMailboxSync()" style="width: 100%; font-size: 16px; padding: 12px 18px; background-color: #0284c7;">
+          📬 <strong>Jetzt Postfach prüfen &amp; abgleichen</strong>
+        </button>
+        <button type="button" id="btn-manual-mailbox-push-master" class="btn btn-secondary" onclick="triggerPushMasterToMailbox()" style="width: 100%; font-size: 14px; padding: 10px 14px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.08);" title="Legt den exakten Stand dieses Computers als Master ins Postfach. Sobald das Smartphone startet, übernimmt es 1:1.">
+          📤 <strong>Aktuellen Stand als Master ins Postfach legen (Handy übernimmt 1:1)</strong>
+        </button>
+      </div>
     </div>
 
     <!-- Hinweis wenn noch nicht gekoppelt -->
@@ -4315,6 +4320,9 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithPaired()" style="width: 100%; font-size: 18px; padding: 14px 20px; background-color: #2E7D32;">
           <span>⚡ <strong>1-Klick-Abgleich mit <span id="sync-quick-btn-devname">Smartphone</span></strong></span>
         </button>
+        <button type="button" id="btn-force-overwrite-paired" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 18px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf dem Smartphone zu 100% durch den aktuellen Stand dieses Computers.">
+          <span>📲 <strong>Smartphone komplett überschreiben (1:1 PC-Stand erzwingen)</strong></span>
+        </button>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="editSyncConnection()" style="flex: 1; font-size: 14px; padding: 10px 14px;">
             ✏️ <strong>Anderes Smartphone / Code eingeben</strong>
@@ -4337,9 +4345,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
       </div>
 
-      <div class="form-actions" style="margin-top: 20px;">
+      <div class="form-actions" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
         <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
           <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+        </button>
+        <button type="button" id="btn-trigger-overwrite" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 20px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf dem Smartphone zu 100% durch den aktuellen Stand dieses Computers.">
+          <span>📲 <strong>Smartphone komplett überschreiben (1:1 PC-Stand senden)</strong></span>
         </button>
       </div>
     </form>
