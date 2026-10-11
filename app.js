@@ -9746,7 +9746,7 @@ function printEmergencySheet() {
   if (typeof announceNVDA === 'function') announceNVDA('Notfall-Datenblatt geöffnet.');
 }
 
-async function deriveKey(password, salt, keyFileContent = null) {
+async function deriveKey(password, salt, keyFileContent = null, kdfType = null) {
   const enc = new TextEncoder();
   let keyMaterialBytes;
 
@@ -9771,6 +9771,39 @@ async function deriveKey(password, salt, keyFileContent = null) {
     keyMaterialBytes = enc.encode(password);
   }
 
+  // Bestimme KDF-Verfahren: kdfType Parameter ODER gespeicherte Einstellung
+  const effectiveKdf = kdfType || (localStorage.getItem('haushaltsbuch_kdf_algo') || 'pbkdf2');
+
+  // 1. ARGON2ID (KeePass 2 Standard)
+  if (effectiveKdf === 'argon2id' || effectiveKdf === 'argon2') {
+    try {
+      const hashwasmObj = (typeof window !== 'undefined' && window.hashwasm) || (typeof globalThis !== 'undefined' && globalThis.hashwasm);
+      if (hashwasmObj && typeof hashwasmObj.argon2id === 'function') {
+        const saltUint8 = salt instanceof Uint8Array ? salt : new Uint8Array(salt);
+        const argonRawKey = await hashwasmObj.argon2id({
+          password: keyMaterialBytes,
+          salt: saltUint8,
+          iterations: 3,
+          memorySize: 65536, // 64 MB RAM
+          parallelism: 1,
+          hashLength: 32,
+          outputType: 'binary'
+        });
+
+        return crypto.subtle.importKey(
+          'raw',
+          argonRawKey,
+          { name: 'AES-GCM', length: 256 },
+          false,
+          ['encrypt', 'decrypt']
+        );
+      }
+    } catch(argonErr) {
+      console.warn('Argon2id KDF fehlgeschlagen, weiche auf PBKDF2 aus:', argonErr);
+    }
+  }
+
+  // 2. PBKDF2 (Bewährter nativer WebCrypto-Standard mit 100.000 Runden SHA-256)
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     keyMaterialBytes,
