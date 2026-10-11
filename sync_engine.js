@@ -881,7 +881,8 @@ const SyncEngine = {
         shoppingList: appState.shoppingList || [],
         peerLoans: appState.peerLoans || [],
         budgets: appState.budgets || {},
-        customCategories: appState.customCategories || {}
+        customCategories: appState.customCategories || {},
+        deletedEntities: appState.deletedEntities || {}
       };
     }
 
@@ -1064,13 +1065,84 @@ const SyncEngine = {
   mergeIncomingIntoAppState(incoming) {
     if (!appState || !incoming) return;
 
-    if (!Array.isArray(appState.transactions)) appState.transactions = [];
+    // 0. Gelöschte Einträge (Tombstones) synchronisieren
+    if (!appState.deletedEntities || typeof appState.deletedEntities !== 'object') {
+      appState.deletedEntities = {};
+    }
+    const incomingDeleted = incoming.deletedEntities || {};
+    const entityTypes = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+
+    // Beide Tombstone-Listen zusammenführen
+    entityTypes.forEach(type => {
+      if (!appState.deletedEntities[type]) appState.deletedEntities[type] = {};
+      const incDelType = incomingDeleted[type] || {};
+      Object.keys(incDelType).forEach(id => {
+        const incTs = Number(incDelType[id] || 0);
+        const curTs = Number(appState.deletedEntities[type][id] || 0);
+        appState.deletedEntities[type][id] = Math.max(incTs, curTs);
+      });
+    });
+
+    const isTxDeleted = (id) => Boolean(appState.deletedEntities.transactions && appState.deletedEntities.transactions[String(id)]);
+    const isRecDeleted = (id) => Boolean(appState.deletedEntities.recurring && appState.deletedEntities.recurring[String(id)]);
+    const isWishDeleted = (id) => Boolean(appState.deletedEntities.wishlist && appState.deletedEntities.wishlist[String(id)]);
+    const isShopDeleted = (id) => Boolean(appState.deletedEntities.shoppingList && appState.deletedEntities.shoppingList[String(id)]);
+    const isPotDeleted = (id) => Boolean(appState.deletedEntities.savingPots && appState.deletedEntities.savingPots[String(id)]);
+    const isLoanDeleted = (id) => Boolean(appState.deletedEntities.peerLoans && appState.deletedEntities.peerLoans[String(id)]);
+    const isAccDeleted = (id) => Boolean(appState.deletedEntities.accounts && appState.deletedEntities.accounts[String(id)]);
+
+    // 1. Lokale Listen von gelöschten Elementen bereinigen (falls auf anderem Gerät gelöscht)
+    if (Array.isArray(appState.transactions)) {
+      appState.transactions = appState.transactions.filter(t => t && t.id && !isTxDeleted(t.id));
+    } else {
+      appState.transactions = [];
+    }
+
+    if (Array.isArray(appState.recurring)) {
+      appState.recurring = appState.recurring.filter(r => r && r.id && !isRecDeleted(r.id));
+    } else {
+      appState.recurring = [];
+    }
+
+    if (Array.isArray(appState.wishlist)) {
+      appState.wishlist = appState.wishlist.filter(w => w && w.id && !isWishDeleted(w.id));
+    } else {
+      appState.wishlist = [];
+    }
+
+    if (Array.isArray(appState.shoppingList)) {
+      appState.shoppingList = appState.shoppingList.filter(s => s && s.id && !isShopDeleted(s.id));
+    } else {
+      appState.shoppingList = [];
+    }
+
+    if (Array.isArray(appState.savingPots)) {
+      appState.savingPots = appState.savingPots.filter(p => p && p.id && !isPotDeleted(p.id));
+    } else {
+      appState.savingPots = [];
+    }
+
+    if (Array.isArray(appState.peerLoans)) {
+      appState.peerLoans = appState.peerLoans.filter(l => l && l.id && !isLoanDeleted(l.id));
+    } else {
+      appState.peerLoans = [];
+    }
+
+    if (Array.isArray(appState.accounts)) {
+      // Mindestens 1 Konto immer behalten
+      if (appState.accounts.length > 1) {
+        appState.accounts = appState.accounts.filter(a => a && a.id && !isAccDeleted(a.id));
+      }
+    } else {
+      appState.accounts = [];
+    }
+
+    // 2. Neue/eingehende Buchungen (transactions) einpflegen (ausgenommen gelöschte)
     const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
     let addedTx = 0;
-
     const incomingTx = incoming.transactions || [];
     for (const t of incomingTx) {
-      if (t && t.id && !existingTxIds.has(String(t.id))) {
+      if (t && t.id && !existingTxIds.has(String(t.id)) && !isTxDeleted(t.id)) {
         appState.transactions.push(t);
         existingTxIds.add(String(t.id));
         addedTx++;
@@ -1080,20 +1152,18 @@ const SyncEngine = {
       appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }
 
-    // Konten
-    if (!Array.isArray(appState.accounts)) appState.accounts = [];
+    // 3. Konten abgleichen
     if (!appState.initialBalances) appState.initialBalances = {};
     const existingAccMap = new Map(appState.accounts.map(a => [String(a.id), a]));
     const incomingAcc = incoming.accounts || [];
 
     for (const a of incomingAcc) {
-      if (a && a.id) {
+      if (a && a.id && !isAccDeleted(a.id)) {
         const existing = existingAccMap.get(String(a.id));
         if (!existing) {
           appState.accounts.push(a);
           existingAccMap.set(String(a.id), a);
         } else {
-          // Eigenschaften aktualisieren, falls Name oder Details angepasst wurden
           if (a.name) existing.name = a.name;
           if (a.icon) existing.icon = a.icon;
           if (a.type) existing.type = a.type;
@@ -1105,16 +1175,18 @@ const SyncEngine = {
       }
     }
 
-    // Anfangsbestände (initialBalances) abgleichen
+    // Anfangsbestände abgleichen
     if (incoming.initialBalances && typeof incoming.initialBalances === 'object') {
       Object.keys(incoming.initialBalances).forEach(accId => {
-        if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
-          appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+        if (!isAccDeleted(accId)) {
+          if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
+            appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+          }
         }
       });
     }
 
-    // Sicherstellen, dass appState.accounts und appState.initialBalances synchron sind
+    // Synchronisation von Kontostand und initialBalances absichern
     appState.accounts.forEach(a => {
       if (a.initialBalance !== undefined && a.initialBalance !== 0) {
         if (!appState.initialBalances[a.id]) {
@@ -1125,56 +1197,51 @@ const SyncEngine = {
       }
     });
 
-    // Wunschliste
-    if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
+    // 4. Wunschliste
     const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
     const incomingWish = incoming.wishlist || [];
     for (const w of incomingWish) {
-      if (w && w.id && !existingWishIds.has(String(w.id))) {
+      if (w && w.id && !existingWishIds.has(String(w.id)) && !isWishDeleted(w.id)) {
         appState.wishlist.push(w);
         existingWishIds.add(String(w.id));
       }
     }
 
-    // Daueraufträge
-    if (!Array.isArray(appState.recurring)) appState.recurring = [];
+    // 5. Daueraufträge
     const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
     const incomingRec = incoming.recurring || [];
     for (const r of incomingRec) {
-      if (r && r.id && !existingRecIds.has(String(r.id))) {
+      if (r && r.id && !existingRecIds.has(String(r.id)) && !isRecDeleted(r.id)) {
         appState.recurring.push(r);
         existingRecIds.add(String(r.id));
       }
     }
 
-    // Spartöpfe
-    if (!Array.isArray(appState.savingPots)) appState.savingPots = [];
+    // 6. Spartöpfe
     const existingPotIds = new Set(appState.savingPots.map(p => String(p.id)));
     const incomingPots = incoming.savingPots || [];
     for (const p of incomingPots) {
-      if (p && p.id && !existingPotIds.has(String(p.id))) {
+      if (p && p.id && !existingPotIds.has(String(p.id)) && !isPotDeleted(p.id)) {
         appState.savingPots.push(p);
         existingPotIds.add(String(p.id));
       }
     }
 
-    // Einkaufsliste & Checkliste
-    if (!Array.isArray(appState.shoppingList)) appState.shoppingList = [];
+    // 7. Einkaufsliste & Checkliste
     const existingShopIds = new Set(appState.shoppingList.map(s => String(s.id)));
     const incomingShop = incoming.shoppingList || [];
     for (const s of incomingShop) {
-      if (s && s.id && !existingShopIds.has(String(s.id))) {
+      if (s && s.id && !existingShopIds.has(String(s.id)) && !isShopDeleted(s.id)) {
         appState.shoppingList.push(s);
         existingShopIds.add(String(s.id));
       }
     }
 
-    // Geliehenes & Verliehenes Geld (Peer Loans)
-    if (!Array.isArray(appState.peerLoans)) appState.peerLoans = [];
+    // 8. Geliehenes & Verliehenes Geld (Peer Loans)
     const existingLoanMap = new Map(appState.peerLoans.map(l => [String(l.id), l]));
     const incomingLoans = incoming.peerLoans || [];
     for (const l of incomingLoans) {
-      if (l && l.id) {
+      if (l && l.id && !isLoanDeleted(l.id)) {
         const existing = existingLoanMap.get(String(l.id));
         if (!existing) {
           appState.peerLoans.push(l);
@@ -1185,13 +1252,13 @@ const SyncEngine = {
       }
     }
 
-    // Budgets
+    // 9. Budgets
     if (incoming.budgets && typeof incoming.budgets === 'object') {
       if (!appState.budgets) appState.budgets = {};
       Object.assign(appState.budgets, incoming.budgets);
     }
 
-    // Benutzerdefinierte Kategorien
+    // 10. Benutzerdefinierte Kategorien
     if (incoming.customCategories && typeof incoming.customCategories === 'object') {
       if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
       ['exp', 'inc', 'trf'].forEach(type => {

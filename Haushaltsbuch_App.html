@@ -6277,7 +6277,8 @@ const SyncEngine = {
         shoppingList: appState.shoppingList || [],
         peerLoans: appState.peerLoans || [],
         budgets: appState.budgets || {},
-        customCategories: appState.customCategories || {}
+        customCategories: appState.customCategories || {},
+        deletedEntities: appState.deletedEntities || {}
       };
     }
 
@@ -6460,13 +6461,84 @@ const SyncEngine = {
   mergeIncomingIntoAppState(incoming) {
     if (!appState || !incoming) return;
 
-    if (!Array.isArray(appState.transactions)) appState.transactions = [];
+    // 0. Gelöschte Einträge (Tombstones) synchronisieren
+    if (!appState.deletedEntities || typeof appState.deletedEntities !== 'object') {
+      appState.deletedEntities = {};
+    }
+    const incomingDeleted = incoming.deletedEntities || {};
+    const entityTypes = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+
+    // Beide Tombstone-Listen zusammenführen
+    entityTypes.forEach(type => {
+      if (!appState.deletedEntities[type]) appState.deletedEntities[type] = {};
+      const incDelType = incomingDeleted[type] || {};
+      Object.keys(incDelType).forEach(id => {
+        const incTs = Number(incDelType[id] || 0);
+        const curTs = Number(appState.deletedEntities[type][id] || 0);
+        appState.deletedEntities[type][id] = Math.max(incTs, curTs);
+      });
+    });
+
+    const isTxDeleted = (id) => Boolean(appState.deletedEntities.transactions && appState.deletedEntities.transactions[String(id)]);
+    const isRecDeleted = (id) => Boolean(appState.deletedEntities.recurring && appState.deletedEntities.recurring[String(id)]);
+    const isWishDeleted = (id) => Boolean(appState.deletedEntities.wishlist && appState.deletedEntities.wishlist[String(id)]);
+    const isShopDeleted = (id) => Boolean(appState.deletedEntities.shoppingList && appState.deletedEntities.shoppingList[String(id)]);
+    const isPotDeleted = (id) => Boolean(appState.deletedEntities.savingPots && appState.deletedEntities.savingPots[String(id)]);
+    const isLoanDeleted = (id) => Boolean(appState.deletedEntities.peerLoans && appState.deletedEntities.peerLoans[String(id)]);
+    const isAccDeleted = (id) => Boolean(appState.deletedEntities.accounts && appState.deletedEntities.accounts[String(id)]);
+
+    // 1. Lokale Listen von gelöschten Elementen bereinigen (falls auf anderem Gerät gelöscht)
+    if (Array.isArray(appState.transactions)) {
+      appState.transactions = appState.transactions.filter(t => t && t.id && !isTxDeleted(t.id));
+    } else {
+      appState.transactions = [];
+    }
+
+    if (Array.isArray(appState.recurring)) {
+      appState.recurring = appState.recurring.filter(r => r && r.id && !isRecDeleted(r.id));
+    } else {
+      appState.recurring = [];
+    }
+
+    if (Array.isArray(appState.wishlist)) {
+      appState.wishlist = appState.wishlist.filter(w => w && w.id && !isWishDeleted(w.id));
+    } else {
+      appState.wishlist = [];
+    }
+
+    if (Array.isArray(appState.shoppingList)) {
+      appState.shoppingList = appState.shoppingList.filter(s => s && s.id && !isShopDeleted(s.id));
+    } else {
+      appState.shoppingList = [];
+    }
+
+    if (Array.isArray(appState.savingPots)) {
+      appState.savingPots = appState.savingPots.filter(p => p && p.id && !isPotDeleted(p.id));
+    } else {
+      appState.savingPots = [];
+    }
+
+    if (Array.isArray(appState.peerLoans)) {
+      appState.peerLoans = appState.peerLoans.filter(l => l && l.id && !isLoanDeleted(l.id));
+    } else {
+      appState.peerLoans = [];
+    }
+
+    if (Array.isArray(appState.accounts)) {
+      // Mindestens 1 Konto immer behalten
+      if (appState.accounts.length > 1) {
+        appState.accounts = appState.accounts.filter(a => a && a.id && !isAccDeleted(a.id));
+      }
+    } else {
+      appState.accounts = [];
+    }
+
+    // 2. Neue/eingehende Buchungen (transactions) einpflegen (ausgenommen gelöschte)
     const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
     let addedTx = 0;
-
     const incomingTx = incoming.transactions || [];
     for (const t of incomingTx) {
-      if (t && t.id && !existingTxIds.has(String(t.id))) {
+      if (t && t.id && !existingTxIds.has(String(t.id)) && !isTxDeleted(t.id)) {
         appState.transactions.push(t);
         existingTxIds.add(String(t.id));
         addedTx++;
@@ -6476,20 +6548,18 @@ const SyncEngine = {
       appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }
 
-    // Konten
-    if (!Array.isArray(appState.accounts)) appState.accounts = [];
+    // 3. Konten abgleichen
     if (!appState.initialBalances) appState.initialBalances = {};
     const existingAccMap = new Map(appState.accounts.map(a => [String(a.id), a]));
     const incomingAcc = incoming.accounts || [];
 
     for (const a of incomingAcc) {
-      if (a && a.id) {
+      if (a && a.id && !isAccDeleted(a.id)) {
         const existing = existingAccMap.get(String(a.id));
         if (!existing) {
           appState.accounts.push(a);
           existingAccMap.set(String(a.id), a);
         } else {
-          // Eigenschaften aktualisieren, falls Name oder Details angepasst wurden
           if (a.name) existing.name = a.name;
           if (a.icon) existing.icon = a.icon;
           if (a.type) existing.type = a.type;
@@ -6501,16 +6571,18 @@ const SyncEngine = {
       }
     }
 
-    // Anfangsbestände (initialBalances) abgleichen
+    // Anfangsbestände abgleichen
     if (incoming.initialBalances && typeof incoming.initialBalances === 'object') {
       Object.keys(incoming.initialBalances).forEach(accId => {
-        if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
-          appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+        if (!isAccDeleted(accId)) {
+          if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
+            appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+          }
         }
       });
     }
 
-    // Sicherstellen, dass appState.accounts und appState.initialBalances synchron sind
+    // Synchronisation von Kontostand und initialBalances absichern
     appState.accounts.forEach(a => {
       if (a.initialBalance !== undefined && a.initialBalance !== 0) {
         if (!appState.initialBalances[a.id]) {
@@ -6521,56 +6593,51 @@ const SyncEngine = {
       }
     });
 
-    // Wunschliste
-    if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
+    // 4. Wunschliste
     const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
     const incomingWish = incoming.wishlist || [];
     for (const w of incomingWish) {
-      if (w && w.id && !existingWishIds.has(String(w.id))) {
+      if (w && w.id && !existingWishIds.has(String(w.id)) && !isWishDeleted(w.id)) {
         appState.wishlist.push(w);
         existingWishIds.add(String(w.id));
       }
     }
 
-    // Daueraufträge
-    if (!Array.isArray(appState.recurring)) appState.recurring = [];
+    // 5. Daueraufträge
     const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
     const incomingRec = incoming.recurring || [];
     for (const r of incomingRec) {
-      if (r && r.id && !existingRecIds.has(String(r.id))) {
+      if (r && r.id && !existingRecIds.has(String(r.id)) && !isRecDeleted(r.id)) {
         appState.recurring.push(r);
         existingRecIds.add(String(r.id));
       }
     }
 
-    // Spartöpfe
-    if (!Array.isArray(appState.savingPots)) appState.savingPots = [];
+    // 6. Spartöpfe
     const existingPotIds = new Set(appState.savingPots.map(p => String(p.id)));
     const incomingPots = incoming.savingPots || [];
     for (const p of incomingPots) {
-      if (p && p.id && !existingPotIds.has(String(p.id))) {
+      if (p && p.id && !existingPotIds.has(String(p.id)) && !isPotDeleted(p.id)) {
         appState.savingPots.push(p);
         existingPotIds.add(String(p.id));
       }
     }
 
-    // Einkaufsliste & Checkliste
-    if (!Array.isArray(appState.shoppingList)) appState.shoppingList = [];
+    // 7. Einkaufsliste & Checkliste
     const existingShopIds = new Set(appState.shoppingList.map(s => String(s.id)));
     const incomingShop = incoming.shoppingList || [];
     for (const s of incomingShop) {
-      if (s && s.id && !existingShopIds.has(String(s.id))) {
+      if (s && s.id && !existingShopIds.has(String(s.id)) && !isShopDeleted(s.id)) {
         appState.shoppingList.push(s);
         existingShopIds.add(String(s.id));
       }
     }
 
-    // Geliehenes & Verliehenes Geld (Peer Loans)
-    if (!Array.isArray(appState.peerLoans)) appState.peerLoans = [];
+    // 8. Geliehenes & Verliehenes Geld (Peer Loans)
     const existingLoanMap = new Map(appState.peerLoans.map(l => [String(l.id), l]));
     const incomingLoans = incoming.peerLoans || [];
     for (const l of incomingLoans) {
-      if (l && l.id) {
+      if (l && l.id && !isLoanDeleted(l.id)) {
         const existing = existingLoanMap.get(String(l.id));
         if (!existing) {
           appState.peerLoans.push(l);
@@ -6581,13 +6648,13 @@ const SyncEngine = {
       }
     }
 
-    // Budgets
+    // 9. Budgets
     if (incoming.budgets && typeof incoming.budgets === 'object') {
       if (!appState.budgets) appState.budgets = {};
       Object.assign(appState.budgets, incoming.budgets);
     }
 
-    // Benutzerdefinierte Kategorien
+    // 10. Benutzerdefinierte Kategorien
     if (incoming.customCategories && typeof incoming.customCategories === 'object') {
       if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
       ['exp', 'inc', 'trf'].forEach(type => {
@@ -7373,8 +7440,38 @@ let appState = {
   customCategories: { exp: {}, inc: {}, trf: {} },
   wishlist: [],
   shoppingList: [],
-  peerLoans: []
+  peerLoans: [],
+  deletedEntities: {} // Format: { [entityType]: { [id]: timestamp } }
 };
+
+function ensureDeletedEntitiesInitialized() {
+  if (!appState) return;
+  if (!appState.deletedEntities || typeof appState.deletedEntities !== 'object') {
+    appState.deletedEntities = {
+      transactions: {},
+      recurring: {},
+      wishlist: {},
+      shoppingList: {},
+      savingPots: {},
+      peerLoans: {},
+      accounts: {}
+    };
+  }
+  const types = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+  types.forEach(t => {
+    if (!appState.deletedEntities[t] || typeof appState.deletedEntities[t] !== 'object') {
+      appState.deletedEntities[t] = {};
+    }
+  });
+}
+
+function trackDeletedEntity(entityType, id) {
+  if (!id) return;
+  ensureDeletedEntitiesInitialized();
+  if (appState.deletedEntities[entityType]) {
+    appState.deletedEntities[entityType][String(id)] = Date.now();
+  }
+}
 
 // ============================================================================
 // 1e. FINANZ-INTELLIGENZ SUITE: BUDGETS, RANKINGS, CSV-IMPORT, BERICHTE, RECHNER
@@ -7973,6 +8070,7 @@ async function deleteShoppingItem(id) {
   if (idx === -1) return;
 
   const removed = appState.shoppingList.splice(idx, 1)[0];
+  trackDeletedEntity('shoppingList', id);
   await saveStateToEncryptedStorage();
   renderShoppingList();
   announceNVDA(`${removed.name} von der Einkaufsliste gelöscht.`);
@@ -7995,18 +8093,18 @@ function setShoppingFilter(filter) {
 
 async function clearDoneShoppingItems() {
   ensureShoppingListInitialized();
-  const countBefore = appState.shoppingList.length;
-  appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
-  const removedCount = countBefore - appState.shoppingList.length;
-
-  if (removedCount === 0) {
+  const doneItems = appState.shoppingList.filter(i => i.checked);
+  if (doneItems.length === 0) {
     alert('Es gibt keine abgehakten Artikel zum Aufräumen.');
     return;
   }
 
+  doneItems.forEach(i => trackDeletedEntity('shoppingList', i.id));
+  appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
+
   await saveStateToEncryptedStorage();
   renderShoppingList();
-  announceNVDA(`${removedCount} erledigte Artikel von der Einkaufsliste aufgeräumt.`);
+  announceNVDA(`${doneItems.length} erledigte Artikel von der Einkaufsliste aufgeräumt.`);
 }
 
 async function clearEntireShoppingList() {
@@ -8020,6 +8118,7 @@ async function clearEntireShoppingList() {
     return;
   }
 
+  appState.shoppingList.forEach(i => trackDeletedEntity('shoppingList', i.id));
   appState.shoppingList = [];
   await saveStateToEncryptedStorage();
   renderShoppingList();
@@ -8381,9 +8480,11 @@ async function handleConfirmShoppingBooking(e) {
   if (clearDoneChk && clearDoneChk.checked) {
     const doneItems = appState.shoppingList.filter(i => i.checked);
     if (doneItems.length > 0) {
+      doneItems.forEach(i => trackDeletedEntity('shoppingList', i.id));
       appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
     } else {
       // If none were checked, all were booked, so clear entire list
+      appState.shoppingList.forEach(i => trackDeletedEntity('shoppingList', i.id));
       appState.shoppingList = [];
     }
   }
@@ -8713,10 +8814,10 @@ async function handleDeleteWish(wishId) {
   ensureWishlistInitialized();
   const wish = appState.wishlist.find(w => w.id === wishId);
   if (!wish) return;
-
   if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
 
   appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
+  trackDeletedEntity('wishlist', wishId);
   await saveStateToEncryptedStorage();
   renderWishlist();
   announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
@@ -9680,6 +9781,7 @@ async function deleteAccount(accId) {
     if (appState.initialBalances && appState.initialBalances[accId] !== undefined) {
       delete appState.initialBalances[accId];
     }
+    trackDeletedEntity('accounts', accId);
     await saveStateToEncryptedStorage();
     populateAllAccountDropdowns();
     populateBudgetCategoryDropdown();
@@ -14812,6 +14914,7 @@ async function deleteTransaction(txId) {
       });
     }
 
+    trackDeletedEntity('transactions', txId);
     await saveStateToEncryptedStorage();
     updateOverview();
     announceNVDA(`Buchung über ${formatCurrency(deleted.amount)} und zugehörige Leihgaben gelöscht.`);
@@ -15144,6 +15247,7 @@ async function deleteRecurring(recId) {
   const idx = appState.recurring.findIndex(r => r.id === recId);
   if (idx !== -1) {
     const deleted = appState.recurring.splice(idx, 1)[0];
+    trackDeletedEntity('recurring', recId);
     await saveStateToEncryptedStorage();
     renderSettingsRecurringList();
     updateOverview();
@@ -16839,6 +16943,7 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
     if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
     if (!appState.transactions) appState.transactions = [];
     if (!appState.recurring) appState.recurring = [];
+    ensureDeletedEntitiesInitialized();
 
     setFailedAttempts(0);
     setLockoutEndTime(0);
@@ -17876,6 +17981,7 @@ function switchViewToTransferForPot(potId) {
 async function handleDeleteSavingPot(potId) {
   if (!confirm('Möchtest du diesen Spartopf wirklich löschen?')) return;
   appState.savingPots = (appState.savingPots || []).filter(p => p.id !== potId);
+  trackDeletedEntity('savingPots', potId);
   await saveStateToEncryptedStorage();
   renderSavingPotsList();
   populateWishlistAccountDropdown();
@@ -18658,6 +18764,7 @@ async function deletePeerLoanRepayment(loanId, repayItemId) {
 
   // Falls verknüpfte Buchung existiert, diese auch löschen
   if (rep.txId) {
+    trackDeletedEntity('transactions', rep.txId);
     appState.transactions = appState.transactions.filter(t => t.id !== rep.txId);
   }
 
@@ -18769,11 +18876,13 @@ async function deletePeerLoan(loanId) {
   }
   if (txIdsToDelete.size > 0) {
     if (confirm(`Sollen auch die ${txIdsToDelete.size} verknüpfte(n) Buchung(en) auf deinen Konten gelöscht werden?`)) {
+      txIdsToDelete.forEach(tId => trackDeletedEntity('transactions', tId));
       appState.transactions = appState.transactions.filter(t => !txIdsToDelete.has(t.id));
     }
   }
 
   appState.peerLoans = appState.peerLoans.filter(l => l.id !== loanId);
+  trackDeletedEntity('peerLoans', loanId);
   await saveStateToEncryptedStorage();
   updateOverview();
   announceNVDA(`Eintrag für ${loan.person} gelöscht.`);

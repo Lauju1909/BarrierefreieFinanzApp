@@ -738,8 +738,38 @@ let appState = {
   customCategories: { exp: {}, inc: {}, trf: {} },
   wishlist: [],
   shoppingList: [],
-  peerLoans: []
+  peerLoans: [],
+  deletedEntities: {} // Format: { [entityType]: { [id]: timestamp } }
 };
+
+function ensureDeletedEntitiesInitialized() {
+  if (!appState) return;
+  if (!appState.deletedEntities || typeof appState.deletedEntities !== 'object') {
+    appState.deletedEntities = {
+      transactions: {},
+      recurring: {},
+      wishlist: {},
+      shoppingList: {},
+      savingPots: {},
+      peerLoans: {},
+      accounts: {}
+    };
+  }
+  const types = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+  types.forEach(t => {
+    if (!appState.deletedEntities[t] || typeof appState.deletedEntities[t] !== 'object') {
+      appState.deletedEntities[t] = {};
+    }
+  });
+}
+
+function trackDeletedEntity(entityType, id) {
+  if (!id) return;
+  ensureDeletedEntitiesInitialized();
+  if (appState.deletedEntities[entityType]) {
+    appState.deletedEntities[entityType][String(id)] = Date.now();
+  }
+}
 
 // ============================================================================
 // 1e. FINANZ-INTELLIGENZ SUITE: BUDGETS, RANKINGS, CSV-IMPORT, BERICHTE, RECHNER
@@ -1338,6 +1368,7 @@ async function deleteShoppingItem(id) {
   if (idx === -1) return;
 
   const removed = appState.shoppingList.splice(idx, 1)[0];
+  trackDeletedEntity('shoppingList', id);
   await saveStateToEncryptedStorage();
   renderShoppingList();
   announceNVDA(`${removed.name} von der Einkaufsliste gelöscht.`);
@@ -1360,18 +1391,18 @@ function setShoppingFilter(filter) {
 
 async function clearDoneShoppingItems() {
   ensureShoppingListInitialized();
-  const countBefore = appState.shoppingList.length;
-  appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
-  const removedCount = countBefore - appState.shoppingList.length;
-
-  if (removedCount === 0) {
+  const doneItems = appState.shoppingList.filter(i => i.checked);
+  if (doneItems.length === 0) {
     alert('Es gibt keine abgehakten Artikel zum Aufräumen.');
     return;
   }
 
+  doneItems.forEach(i => trackDeletedEntity('shoppingList', i.id));
+  appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
+
   await saveStateToEncryptedStorage();
   renderShoppingList();
-  announceNVDA(`${removedCount} erledigte Artikel von der Einkaufsliste aufgeräumt.`);
+  announceNVDA(`${doneItems.length} erledigte Artikel von der Einkaufsliste aufgeräumt.`);
 }
 
 async function clearEntireShoppingList() {
@@ -1385,6 +1416,7 @@ async function clearEntireShoppingList() {
     return;
   }
 
+  appState.shoppingList.forEach(i => trackDeletedEntity('shoppingList', i.id));
   appState.shoppingList = [];
   await saveStateToEncryptedStorage();
   renderShoppingList();
@@ -1746,9 +1778,11 @@ async function handleConfirmShoppingBooking(e) {
   if (clearDoneChk && clearDoneChk.checked) {
     const doneItems = appState.shoppingList.filter(i => i.checked);
     if (doneItems.length > 0) {
+      doneItems.forEach(i => trackDeletedEntity('shoppingList', i.id));
       appState.shoppingList = appState.shoppingList.filter(i => !i.checked);
     } else {
       // If none were checked, all were booked, so clear entire list
+      appState.shoppingList.forEach(i => trackDeletedEntity('shoppingList', i.id));
       appState.shoppingList = [];
     }
   }
@@ -2078,10 +2112,10 @@ async function handleDeleteWish(wishId) {
   ensureWishlistInitialized();
   const wish = appState.wishlist.find(w => w.id === wishId);
   if (!wish) return;
-
   if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
 
   appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
+  trackDeletedEntity('wishlist', wishId);
   await saveStateToEncryptedStorage();
   renderWishlist();
   announceNVDA(`Wunsch "${wish.title}" gelöscht.`);
@@ -3045,6 +3079,7 @@ async function deleteAccount(accId) {
     if (appState.initialBalances && appState.initialBalances[accId] !== undefined) {
       delete appState.initialBalances[accId];
     }
+    trackDeletedEntity('accounts', accId);
     await saveStateToEncryptedStorage();
     populateAllAccountDropdowns();
     populateBudgetCategoryDropdown();
@@ -8177,6 +8212,7 @@ async function deleteTransaction(txId) {
       });
     }
 
+    trackDeletedEntity('transactions', txId);
     await saveStateToEncryptedStorage();
     updateOverview();
     announceNVDA(`Buchung über ${formatCurrency(deleted.amount)} und zugehörige Leihgaben gelöscht.`);
@@ -8509,6 +8545,7 @@ async function deleteRecurring(recId) {
   const idx = appState.recurring.findIndex(r => r.id === recId);
   if (idx !== -1) {
     const deleted = appState.recurring.splice(idx, 1)[0];
+    trackDeletedEntity('recurring', recId);
     await saveStateToEncryptedStorage();
     renderSettingsRecurringList();
     updateOverview();
@@ -10204,6 +10241,7 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
     if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
     if (!appState.transactions) appState.transactions = [];
     if (!appState.recurring) appState.recurring = [];
+    ensureDeletedEntitiesInitialized();
 
     setFailedAttempts(0);
     setLockoutEndTime(0);
@@ -11241,6 +11279,7 @@ function switchViewToTransferForPot(potId) {
 async function handleDeleteSavingPot(potId) {
   if (!confirm('Möchtest du diesen Spartopf wirklich löschen?')) return;
   appState.savingPots = (appState.savingPots || []).filter(p => p.id !== potId);
+  trackDeletedEntity('savingPots', potId);
   await saveStateToEncryptedStorage();
   renderSavingPotsList();
   populateWishlistAccountDropdown();
@@ -12023,6 +12062,7 @@ async function deletePeerLoanRepayment(loanId, repayItemId) {
 
   // Falls verknüpfte Buchung existiert, diese auch löschen
   if (rep.txId) {
+    trackDeletedEntity('transactions', rep.txId);
     appState.transactions = appState.transactions.filter(t => t.id !== rep.txId);
   }
 
@@ -12134,11 +12174,13 @@ async function deletePeerLoan(loanId) {
   }
   if (txIdsToDelete.size > 0) {
     if (confirm(`Sollen auch die ${txIdsToDelete.size} verknüpfte(n) Buchung(en) auf deinen Konten gelöscht werden?`)) {
+      txIdsToDelete.forEach(tId => trackDeletedEntity('transactions', tId));
       appState.transactions = appState.transactions.filter(t => !txIdsToDelete.has(t.id));
     }
   }
 
   appState.peerLoans = appState.peerLoans.filter(l => l.id !== loanId);
+  trackDeletedEntity('peerLoans', loanId);
   await saveStateToEncryptedStorage();
   updateOverview();
   announceNVDA(`Eintrag für ${loan.person} gelöscht.`);

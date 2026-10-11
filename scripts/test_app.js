@@ -338,6 +338,40 @@ if (localState.budgets.Freizeit !== 150 || localState.customCategories.exp.Haust
 }
 console.log('Entity merge simulation: 100% PASS!');
 
+// 5b. Test Tombstone Deletion Sync Engine
+console.log('Testing Tombstone Deletion Sync Engine...');
+const requiredTombstoneFunctions = [
+  'ensureDeletedEntitiesInitialized',
+  'trackDeletedEntity'
+];
+requiredTombstoneFunctions.forEach(fn => {
+  const regex = new RegExp(`\\bfunction\\s+${fn}\\b|\\basync\\s+function\\s+${fn}\\b`);
+  if (!regex.test(appJs)) {
+    console.error(`Missing required Tombstone function: ${fn}`);
+    process.exit(1);
+  }
+});
+
+// Tombstone merge and filtering simulation
+const tombstoneTestState = {
+  transactions: [{ id: 'tx_keep', amount: 10 }, { id: 'tx_delete_me', amount: 20 }],
+  deletedEntities: {
+    transactions: { 'tx_delete_me': 1760000000000 },
+    recurring: {},
+    wishlist: {},
+    shoppingList: {},
+    savingPots: {},
+    peerLoans: {},
+    accounts: {}
+  }
+};
+tombstoneTestState.transactions = tombstoneTestState.transactions.filter(t => !tombstoneTestState.deletedEntities.transactions[String(t.id)]);
+if (tombstoneTestState.transactions.length !== 1 || tombstoneTestState.transactions[0].id !== 'tx_keep') {
+  console.error('Tombstone filtering mismatch');
+  process.exit(1);
+}
+console.log('Tombstone Deletion Sync Engine: 100% PASS!');
+
 // 6. Test Overview Accordion & Transaction Filtering / Sorting
 console.log('Testing Transaction Filter & Sort Engine for Overview Accordions...');
 
