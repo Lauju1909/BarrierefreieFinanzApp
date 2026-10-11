@@ -5228,7 +5228,21 @@ function renderAccountCardBalances(balances) {
     const hintText = acc.hint || getAccountTypeDefaultHint(acc.type);
     const balFormatted = formatCurrency(bal);
 
-    // Ausführliche, glasklare Ansage für Screenreader & TalkBack:
+    if (!isMobileTalkBackDevice()) {
+      // DESKTOP: bewährte Original-Ansicht
+      return `
+        <div class="account-card" tabindex="0" aria-label="${escapeHTML(acc.name)}: ${balFormatted}">
+          <div class="acc-header">
+            <span class="acc-icon" aria-hidden="true">${icon}</span>
+            <span class="acc-name">${escapeHTML(acc.name)}</span>
+          </div>
+          <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}">${balFormatted}</div>
+          <span class="acc-hint">${escapeHTML(hintText)}</span>
+        </div>
+      `;
+    }
+
+    // SMARTPHONE (TalkBack): vollständiger Satz als sr-only Text
     const accSpeech = `${acc.name}: Kontostand ${balFormatted}${hintText ? ', ' + hintText : ''}.`;
 
     return `
@@ -5244,6 +5258,31 @@ function renderAccountCardBalances(balances) {
     `;
   }).join('');
 }
+
+function isMobileTalkBackDevice() {
+  return !!window.__IS_ANDROID__ ||
+    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) ||
+    /Android/i.test(navigator.userAgent);
+}
+
+// Smartphone: Gruppen-Beschriftungen für TalkBack nachträglich setzen (Desktop bleibt unverändert)
+function applyMobileA11yLabels() {
+  if (!isMobileTalkBackDevice()) return;
+  const map = [
+    ['.card-income-wrap .card-header-flex', 'Einnahmen Gesamtübersicht'],
+    ['.card-expense-wrap .card-header-flex', 'Ausgaben Gesamtübersicht'],
+    ['#section-credit-container .card-header-flex', 'Kredite und Ratenkäufe Gesamtübersicht'],
+    ['.card-transfer-wrap .card-header-flex', 'Umbuchungen und Sparpläne Gesamtübersicht'],
+    ['#section-peer-loans-container .card-header-flex', 'Geliehenes und verliehenes Geld Gesamtübersicht']
+  ];
+  map.forEach(([sel, label]) => {
+    const el = document.querySelector(sel);
+    if (el) { el.setAttribute('tabindex', '0'); el.setAttribute('role', 'group'); el.setAttribute('aria-label', label); }
+  });
+  const hero = document.querySelector('.balance-hero-card');
+  if (hero) { hero.setAttribute('role', 'region'); hero.setAttribute('aria-label', 'Gesamter Kontostand und Monatsergebnis'); }
+}
+document.addEventListener('DOMContentLoaded', applyMobileA11yLabels);
 
 // ----------------------------------------------------------------------------
 // 10. LISTE RENDERN: BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG IN DER ÜBERSICHT

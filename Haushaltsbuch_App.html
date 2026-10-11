@@ -3384,7 +3384,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 2. DANN: EINNAHMEN -->
 <section class="overview-section" aria-labelledby="section-income-heading">
 <div class="section-card card-income-wrap">
-<div class="card-header-flex" tabindex="0" role="group" aria-label="Einnahmen Gesamtübersicht">
+<div class="card-header-flex">
 <div>
 <h3 id="section-income-heading" class="section-title" style="margin-bottom: 2px;">2. 📥 Einnahmen</h3>
 <span class="sub-counter" id="income-summary-subtext">Lade Einnahmen...</span>
@@ -3406,7 +3406,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 3. DANN: AUSGABEN -->
 <section class="overview-section" aria-labelledby="section-expense-heading">
 <div class="section-card card-expense-wrap">
-<div class="card-header-flex" tabindex="0" role="group" aria-label="Ausgaben Gesamtübersicht">
+<div class="card-header-flex">
 <div>
 <h3 id="section-expense-heading" class="section-title" style="margin-bottom: 2px;">3. 📤 Ausgaben</h3>
 <span class="sub-counter" id="expense-summary-subtext">Lade Ausgaben...</span>
@@ -3428,7 +3428,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 3b. DANN: LAUFENDE KREDITE & RATENKÄUFE -->
 <section class="overview-section" id="section-credit-container" aria-labelledby="section-credit-heading">
 <div class="section-card">
-  <div class="card-header-flex" tabindex="0" role="group" aria-label="Kredite und Ratenkäufe Gesamtübersicht">
+  <div class="card-header-flex">
     <div>
       <h3 id="section-credit-heading" class="section-title" style="margin-bottom: 2px;">💳 Laufende Kredite, Ratenkäufe &amp; Finanzierungen</h3>
       <span class="sub-counter" id="credit-summary-subtext">0 aktive Kredite</span>
@@ -3450,7 +3450,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 3c. DANN: UMBUCHUNGEN, SPARPLÄNE & DAUERAUFTRÄGE -->
 <section class="overview-section" id="section-transfer-container" aria-labelledby="section-transfer-heading">
 <div class="section-card card-transfer-wrap" style="border-left: 8px solid var(--accent-action, #0288D1);">
-  <div class="card-header-flex" tabindex="0" role="group" aria-label="Umbuchungen und Sparpläne Gesamtübersicht">
+  <div class="card-header-flex">
     <div>
       <h3 id="section-transfer-heading" class="section-title" style="margin-bottom: 2px;">🔄 Umbuchungen, Sparpläne &amp; Daueraufträge</h3>
       <span class="sub-counter" id="transfer-summary-subtext">Lade Umbuchungen...</span>
@@ -3472,7 +3472,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 3d. DANN: GELIEHENES & VERLIEHENES GELD -->
 <section class="overview-section" id="section-peer-loans-container" aria-labelledby="section-peer-loans-heading" style="display: none;">
 <div class="section-card" style="border-left: 8px solid #8E24AA;">
-  <div class="card-header-flex" tabindex="0" role="group" aria-label="Geliehenes und verliehenes Geld Gesamtübersicht">
+  <div class="card-header-flex">
     <div>
       <h3 id="section-peer-loans-heading" class="section-title" style="margin-bottom: 2px;">🤝 Geliehenes &amp; Verliehenes Geld</h3>
       <span class="sub-counter" id="peer-loans-summary-subtext">0 offene Einträge</span>
@@ -3496,7 +3496,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
 <section class="overview-section" aria-labelledby="section-total-heading">
-<div class="balance-hero-card" tabindex="0" role="region" aria-label="Gesamter Kontostand und Monatsergebnis">
+<div class="balance-hero-card" tabindex="0">
 <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
 <div class="hero-amount" id="card-alltime-total">0,00 €</div>
 <div class="hero-subtext" id="total-balance-sub">Verfügbares Gesamtguthaben über alle Konten</div>
@@ -12200,7 +12200,21 @@ function renderAccountCardBalances(balances) {
     const hintText = acc.hint || getAccountTypeDefaultHint(acc.type);
     const balFormatted = formatCurrency(bal);
 
-    // Ausführliche, glasklare Ansage für Screenreader & TalkBack:
+    if (!isMobileTalkBackDevice()) {
+      // DESKTOP: bewährte Original-Ansicht
+      return `
+        <div class="account-card" tabindex="0" aria-label="${escapeHTML(acc.name)}: ${balFormatted}">
+          <div class="acc-header">
+            <span class="acc-icon" aria-hidden="true">${icon}</span>
+            <span class="acc-name">${escapeHTML(acc.name)}</span>
+          </div>
+          <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}">${balFormatted}</div>
+          <span class="acc-hint">${escapeHTML(hintText)}</span>
+        </div>
+      `;
+    }
+
+    // SMARTPHONE (TalkBack): vollständiger Satz als sr-only Text
     const accSpeech = `${acc.name}: Kontostand ${balFormatted}${hintText ? ', ' + hintText : ''}.`;
 
     return `
@@ -12216,6 +12230,31 @@ function renderAccountCardBalances(balances) {
     `;
   }).join('');
 }
+
+function isMobileTalkBackDevice() {
+  return !!window.__IS_ANDROID__ ||
+    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) ||
+    /Android/i.test(navigator.userAgent);
+}
+
+// Smartphone: Gruppen-Beschriftungen für TalkBack nachträglich setzen (Desktop bleibt unverändert)
+function applyMobileA11yLabels() {
+  if (!isMobileTalkBackDevice()) return;
+  const map = [
+    ['.card-income-wrap .card-header-flex', 'Einnahmen Gesamtübersicht'],
+    ['.card-expense-wrap .card-header-flex', 'Ausgaben Gesamtübersicht'],
+    ['#section-credit-container .card-header-flex', 'Kredite und Ratenkäufe Gesamtübersicht'],
+    ['.card-transfer-wrap .card-header-flex', 'Umbuchungen und Sparpläne Gesamtübersicht'],
+    ['#section-peer-loans-container .card-header-flex', 'Geliehenes und verliehenes Geld Gesamtübersicht']
+  ];
+  map.forEach(([sel, label]) => {
+    const el = document.querySelector(sel);
+    if (el) { el.setAttribute('tabindex', '0'); el.setAttribute('role', 'group'); el.setAttribute('aria-label', label); }
+  });
+  const hero = document.querySelector('.balance-hero-card');
+  if (hero) { hero.setAttribute('role', 'region'); hero.setAttribute('aria-label', 'Gesamter Kontostand und Monatsergebnis'); }
+}
+document.addEventListener('DOMContentLoaded', applyMobileA11yLabels);
 
 // ----------------------------------------------------------------------------
 // 10. LISTE RENDERN: BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG IN DER ÜBERSICHT
