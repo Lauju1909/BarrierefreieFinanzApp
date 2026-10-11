@@ -5214,6 +5214,7 @@ function updateOverview() {
   renderBudgetsList();
   renderOverviewCreditAccordion();
   renderOverviewPeerLoans();
+  if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
 }
 
 function renderAccountCardBalances(balances) {
@@ -10479,7 +10480,7 @@ function unlockApp() {
     window.__PENDING_SYNC_DATA__ = null;
     try { localStorage.removeItem('haushaltsbuch_pending_sync_data'); } catch(e) {}
     setTimeout(() => {
-      SyncEngine.importSyncedVaultData(pending);
+      SyncEngine.importSyncedVaultData(pending, null, Boolean(pending.forceOverwrite));
     }, 200);
   }
 }
@@ -11518,8 +11519,11 @@ function renderOverviewPeerLoans() {
     const dueDateNotice = loan.dueDate ? ` • 📅 Rückzahlung bis: <strong>${formatDateGerman(loan.dueDate)}</strong>` : '';
     const repaymentsList = Array.isArray(loan.repayments) && loan.repayments.length > 0;
 
+    const loanSpeech = `${isLent ? 'Verliehenes Geld' : 'Geliehenes Geld'} an ${loan.person || 'Unbekannt'}. Ursprünglich ${formatCurrency(total)}, noch offen ${formatCurrency(remaining)}, bereits zurückgezahlt ${formatCurrency(paid)}. Datum ${dateFormatted}.`;
+
     html += `
-      <div style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
+      <div class="peer-loan-card" style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
+        <span class="sr-only">${escapeHTML(loanSpeech)}</span>
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
           <div>
             <div style="font-size: 13px; font-weight: bold; color: ${typeColor}; margin-bottom: 2px;">
@@ -11607,8 +11611,10 @@ function renderOverviewPeerLoans() {
         <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
           ${settledLoans.map(sl => {
             const slIsLent = sl.type === 'lent';
+            const slSpeech = `Beglichen: ${slIsLent ? 'Verliehen an' : 'Geliehen von'} ${sl.person || 'Unbekannt'}, Betrag ${formatCurrency(sl.amount)}. Vollständig beglichen am ${formatDateGerman(sl.settledDate || sl.date)}.`;
             return `
-              <div style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 6px;">
+              <div class="peer-loan-archived-card" style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 6px;">
+                <span class="sr-only">${escapeHTML(slSpeech)}</span>
                 <div>
                   <strong>👤 ${escapeHTML(sl.person || 'Unbekannt')}</strong>: ${formatCurrency(sl.amount)}
                   <span style="color: var(--text-muted, #666); font-size: 12px;">(${slIsLent ? '🟢 Verliehen' : '🔴 Geliehen'} • Beglichen: ${formatDateGerman(sl.settledDate || sl.date)})</span>
@@ -12238,38 +12244,68 @@ async function reopenPeerLoan(loanId) {
   announceNVDA(`Leihgabe mit ${loan.person} wieder geöffnet.`);
 }
 
-async function settlePeerLoan(loanId) {
+function openSettlePeerLoanModal(loanId) {
+  ensurePeerLoansInitialized();
+  const loan = appState.peerLoans.find(l => l.id === loanId);
+  if (!loan) return;
+
+  const modal = document.getElementById('settle-peer-loan-modal');
+  const idInput = document.getElementById('settle-peer-loan-id');
+  const descEl = document.getElementById('settle-peer-loan-desc');
+  const heading = document.getElementById('settle-peer-loan-heading');
+  const bookBox = document.getElementById('settle-peer-loan-book-box');
+  const bookLabel = document.getElementById('settle-peer-loan-book-label');
+  const bookCheckbox = document.getElementById('settle-peer-loan-book-tx');
+
+  const remaining = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
+  const isLent = loan.type === 'lent';
+
+  if (idInput) idInput.value = loanId;
+  if (descEl) {
+    descEl.textContent = isLent
+      ? `Möchtest du die Leihgabe mit „${loan.person}“ über noch offene ${formatCurrency(remaining)} als vollständig zurückgezahlt markieren?`
+      : `Möchtest du deine Schuld bei „${loan.person}“ über noch offene ${formatCurrency(remaining)} als vollständig beglichen markieren?`;
+  }
+
+  if (bookBox && bookLabel) {
+    if (remaining > 0) {
+      bookBox.style.display = 'block';
+      bookLabel.textContent = `Restbetrag von ${formatCurrency(remaining)} als ${isLent ? 'Einnahme (Geldeingang)' : 'Ausgabe (Geldausgang)'} auf dein Konto buchen`;
+      if (bookCheckbox) bookCheckbox.checked = true;
+    } else {
+      bookBox.style.display = 'none';
+      if (bookCheckbox) bookCheckbox.checked = false;
+    }
+  }
+
+  if (modal) {
+    modal.style.display = 'flex';
+    if (heading) heading.focus();
+  }
+}
+
+function closeSettlePeerLoanModal() {
+  const modal = document.getElementById('settle-peer-loan-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function confirmSettlePeerLoanFromModal() {
+  const idInput = document.getElementById('settle-peer-loan-id');
+  if (!idInput || !idInput.value) return;
+  const loanId = idInput.value;
+  const bookAccount = document.getElementById('settle-peer-loan-book-tx') ? document.getElementById('settle-peer-loan-book-tx').checked : false;
+
+  closeSettlePeerLoanModal();
+
   ensurePeerLoansInitialized();
   const loan = appState.peerLoans.find(l => l.id === loanId);
   if (!loan) return;
 
   const remaining = Math.max(0, Number(loan.amount || 0) - Number(loan.paidAmount || 0));
   const isLent = loan.type === 'lent';
-
-  const confirmMsg = isLent
-    ? `Möchtest du die Leihgabe mit "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`
-    : `Möchtest du deine Schuld bei "${loan.person}" über noch offene ${formatCurrency(remaining)} als VOLLSTÄNDIG zurückgezahlt abhaken?`;
-
-  if (typeof confirm === 'function') {
-    try {
-      if (!confirm(confirmMsg)) return;
-    } catch (e) {
-      // WebView fallback
-    }
-  }
-
   const todayStr = new Date().toISOString().split('T')[0];
 
-  let bookAccount = false;
-  if (remaining > 0 && typeof confirm === 'function') {
-    try {
-      bookAccount = confirm(`Soll der Restbetrag von ${formatCurrency(remaining)} auch als ${isLent ? 'Geldeingang (Einnahme)' : 'Geldausgang (Ausgabe)'} auf dein Konto gebucht werden?`);
-    } catch (e) {
-      bookAccount = false;
-    }
-  }
-
-  if (bookAccount) {
+  if (bookAccount && remaining > 0) {
     const acc = loan.account || (appState.accounts && appState.accounts[0] ? appState.accounts[0].id : 'bank');
     const txId = 'tx_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     if (isLent) {
@@ -12309,6 +12345,10 @@ async function settlePeerLoan(loanId) {
   await saveStateToEncryptedStorage();
   updateOverview();
   announceNVDA(`Leihgabe mit ${loan.person} als vollständig zurückgezahlt markiert.`);
+}
+
+async function settlePeerLoan(loanId) {
+  openSettlePeerLoanModal(loanId);
 }
 
 function openDeletePeerLoanModal(loanId) {
@@ -12409,6 +12449,9 @@ window.closeDeletePeerRepayModal = closeDeletePeerRepayModal;
 window.confirmDeletePeerRepayFromModal = confirmDeletePeerRepayFromModal;
 window.reopenPeerLoan = reopenPeerLoan;
 window.settlePeerLoan = settlePeerLoan;
+window.openSettlePeerLoanModal = openSettlePeerLoanModal;
+window.closeSettlePeerLoanModal = closeSettlePeerLoanModal;
+window.confirmSettlePeerLoanFromModal = confirmSettlePeerLoanFromModal;
 window.deletePeerLoan = deletePeerLoan;
 window.openDeletePeerLoanModal = openDeletePeerLoanModal;
 window.closeDeletePeerLoanModal = closeDeletePeerLoanModal;
@@ -12420,6 +12463,8 @@ window.closeQuickCategoryModal = closeQuickCategoryModal;
 window.onQuickCatTypeChange = onQuickCatTypeChange;
 window.onQuickCatModeChange = onQuickCatModeChange;
 window.handleQuickAddCategorySubmit = handleQuickAddCategorySubmit;
+window.renderPeerLoans = renderOverviewPeerLoans;
+window.renderOverviewPeerLoans = renderOverviewPeerLoans;
 window.syncCategoriesFromGitHub = syncCategoriesFromGitHub;
 window.initCloudCategoriesSync = initCloudCategoriesSync;
 

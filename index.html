@@ -2061,6 +2061,37 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
+<!-- =========================================================================
+     MODAL DIALOG: LEIHGABE ALS VOLLSTÄNDIG BEGLICHEN MARKIEREN (BARRIEREFREI)
+     ========================================================================= -->
+<div id="settle-peer-loan-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settle-peer-loan-heading" style="display: none;">
+  <div class="modal-dialog-box" style="max-width: 540px; border-top: 8px solid #2E7D32;">
+    <h2 id="settle-peer-loan-heading" tabindex="-1" style="margin: 0 0 10px 0; color: #2E7D32; font-size: 22px;">
+      ✅ Leihgabe als beglichen markieren
+    </h2>
+    <p id="settle-peer-loan-desc" style="font-size: 15px; color: var(--text-primary); margin: 0 0 16px 0;">
+      Möchtest du diese Leihgabe als vollständig zurückgezahlt markieren?
+    </p>
+    <input type="hidden" id="settle-peer-loan-id">
+
+    <div id="settle-peer-loan-book-box" style="background: rgba(46, 125, 50, 0.08); border-left: 5px solid #2E7D32; padding: 12px 14px; border-radius: 6px; margin-bottom: 18px;">
+      <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-size: 14px; color: var(--text-primary);">
+        <input type="checkbox" id="settle-peer-loan-book-tx" checked style="margin-top: 3px;">
+        <span id="settle-peer-loan-book-label">Restbetrag automatisch als Buchung auf dein Konto verbuchen</span>
+      </label>
+    </div>
+
+    <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 14px;">
+      <button type="button" class="btn btn-secondary" onclick="closeSettlePeerLoanModal()" style="padding: 10px 18px;">
+        Abbrechen
+      </button>
+      <button type="button" class="btn btn-primary" onclick="confirmSettlePeerLoanFromModal()" style="background-color: #2E7D32; border-color: #1B5E20; padding: 10px 18px;">
+        ✅ Als beglichen markieren
+      </button>
+    </div>
+  </div>
+</div>
+
 
 
 <!-- =========================================================================

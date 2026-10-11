@@ -1023,6 +1023,7 @@ const SyncEngine = {
         if (typeof renderShoppingList === 'function') renderShoppingList();
         if (typeof renderWishlist === 'function') renderWishlist();
         if (typeof renderSavingPotsList === 'function') renderSavingPotsList();
+        if (typeof renderOverviewPeerLoans === 'function') renderOverviewPeerLoans();
         if (typeof renderPeerLoans === 'function') renderPeerLoans();
         if (typeof renderSettingsRecurringList === 'function') renderSettingsRecurringList();
         if (typeof renderBudgetsList === 'function') renderBudgetsList();
