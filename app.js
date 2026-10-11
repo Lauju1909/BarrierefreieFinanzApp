@@ -5229,17 +5229,18 @@ function renderAccountCardBalances(balances) {
     const balFormatted = formatCurrency(bal);
 
     // Ausführliche, glasklare Ansage für Screenreader & TalkBack:
-    const accSpeech = `${acc.name}, Kontostand: ${balFormatted}${hintText ? '. ' + hintText : ''}`;
+    const accSpeech = `${acc.name}: Kontostand ${balFormatted}${hintText ? ', ' + hintText : ''}.`;
 
     return `
-      <li class="account-card" role="listitem" tabindex="0" aria-label="${escapeHTML(accSpeech)}">
-        <div class="acc-header">
-          <span class="acc-icon" aria-hidden="true">${icon}</span>
+      <div class="account-card" tabindex="0">
+        <span class="sr-only">${escapeHTML(accSpeech)}</span>
+        <div class="acc-header" aria-hidden="true">
+          <span class="acc-icon">${icon}</span>
           <span class="acc-name">${escapeHTML(acc.name)}</span>
         </div>
-        <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}" aria-label="${escapeHTML(balFormatted)}">${balFormatted}</div>
+        <div class="acc-balance ${colorClass}" id="acc-balance-${escapeHTML(acc.id)}" aria-hidden="true">${balFormatted}</div>
         <span class="acc-hint" aria-hidden="true">${escapeHTML(hintText)}</span>
-      </li>
+      </div>
     `;
   }).join('');
 }
@@ -11422,11 +11423,12 @@ function renderOverviewPeerLoans() {
   if (!container) return;
 
   const activeLoans = (appState.peerLoans || []).filter(l => !l.settled);
+  const settledLoans = (appState.peerLoans || []).filter(l => l.settled);
 
-  // Verstecken, wenn keine offenen Leihgaben vorhanden sind (so wie bei Krediten & Umbuchungen)
-  if (activeLoans.length === 0) {
+  // Verstecken, wenn absolut keine Leihgaben (weder aktiv noch beglichen) vorhanden sind
+  if (activeLoans.length === 0 && settledLoans.length === 0) {
     if (secPeer) secPeer.style.display = 'none';
-    container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Aktuell keine offenen geliehenen oder verliehenen Beträge vorhanden.</p>';
+    container.innerHTML = '<p class="empty-state" style="padding: 10px; color: var(--text-muted, #666);">Aktuell keine geliehenen oder verliehenen Beträge vorhanden.</p>';
     if (subText) subText.textContent = '0 offene Einträge';
     if (totalEl) totalEl.textContent = '0,00 €';
     return;
@@ -11557,7 +11559,6 @@ function renderOverviewPeerLoans() {
     `;
   });
 
-  const settledLoans = (appState.peerLoans || []).filter(l => l.settled);
   if (settledLoans.length > 0) {
     html += `
       <details style="margin-top: 14px; background: var(--bg-hover, #f8f9fa); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px 14px;">
