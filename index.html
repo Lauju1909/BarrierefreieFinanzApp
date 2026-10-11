@@ -558,10 +558,26 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-group">
 <label for="pin-input" class="field-label"><strong id="pin-input-label">PIN oder Passwort:</strong></label>
 <div style="display: flex; gap: 8px; align-items: stretch;">
-<input type="password" id="pin-input" class="large-input pin-field" maxlength="30" placeholder="z. B. 1234" autocomplete="off" autofocus required style="flex: 1;">
+<input type="password" id="pin-input" class="large-input pin-field" maxlength="30" placeholder="z. B. 1234" autocomplete="off" autofocus required style="flex: 1;" oninput="updatePinStrengthUI('pin-input', 'lock-pin-strength-bar', 'lock-pin-strength-text')">
 <button type="button" class="btn btn-secondary" onclick="togglePinVisibility()" title="PIN im Klartext anzeigen / verbergen" aria-label="PIN im Klartext anzeigen oder verbergen" style="white-space: nowrap; padding: 0 16px;">
 <span id="pin-toggle-icon">👁 Anzeigen</span>
 </button>
+</div>
+
+<!-- PIN-STÄRKE MESSER (KEEPASS-STYLE ENTROPIE) -->
+<div class="pin-strength-container" id="lock-pin-strength-wrapper" style="display: none;">
+  <div class="pin-strength-bar-bg" aria-hidden="true">
+    <div id="lock-pin-strength-bar" class="pin-strength-bar-fill"></div>
+  </div>
+  <div class="pin-strength-label">
+    <span>Passwort-Stärke:</span>
+    <span id="lock-pin-strength-text" aria-live="polite">---</span>
+  </div>
+</div>
+
+<!-- OPTIONALES GESCRAMBELTES PIN-PAD -->
+<div id="lock-scrambled-pad-container" style="display: none; margin-top: 10px;">
+  <div id="scrambled-pad-buttons" class="scrambled-pad-grid" role="group" aria-label="Zufälliges Ziffernfeld (Anti-Keylogger)"></div>
 </div>
 </div>
 
@@ -2071,9 +2087,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 </div>
 <div class="header-controls">
+<button type="button" class="btn btn-privacy-toggle" id="btn-header-privacy-toggle" onclick="togglePrivacyMode()" title="Beträge im Diskretionsmodus unkenntlich machen (Strg + H)" aria-label="Beträge verbergen oder anzeigen, Tastenkürzel Strg + H">
+<span aria-hidden="true" id="header-privacy-icon">👁️</span>
+<span id="header-privacy-text">Diskretion (Strg+H)</span>
+</button>
 <span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum">
  📅 Heute:<strong id="today-date-text">Lade Datum...</strong></span>
-<button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L)">
+<button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L oder Strg + L)">
 <span aria-hidden="true">🔒</span>
 <span>Sperren (L)</span>
 </button>
@@ -3349,8 +3369,33 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-settings-view" data-emoji="">Einstellungen, Design & Datensicherung</h2>
 
+<!-- KATEGORIEN-NAVIGATION FÜR EINSTELLUNGEN (AUFGERÄUMTE FILTERUNG) -->
+<nav class="settings-category-nav" role="tablist" aria-label="Einstellungen Kategorien">
+  <button type="button" class="settings-cat-btn active" role="tab" id="set-cat-btn-all" aria-selected="true" onclick="switchSettingsCategory('all')">
+    <span>📂 <strong>Alle anzeigen</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-security" aria-selected="false" onclick="switchSettingsCategory('security')">
+    <span>🛡️ <strong>Sicherheit &amp; Tresor</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-design" aria-selected="false" onclick="switchSettingsCategory('design')">
+    <span>🎨 <strong>Darstellung &amp; Design</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-backup" aria-selected="false" onclick="switchSettingsCategory('backup')">
+    <span>💾 <strong>Datensicherung &amp; Import</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-budgets" aria-selected="false" onclick="switchSettingsCategory('budgets')">
+    <span>🎯 <strong>Monats-Budgets</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-categories" aria-selected="false" onclick="switchSettingsCategory('categories')">
+    <span>🏷️ <strong>Eigene Kategorien</strong></span>
+  </button>
+  <button type="button" class="settings-cat-btn" role="tab" id="set-cat-btn-system" aria-selected="false" onclick="switchSettingsCategory('system')">
+    <span>📜 <strong>Info &amp; System</strong></span>
+  </button>
+</nav>
+
 <!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
-<section class="settings-box" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
+<section class="settings-box" data-settings-cat="design" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
 <h3 id="theme-settings-heading" data-emoji="🎨">Darstellung, Design & Schriftgröße</h3>
 <p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
 
@@ -3373,7 +3418,6 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </select>
 </div>
 </div>
-</section>
 
 <div class="form-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 17px; font-weight: bold;">
@@ -3382,9 +3426,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </label>
 <p class="field-hint" style="margin-top: 4px;">Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.</p>
 </div>
+</section>
 
 <!-- 2. GITHUB AUTO-UPDATER -->
-<section class="settings-box" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
+<section class="settings-box" data-settings-cat="system" aria-labelledby="github-updater-heading" style="border-left: 8px solid var(--accent-income);">
 <h3 id="github-updater-heading" data-emoji="🔄">GitHub Auto-Updater (App-Status)</h3>
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
@@ -3400,7 +3445,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 3. DATENSICHERUNG & PC-UMZUG (BACKUP & IMPORT) -->
-<section class="settings-box" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
+<section class="settings-box" data-settings-cat="backup" aria-labelledby="backup-restore-heading" style="border-left: 8px solid var(--accent-future);">
 <h3 id="backup-restore-heading" data-emoji="💾">Datensicherung & PC-Wechsel (Backup & Wiederherstellen)</h3>
 <p class="field-hint">Hier kannst du alle deine Daten als verschlüsselte Sicherungsdatei herunterladen oder auf einen neuen PC übertragen:</p>
 
@@ -3421,7 +3466,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
 <!-- MONATS-BUDGETS & AUSGABEN-LIMITS -->
-<section class="settings-box" aria-labelledby="heading-budgets-view" style="border-left: 8px solid #FF9800; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="budgets" aria-labelledby="heading-budgets-view" style="border-left: 8px solid #FF9800; margin-top: 18px;">
 <h3 id="heading-budgets-view" data-emoji="🎯">Monats-Budgets &amp; Ausgaben-Limits</h3>
 <p class="field-hint">Setze monatliche Budgetgrenzen für deine Ausgabenkategorien. Die App warnt dich rechtzeitig, wenn ein Budget zu 80% oder 100% aufgebraucht ist:</p>
 
@@ -3452,7 +3497,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
 <!-- BANK-KONTOAUSZUG & CSV-IMPORT -->
-<section class="settings-box" aria-labelledby="csv-import-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="backup" aria-labelledby="csv-import-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
 <h3 id="csv-import-heading" data-emoji="📥">Bank-Kontoauszug / CSV-Datei importieren</h3>
 <p class="field-hint">Lade hier deinen monatlichen Kontoauszug als .csv-Datei (z. B. von Sparkasse, ING, DKB, Volksbank, PayPal) hoch. Die App erkennt die Buchungen automatisch und zeigt dir vor dem Speichern eine praktische Vorschau:</p>
 
@@ -3465,7 +3510,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- DRUCKBARER MONATSBERICHT & PDF-EXPORT -->
-<section class="settings-box" aria-labelledby="print-report-settings-heading" style="border-left: 8px solid #2196F3; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="system" aria-labelledby="print-report-settings-heading" style="border-left: 8px solid #2196F3; margin-top: 18px;">
 <h3 id="print-report-settings-heading" data-emoji="📄">Druckbarer Monatsbericht &amp; Steuer-Nachweis (PDF)</h3>
 <p class="field-hint">Erstelle mit einem Klick einen druckfertigen, sauberen Finanzbericht für deine Unterlagen, den Steuerberater oder Behörden:</p>
 
@@ -3481,7 +3526,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 
 <!-- 3b. EIGENE KATEGORIE ODER GESCHÄFT HINZUFÜGEN & VORSCHLAGEN -->
-<section class="settings-box" aria-labelledby="custom-cat-heading" style="border-left: 8px solid #FF9800; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="categories" aria-labelledby="custom-cat-heading" style="border-left: 8px solid #FF9800; margin-top: 18px;">
 <h3 id="custom-cat-heading" data-emoji="">Eigene Kategorie oder Geschäft hinzufügen</h3>
 <p class="field-hint">Fehlt dir ein Geschäft, Laden oder eine Kategorie? Füge sie hier hinzu – sie wird<strong>sofort in deiner App freigeschaltet</strong>und gleichzeitig<strong>automatisch an den Entwickler übermittelt</strong>, damit sie im nächsten Update fest eingebaut werden kann:</p>
 
@@ -3538,7 +3583,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 4. FEEDBACK & NEUE FUNKTIONEN VORSCHLAGEN -->
-<section class="settings-box" aria-labelledby="feedback-settings-heading" style="border-left: 8px solid #9c27b0; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="system" aria-labelledby="feedback-settings-heading" style="border-left: 8px solid #9c27b0; margin-top: 18px;">
 <h3 id="feedback-settings-heading" data-emoji="💡">Vorschlag für neue Funktionen oder Feedback senden</h3>
 <p class="field-hint">Hast du einen Wunsch für eine neue Funktion oder möchtest Feedback geben? Schreibe es hier auf – es wird<strong>völlig ohne Anmeldung oder E-Mail-Programm</strong>sofort live an den Entwickler übertragen:</p>
 
@@ -3561,8 +3606,69 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </form>
 </section>
 
-<!-- 5. PIN ÄNDERN -->
-<section class="settings-box" aria-labelledby="set-pin-heading">
+<!-- 5. KEEPASS 2 SICHERHEITS-SUITE (DEDIZIERTER BEREICH MIT EIN-/AUSSCHALTERN) -->
+<section class="settings-box" data-settings-cat="security" id="settings-security-suite-section" aria-labelledby="security-suite-heading" style="border-left: 8px solid #D32F2F; margin-top: 18px;">
+  <h3 id="security-suite-heading" data-emoji="🛡️">🛡️ Erweiterte KeePass-Sicherheit (Schutz-Optionen)</h3>
+  <p class="field-hint">Alle Funktionen lassen sich nach deinen Bedürfnissen flexibel aktivieren oder abschalten:</p>
+
+  <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 14px;">
+    <!-- SCHALTER 1: AUTO-LOCK BEI WINDOWS-SPERRE / STANDBY -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-autolock-win" onchange="toggleSecuritySetting('autoLockWinL', this.checked)" checked style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Auto-Lock bei Windows-Sperre (Win+L), Standby &amp; Fensterwechsel</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Sperrt die App und löscht sensible Daten sofort aus dem Speicher, wenn der Bildschirm gesperrt oder der Tab verborgen wird.</p>
+      </div>
+    </label>
+
+    <!-- SCHALTER 2: SOFORT-SPERRE STRG + L -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-shortcut-ctrll" onchange="toggleSecuritySetting('shortcutCtrlL', this.checked)" checked style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Tastenkürzel Strg + L (bzw. L) zum blitzschnellen Sperren</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Ermöglicht das sofortige manuelle Sperren mit Strg + L oder der Taste L.</p>
+      </div>
+    </label>
+
+    <!-- SCHALTER 3: PRIVATSPHÄRE-MASKE (DISKRETIONSMODUS) -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-privacy-mask" onchange="toggleSecuritySetting('privacyMask', this.checked)" style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Privatsphäre-Maske / Diskretionsmodus (Strg + H)</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Maskiert alle sichtbaren Geldbeträge mit „•••• €“, wenn Fremde auf deinen Bildschirm schauen könnten.</p>
+      </div>
+    </label>
+
+    <!-- SCHALTER 4: GESCRAMBELTES PIN-PAD -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-scrambled-pinpad" onchange="toggleSecuritySetting('scrambledPinPad', this.checked)" style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Zufalls-Ziffernfeld (Gescrambeltes PIN-Pad) auf dem Sperrbildschirm</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Verwirfelt die Tasten 0–9 bei jedem Start gegen Keylogger und Fettfleck-Angriffe (Smudge Attacks).</p>
+      </div>
+    </label>
+
+    <!-- SCHALTER 5: PRÜFSUMMEN-VERIFIKATION -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-verify-checksums" onchange="toggleSecuritySetting('verifyChecksums', this.checked)" checked style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Kryptografische SHA-256 Prüfsummenprüfung bei Backups</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Stellt sicher, dass Sicherungsdateien beim Importieren auf Bit-Ebene 100% unbeschädigt und unverändert sind.</p>
+      </div>
+    </label>
+  </div>
+
+  <!-- SICHERHEITS-AUDIT-PROTOKOLL -->
+  <div style="margin-top: 14px; background: rgba(0,0,0,0.03); border: 2px solid var(--border-color); border-radius: 8px; padding: 14px;">
+    <h4 style="margin: 0 0 8px 0; font-size: 16px;" data-emoji="📜">📜 Sicherheits-Audit-Protokoll</h4>
+    <div id="security-audit-info" style="font-size: 14px; color: var(--text-primary); line-height: 1.6;" aria-live="polite">
+      Wird geladen...
+    </div>
+  </div>
+</section>
+
+<!-- 5a. PIN ÄNDERN -->
+<section class="settings-box" data-settings-cat="security" aria-labelledby="set-pin-heading">
 <h3 id="set-pin-heading" data-emoji="🔒">Sicherheits-PIN / Passwort ändern</h3>
 <form id="form-change-pin" onsubmit="handleChangePin(event)">
 <div class="form-group">
@@ -3571,14 +3677,23 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
 <div class="form-group">
 <label for="change-new-pin" class="field-label">Neue PIN oder Passwort:</label>
-<input type="password" id="change-new-pin" class="large-input" required>
+<input type="password" id="change-new-pin" class="large-input" required oninput="updatePinStrengthUI('change-new-pin', 'change-pin-strength-bar', 'change-pin-strength-text')">
+<div class="pin-strength-container" id="change-pin-strength-wrapper" style="margin-top: 6px;">
+  <div class="pin-strength-bar-bg" aria-hidden="true">
+    <div id="change-pin-strength-bar" class="pin-strength-bar-fill"></div>
+  </div>
+  <div class="pin-strength-label">
+    <span>Passwort-Stärke:</span>
+    <span id="change-pin-strength-text" aria-live="polite">---</span>
+  </div>
+</div>
 </div>
 <button type="submit" class="btn btn-secondary"><strong>Neue PIN speichern & Daten neu verschlüsseln</strong></button>
 </form>
 </section>
 
 <!-- 5b. BIOMETRIE / FINGERABDRUCK -->
-<section id="settings-biometric-section" class="settings-box" aria-labelledby="set-bio-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
+<section id="settings-biometric-section" class="settings-box" data-settings-cat="security" aria-labelledby="set-bio-heading" style="border-left: 8px solid #4CAF50; margin-top: 18px;">
   <h3 id="set-bio-heading" data-emoji="👆">👆 Fingerabdruck &amp; Biometrie (Android)</h3>
   <p class="field-hint">Entsperre deine Finanz-App bequem per Fingerabdrucksensor deines Geräts, ohne jedes Mal deine PIN eintippen zu müssen:</p>
 
@@ -3599,7 +3714,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 5c. KEEPASS-SICHERHEIT: SCHLÜSSELDATEI (KEY-FILE) -->
-<section id="settings-keyfile-section" class="settings-box" aria-labelledby="set-keyfile-heading" style="border-left: 8px solid #3F51B5; margin-top: 18px;">
+<section id="settings-keyfile-section" class="settings-box" data-settings-cat="security" aria-labelledby="set-keyfile-heading" style="border-left: 8px solid #3F51B5; margin-top: 18px;">
   <h3 id="set-keyfile-heading" data-emoji="🔑">🔑 Schlüsseldatei (2-Faktor-Schutz wie KeePass 2)</h3>
   <p class="field-hint">Schütze deinen Tresor doppelt: Nur wer <strong>PIN UND Schlüsseldatei</strong> (z. B. auf einem USB-Stick) besitzt, kann den Tresor öffnen:</p>
   
@@ -3620,7 +3735,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 5d. NOTFALLBLATT (EMERGENCY SHEET) -->
-<section class="settings-box" aria-labelledby="set-emergency-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="security" aria-labelledby="set-emergency-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
   <h3 id="set-emergency-heading" data-emoji="📄">📄 Notfall-Datenblatt drucken (KeePass Emergency Sheet)</h3>
   <p class="field-hint">Drucke ein Notfall-Dokument aus, um deine Tresor-Zugangsdaten offline sicher an einem geschützten Ort (z. B. Dokumentenmappe, Tresor) aufzubewahren:</p>
   <div style="margin-top: 10px;">
@@ -3631,7 +3746,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 6. ÄNDERUNGSPROTOKOLL EINSTELLUNG -->
-<section class="settings-box" aria-labelledby="changelog-settings-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
+<section class="settings-box" data-settings-cat="system" aria-labelledby="changelog-settings-heading" style="border-left: 8px solid #009688; margin-top: 18px;">
 <h3 id="changelog-settings-heading" data-emoji="📜">Änderungsprotokoll & Update-Hinweise</h3>
 <p class="field-hint">Hier kannst du festlegen, ob bei neuen Updates vor der PIN-Eingabe automatisch das Änderungsprotokoll ("Was ist neu?") angezeigt werden soll:</p>
 
@@ -3650,7 +3765,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 6. DATEN LÖSCHEN / RESET -->
-<section class="settings-box danger-box" aria-labelledby="set-reset-heading">
+<section class="settings-box danger-box" data-settings-cat="security" aria-labelledby="set-reset-heading">
 <h3 id="set-reset-heading" data-emoji="">DSGVO-Löschung: Alle Daten unwiderruflich vernichten</h3>
 <p class="field-hint">Löscht sämtliche Buchungen, Kontostände, Schlüssel und PINs vollständig von diesem Computer.</p>
 <button class="btn btn-danger" onclick="resetAllAppData()">Alle Daten & Schlüssel restlos löschen</button>

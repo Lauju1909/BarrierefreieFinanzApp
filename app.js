@@ -4016,12 +4016,32 @@ document.addEventListener('DOMContentLoaded', () => {
   startHeartbeat();
   updateTodayDisplay();
   checkChangelogOnStartup();
+  initSecurityListeners();
 
   const todayVal = new Date().toISOString().split('T')[0];
   if (document.getElementById('exp-date')) document.getElementById('exp-date').value = todayVal;
   if (document.getElementById('inc-date')) document.getElementById('inc-date').value = todayVal;
   if (document.getElementById('trf-date')) document.getElementById('trf-date').value = todayVal;
 });
+
+function initSecurityListeners() {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden' && cryptoKey) {
+      const sec = getSecuritySettings();
+      if (sec.autoLockWinL) {
+        lockApp();
+      }
+    }
+  });
+  window.addEventListener('pagehide', () => {
+    if (cryptoKey) {
+      const sec = getSecuritySettings();
+      if (sec.autoLockWinL) {
+        lockApp();
+      }
+    }
+  });
+}
 
 function startHeartbeat() {
   const port = window.__LOCAL_PORT__ || 48123;
@@ -4079,6 +4099,21 @@ function setupGlobalKeyboardShortcuts() {
       return;
     }
 
+    // Globale Sicherheits-Tastenkombinationen (funktionieren auch außerhalb von Formularen)
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === 'L')) {
+      const sec = getSecuritySettings();
+      if (sec.shortcutCtrlL) {
+        e.preventDefault();
+        lockApp();
+        return;
+      }
+    }
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'h' || e.key === 'H')) {
+      e.preventDefault();
+      togglePrivacyMode();
+      return;
+    }
+
     if (isEditing) return;
 
     if (e.key === '1') { e.preventDefault(); switchView('overview'); }
@@ -4093,8 +4128,11 @@ function setupGlobalKeyboardShortcuts() {
       e.preventDefault();
       setDayToToday();
     } else if (e.key === 'l' || e.key === 'L') {
-      e.preventDefault();
-      lockApp();
+      const sec = getSecuritySettings();
+      if (sec.shortcutCtrlL) {
+        e.preventDefault();
+        lockApp();
+      }
     }
   });
 
@@ -9914,6 +9952,7 @@ function updateLockScreenUI(isFirstTime) {
       });
     }
     updateKeyFileLockScreen();
+    renderScrambledPinPad();
   }, 100);
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
@@ -10212,6 +10251,8 @@ function unlockApp() {
 
   switchView('overview');
   resetInactivityTimer();
+  recordUnlockAudit();
+  updateSecuritySettingsUI();
 
   // Asynchrones E2E-Postfach beim Entsperren prüfen
   if (typeof SyncEngine !== 'undefined') {
@@ -10296,6 +10337,7 @@ function lockApp() {
   checkVaultStatus();
   checkLockoutStatus();
   updateKeyFileLockScreen();
+  renderScrambledPinPad();
   announceNVDA('App gesperrt. Sensibler Arbeitsspeicher wurde bereinigt.');
 }
 
@@ -10369,26 +10411,48 @@ function exportEncryptedBackup() {
     return;
   }
 
-  const backupObj = {
-    version: '5.0.0',
-    appName: 'BarrierefreieFinanzApp',
-    exportedAt: new Date().toISOString(),
-    salt: salt,
-    vault: vault
-  };
+  const payload = salt + ':' + vault;
+  computeSha256Hex(payload).then(checksum => {
+    const backupObj = {
+      version: '5.0.0',
+      appName: 'BarrierefreieFinanzApp',
+      exportedAt: new Date().toISOString(),
+      salt: salt,
+      vault: vault,
+      checksum_sha256: checksum
+    };
 
-  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupObj, null, 2));
-  const downloadAnchor = document.createElement('a');
-  const now = new Date();
-  const dateStamp = now.toISOString().split('T')[0];
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const now = new Date();
+    const dateStamp = now.toISOString().split('T')[0];
 
-  downloadAnchor.setAttribute('href', dataStr);
-  downloadAnchor.setAttribute('download', `Haushaltsbuch_Sicherung_${dateStamp}.json`);
-  document.body.appendChild(downloadAnchor);
-  downloadAnchor.click();
-  downloadAnchor.remove();
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `Haushaltsbuch_Sicherung_${dateStamp}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
 
-  announceNVDA('Verschlüsselte Sicherung erfolgreich heruntergeladen!');
+    announceNVDA('Verschlüsselte Sicherung mit SHA-256 Integritätsprüfung erfolgreich heruntergeladen!');
+  }).catch(() => {
+    const backupObj = {
+      version: '5.0.0',
+      appName: 'BarrierefreieFinanzApp',
+      exportedAt: new Date().toISOString(),
+      salt: salt,
+      vault: vault
+    };
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(backupObj, null, 2));
+    const downloadAnchor = document.createElement('a');
+    const now = new Date();
+    const dateStamp = now.toISOString().split('T')[0];
+    downloadAnchor.setAttribute('href', dataStr);
+    downloadAnchor.setAttribute('download', `Haushaltsbuch_Sicherung_${dateStamp}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    announceNVDA('Verschlüsselte Sicherung erfolgreich heruntergeladen!');
+  });
 }
 
 function hexToUint8Array(hex) {
@@ -10415,6 +10479,18 @@ async function importEncryptedBackup(event) {
   reader.onload = async function(e) {
     try {
       const backupObj = JSON.parse(e.target.result);
+
+      // SHA-256 Integritätsprüfung (falls vorhanden und in Einstellungen aktiv)
+      const sec = getSecuritySettings();
+      if (sec.verifyChecksums && backupObj.checksum_sha256 && backupObj.salt && backupObj.vault) {
+        const checkPayload = backupObj.salt + ':' + backupObj.vault;
+        const computed = await computeSha256Hex(checkPayload);
+        if (computed !== backupObj.checksum_sha256) {
+          alert('❌ FEHLER: Die SHA-256 Prüfsumme der Sicherungsdatei stimmt nicht überein!\n\nDie Datei wurde möglicherweise beschädigt oder manipuliert.');
+          announceNVDA('Sicherheitswarnung: Prüfsummenfehler beim Backup-Import.', true);
+          return;
+        }
+      }
       
       let normalizedVault = null;
       let normalizedSalt = null;
@@ -10513,6 +10589,9 @@ async function importEncryptedBackup(event) {
 // 18. FORMATIERUNGS-HILFSFUNKTIONEN
 // ----------------------------------------------------------------------------
 function formatCurrency(num) {
+  if (appState && appState.securitySettings && appState.securitySettings.privacyMask) {
+    return '•••• €';
+  }
   const val = Number(num || 0);
   return val.toLocaleString('de-DE', {
     minimumFractionDigits: 2,
@@ -13421,6 +13500,327 @@ window.updateKeyFileUI = updateKeyFileUI;
 window.updateKeyFileLockScreen = updateKeyFileLockScreen;
 window.printEmergencySheet = printEmergencySheet;
 window.zeroizeMemory = zeroizeMemory;
+
+// =============================================================================
+// KEEPASS 2 SICHERHEITS-SUITE & KATEGORISIERTE EINSTELLUNGEN
+// =============================================================================
+
+function computeSha256Hex(str) {
+  try {
+    const enc = new TextEncoder();
+    const data = enc.encode(str);
+    return crypto.subtle.digest('SHA-256', data).then(buf => {
+      const arr = new Uint8Array(buf);
+      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    });
+  } catch(e) {
+    return Promise.resolve('');
+  }
+}
+
+function getSecuritySettings() {
+  if (appState && appState.securitySettings) {
+    return Object.assign({
+      autoLockWinL: true,
+      shortcutCtrlL: true,
+      privacyMask: false,
+      auditLog: true,
+      scrambledPinPad: false,
+      verifyChecksums: true
+    }, appState.securitySettings);
+  }
+  return {
+    autoLockWinL: true,
+    shortcutCtrlL: true,
+    privacyMask: false,
+    auditLog: true,
+    scrambledPinPad: false,
+    verifyChecksums: true
+  };
+}
+
+async function toggleSecuritySetting(key, val) {
+  if (!appState) return;
+  if (!appState.securitySettings) {
+    appState.securitySettings = getSecuritySettings();
+  }
+  appState.securitySettings[key] = !!val;
+  await saveStateToEncryptedStorage();
+  updateSecuritySettingsUI();
+
+  if (key === 'privacyMask') {
+    updateOverview();
+    announceNVDA(val ? 'Privatsphäre-Maske aktiviert. Beträge sind verborgen.' : 'Privatsphäre-Maske deaktiviert. Beträge werden wieder angezeigt.');
+  } else {
+    announceNVDA('Sicherheitseinstellung aktualisiert.');
+  }
+}
+
+function updateSecuritySettingsUI() {
+  const sec = getSecuritySettings();
+  const map = {
+    autoLockWinL: 'setting-autolock-win',
+    shortcutCtrlL: 'setting-shortcut-ctrll',
+    privacyMask: 'setting-privacy-mask',
+    scrambledPinPad: 'setting-scrambled-pinpad',
+    verifyChecksums: 'setting-verify-checksums'
+  };
+
+  Object.entries(map).forEach(([k, id]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!sec[k];
+  });
+
+  // Header Privacy Button Zustand aktualisieren
+  const btnPrivacy = document.getElementById('btn-header-privacy-toggle');
+  const iconPrivacy = document.getElementById('header-privacy-icon');
+  const textPrivacy = document.getElementById('header-privacy-text');
+  if (btnPrivacy) {
+    if (sec.privacyMask) {
+      btnPrivacy.classList.add('active');
+      if (iconPrivacy) iconPrivacy.textContent = '🙈';
+      if (textPrivacy) textPrivacy.textContent = 'Beträge verdeckt';
+    } else {
+      btnPrivacy.classList.remove('active');
+      if (iconPrivacy) iconPrivacy.textContent = '👁️';
+      if (textPrivacy) textPrivacy.textContent = 'Diskretion (Strg+H)';
+    }
+  }
+
+  // Audit Info rendern
+  renderSecurityAuditInfo();
+}
+
+function togglePrivacyMode() {
+  if (!cryptoKey || !appState) return;
+  const current = !!(appState.securitySettings && appState.securitySettings.privacyMask);
+  toggleSecuritySetting('privacyMask', !current);
+}
+
+function recordUnlockAudit() {
+  if (!appState) return;
+  if (!appState.securityAudit) {
+    appState.securityAudit = {
+      unlockCount: 0,
+      lastUnlockTime: null,
+      failedAttemptsBeforeUnlock: 0
+    };
+  }
+  const failed = getFailedAttempts();
+  appState.securityAudit.unlockCount = (appState.securityAudit.unlockCount || 0) + 1;
+  appState.securityAudit.lastUnlockTime = new Date().toISOString();
+  appState.securityAudit.failedAttemptsBeforeUnlock = failed;
+  saveStateToEncryptedStorage().catch(() => {});
+}
+
+function renderSecurityAuditInfo() {
+  const auditEl = document.getElementById('security-audit-info');
+  if (!auditEl) return;
+  const audit = appState && appState.securityAudit ? appState.securityAudit : null;
+  if (!audit || !audit.lastUnlockTime) {
+    auditEl.innerHTML = '🛡️ Noch kein Audit-Protokoll vorhanden. Wird beim Entsperren erfasst.';
+    return;
+  }
+  const dateObj = new Date(audit.lastUnlockTime);
+  const timeStr = dateObj.toLocaleDateString('de-DE') + ' um ' + dateObj.toLocaleTimeString('de-DE');
+  auditEl.innerHTML = `
+    <div>🕒 <strong>Letztes Entsperren:</strong> ${timeStr}</div>
+    <div>🔢 <strong>Gesamte Entsperrvorgänge:</strong> ${audit.unlockCount || 1}</div>
+    <div>⚠️ <strong>Fehlversuche vor letztem Entsperren:</strong> ${audit.failedAttemptsBeforeUnlock || 0}</div>
+    <div style="margin-top: 4px; color: #2E7D32;">🟢 <strong>Status:</strong> Tresor ist aktuell unversehrt und aktiv geschützt.</div>
+  `;
+}
+
+// -----------------------------------------------------------------------------
+// KATEGORIEN-FILTERUNG IN DEN EINSTELLUNGEN
+// -----------------------------------------------------------------------------
+function switchSettingsCategory(category) {
+  const allBtns = document.querySelectorAll('.settings-cat-btn');
+  allBtns.forEach(btn => {
+    btn.classList.remove('active');
+    btn.setAttribute('aria-selected', 'false');
+  });
+
+  const activeBtn = document.getElementById(`set-cat-btn-${category}`);
+  if (activeBtn) {
+    activeBtn.classList.add('active');
+    activeBtn.setAttribute('aria-selected', 'true');
+  }
+
+  const sections = document.querySelectorAll('#view-settings section[data-settings-cat]');
+  sections.forEach(sec => {
+    const cat = sec.getAttribute('data-settings-cat');
+    if (category === 'all' || cat === category) {
+      sec.style.display = '';
+    } else {
+      sec.style.display = 'none';
+    }
+  });
+
+  const labelMap = {
+    all: 'Alle Einstellungen werden angezeigt',
+    security: 'Kategorie Sicherheit und Tresor ausgewählt',
+    design: 'Kategorie Darstellung und Design ausgewählt',
+    backup: 'Kategorie Datensicherung und Import ausgewählt',
+    budgets: 'Kategorie Monats-Budgets ausgewählt',
+    categories: 'Kategorie Eigene Kategorien ausgewählt',
+    system: 'Kategorie Info und System ausgewählt'
+  };
+  if (labelMap[category]) {
+    announceNVDA(labelMap[category]);
+  }
+}
+
+// -----------------------------------------------------------------------------
+// KEEPASS PASSWORT- / PIN-STÄRKE MESSER (ENTROPIE)
+// -----------------------------------------------------------------------------
+function calculatePinStrength(val) {
+  if (!val || typeof val !== 'string') return { score: 0, label: 'Leer', color: '#9e9e9e', percent: 0 };
+  let poolSize = 0;
+  if (/[0-9]/.test(val)) poolSize += 10;
+  if (/[a-z]/.test(val)) poolSize += 26;
+  if (/[A-Z]/.test(val)) poolSize += 26;
+  if (/[^a-zA-Z0-9]/.test(val)) poolSize += 32;
+
+  const entropy = val.length * Math.log2(Math.max(poolSize, 2));
+
+  if (entropy < 20 || val.length < 4) {
+    return { score: 1, label: 'Sehr schwach (z. B. zu kurz)', color: '#d32f2f', percent: 20 };
+  } else if (entropy < 35 || val.length < 6) {
+    return { score: 2, label: 'Schwach', color: '#f57c00', percent: 40 };
+  } else if (entropy < 55) {
+    return { score: 3, label: 'Mittel / Gut', color: '#fbc02d', percent: 65 };
+  } else if (entropy < 75) {
+    return { score: 4, label: 'Stark', color: '#388e3c', percent: 85 };
+  } else {
+    return { score: 5, label: 'Sehr stark (KeePass-Niveau)', color: '#1b5e20', percent: 100 };
+  }
+}
+
+function updatePinStrengthUI(inputId, barId, textId) {
+  const input = document.getElementById(inputId);
+  const bar = document.getElementById(barId);
+  const text = document.getElementById(textId);
+  const wrapper = document.getElementById(inputId === 'pin-input' ? 'lock-pin-strength-wrapper' : 'change-pin-strength-wrapper');
+
+  if (!input || !bar || !text) return;
+  const val = input.value;
+  if (!val) {
+    if (wrapper) wrapper.style.display = 'none';
+    bar.style.width = '0%';
+    text.textContent = '---';
+    return;
+  }
+
+  if (wrapper) wrapper.style.display = 'flex';
+  const strength = calculatePinStrength(val);
+  bar.style.width = strength.percent + '%';
+  bar.style.backgroundColor = strength.color;
+  text.textContent = strength.label;
+  text.style.color = strength.color;
+}
+
+// -----------------------------------------------------------------------------
+// GESCRAMBELTES PIN-PAD (ANTI-KEYLOGGER / SMUDGE ATTACK)
+// -----------------------------------------------------------------------------
+function renderScrambledPinPad() {
+  const container = document.getElementById('lock-scrambled-pad-container');
+  const grid = document.getElementById('scrambled-pad-buttons');
+  if (!container || !grid) return;
+
+  const sec = getSecuritySettings();
+  if (!sec.scrambledPinPad) {
+    container.style.display = 'none';
+    grid.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'block';
+  // Array 0 bis 9 mischen
+  const digits = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  for (let i = digits.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [digits[i], digits[j]] = [digits[j], digits[i]];
+  }
+
+  grid.innerHTML = '';
+
+  // Die ersten 9 Ziffern
+  for (let i = 0; i < 9; i++) {
+    const d = digits[i];
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'scrambled-pad-btn';
+    btn.textContent = d;
+    btn.setAttribute('aria-label', `Ziffer ${d}`);
+    btn.onclick = () => appendScrambledDigit(d);
+    grid.appendChild(btn);
+  }
+
+  // Taste 10: Rückschritt / Löschen
+  const backBtn = document.createElement('button');
+  backBtn.type = 'button';
+  backBtn.className = 'scrambled-pad-btn action-btn';
+  backBtn.innerHTML = '⌫';
+  backBtn.setAttribute('aria-label', 'Letzte Ziffer löschen');
+  backBtn.onclick = removeLastScrambledDigit;
+  grid.appendChild(backBtn);
+
+  // Taste 11: Die 10. Ziffer
+  const lastD = digits[9];
+  const lastBtn = document.createElement('button');
+  lastBtn.type = 'button';
+  lastBtn.className = 'scrambled-pad-btn';
+  lastBtn.textContent = lastD;
+  lastBtn.setAttribute('aria-label', `Ziffer ${lastD}`);
+  lastBtn.onclick = () => appendScrambledDigit(lastD);
+  grid.appendChild(lastBtn);
+
+  // Taste 12: Alles leeren (C)
+  const clearBtn = document.createElement('button');
+  clearBtn.type = 'button';
+  clearBtn.className = 'scrambled-pad-btn action-btn';
+  clearBtn.innerHTML = 'C';
+  clearBtn.setAttribute('aria-label', 'Ganze PIN löschen');
+  clearBtn.onclick = clearScrambledPin;
+  grid.appendChild(clearBtn);
+}
+
+function appendScrambledDigit(d) {
+  const pinInput = document.getElementById('pin-input');
+  if (!pinInput) return;
+  pinInput.value = (pinInput.value || '') + String(d);
+  updatePinStrengthUI('pin-input', 'lock-pin-strength-bar', 'lock-pin-strength-text');
+}
+
+function removeLastScrambledDigit() {
+  const pinInput = document.getElementById('pin-input');
+  if (!pinInput || !pinInput.value) return;
+  pinInput.value = pinInput.value.slice(0, -1);
+  updatePinStrengthUI('pin-input', 'lock-pin-strength-bar', 'lock-pin-strength-text');
+}
+
+function clearScrambledPin() {
+  const pinInput = document.getElementById('pin-input');
+  if (!pinInput) return;
+  pinInput.value = '';
+  updatePinStrengthUI('pin-input', 'lock-pin-strength-bar', 'lock-pin-strength-text');
+}
+
+window.computeSha256Hex = computeSha256Hex;
+window.getSecuritySettings = getSecuritySettings;
+window.toggleSecuritySetting = toggleSecuritySetting;
+window.updateSecuritySettingsUI = updateSecuritySettingsUI;
+window.togglePrivacyMode = togglePrivacyMode;
+window.recordUnlockAudit = recordUnlockAudit;
+window.renderSecurityAuditInfo = renderSecurityAuditInfo;
+window.switchSettingsCategory = switchSettingsCategory;
+window.calculatePinStrength = calculatePinStrength;
+window.updatePinStrengthUI = updatePinStrengthUI;
+window.renderScrambledPinPad = renderScrambledPinPad;
+window.appendScrambledDigit = appendScrambledDigit;
+window.removeLastScrambledDigit = removeLastScrambledDigit;
+window.clearScrambledPin = clearScrambledPin;
 
 function setAccessibleCodeValue(el, val, label) {
   if (!el) return;

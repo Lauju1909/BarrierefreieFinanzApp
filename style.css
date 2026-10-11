@@ -886,3 +886,138 @@ body.theme-dark .shopping-badge-price {
   border: none;
 }
 
+/* ==========================================================================
+   EINSTELLUNGEN KATEGORIEN-LEISTE (SETTINGS TABS)
+   ========================================================================== */
+.settings-category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  background-color: var(--bg-surface-elevated);
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 2px solid var(--border-subtle);
+}
+
+.settings-cat-btn {
+  background-color: var(--bg-surface);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease-in-out;
+}
+
+.settings-cat-btn:hover {
+  background-color: var(--bg-hover);
+  border-color: var(--border-color);
+}
+
+.settings-cat-btn.active {
+  background-color: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
+}
+
+/* ==========================================================================
+   PIN-STÄRKE MESSER (ENTROPY METER)
+   ========================================================================== */
+.pin-strength-container {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pin-strength-bar-bg {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.pin-strength-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s ease, background-color 0.3s ease;
+  border-radius: 4px;
+}
+
+.pin-strength-label {
+  font-size: 13px;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ==========================================================================
+   GESCRAMBELTES PIN-PAD (ANTI-KEYLOGGER / SMUDGE ATTACK)
+   ========================================================================== */
+.scrambled-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  max-width: 300px;
+  margin: 12px auto 0 auto;
+}
+
+.scrambled-pad-btn {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 14px 0;
+  font-size: 24px;
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.08s ease, background-color 0.15s ease;
+}
+
+.scrambled-pad-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.scrambled-pad-btn:active {
+  transform: scale(0.95);
+}
+
+.scrambled-pad-btn.action-btn {
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   PRIVATSPHÄRE-MASKE / DISKRETIONSMODUS
+   ========================================================================== */
+.btn-privacy-toggle {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-color);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+}
+
+.btn-privacy-toggle.active {
+  background-color: #4A148C;
+  color: #fff;
+  border-color: #7B1FA2;
+}
+
+
