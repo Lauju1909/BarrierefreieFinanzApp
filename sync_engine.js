@@ -882,6 +882,8 @@ const SyncEngine = {
         peerLoans: appState.peerLoans || [],
         budgets: appState.budgets || {},
         customCategories: appState.customCategories || {},
+        securitySettings: appState.securitySettings || {},
+        securityAudit: appState.securityAudit || {},
         deletedEntities: appState.deletedEntities || {}
       };
     }
@@ -937,6 +939,15 @@ const SyncEngine = {
         if (typeof updateOverview === 'function') updateOverview();
         if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
         if (typeof renderOverviewCreditAccordion === 'function') renderOverviewCreditAccordion();
+        if (typeof renderShoppingList === 'function') renderShoppingList();
+        if (typeof renderWishlist === 'function') renderWishlist();
+        if (typeof renderSavingPotsList === 'function') renderSavingPotsList();
+        if (typeof renderPeerLoans === 'function') renderPeerLoans();
+        if (typeof renderSettingsRecurringList === 'function') renderSettingsRecurringList();
+        if (typeof renderBudgetsList === 'function') renderBudgetsList();
+        if (typeof populateCategoriesDropdowns === 'function') populateCategoriesDropdowns();
+        if (typeof populateAllAccountDropdowns === 'function') populateAllAccountDropdowns();
+        if (typeof populateWishlistAccountDropdown === 'function') populateWishlistAccountDropdown();
 
         const txCount = appState.transactions ? appState.transactions.length : 0;
         const msg = `Synchronisation erfolgreich! ${txCount} Buchungen synchronisiert.`;
@@ -1070,7 +1081,7 @@ const SyncEngine = {
       appState.deletedEntities = {};
     }
     const incomingDeleted = incoming.deletedEntities || {};
-    const entityTypes = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+    const entityTypes = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts', 'budgets'];
 
     // Beide Tombstone-Listen zusammenführen
     entityTypes.forEach(type => {
@@ -1090,6 +1101,7 @@ const SyncEngine = {
     const isPotDeleted = (id) => Boolean(appState.deletedEntities.savingPots && appState.deletedEntities.savingPots[String(id)]);
     const isLoanDeleted = (id) => Boolean(appState.deletedEntities.peerLoans && appState.deletedEntities.peerLoans[String(id)]);
     const isAccDeleted = (id) => Boolean(appState.deletedEntities.accounts && appState.deletedEntities.accounts[String(id)]);
+    const isBudgetDeleted = (cat) => Boolean(appState.deletedEntities.budgets && appState.deletedEntities.budgets[String(cat)]);
 
     // 1. Lokale Listen von gelöschten Elementen bereinigen (falls auf anderem Gerät gelöscht)
     if (Array.isArray(appState.transactions)) {
@@ -1137,22 +1149,36 @@ const SyncEngine = {
       appState.accounts = [];
     }
 
-    // 2. Neue/eingehende Buchungen (transactions) einpflegen (ausgenommen gelöschte)
-    const existingTxIds = new Set(appState.transactions.map(t => String(t.id)));
-    let addedTx = 0;
+    if (appState.budgets && typeof appState.budgets === 'object') {
+      Object.keys(appState.budgets).forEach(cat => {
+        if (isBudgetDeleted(cat)) {
+          delete appState.budgets[cat];
+        }
+      });
+    }
+
+    // 2. Buchungen (transactions) einpflegen & aktualisieren
+    const existingTxMap = new Map(appState.transactions.map(t => [String(t.id), t]));
+    let txChanged = 0;
     const incomingTx = incoming.transactions || [];
     for (const t of incomingTx) {
-      if (t && t.id && !existingTxIds.has(String(t.id)) && !isTxDeleted(t.id)) {
-        appState.transactions.push(t);
-        existingTxIds.add(String(t.id));
-        addedTx++;
+      if (t && t.id && !isTxDeleted(t.id)) {
+        const existing = existingTxMap.get(String(t.id));
+        if (!existing) {
+          appState.transactions.push(t);
+          existingTxMap.set(String(t.id), t);
+          txChanged++;
+        } else if ((t.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, t);
+          txChanged++;
+        }
       }
     }
-    if (addedTx > 0) {
+    if (txChanged > 0) {
       appState.transactions.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
     }
 
-    // 3. Konten abgleichen
+    // 3. Konten & Startguthaben abgleichen
     if (!appState.initialBalances) appState.initialBalances = {};
     const existingAccMap = new Map(appState.accounts.map(a => [String(a.id), a]));
     const incomingAcc = incoming.accounts || [];
@@ -1163,11 +1189,13 @@ const SyncEngine = {
         if (!existing) {
           appState.accounts.push(a);
           existingAccMap.set(String(a.id), a);
+        } else if ((a.updatedAt || 0) >= (existing.updatedAt || 0)) {
+          Object.assign(existing, a);
         } else {
-          if (a.name) existing.name = a.name;
-          if (a.icon) existing.icon = a.icon;
-          if (a.type) existing.type = a.type;
-          if (a.hint !== undefined) existing.hint = a.hint;
+          if (a.name && !existing.name) existing.name = a.name;
+          if (a.icon && !existing.icon) existing.icon = a.icon;
+          if (a.type && !existing.type) existing.type = a.type;
+          if (a.hint !== undefined && !existing.hint) existing.hint = a.hint;
           if (a.initialBalance !== undefined && (existing.initialBalance === undefined || existing.initialBalance === 0)) {
             existing.initialBalance = Number(a.initialBalance || 0);
           }
@@ -1179,61 +1207,87 @@ const SyncEngine = {
     if (incoming.initialBalances && typeof incoming.initialBalances === 'object') {
       Object.keys(incoming.initialBalances).forEach(accId => {
         if (!isAccDeleted(accId)) {
-          if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
-            appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+          const incBal = Number(incoming.initialBalances[accId] || 0);
+          const curBal = Number(appState.initialBalances[accId] || 0);
+          const accObj = existingAccMap.get(String(accId));
+          if (accObj && accObj.initialBalance !== undefined) {
+            appState.initialBalances[accId] = accObj.initialBalance;
+          } else if (curBal === 0 && incBal !== 0) {
+            appState.initialBalances[accId] = incBal;
           }
         }
       });
     }
 
-    // Synchronisation von Kontostand und initialBalances absichern
     appState.accounts.forEach(a => {
-      if (a.initialBalance !== undefined && a.initialBalance !== 0) {
-        if (!appState.initialBalances[a.id]) {
-          appState.initialBalances[a.id] = a.initialBalance;
-        }
-      } else if (appState.initialBalances && appState.initialBalances[a.id] !== undefined) {
-        a.initialBalance = Number(appState.initialBalances[a.id] || 0);
+      if (a.initialBalance !== undefined) {
+        appState.initialBalances[a.id] = Number(a.initialBalance || 0);
       }
     });
 
-    // 4. Wunschliste
-    const existingWishIds = new Set(appState.wishlist.map(w => String(w.id)));
+    // 4. Wunschliste einpflegen & aktualisieren
+    const existingWishMap = new Map(appState.wishlist.map(w => [String(w.id), w]));
     const incomingWish = incoming.wishlist || [];
     for (const w of incomingWish) {
-      if (w && w.id && !existingWishIds.has(String(w.id)) && !isWishDeleted(w.id)) {
-        appState.wishlist.push(w);
-        existingWishIds.add(String(w.id));
+      if (w && w.id && !isWishDeleted(w.id)) {
+        const existing = existingWishMap.get(String(w.id));
+        if (!existing) {
+          appState.wishlist.push(w);
+          existingWishMap.set(String(w.id), w);
+        } else if ((w.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, w);
+        } else if (w.fulfilled !== undefined && existing.fulfilled !== w.fulfilled && !existing.updatedAt) {
+          existing.fulfilled = w.fulfilled;
+        }
       }
     }
 
-    // 5. Daueraufträge
-    const existingRecIds = new Set(appState.recurring.map(r => String(r.id)));
+    // 5. Daueraufträge einpflegen & aktualisieren
+    const existingRecMap = new Map(appState.recurring.map(r => [String(r.id), r]));
     const incomingRec = incoming.recurring || [];
     for (const r of incomingRec) {
-      if (r && r.id && !existingRecIds.has(String(r.id)) && !isRecDeleted(r.id)) {
-        appState.recurring.push(r);
-        existingRecIds.add(String(r.id));
+      if (r && r.id && !isRecDeleted(r.id)) {
+        const existing = existingRecMap.get(String(r.id));
+        if (!existing) {
+          appState.recurring.push(r);
+          existingRecMap.set(String(r.id), r);
+        } else if ((r.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, r);
+        }
       }
     }
 
-    // 6. Spartöpfe
-    const existingPotIds = new Set(appState.savingPots.map(p => String(p.id)));
+    // 6. Spartöpfe einpflegen & Salden aktualisieren
+    const existingPotMap = new Map(appState.savingPots.map(p => [String(p.id), p]));
     const incomingPots = incoming.savingPots || [];
     for (const p of incomingPots) {
-      if (p && p.id && !existingPotIds.has(String(p.id)) && !isPotDeleted(p.id)) {
-        appState.savingPots.push(p);
-        existingPotIds.add(String(p.id));
+      if (p && p.id && !isPotDeleted(p.id)) {
+        const existing = existingPotMap.get(String(p.id));
+        if (!existing) {
+          appState.savingPots.push(p);
+          existingPotMap.set(String(p.id), p);
+        } else if ((p.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, p);
+        } else if (p.currentAmount !== undefined && !existing.updatedAt) {
+          existing.currentAmount = p.currentAmount;
+        }
       }
     }
 
-    // 7. Einkaufsliste & Checkliste
-    const existingShopIds = new Set(appState.shoppingList.map(s => String(s.id)));
+    // 7. Einkaufsliste & Checkliste einpflegen & Häkchen abgleichen
+    const existingShopMap = new Map(appState.shoppingList.map(s => [String(s.id), s]));
     const incomingShop = incoming.shoppingList || [];
     for (const s of incomingShop) {
-      if (s && s.id && !existingShopIds.has(String(s.id)) && !isShopDeleted(s.id)) {
-        appState.shoppingList.push(s);
-        existingShopIds.add(String(s.id));
+      if (s && s.id && !isShopDeleted(s.id)) {
+        const existing = existingShopMap.get(String(s.id));
+        if (!existing) {
+          appState.shoppingList.push(s);
+          existingShopMap.set(String(s.id), s);
+        } else if ((s.updatedAt || 0) > (existing.updatedAt || 0)) {
+          Object.assign(existing, s);
+        } else if (s.checked !== undefined && existing.checked !== s.checked && !existing.updatedAt) {
+          existing.checked = s.checked;
+        }
       }
     }
 
@@ -1255,7 +1309,11 @@ const SyncEngine = {
     // 9. Budgets
     if (incoming.budgets && typeof incoming.budgets === 'object') {
       if (!appState.budgets) appState.budgets = {};
-      Object.assign(appState.budgets, incoming.budgets);
+      Object.entries(incoming.budgets).forEach(([cat, val]) => {
+        if (!isBudgetDeleted(cat)) {
+          appState.budgets[cat] = val;
+        }
+      });
     }
 
     // 10. Benutzerdefinierte Kategorien
@@ -1267,6 +1325,23 @@ const SyncEngine = {
           Object.assign(appState.customCategories[type], incoming.customCategories[type]);
         }
       });
+    }
+
+    // 11. Sicherheitseinstellungen
+    if (incoming.securitySettings && typeof incoming.securitySettings === 'object') {
+      if (!appState.securitySettings) appState.securitySettings = {};
+      Object.assign(appState.securitySettings, incoming.securitySettings);
+    }
+
+    // 12. Sicherheits-Audit
+    if (incoming.securityAudit && typeof incoming.securityAudit === 'object') {
+      if (!appState.securityAudit) appState.securityAudit = {};
+      appState.securityAudit.unlockCount = Math.max(appState.securityAudit.unlockCount || 0, incoming.securityAudit.unlockCount || 0);
+      if (incoming.securityAudit.lastUnlockTime) {
+        if (!appState.securityAudit.lastUnlockTime || new Date(incoming.securityAudit.lastUnlockTime) > new Date(appState.securityAudit.lastUnlockTime)) {
+          appState.securityAudit.lastUnlockTime = incoming.securityAudit.lastUnlockTime;
+        }
+      }
     }
   },
 

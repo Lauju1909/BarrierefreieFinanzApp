@@ -726,10 +726,10 @@ const CATEGORIES_DB = {
 
 let appState = {
   accounts: [
-    { id: 'bank', name: 'Girokonto (Bank)', type: 'giro', initialBalance: 0, isDefault: true },
-    { id: 'cash', name: 'Bargeld (Geldbeutel)', type: 'cash', initialBalance: 0, isDefault: false },
-    { id: 'savings', name: 'Tagesgeld / Sparkonto', type: 'savings', initialBalance: 0, isDefault: false },
-    { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', initialBalance: 0, isDefault: false }
+    { id: 'bank', name: 'Girokonto (Bank)', type: 'giro', initialBalance: 0, isDefault: true, updatedAt: 1 },
+    { id: 'cash', name: 'Bargeld (Geldbeutel)', type: 'cash', initialBalance: 0, isDefault: false, updatedAt: 1 },
+    { id: 'savings', name: 'Tagesgeld / Sparkonto', type: 'savings', initialBalance: 0, isDefault: false, updatedAt: 1 },
+    { id: 'paypal', name: 'PayPal Guthaben', type: 'paypal', initialBalance: 0, isDefault: false, updatedAt: 1 }
   ],
   initialBalances: { bank: 0, paypal: 0, savings: 0, cash: 0 },
   transactions: [],
@@ -739,7 +739,30 @@ let appState = {
   wishlist: [],
   shoppingList: [],
   peerLoans: [],
-  deletedEntities: {} // Format: { [entityType]: { [id]: timestamp } }
+  savingPots: [],
+  securitySettings: {
+    autoLockWinL: true,
+    shortcutCtrlL: true,
+    privacyMask: false,
+    auditLog: true,
+    scrambledPinPad: false,
+    verifyChecksums: true
+  },
+  securityAudit: {
+    unlockCount: 0,
+    lastUnlockTime: null,
+    failedAttemptsBeforeUnlock: 0
+  },
+  deletedEntities: {
+    transactions: {},
+    recurring: {},
+    wishlist: {},
+    shoppingList: {},
+    savingPots: {},
+    peerLoans: {},
+    accounts: {},
+    budgets: {}
+  }
 };
 
 function ensureDeletedEntitiesInitialized() {
@@ -752,10 +775,11 @@ function ensureDeletedEntitiesInitialized() {
       shoppingList: {},
       savingPots: {},
       peerLoans: {},
-      accounts: {}
+      accounts: {},
+      budgets: {}
     };
   }
-  const types = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts'];
+  const types = ['transactions', 'recurring', 'wishlist', 'shoppingList', 'savingPots', 'peerLoans', 'accounts', 'budgets'];
   types.forEach(t => {
     if (!appState.deletedEntities[t] || typeof appState.deletedEntities[t] !== 'object') {
       appState.deletedEntities[t] = {};
@@ -811,6 +835,7 @@ function deleteBudget(cat) {
   ensureBudgetsInitialized();
   if (appState.budgets[cat] !== undefined) {
     delete appState.budgets[cat];
+    trackDeletedEntity('budgets', cat);
     saveStateToEncryptedStorage();
     renderBudgetsList();
     announceNVDA(`Budget für ${cat} gelöscht.`);
@@ -1335,7 +1360,8 @@ async function addShoppingItemFromForm(e) {
     price: price,
     store: store,
     checked: false,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
 
   appState.shoppingList.push(newItem);
@@ -1355,6 +1381,7 @@ async function toggleShoppingItem(id) {
   if (!item) return;
 
   item.checked = !item.checked;
+  item.updatedAt = Date.now();
   await saveStateToEncryptedStorage();
   renderShoppingList();
 
@@ -1565,7 +1592,8 @@ async function parseAndImportShoppingText(rawText, defaultStore) {
       price: price,
       store: store,
       checked: false,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     });
   }
 
@@ -1883,7 +1911,8 @@ async function handleAddWish(e) {
     targetDate: targetDate,
     note: note,
     fulfilled: false,
-    createdAt: new Date().toISOString().split('T')[0]
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
 
   appState.wishlist.push(newWish);
@@ -2068,6 +2097,7 @@ async function handleFulfillWishAsExpense(wishId) {
       const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich aus dem Spartopf "${potObj.name}" entnehmen und als Ausgabe buchen?`;
       if (!confirm(confirmMsg)) return;
       potObj.currentAmount = Math.max(0, Math.round((Number(potObj.currentAmount || 0) - wish.amount) * 100) / 100);
+      potObj.updatedAt = Date.now();
     }
   } else {
     const confirmMsg = `Möchtest du "${wish.title}" über ${formatCurrency(wish.amount)} jetzt verbindlich als Ausgabe von Konto "${formatAccountName(wish.account)}" abbuchen und den Wunsch als erfüllt markieren?`;
@@ -2084,11 +2114,14 @@ async function handleFulfillWishAsExpense(wishId) {
     subcategory: wish.title,
     description: `Wunsch erfüllt: ${wish.title}${potName ? ` (aus Spartopf "${potName}")` : ''}`,
     isPlanned: false,
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   });
 
   wish.fulfilled = true;
   wish.fulfilledDate = new Date().toISOString().split('T')[0];
+  wish.updatedAt = Date.now();
 
   await saveStateToEncryptedStorage();
   updateOverview();
@@ -2103,6 +2136,7 @@ async function handleToggleWishFulfilled(wishId) {
   if (!wish) return;
 
   wish.fulfilled = !wish.fulfilled;
+  wish.updatedAt = Date.now();
   await saveStateToEncryptedStorage();
   renderWishlist();
   announceNVDA(`Wunsch "${wish.title}" Status aktualisiert.`);
@@ -3006,6 +3040,7 @@ async function saveAccount(e) {
       acc.accountNumber = accountNumber;
       acc.dispoLimit = dispoLimit;
       acc.notes = notes;
+      acc.updatedAt = Date.now();
     }
   } else {
     // Add new
@@ -3025,7 +3060,9 @@ async function saveAccount(e) {
       bic: bic,
       accountNumber: accountNumber,
       dispoLimit: dispoLimit,
-      notes: notes
+      notes: notes,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     });
   }
 
@@ -5776,6 +5813,7 @@ async function confirmEndRecurring() {
   const today = new Date();
   rec.endYear = today.getFullYear();
   rec.endMonth = today.getMonth();
+  rec.updatedAt = Date.now();
 
   await saveStateToEncryptedStorage();
   closeEndOrDeleteRecModal();
@@ -6534,7 +6572,9 @@ async function handleAddExpense(e) {
                 toAccount: account,
                 amount: shortfall,
                 date: date,
-                description: `Automatische Deckung für ${category} (${chosenAcc.name} hatte nur ${formatCurrency(Math.max(0, curAvail))})`
+                description: `Automatische Deckung für ${category} (${chosenAcc.name} hatte nur ${formatCurrency(Math.max(0, curAvail))})`,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
               });
               autoCoverMsg = ` (davon ${formatCurrency(shortfall)} automatisch über ${backupAcc.name} gedeckt)`;
             }
@@ -6551,7 +6591,9 @@ async function handleAddExpense(e) {
         subcategory: subcategory,
         description: desc,
         isPlanned: isPlanned,
-        date: date
+        date: date,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       };
       if (currentExpenseReceipt) {
         newTx.receipt = JSON.parse(JSON.stringify(currentExpenseReceipt));
@@ -7156,7 +7198,9 @@ async function handleAddIncome(e) {
         subcategory: subcategory,
         description: desc,
         isPlanned: isPlanned,
-        date: date
+        date: date,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       };
       if (currentIncomeReceipt) {
         newTx.receipt = JSON.parse(JSON.stringify(currentIncomeReceipt));
@@ -7260,6 +7304,7 @@ async function handleAddTransfer(e) {
     fromPotObj = (appState.savingPots || []).find(p => p.id === fromPotId);
     if (fromPotObj) {
       fromPotObj.currentAmount = Math.max(0, Math.round((Number(fromPotObj.currentAmount || 0) - amount) * 100) / 100);
+      fromPotObj.updatedAt = Date.now();
       potNoteParts.push(`aus Spartopf "${fromPotObj.name}"`);
     }
   }
@@ -7270,6 +7315,7 @@ async function handleAddTransfer(e) {
     toPotObj = (appState.savingPots || []).find(p => p.id === toPotId);
     if (toPotObj) {
       toPotObj.currentAmount = Math.round((Number(toPotObj.currentAmount || 0) + amount) * 100) / 100;
+      toPotObj.updatedAt = Date.now();
       potNoteParts.push(`in Spartopf "${toPotObj.name}"`);
     }
   }
@@ -7307,7 +7353,9 @@ async function handleAddTransfer(e) {
       startMonth: recStartMonth,
       targetPotId: toPotId || '',
       sourcePotId: fromPotId || '',
-      active: true
+      active: true,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     });
     announceNVDA(`Dauerhafter Sparplan über ${formatCurrency(amount)}${potInfo} gespeichert!`);
   } else {
@@ -7320,7 +7368,9 @@ async function handleAddTransfer(e) {
       category: 'Umbuchung & Sparplan',
       description: desc ? `${desc}${potInfo}` : `Umbuchung ${formatAccountName(fromAccount)} -> ${formatAccountName(toAccount)}${potInfo}`,
       isPlanned: isPlanned,
-      date: date
+      date: date,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
     });
     announceNVDA(`Umbuchung über ${formatCurrency(amount)}${potInfo} ${isPlanned ? 'geplant' : 'gebucht'}!`);
   }
@@ -8077,6 +8127,8 @@ async function saveEditedTransaction(e) {
       delete tx.receipt;
     }
 
+    tx.updatedAt = Date.now();
+
     announceNVDA('Buchung erfolgreich aktualisiert!');
   }
 
@@ -8533,6 +8585,8 @@ async function saveEditedRecurring(e) {
     rec.category = document.getElementById('edit-rec-category').value;
     rec.subcategory = document.getElementById('edit-rec-subcategory').value;
   }
+
+  rec.updatedAt = Date.now();
 
   await saveStateToEncryptedStorage();
   closeEditRecModal();
@@ -10239,6 +10293,9 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
     if (!appState.customCategories) appState.customCategories = { exp: {}, inc: {}, trf: {} };
     if (!appState.wishlist || !Array.isArray(appState.wishlist)) appState.wishlist = [];
     if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) appState.shoppingList = [];
+    if (!appState.savingPots || !Array.isArray(appState.savingPots)) appState.savingPots = [];
+    if (!appState.peerLoans || !Array.isArray(appState.peerLoans)) appState.peerLoans = [];
+    if (!appState.budgets || typeof appState.budgets !== 'object') appState.budgets = {};
     if (!appState.transactions) appState.transactions = [];
     if (!appState.recurring) appState.recurring = [];
     ensureDeletedEntitiesInitialized();
@@ -11183,7 +11240,8 @@ async function handleAddSavingPot(e) {
     currentAmount: currentAmount,
     targetAmount: targetAmount,
     note: note,
-    createdAt: new Date().toISOString().split('T')[0]
+    createdAt: Date.now(),
+    updatedAt: Date.now()
   };
 
   appState.savingPots.push(newPot);

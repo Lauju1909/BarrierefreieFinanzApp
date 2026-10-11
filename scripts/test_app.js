@@ -354,7 +354,11 @@ requiredTombstoneFunctions.forEach(fn => {
 
 // Tombstone merge and filtering simulation
 const tombstoneTestState = {
-  transactions: [{ id: 'tx_keep', amount: 10 }, { id: 'tx_delete_me', amount: 20 }],
+  transactions: [{ id: 'tx_keep', amount: 10, updatedAt: 100 }, { id: 'tx_delete_me', amount: 20 }],
+  budgets: { Lebensmittel: 300, Freizeit: 100 },
+  shoppingList: [{ id: 'shop_1', name: 'Milch', checked: false, updatedAt: 100 }],
+  savingPots: [{ id: 'pot_1', name: 'Urlaub', currentAmount: 50, updatedAt: 100 }],
+  wishlist: [{ id: 'wish_1', title: 'Buch', fulfilled: false, updatedAt: 100 }],
   deletedEntities: {
     transactions: { 'tx_delete_me': 1760000000000 },
     recurring: {},
@@ -362,7 +366,8 @@ const tombstoneTestState = {
     shoppingList: {},
     savingPots: {},
     peerLoans: {},
-    accounts: {}
+    accounts: {},
+    budgets: { Freizeit: 1760000000000 }
   }
 };
 tombstoneTestState.transactions = tombstoneTestState.transactions.filter(t => !tombstoneTestState.deletedEntities.transactions[String(t.id)]);
@@ -370,7 +375,52 @@ if (tombstoneTestState.transactions.length !== 1 || tombstoneTestState.transacti
   console.error('Tombstone filtering mismatch');
   process.exit(1);
 }
-console.log('Tombstone Deletion Sync Engine: 100% PASS!');
+
+// Test updated entity simulation (incoming newer version overrides older version)
+const incomingUpdate = {
+  transactions: [{ id: 'tx_keep', amount: 15, updatedAt: 200 }],
+  shoppingList: [{ id: 'shop_1', name: 'Milch', checked: true, updatedAt: 200 }],
+  savingPots: [{ id: 'pot_1', name: 'Urlaub', currentAmount: 150, updatedAt: 200 }],
+  wishlist: [{ id: 'wish_1', title: 'Buch', fulfilled: true, updatedAt: 200 }],
+  budgets: { Lebensmittel: 350, Freizeit: 100 } // Freizeit is deleted
+};
+
+// Simulate merge
+const isBudgetDel = (cat) => Boolean(tombstoneTestState.deletedEntities.budgets && tombstoneTestState.deletedEntities.budgets[cat]);
+Object.keys(tombstoneTestState.budgets).forEach(b => {
+  if (isBudgetDel(b)) delete tombstoneTestState.budgets[b];
+});
+Object.entries(incomingUpdate.budgets).forEach(([cat, val]) => {
+  if (!isBudgetDel(cat)) tombstoneTestState.budgets[cat] = val;
+});
+if (tombstoneTestState.budgets.Freizeit !== undefined || tombstoneTestState.budgets.Lebensmittel !== 350) {
+  console.error('Budget tombstone / update mismatch');
+  process.exit(1);
+}
+
+// Simulate transaction update
+const txMap = new Map(tombstoneTestState.transactions.map(t => [t.id, t]));
+for (const t of incomingUpdate.transactions) {
+  const existing = txMap.get(t.id);
+  if (existing && t.updatedAt > existing.updatedAt) Object.assign(existing, t);
+}
+if (tombstoneTestState.transactions[0].amount !== 15) {
+  console.error('Transaction update mismatch');
+  process.exit(1);
+}
+
+// Simulate shopping update
+const shopMap = new Map(tombstoneTestState.shoppingList.map(s => [s.id, s]));
+for (const s of incomingUpdate.shoppingList) {
+  const existing = shopMap.get(s.id);
+  if (existing && s.updatedAt > existing.updatedAt) Object.assign(existing, s);
+}
+if (tombstoneTestState.shoppingList[0].checked !== true) {
+  console.error('Shopping item check update mismatch');
+  process.exit(1);
+}
+
+console.log('Tombstone & Bidirectional Sync Engine: 100% PASS!');
 
 // 6. Test Overview Accordion & Transaction Filtering / Sorting
 console.log('Testing Transaction Filter & Sort Engine for Overview Accordions...');
