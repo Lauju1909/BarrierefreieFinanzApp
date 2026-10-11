@@ -1082,14 +1082,48 @@ const SyncEngine = {
 
     // Konten
     if (!Array.isArray(appState.accounts)) appState.accounts = [];
-    const existingAccIds = new Set(appState.accounts.map(a => String(a.id)));
+    if (!appState.initialBalances) appState.initialBalances = {};
+    const existingAccMap = new Map(appState.accounts.map(a => [String(a.id), a]));
     const incomingAcc = incoming.accounts || [];
+
     for (const a of incomingAcc) {
-      if (a && a.id && !existingAccIds.has(String(a.id))) {
-        appState.accounts.push(a);
-        existingAccIds.add(String(a.id));
+      if (a && a.id) {
+        const existing = existingAccMap.get(String(a.id));
+        if (!existing) {
+          appState.accounts.push(a);
+          existingAccMap.set(String(a.id), a);
+        } else {
+          // Eigenschaften aktualisieren, falls Name oder Details angepasst wurden
+          if (a.name) existing.name = a.name;
+          if (a.icon) existing.icon = a.icon;
+          if (a.type) existing.type = a.type;
+          if (a.hint !== undefined) existing.hint = a.hint;
+          if (a.initialBalance !== undefined && (existing.initialBalance === undefined || existing.initialBalance === 0)) {
+            existing.initialBalance = Number(a.initialBalance || 0);
+          }
+        }
       }
     }
+
+    // Anfangsbestände (initialBalances) abgleichen
+    if (incoming.initialBalances && typeof incoming.initialBalances === 'object') {
+      Object.keys(incoming.initialBalances).forEach(accId => {
+        if (appState.initialBalances[accId] === undefined || appState.initialBalances[accId] === 0) {
+          appState.initialBalances[accId] = Number(incoming.initialBalances[accId] || 0);
+        }
+      });
+    }
+
+    // Sicherstellen, dass appState.accounts und appState.initialBalances synchron sind
+    appState.accounts.forEach(a => {
+      if (a.initialBalance !== undefined && a.initialBalance !== 0) {
+        if (!appState.initialBalances[a.id]) {
+          appState.initialBalances[a.id] = a.initialBalance;
+        }
+      } else if (appState.initialBalances && appState.initialBalances[a.id] !== undefined) {
+        a.initialBalance = Number(appState.initialBalances[a.id] || 0);
+      }
+    });
 
     // Wunschliste
     if (!Array.isArray(appState.wishlist)) appState.wishlist = [];
