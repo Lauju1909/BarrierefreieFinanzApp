@@ -3656,6 +3656,16 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <p class="field-hint" style="margin: 2px 0 0 0;">Stellt sicher, dass Sicherungsdateien beim Importieren auf Bit-Ebene 100% unbeschädigt und unverändert sind.</p>
       </div>
     </label>
+
+    <!-- SCHALTER 6: ARGON2ID SCHLÜSSELABLEITUNG (KEEPASS-STANDARD) -->
+    <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; font-size: 16px;">
+      <input type="checkbox" id="setting-argon2-kdf" onchange="handleArgon2Toggle(this.checked)" style="width: 22px; height: 22px; margin-top: 2px;">
+      <div>
+        <strong>Argon2id Schlüsselableitung (Modernster KeePass 2 Standard)</strong>
+        <p class="field-hint" style="margin: 2px 0 0 0;">Speicherharte KDF gegen GPU- und ASIC-Brute-Force-Angriffe. Wenn deaktiviert, wird bewährtes PBKDF2 (100.000 Runden) genutzt.</p>
+        <div id="argon2-status-badge" style="margin-top: 4px; font-size: 13px; font-weight: bold; color: var(--accent-action);" aria-live="polite">Status: PBKDF2 aktiv</div>
+      </div>
+    </label>
   </div>
 
   <!-- SICHERHEITS-AUDIT-PROTOKOLL -->
@@ -4333,6 +4343,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 </div>
 
+<script src="argon2.umd.min.js"></script>
 <script src="sync_engine.js"></script>
 <script src="app.js"></script>
 </body>

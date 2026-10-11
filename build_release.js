@@ -4,6 +4,7 @@ const { execSync } = require('child_process');
 console.log('--- Building Haushaltsbuch_App.html ---');
 const html = fs.readFileSync('index.html', 'utf8');
 const css = fs.readFileSync('style.css', 'utf8');
+const argon2Js = fs.existsSync('argon2.umd.min.js') ? fs.readFileSync('argon2.umd.min.js', 'utf8') : '';
 const syncEngine = fs.readFileSync('sync_engine.js', 'utf8');
 const appJs = fs.readFileSync('app.js', 'utf8');
 
@@ -13,8 +14,8 @@ let bundle = html.replace(
 );
 
 bundle = bundle.replace(
-  /<script\s+src=["']sync_engine\.js["']><\/script>\s*[\r\n]+\s*<script\s+src=["']app\.js["']><\/script>/i,
-  `<script>\n${syncEngine}\n</script>\n<script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>\n<script>\n${appJs}\n</script>`
+  /<script\s+src=["']argon2\.umd\.min\.js["']><\/script>\s*[\r\n]+\s*<script\s+src=["']sync_engine\.js["']><\/script>\s*[\r\n]+\s*<script\s+src=["']app\.js["']><\/script>/i,
+  `<script>\n${argon2Js}\n</script>\n<script>\n${syncEngine}\n</script>\n<script id="disk-vault-data">window.__DISK_VAULT__ = {};</script>\n<script>\n${appJs}\n</script>`
 );
 
 fs.writeFileSync('Haushaltsbuch_App.html', bundle, 'utf8');
