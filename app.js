@@ -887,22 +887,50 @@ function renderBudgetsList() {
         const icon = CATEGORY_ICONS[cat] || '🎯';
         const iconHtml = show ? `<span class="emoji-icon" aria-hidden="true">${icon} </span>` : '';
 
+        if (!isMobileTalkBackDevice()) {
+          // DESKTOP: bewährte Original-Ansicht
+          return `
+            <div class="budget-card" tabindex="0" aria-label="Budget ${escapeHTML(cat)}: ${formatCurrency(spent)} von ${formatCurrency(limit)} verbraucht (${percent} Prozent)">
+              <div class="budget-header">
+                <span>${iconHtml}${escapeHTML(cat)}</span>
+                ${statusBadge}
+              </div>
+              <div class="budget-bar-container">
+                <div class="budget-bar-fill ${colorClass}" style="width: ${percent}%;"></div>
+              </div>
+              <div class="budget-stats">
+                <span>Ausgegeben: <strong>${formatCurrency(spent)}</strong></span>
+                <span>Limit: <strong>${formatCurrency(limit)}</strong></span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 13px;">
+                <span>${remaining >= 0 ? `Noch verfügbar: <strong style="color: #4CAF50;">${formatCurrency(remaining)}</strong>` : `Überzug: <strong style="color: #F44336;">${formatCurrency(Math.abs(remaining))}</strong>`}</span>
+                <button type="button" class="btn btn-secondary" onclick="deleteBudget('${escapeHTML(cat)}')" style="padding: 4px 8px; font-size: 12px; color: #f44336;">Löschen</button>
+              </div>
+            </div>
+          `;
+        }
+
+        // SMARTPHONE (TalkBack): vollständiger Satz als sr-only Text
+        const budgetSpeech = `Budget ${cat}: ${formatCurrency(spent)} von ${formatCurrency(limit)} verbraucht (${percent} Prozent). ${remaining >= 0 ? 'Noch verfügbar: ' + formatCurrency(remaining) : 'Überzug: ' + formatCurrency(Math.abs(remaining))}.`;
         return `
-          <div class="budget-card" tabindex="0" aria-label="Budget ${escapeHTML(cat)}: ${formatCurrency(spent)} von ${formatCurrency(limit)} verbraucht (${percent} Prozent)">
-            <div class="budget-header">
-              <span>${iconHtml}${escapeHTML(cat)}</span>
-              ${statusBadge}
-            </div>
-            <div class="budget-bar-container">
-              <div class="budget-bar-fill ${colorClass}" style="width: ${percent}%;"></div>
-            </div>
-            <div class="budget-stats">
-              <span>Ausgegeben: <strong>${formatCurrency(spent)}</strong></span>
-              <span>Limit: <strong>${formatCurrency(limit)}</strong></span>
+          <div class="budget-card" tabindex="0">
+            <span class="sr-only">${escapeHTML(budgetSpeech)}</span>
+            <div aria-hidden="true">
+              <div class="budget-header">
+                <span>${iconHtml}${escapeHTML(cat)}</span>
+                ${statusBadge}
+              </div>
+              <div class="budget-bar-container">
+                <div class="budget-bar-fill ${colorClass}" style="width: ${percent}%;"></div>
+              </div>
+              <div class="budget-stats">
+                <span>Ausgegeben: <strong>${formatCurrency(spent)}</strong></span>
+                <span>Limit: <strong>${formatCurrency(limit)}</strong></span>
+              </div>
             </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 13px;">
-              <span>${remaining >= 0 ? `Noch verfügbar: <strong style="color: #4CAF50;">${formatCurrency(remaining)}</strong>` : `Überzug: <strong style="color: #F44336;">${formatCurrency(Math.abs(remaining))}</strong>`}</span>
-              <button type="button" class="btn btn-secondary" onclick="deleteBudget('${escapeHTML(cat)}')" style="padding: 4px 8px; font-size: 12px; color: #f44336;">Löschen</button>
+              <span aria-hidden="true">${remaining >= 0 ? `Noch verfügbar: <strong style="color: #4CAF50;">${formatCurrency(remaining)}</strong>` : `Überzug: <strong style="color: #F44336;">${formatCurrency(Math.abs(remaining))}</strong>`}</span>
+              <button type="button" class="btn btn-secondary" onclick="deleteBudget('${escapeHTML(cat)}')" style="padding: 4px 8px; font-size: 12px; color: #f44336;" aria-label="Budget für ${escapeHTML(cat)} löschen">Löschen</button>
             </div>
           </div>
         `;
@@ -5306,6 +5334,89 @@ function applyMobileA11yLabels() {
 }
 document.addEventListener('DOMContentLoaded', applyMobileA11yLabels);
 
+// Haptisches Vibrations-Feedback für Aktionen auf dem Smartphone
+function triggerMobileHaptic(type = 'success') {
+  if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.Plugins && Capacitor.Plugins.Haptics) {
+    try {
+      if (type === 'success') {
+        Capacitor.Plugins.Haptics.notification({ type: 'SUCCESS' });
+      } else if (type === 'error') {
+        Capacitor.Plugins.Haptics.notification({ type: 'ERROR' });
+      } else {
+        Capacitor.Plugins.Haptics.impact({ style: 'LIGHT' });
+      }
+    } catch (e) {}
+  } else if (window.navigator && window.navigator.vibrate) {
+    try {
+      if (type === 'success') window.navigator.vibrate([30, 40, 30]);
+      else if (type === 'error') window.navigator.vibrate([80, 50, 80]);
+      else window.navigator.vibrate(25);
+    } catch (e) {}
+  }
+}
+
+// Android Zurück-Taste (Hardware / Geste) abfangen: Schließt offene Fenster oder kehrt zur Übersicht zurück
+function initAndroidBackButton() {
+  if (typeof Capacitor === 'undefined' || !Capacitor.Plugins || !Capacitor.Plugins.App) return;
+
+  try {
+    Capacitor.Plugins.App.addListener('backButton', () => {
+      // 1. Offenes Modal schließen
+      const modalSelectors = [
+        '#edit-tx-modal', '#settle-peer-loan-modal', '#delete-peer-loan-modal',
+        '#delete-peer-repay-modal', '#peer-loan-modal', '#peer-loan-repay-modal',
+        '#quick-cat-modal', '#cash-counter-modal', '#edit-account-modal',
+        '#delete-account-modal', '#edit-rec-modal', '#tx-detail-modal',
+        '#edit-planned-modal', '#end-or-delete-rec-modal', '#edit-budget-modal',
+        '#delete-budget-modal', '#edit-shopping-modal', '#changelog-modal',
+        '#vault-reset-confirm-modal', '#receipt-fullscreen-viewer-modal', '#qr-scanner-modal'
+      ];
+      for (const sel of modalSelectors) {
+        const m = document.querySelector(sel);
+        if (m && m.style && m.style.display !== 'none' && m.style.display !== '') {
+          const closeBtn = m.querySelector('.btn-close-modal, .modal-close-btn, button[onclick*="close"], button[aria-label*="schließen"], button[aria-label*="Schließen"]');
+          if (closeBtn) {
+            closeBtn.click();
+          } else {
+            m.style.display = 'none';
+          }
+          announceNVDA('Fenster geschlossen.');
+          return;
+        }
+      }
+
+      // 2. Zurück zur Übersicht, wenn in anderem Reiter
+      if (currentActiveView !== 'overview') {
+        switchView('overview');
+        return;
+      }
+
+      // 3. In Übersicht: App beenden
+      Capacitor.Plugins.App.exitApp();
+    });
+  } catch (e) {
+    console.warn('Android BackButton Listener:', e);
+  }
+}
+
+// Android Dezimal-Tastatur automatisch für Geldbeträge aktivieren
+function initMobileInputModes() {
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    if (!input.hasAttribute('inputmode')) {
+      const step = input.getAttribute('step');
+      if (step && (step === '0.01' || step.includes('.'))) {
+        input.setAttribute('inputmode', 'decimal');
+      } else {
+        input.setAttribute('inputmode', 'numeric');
+      }
+    }
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  initAndroidBackButton();
+  initMobileInputModes();
+});
+
 // ----------------------------------------------------------------------------
 // 10. LISTE RENDERN: BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG IN DER ÜBERSICHT
 // ----------------------------------------------------------------------------
@@ -5387,27 +5498,58 @@ function renderTransactionList(list, containerId, emptyText) {
       sharedBadge = '<span class="status-badge" style="background: rgba(103, 58, 183, 0.12); color: #512DA8; border: 1px solid rgba(103, 58, 183, 0.35);">👥 Fremdanteil</span>';
     }
 
-    html += `
-      <li class="tx-item" tabindex="0">
-        <div class="tx-info">
-          <span class="tx-icon" aria-hidden="true">${icon}</span>
-          <div class="tx-details">
-            <span class="tx-cat-name">${categoryDisplayHtml}</span>
-            <span class="tx-account-badge">${accountBadgeText}</span>
-            ${statusBadge}
-            ${sharedBadge}
-            ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
-            ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+    if (!isMobileTalkBackDevice()) {
+      // DESKTOP: bewährte Original-Ansicht
+      html += `
+        <li class="tx-item" tabindex="0">
+          <div class="tx-info">
+            <span class="tx-icon" aria-hidden="true">${icon}</span>
+            <div class="tx-details">
+              <span class="tx-cat-name">${categoryDisplayHtml}</span>
+              <span class="tx-account-badge">${accountBadgeText}</span>
+              ${statusBadge}
+              ${sharedBadge}
+              ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
+              ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+            </div>
           </div>
-        </div>
-        <div class="tx-amount-col">
-          <span class="tx-sum ${colorClass}">${sign ? sign + ' ' : ''}${formatCurrency(tx.amount)}</span>
-          ${receiptBtn}
-          ${editBtn}
-          ${deleteBtn}
-        </div>
-      </li>
-    `;
+          <div class="tx-amount-col">
+            <span class="tx-sum ${colorClass}">${sign ? sign + ' ' : ''}${formatCurrency(tx.amount)}</span>
+            ${receiptBtn}
+            ${editBtn}
+            ${deleteBtn}
+          </div>
+        </li>
+      `;
+    } else {
+      // SMARTPHONE (TalkBack): flüssiger Satz als sr-only Text
+      const catClean = tx.category || (isTransfer ? 'Umbuchung' : 'Buchung');
+      const subClean = hasSub ? `, ${tx.subcategory}` : '';
+      const txSpeech = `${isIncome ? 'Einnahme' : (isTransfer ? 'Umbuchung' : 'Ausgabe')} ${catClean}${subClean}: ${formatCurrency(tx.amount)}, ${accountBadgeText}.${isEffectivelyPlanned ? ' Status: Geplant.' : ''}${tx.description ? ' Notiz: ' + tx.description + '.' : ''}`;
+
+      html += `
+        <li class="tx-item" tabindex="0">
+          <span class="sr-only">${escapeHTML(txSpeech)}</span>
+          <div class="tx-info" aria-hidden="true">
+            <span class="tx-icon">${icon}</span>
+            <div class="tx-details">
+              <span class="tx-cat-name">${categoryDisplayHtml}</span>
+              <span class="tx-account-badge">${accountBadgeText}</span>
+              ${statusBadge}
+              ${sharedBadge}
+              ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
+              ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+            </div>
+          </div>
+          <div class="tx-amount-col">
+            <span class="tx-sum ${colorClass}" aria-hidden="true">${sign ? sign + ' ' : ''}${formatCurrency(tx.amount)}</span>
+            ${receiptBtn}
+            ${editBtn}
+            ${deleteBtn}
+          </div>
+        </li>
+      `;
+    }
   });
   html += '</ul>';
   container.innerHTML = html;
@@ -6749,6 +6891,13 @@ async function handleAddExpense(e) {
   const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
   const newBalFormatted = formatCurrency(newBal);
   announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  triggerMobileHaptic('success');
+  if (typeof isMobileTalkBackDevice === 'function' && isMobileTalkBackDevice()) {
+    setTimeout(() => {
+      const firstCard = document.querySelector('#overview-accounts-grid .account-card');
+      if (firstCard) firstCard.focus();
+    }, 120);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -7374,6 +7523,13 @@ async function handleAddIncome(e) {
   const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
   const newBalFormatted = formatCurrency(newBal);
   announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  triggerMobileHaptic('success');
+  if (typeof isMobileTalkBackDevice === 'function' && isMobileTalkBackDevice()) {
+    setTimeout(() => {
+      const firstCard = document.querySelector('#overview-accounts-grid .account-card');
+      if (firstCard) firstCard.focus();
+    }, 120);
+  }
 }
 
 async function handleAddTransfer(e) {
@@ -7493,6 +7649,13 @@ async function handleAddTransfer(e) {
   const fromBal = updatedBalances[fromAccount] !== undefined ? formatCurrency(updatedBalances[fromAccount]) : '';
   const toBal = updatedBalances[toAccount] !== undefined ? formatCurrency(updatedBalances[toAccount]) : '';
   announceNVDA(`Umbuchung über ${formatCurrency(amount)}${potInfo} gebucht! Neuer Stand ${fromAccObj ? fromAccObj.name : 'Quelle'}: ${fromBal}, ${toAccObj ? toAccObj.name : 'Ziel'}: ${toBal}.`, true);
+  triggerMobileHaptic('success');
+  if (typeof isMobileTalkBackDevice === 'function' && isMobileTalkBackDevice()) {
+    setTimeout(() => {
+      const firstCard = document.querySelector('#overview-accounts-grid .account-card');
+      if (firstCard) firstCard.focus();
+    }, 120);
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -11587,9 +11750,9 @@ function renderOverviewPeerLoans() {
     const loanSpeech = `${isLent ? 'Verliehenes Geld' : 'Geliehenes Geld'} an ${loan.person || 'Unbekannt'}. Ursprünglich ${formatCurrency(total)}, noch offen ${formatCurrency(remaining)}, bereits zurückgezahlt ${formatCurrency(paid)}. Datum ${dateFormatted}.`;
 
     html += `
-      <div class="peer-loan-card" style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
+      <div class="peer-loan-card" ${isMobileTalkBackDevice() ? 'tabindex="0"' : ''} style="background: var(--bg-hover, #f8f9fa); border: 2px solid ${isLent ? 'rgba(46,125,50,0.3)' : 'rgba(211,47,47,0.3)'}; border-left: 6px solid ${typeColor}; border-radius: 8px; padding: 12px;">
         <span class="sr-only">${escapeHTML(loanSpeech)}</span>
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+        <div ${isMobileTalkBackDevice() ? 'aria-hidden="true"' : ''} style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
           <div>
             <div style="font-size: 13px; font-weight: bold; color: ${typeColor}; margin-bottom: 2px;">
               ${typeLabel}
@@ -11611,7 +11774,7 @@ function renderOverviewPeerLoans() {
         </div>
 
         ${paid > 0 ? `
-          <div style="margin-top: 10px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px;">
+          <div ${isMobileTalkBackDevice() ? 'aria-hidden="true"' : ''} style="margin-top: 10px; background: rgba(0,0,0,0.03); padding: 8px; border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted, #666); margin-bottom: 4px;">
               <span>Bereits zurückgezahlt: <strong>${formatCurrency(paid)}</strong> (${percent}%)</span>
               <span>Noch offen: <strong>${formatCurrency(remaining)}</strong></span>
@@ -11678,9 +11841,9 @@ function renderOverviewPeerLoans() {
             const slIsLent = sl.type === 'lent';
             const slSpeech = `Beglichen: ${slIsLent ? 'Verliehen an' : 'Geliehen von'} ${sl.person || 'Unbekannt'}, Betrag ${formatCurrency(sl.amount)}. Vollständig beglichen am ${formatDateGerman(sl.settledDate || sl.date)}.`;
             return `
-              <div class="peer-loan-archived-card" style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 6px;">
+              <div class="peer-loan-archived-card" ${isMobileTalkBackDevice() ? 'tabindex="0"' : ''} style="display: flex; justify-content: space-between; align-items: center; background: var(--card-bg, #fff); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 6px;">
                 <span class="sr-only">${escapeHTML(slSpeech)}</span>
-                <div>
+                <div ${isMobileTalkBackDevice() ? 'aria-hidden="true"' : ''}>
                   <strong>👤 ${escapeHTML(sl.person || 'Unbekannt')}</strong>: ${formatCurrency(sl.amount)}
                   <span style="color: var(--text-muted, #666); font-size: 12px;">(${slIsLent ? '🟢 Verliehen' : '🔴 Geliehen'} • Beglichen: ${formatDateGerman(sl.settledDate || sl.date)})</span>
                   ${sl.note ? `<div style="font-size: 12px; color: var(--text-muted, #666); font-style: italic;">„${escapeHTML(sl.note)}“</div>` : ''}

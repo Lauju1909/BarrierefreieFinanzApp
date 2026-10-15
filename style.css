@@ -767,6 +767,25 @@ body.theme-dark .shopping-badge-price {
   .changelog-content {
     max-height: 48vh !important;
   }
+  /* Barrierefreie Mindest-Touch-Fläche nach WCAG 2.5.5 für Smartphones */
+  .btn, .tab-btn {
+    min-height: 44px;
+  }
+  .tab-btn {
+    padding: 10px 14px;
+    font-size: 15px;
+  }
+  .btn-edit-tx, .btn-delete-tx, .btn-receipt-tx {
+    min-height: 42px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+  .tab-list {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding: 8px 10px;
+    gap: 6px;
+  }
 }
 
 /* ==========================================================================
