@@ -4839,25 +4839,39 @@ function calculateBalancesUpToDate(targetDateStr) {
     balances[acc.id] = Number(acc.initialBalance || (appState.initialBalances && appState.initialBalances[acc.id]) || 0);
   });
 
+  function resolveTxAccId(accRef) {
+    if (!accRef) return null;
+    if (balances[accRef] !== undefined) return accRef;
+    const found = (appState.accounts || []).find(a => a.id === accRef || a.type === accRef || a.name === accRef);
+    if (found && balances[found.id] !== undefined) return found.id;
+    if (appState.accounts && appState.accounts.length > 0) return appState.accounts[0].id;
+    return null;
+  }
+
   const targetDate = new Date(targetDateStr + 'T23:59:59');
   const targetYear = targetDate.getFullYear();
   const targetMonth = targetDate.getMonth();
+  const todayFallback = new Date().toISOString().split('T')[0];
 
   appState.transactions.forEach(tx => {
-    if (tx.date <= targetDateStr) {
+    const txDate = tx.date || todayFallback;
+    if (txDate <= targetDateStr) {
       // Wenn ein Teilbetrag als 'shared_no_repay' markiert ist (Fremdanteil, den die andere Person selbst gezahlt hat):
       // Nicht vom eigenen Konto abbuchen!
       if (tx.splitType === 'shared_no_repay') {
         return;
       }
       const amt = Number(tx.amount || 0);
-      if (tx.type === 'income' && tx.account && balances[tx.account] !== undefined) {
-        balances[tx.account] += amt;
-      } else if (tx.type === 'expense' && tx.account && balances[tx.account] !== undefined) {
-        balances[tx.account] -= amt;
-      } else if (tx.type === 'transfer' && tx.fromAccount && tx.toAccount) {
-        if (balances[tx.fromAccount] !== undefined) balances[tx.fromAccount] -= amt;
-        if (balances[tx.toAccount] !== undefined) balances[tx.toAccount] += amt;
+      const accId = resolveTxAccId(tx.account);
+      if (tx.type === 'income' && accId && balances[accId] !== undefined) {
+        balances[accId] += amt;
+      } else if (tx.type === 'expense' && accId && balances[accId] !== undefined) {
+        balances[accId] -= amt;
+      } else if (tx.type === 'transfer') {
+        const fromId = resolveTxAccId(tx.fromAccount);
+        const toId = resolveTxAccId(tx.toAccount);
+        if (fromId && balances[fromId] !== undefined) balances[fromId] -= amt;
+        if (toId && balances[toId] !== undefined) balances[toId] += amt;
       }
     }
   });
@@ -4868,15 +4882,19 @@ function calculateBalancesUpToDate(targetDateStr) {
     for (let m = 0; m <= endM; m++) {
       const recList = getRecurringTransactionsForMonth(y, m);
       recList.forEach(rec => {
-        if (rec.date <= targetDateStr) {
+        const recDate = rec.date || targetDateStr;
+        if (recDate <= targetDateStr) {
           const amt = Number(rec.amount || 0);
-          if (rec.type === 'income' && rec.account && balances[rec.account] !== undefined) {
-            balances[rec.account] += amt;
-          } else if (rec.type === 'expense' && rec.account && balances[rec.account] !== undefined) {
-            balances[rec.account] -= amt;
-          } else if (rec.type === 'transfer' && rec.fromAccount && rec.toAccount) {
-            if (balances[rec.fromAccount] !== undefined) balances[rec.fromAccount] -= amt;
-            if (balances[rec.toAccount] !== undefined) balances[rec.toAccount] += amt;
+          const recAccId = resolveTxAccId(rec.account);
+          if (rec.type === 'income' && recAccId && balances[recAccId] !== undefined) {
+            balances[recAccId] += amt;
+          } else if (rec.type === 'expense' && recAccId && balances[recAccId] !== undefined) {
+            balances[recAccId] -= amt;
+          } else if (rec.type === 'transfer') {
+            const fromId = resolveTxAccId(rec.fromAccount);
+            const toId = resolveTxAccId(rec.toAccount);
+            if (fromId && balances[fromId] !== undefined) balances[fromId] -= amt;
+            if (toId && balances[toId] !== undefined) balances[toId] += amt;
           }
         }
       });
@@ -4918,7 +4936,7 @@ function calculateMonthStats(year, month) {
   const mFormatted = String(month + 1).padStart(2, '0');
   const monthPrefix = `${year}-${mFormatted}`;
 
-  const monthTx = appState.transactions.filter(t => t.date.startsWith(monthPrefix));
+  const monthTx = appState.transactions.filter(t => (t.date || '').startsWith(monthPrefix));
   const recList = getRecurringTransactionsForMonth(year, month);
   const allMonth = [...monthTx, ...recList];
 
@@ -5003,6 +5021,7 @@ function updateOverview() {
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
 
@@ -5078,6 +5097,7 @@ function updateOverview() {
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
 
@@ -5119,6 +5139,7 @@ function updateOverview() {
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
 
@@ -6213,14 +6234,24 @@ async function handleAddExpense(e) {
   const account = document.getElementById('exp-account') ? document.getElementById('exp-account').value : 'bank';
   const category = document.getElementById('exp-category').value;
   const subcategory = document.getElementById('exp-subcategory') ? document.getElementById('exp-subcategory').value : '';
-  const date = document.getElementById('exp-date').value;
+  const dateInputVal = document.getElementById('exp-date') ? document.getElementById('exp-date').value : '';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const date = dateInputVal || todayStr;
   const desc = document.getElementById('exp-desc').value.trim();
 
   if (isNaN(amount) || amount <= 0) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
+
+  // Zeitraum synchronisieren, damit die Ausgabe direkt im sichtbaren Monat/Tag liegt
+  const txYear = parseInt(date.substring(0, 4), 10);
+  const txMonth = parseInt(date.substring(5, 7), 10) - 1;
+  if (!isNaN(txYear) && !isNaN(txMonth)) {
+    selectedYear = txYear;
+    selectedMonth = txMonth;
+    selectedDateStr = date;
+  }
 
   // Split-Zahlung prüfen
   const splitToggle = document.getElementById('exp-split-toggle');
@@ -6708,8 +6739,16 @@ async function handleAddExpense(e) {
 
   await saveStateToEncryptedStorage();
   resetExpenseFormState();
+  switchView('overview', false);
   updateOverview();
-  switchView('overview');
+  if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+
+  const updatedBalances = calculateBalancesUpToDate(date);
+  const chosenAcc = (appState.accounts || []).find(a => a.id === account);
+  const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
+  const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
+  const newBalFormatted = formatCurrency(newBal);
+  announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
 }
 
 // ----------------------------------------------------------------------------
@@ -7030,14 +7069,24 @@ async function handleAddIncome(e) {
   const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : 'bank';
   const category = document.getElementById('inc-category').value;
   const subcategory = document.getElementById('inc-subcategory') ? document.getElementById('inc-subcategory').value : '';
-  const date = document.getElementById('inc-date').value;
+  const dateInputVal = document.getElementById('inc-date') ? document.getElementById('inc-date').value : '';
+  const todayStr = new Date().toISOString().split('T')[0];
+  const date = dateInputVal || todayStr;
   const desc = document.getElementById('inc-desc').value.trim();
 
   if (isNaN(amount) || amount <= 0) return;
 
-  const todayStr = new Date().toISOString().split('T')[0];
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
+
+  // Zeitraum synchronisieren, damit die Einnahme direkt im sichtbaren Monat/Tag liegt
+  const txYear = parseInt(date.substring(0, 4), 10);
+  const txMonth = parseInt(date.substring(5, 7), 10) - 1;
+  if (!isNaN(txYear) && !isNaN(txMonth)) {
+    selectedYear = txYear;
+    selectedMonth = txMonth;
+    selectedDateStr = date;
+  }
 
   // Split-Einzahlung prüfen
   const splitToggle = document.getElementById('inc-split-toggle');
@@ -7315,8 +7364,16 @@ async function handleAddIncome(e) {
 
   await saveStateToEncryptedStorage();
   resetIncomeFormState();
+  switchView('overview', false);
   updateOverview();
-  switchView('overview');
+  if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+
+  const updatedBalances = calculateBalancesUpToDate(date);
+  const chosenAcc = (appState.accounts || []).find(a => a.id === account);
+  const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
+  const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
+  const newBalFormatted = formatCurrency(newBal);
+  announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
 }
 
 async function handleAddTransfer(e) {
@@ -7426,8 +7483,16 @@ async function handleAddTransfer(e) {
   toggleTransferFrequencyFields();
   renderSavingPotsList();
   renderWishlist();
+  switchView('overview', false);
   updateOverview();
-  switchView('overview');
+  if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+
+  const updatedBalances = calculateBalancesUpToDate(date);
+  const fromAccObj = (appState.accounts || []).find(a => a.id === fromAccount);
+  const toAccObj = (appState.accounts || []).find(a => a.id === toAccount);
+  const fromBal = updatedBalances[fromAccount] !== undefined ? formatCurrency(updatedBalances[fromAccount]) : '';
+  const toBal = updatedBalances[toAccount] !== undefined ? formatCurrency(updatedBalances[toAccount]) : '';
+  announceNVDA(`Umbuchung über ${formatCurrency(amount)}${potInfo} gebucht! Neuer Stand ${fromAccObj ? fromAccObj.name : 'Quelle'}: ${fromBal}, ${toAccObj ? toAccObj.name : 'Ziel'}: ${toBal}.`, true);
 }
 
 // ----------------------------------------------------------------------------
@@ -9590,7 +9655,7 @@ function initTheme() {
 // ----------------------------------------------------------------------------
 // 15. VIEW NAVIGATION (TABS 1-5)
 // ----------------------------------------------------------------------------
-function switchView(viewName) {
+function switchView(viewName, announce = true) {
   currentActiveView = viewName;
 
   const views = ['overview', 'expense', 'income', 'transfer', 'settings', 'accounts', 'wishlist', 'shopping', 'sync'];
@@ -9612,7 +9677,7 @@ function switchView(viewName) {
 
   if (viewName === 'overview') {
     updateOverview();
-    announceNVDA('Übersicht geöffnet.');
+    if (announce) announceNVDA('Übersicht geöffnet.');
   } else if (viewName === 'expense') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
