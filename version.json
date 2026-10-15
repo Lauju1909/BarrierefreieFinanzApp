@@ -1,7 +1,7 @@
 {
-  "version": "6.9.25",
+  "version": "6.9.26",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-10-11",
+  "buildDate": "2026-10-15",
   "features": [
     "🛡️ Argon2id Schlüsselableitung (KeePass 2 KDF-Standard): Modernste Memory-Hard KDF-Technologie mit 64 MB RAM und 3 Runden schützt gegen Wörterbuch- und GPU/ASIC-Angriffe, mit automatischer Dual-Engine-Erkennung und 100% Abwärtskompatibilität zu PBKDF2",
     "📂 Strukturierte Einstellungs-Kategorien: 7 thematische Filterreiter (Alle, Sicherheit, Design, Backup, Budgets, Kategorien, Info) für intuitive Navigation",
