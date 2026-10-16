@@ -47,10 +47,11 @@ jobs:
             sed -i -E "s/const CURRENT_APP_VERSION = 'v[0-9.]+';/const CURRENT_APP_VERSION = 'v$NEW_VER';/g" app.js
           fi
           for html in *.html; do
-            if [ -f "$html" ]; then
               sed -i -E "s/const CURRENT_APP_VERSION = 'v[0-9.]+';/const CURRENT_APP_VERSION = 'v$NEW_VER';/g" "$html"
               sed -i -E "s/(id=\"app-version-display\">v?)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VER/g" "$html"
-              sed -i -E "s/(Installierte Version: <[^>]+>v?)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VER/g" "$html"
+              sed -i -E "s/(id=\"changelog-modal-heading\"[^>]*>Was ist neu in diesem Update\?\s*\(v?)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VER/g" "$html"
+              sed -i -E "s/(Barrierefreie Finanzen v)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VER/g" "$html"
+              sed -i -E "s/(Installierte Version:\s*<[^>]+>v?)[0-9]+\.[0-9]+\.[0-9]+/\1$NEW_VER/g" "$html"
             fi
           done
           if [ -f main.py ]; then
@@ -125,17 +126,7 @@ jobs:
           node-version: 20
 
       - name: Generate Haushaltsbuch_App.html
-        run: |
-          node -e "
-            const fs = require('fs');
-            const html = fs.readFileSync('index.html', 'utf8');
-            const css = fs.readFileSync('style.css', 'utf8');
-            const syncEngine = fs.readFileSync('sync_engine.js', 'utf8');
-            const appJs = fs.readFileSync('app.js', 'utf8');
-            let bundle = html.replace(/<link\s+rel=[\"']stylesheet[\"']\s+href=[\"']style\.css[\"']\s*\/?>/i, '<style>\n' + css + '\n</style>');
-            bundle = bundle.replace(/<script\s+src=[\"']sync_engine\.js[\"']><\/script>\s*[\r\n]+\s*<script\s+src=[\"']app\.js[\"']><\/script>/i, '<script>\n' + syncEngine + '\n</script>\n<script id=\"disk-vault-data\">window.__DISK_VAULT__ = {};</script>\n<script>\n' + appJs + '\n</script>');
-            fs.writeFileSync('Haushaltsbuch_App.html', bundle, 'utf8');
-          "
+        run: node build_release.js
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -153,6 +144,8 @@ jobs:
             --add-data "style.css:." \
             --add-data "app.js:." \
             --add-data "sync_engine.js:." \
+            --add-data "argon2.umd.min.js:." \
+            --add-data "categories.json:." \
             --add-data "version.json:." \
             launcher_linux.py
           chmod +x dist/Haushaltsbuch-Linux

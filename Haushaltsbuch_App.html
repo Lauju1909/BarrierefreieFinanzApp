@@ -12011,6 +12011,7 @@ function calculateMonthStats(year, month) {
 // 9. HAUPTÜBERSICHT RENDERN MIT BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG
 // ----------------------------------------------------------------------------
 function updateOverview() {
+  if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
   if (currentActiveView !== 'overview') return;
 
   const bannerTitle = document.getElementById('overview-month-title');
@@ -12280,8 +12281,8 @@ function updateOverview() {
       `).join('');
     }
   }
-      populateFilterAccountDropdown();
-  renderExpenseRankings(periodAllTxs.filter(t => t.type === 'expense'));
+  populateFilterAccountDropdown();
+  renderExpenseRankings(allPeriodExpense);
   checkLiquidityWarning(periodEndBalances);
   renderBudgetsList();
   renderOverviewCreditAccordion();
@@ -13408,6 +13409,7 @@ async function handleAddExpense(e) {
 
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
+  let autoCoverMsg = '';
 
   // Zeitraum synchronisieren, damit die Ausgabe direkt im sichtbaren Monat/Tag liegt
   const txYear = parseInt(date.substring(0, 4), 10);
@@ -13416,6 +13418,8 @@ async function handleAddExpense(e) {
     selectedYear = txYear;
     selectedMonth = txMonth;
     selectedDateStr = date;
+    currentWeekDateStr = date;
+    if (typeof renderTimePickerBar === 'function') renderTimePickerBar();
   }
 
   // Split-Zahlung prüfen
@@ -13757,7 +13761,9 @@ async function handleAddExpense(e) {
           subcategory: subcategory,
           description: finalDesc,
           isPlanned: isPlanned,
-          date: date
+          date: date,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
         };
 
         if (currentExpenseReceipt) {
@@ -13797,7 +13803,7 @@ async function handleAddExpense(e) {
       // Auto-Deckung (wie bei PayPal):
       // REGEL: Nur belasten, wenn auf dem Primärkonto wirklich nicht genug Geld vorhanden ist!
       const chosenAcc = (appState.accounts || []).find(a => a.id === account);
-      let autoCoverMsg = '';
+      autoCoverMsg = '';
       if (chosenAcc && chosenAcc.hasBackupAccount && chosenAcc.backupAccountId && !isPlanned) {
         const balancesBefore = calculateBalancesUpToDate(date);
         const curAvail = balancesBefore[account] !== undefined ? balancesBefore[account] : 0;
@@ -13909,11 +13915,22 @@ async function handleAddExpense(e) {
   if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
 
   const updatedBalances = calculateBalancesUpToDate(date);
-  const chosenAcc = (appState.accounts || []).find(a => a.id === account);
-  const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
-  const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
-  const newBalFormatted = formatCurrency(newBal);
-  announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  if (isSplit && splitRowsValid.length > 0) {
+    const accIds = [...new Set(splitRowsValid.filter(r => (r.type || 'account') === 'account').map(r => r.account))];
+    const balParts = accIds.map(aId => {
+      const aObj = (appState.accounts || []).find(a => a.id === aId);
+      const bVal = updatedBalances[aId] !== undefined ? updatedBalances[aId] : 0;
+      return `${aObj ? aObj.name : aId}: ${formatCurrency(bVal)}`;
+    });
+    const balText = balParts.length > 0 ? ` Neue Kontostände: ${balParts.join(', ')}.` : '';
+    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Teile ${isPlanned ? 'geplant' : 'gebucht'}!${balText}`, true);
+  } else {
+    const chosenAcc = (appState.accounts || []).find(a => a.id === account);
+    const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
+    const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
+    const newBalFormatted = formatCurrency(newBal);
+    announceNVDA(`Ausgabe ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}${autoCoverMsg}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  }
   triggerMobileHaptic('success');
   if (typeof isMobileTalkBackDevice === 'function' && isMobileTalkBackDevice()) {
     setTimeout(() => {
@@ -14258,6 +14275,8 @@ async function handleAddIncome(e) {
     selectedYear = txYear;
     selectedMonth = txMonth;
     selectedDateStr = date;
+    currentWeekDateStr = date;
+    if (typeof renderTimePickerBar === 'function') renderTimePickerBar();
   }
 
   // Split-Einzahlung prüfen
@@ -14418,7 +14437,9 @@ async function handleAddIncome(e) {
           subcategory: subcategory,
           description: finalDesc,
           isPlanned: isPlanned,
-          date: date
+          date: date,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
         };
 
         if (currentIncomeReceipt) {
@@ -14541,11 +14562,22 @@ async function handleAddIncome(e) {
   if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
 
   const updatedBalances = calculateBalancesUpToDate(date);
-  const chosenAcc = (appState.accounts || []).find(a => a.id === account);
-  const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
-  const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
-  const newBalFormatted = formatCurrency(newBal);
-  announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  if (isSplit && splitRowsValid.length > 0) {
+    const accIds = [...new Set(splitRowsValid.filter(r => (r.type || 'account') === 'account').map(r => r.account))];
+    const balParts = accIds.map(aId => {
+      const aObj = (appState.accounts || []).find(a => a.id === aId);
+      const bVal = updatedBalances[aId] !== undefined ? updatedBalances[aId] : 0;
+      return `${aObj ? aObj.name : aId}: ${formatCurrency(bVal)}`;
+    });
+    const balText = balParts.length > 0 ? ` Neue Kontostände: ${balParts.join(', ')}.` : '';
+    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} aufgeteilt auf ${splitRowsValid.length} Teile ${isPlanned ? 'geplant' : 'gebucht'}!${balText}`, true);
+  } else {
+    const chosenAcc = (appState.accounts || []).find(a => a.id === account);
+    const chosenAccName = chosenAcc ? chosenAcc.name : 'Konto';
+    const newBal = updatedBalances[account] !== undefined ? updatedBalances[account] : 0;
+    const newBalFormatted = formatCurrency(newBal);
+    announceNVDA(`Einnahme ${category} über ${formatCurrency(amount)} ${isPlanned ? 'geplant' : 'gebucht'}! Neuer Kontostand von ${chosenAccName}: ${newBalFormatted}.`, true);
+  }
   triggerMobileHaptic('success');
   if (typeof isMobileTalkBackDevice === 'function' && isMobileTalkBackDevice()) {
     setTimeout(() => {
@@ -14606,12 +14638,23 @@ async function handleAddTransfer(e) {
   const isFuture = date > todayStr;
   const isPlanned = (freq === 'planned') || isFuture;
 
+  // Zeitraum synchronisieren, damit die Umbuchung direkt im sichtbaren Monat/Tag liegt
+  const txYear = parseInt(date.substring(0, 4), 10);
+  const txMonth = parseInt(date.substring(5, 7), 10) - 1;
+  if (!isNaN(txYear) && !isNaN(txMonth)) {
+    selectedYear = txYear;
+    selectedMonth = txMonth;
+    selectedDateStr = date;
+    currentWeekDateStr = date;
+    if (typeof renderTimePickerBar === 'function') renderTimePickerBar();
+  }
+
   if (['weekly', 'monthly', 'quarterly', 'halfyear', 'yearly'].includes(freq)) {
     const day = parseInt(document.getElementById('trf-rec-day').value, 10) || 1;
     const weekday = document.getElementById('trf-rec-weekday') ? parseInt(document.getElementById('trf-rec-weekday').value, 10) : 5;
     
-    let recStartYear = curDate.getFullYear();
-    let recStartMonth = curDate.getMonth();
+    let recStartYear = selectedYear;
+    let recStartMonth = selectedMonth;
     const trfStartMonthEl = document.getElementById('trf-start-month');
     if (trfStartMonthEl && trfStartMonthEl.value && trfStartMonthEl.value.includes('-')) {
       const parts = trfStartMonthEl.value.split('-');
@@ -15290,15 +15333,19 @@ async function saveEditedTransaction(e) {
     const oldSplitId = tx.splitId;
     if (oldSplitId) {
       const oldSiblings = appState.transactions.filter(t => t.splitId === oldSplitId);
+      oldSiblings.forEach(s => trackDeletedEntity('transactions', s.id));
       const oldLoanIds = oldSiblings.map(s => s.peerLoanId).filter(Boolean);
       if (oldLoanIds.length > 0) {
+        oldLoanIds.forEach(lId => trackDeletedEntity('peerLoans', lId));
         appState.peerLoans = (appState.peerLoans || []).filter(l => !oldLoanIds.includes(l.id));
       }
       appState.transactions = appState.transactions.filter(t => t.splitId !== oldSplitId);
     } else {
       if (tx.peerLoanId) {
+        trackDeletedEntity('peerLoans', tx.peerLoanId);
         appState.peerLoans = (appState.peerLoans || []).filter(l => l.id !== tx.peerLoanId);
       }
+      trackDeletedEntity('transactions', id);
       appState.transactions = appState.transactions.filter(t => t.id !== id);
     }
 
@@ -15348,7 +15395,9 @@ async function saveEditedTransaction(e) {
         subcategory: subcategory,
         description: finalDesc,
         isPlanned: isPlanned,
-        date: date
+        date: date,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       };
 
       if (receiptToKeep) {
@@ -15389,6 +15438,9 @@ async function saveEditedTransaction(e) {
     // Normale Einzelbuchung (oder vorherige Split-Buchung zu Einzelbuchung zusammenführen)
     if (tx.splitId) {
       // Vorher war es ein Split, jetzt wurde Split abgewählt: Geschwister entfernen
+      appState.transactions.forEach(t => {
+        if (t.splitId === tx.splitId && t.id !== tx.id) trackDeletedEntity('transactions', t.id);
+      });
       appState.transactions = appState.transactions.filter(t => t.splitId !== tx.splitId || t.id === tx.id);
       delete tx.splitId;
       delete tx.splitIndex;
@@ -15494,6 +15546,7 @@ async function saveEditedTransaction(e) {
     }
   } else if (linkedLoan) {
     // Häkchen wurde entfernt: Leihgabe entfernen
+    trackDeletedEntity('peerLoans', linkedLoan.id);
     appState.peerLoans = appState.peerLoans.filter(l => l.id !== linkedLoan.id);
     if (tx) delete tx.peerLoanId;
     if (isSplitToggle && newSplitId) {
@@ -15533,14 +15586,22 @@ async function deleteTransaction(txId) {
     // Auch dazu gehörende Leihgaben (geliehenes / verliehenes Geld) automatisch löschen
     ensurePeerLoansInitialized();
     if (appState.peerLoans && Array.isArray(appState.peerLoans)) {
-      const beforeCount = appState.peerLoans.length;
       appState.peerLoans = appState.peerLoans.filter(l => {
         // 1. Direkt per txId verknüpft
-        if (l.txId && l.txId === txId) return false;
+        if (l.txId && l.txId === txId) {
+          trackDeletedEntity('peerLoans', l.id);
+          return false;
+        }
         // 2. Per peerLoanId auf der Buchung verknüpft
-        if (deleted.peerLoanId && l.id === deleted.peerLoanId) return false;
+        if (deleted.peerLoanId && l.id === deleted.peerLoanId) {
+          trackDeletedEntity('peerLoans', l.id);
+          return false;
+        }
         // 3. Wenn Buchung Teil eines Splits mit Leihgabe war
-        if (deleted.splitId && l.txId && l.txId.startsWith('tx_') && l.splitId === deleted.splitId) return false;
+        if (deleted.splitId && l.txId && l.txId.startsWith('tx_') && l.splitId === deleted.splitId) {
+          trackDeletedEntity('peerLoans', l.id);
+          return false;
+        }
         return true;
       });
 
@@ -18363,6 +18424,7 @@ async function handlePayOffInstallment(planId) {
     });
   }
 
+  trackDeletedEntity('recurring', planId);
   appState.recurring = appState.recurring.filter(r => r.id !== planId);
   await saveStateToEncryptedStorage();
   renderSettingsInstallmentsList();
@@ -18373,6 +18435,7 @@ async function handlePayOffInstallment(planId) {
 
 async function handleDeleteInstallmentPlan(planId) {
   if (!confirm('Möchtest du diesen Ratenplan wirklich löschen? Bereits getätigte Buchungen bleiben erhalten.')) return;
+  trackDeletedEntity('recurring', planId);
   appState.recurring = (appState.recurring || []).filter(r => r.id !== planId);
   await saveStateToEncryptedStorage();
   renderSettingsInstallmentsList();
