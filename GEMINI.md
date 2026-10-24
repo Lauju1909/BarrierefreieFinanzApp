@@ -13,7 +13,7 @@ Dieses Dokument definiert die **verbindlichen Regeln, Pflichten und Verbote** f�
 2. ❌ **KEINE manuellen GitHub Releases oder Git-Tags anlegen:**
    - Erstelle niemals manuell Tags wie `v1.x.x` oder Releases über Git/CLI. GitHub Actions kompiliert, taggt und veröffentlicht Multiplattform-Releases automatisch.
 3. ❌ **KEINE privaten Daten des Autors veröffentlichen:**
-   - Der Entwickler ist **Laurin Schneider**. Es dürfen **NIEMALS** private Anschriften, Wohnadressen, Telefonnummern oder vertrauliche persönliche Angaben in Code, Commits, Dokumentation oder Issues hinterlegt werden (strikter Schutz der Privatsphäre!).
+   - Der Entwickler ist **Lauju1909**. Es dürfen **NIEMALS** private Anschriften, Wohnadressen, Telefonnummern oder vertrauliche persönliche Angaben in Code, Commits, Dokumentation oder Issues hinterlegt werden (strikter Schutz der Privatsphäre!).
 4. ❌ **KEINE bestehenden Benutzerdaten oder Vokabeln beschädigen:**
    - Niemals vorhandene Vokabellisten, Beispieldaten, Backup-Strukturen, Notizen oder Finanzdaten löschen oder inkompatibel umbauen.
    - 100% Abwärtskompatibilität für alle gespeicherten Daten (Vokabeln, Noten, Finanzbuchungen, Stundenpläne) ist zwingend vorgeschrieben.
