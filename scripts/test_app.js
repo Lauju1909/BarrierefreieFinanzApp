@@ -1229,6 +1229,96 @@ console.log(`argon2.umd.min.js verified (${argonSize} bytes, standalone bundle).
 
 console.log('Argon2id Dual-KDF Integration: 100% PASS!');
 
+// 13. Test Multi-Device & Transitive Pairing (PC <-> Smartphone <-> Laptop)
+console.log('Testing Multi-Device & Transitive Pairing (PC <-> Handy <-> Laptop)...');
+const expectedMultiSyncMethods = [
+  'getPairedDevices',
+  'savePairedDevice',
+  'removePairedDevice',
+  'getAllActivePairingCodes',
+  'getExportablePeers',
+  'registerIncomingPeerAndGroup',
+  'decryptWithAnyKnownCode',
+  'syncAllPairedDevices'
+];
+expectedMultiSyncMethods.forEach(m => {
+  if (!syncEngineJs.includes(m)) {
+    console.error(`Missing Multi-Device SyncEngine method: ${m}`);
+    process.exit(1);
+  }
+});
+
+const expectedMultiSyncHtmlIds = [
+  'sync-paired-devices-list',
+  'sync-desktop-paired-count',
+  'sync-desktop-own-name',
+  'sync-desktop-own-code',
+  'sync-mobile-paired-list'
+];
+expectedMultiSyncHtmlIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing Multi-Device Sync HTML ID: ${id}`);
+    process.exit(1);
+  }
+});
+
+// Simulate 3-device transitive pairing in isolated storage contexts (Handy, PC, Laptop)
+function createDeviceContext(devName, initCode) {
+  const store = {
+    haushaltsbuch_sync_devicename: devName,
+    haushaltsbuch_sync_code: initCode
+  };
+  const ls = {
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; }
+  };
+  const ctxWindow = { __IS_ANDROID__: devName.startsWith('Handy') };
+  const fn = new Function('localStorage', 'window', 'navigator', 'crypto', syncEngineJs + '; return SyncEngine;');
+  return {
+    store,
+    engine: fn(ls, ctxWindow, { userAgent: devName.startsWith('Handy') ? 'Android' : 'Windows' }, require('crypto').webcrypto)
+  };
+}
+
+const handyCtx = createDeviceContext('Handy-7X49', 'AAAA-BBBB-CCCC');
+const pcCtx = createDeviceContext('PC-1111', '1111-2222-3333');
+const laptopCtx = createDeviceContext('PC-2222', '9999-8888-7777');
+
+// Step 1: PC pairs with Handy using Handy's code (AAAA-BBBB-CCCC)
+pcCtx.engine.savePairedDevice('Handy-7X49', 'AAAA-BBBB-CCCC', 'Heute 10:00', true);
+handyCtx.engine.registerIncomingPeerAndGroup('PC-1111', 'AAAA-BBBB-CCCC', pcCtx.engine.getExportablePeers('AAAA-BBBB-CCCC'), 'Heute 10:00');
+
+if (handyCtx.engine.getPairedDevices().length !== 1 || handyCtx.engine.getPairedDevices()[0].name !== 'PC-1111') {
+  console.error('Step 1 failed: Handy should have PC-1111 paired:', handyCtx.engine.getPairedDevices());
+  process.exit(1);
+}
+
+// Step 2: Laptop pairs ONLY with Handy using Handy's code (AAAA-BBBB-CCCC)
+laptopCtx.engine.savePairedDevice('Handy-7X49', 'AAAA-BBBB-CCCC', 'Heute 11:00', true);
+// Handy receives Laptop's sync request and adds Laptop to the group
+handyCtx.engine.registerIncomingPeerAndGroup('PC-2222', 'AAAA-BBBB-CCCC', laptopCtx.engine.getExportablePeers('AAAA-BBBB-CCCC'), 'Heute 11:00');
+// Handy sends response back to Laptop including all peers known to Handy (which includes PC-1111!)
+const handyPeersForLaptop = handyCtx.engine.getExportablePeers('AAAA-BBBB-CCCC');
+laptopCtx.engine.registerIncomingPeerAndGroup('Handy-7X49', 'AAAA-BBBB-CCCC', handyPeersForLaptop, 'Heute 11:00');
+
+// Verify Laptop now automatically knows BOTH Handy-7X49 AND PC-1111!
+const laptopPairedNames = laptopCtx.engine.getPairedDevices().map(d => d.name).sort();
+if (laptopPairedNames.length !== 2 || laptopPairedNames[0] !== 'Handy-7X49' || laptopPairedNames[1] !== 'PC-1111') {
+  console.error('Step 2 failed: Laptop should automatically be paired with BOTH Handy-7X49 and PC-1111:', laptopPairedNames);
+  process.exit(1);
+}
+
+// Step 3: PC receives mailbox update from Laptop/Handy and automatically learns about Laptop (PC-2222)!
+pcCtx.engine.registerIncomingPeerAndGroup('PC-2222', 'AAAA-BBBB-CCCC', laptopCtx.engine.getExportablePeers('AAAA-BBBB-CCCC'), 'Heute 11:05');
+const pcPairedNames = pcCtx.engine.getPairedDevices().map(d => d.name).sort();
+if (pcPairedNames.length !== 2 || pcPairedNames[0] !== 'Handy-7X49' || pcPairedNames[1] !== 'PC-2222') {
+  console.error('Step 3 failed: PC should automatically be paired with BOTH Handy-7X49 and PC-2222:', pcPairedNames);
+  process.exit(1);
+}
+
+console.log('Multi-Device & Transitive Pairing (PC <-> Handy <-> Laptop): 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');

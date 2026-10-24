@@ -4251,15 +4251,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="view-header">
-    <h2>📱 Synchronisation &amp; Verschlüsseltes E2E-Postfach</h2>
-    <p class="view-desc">Gleiche deine Finanzdaten per Ende-zu-Ende-Verschlüsselung (AES-256-GCM) zwischen Computer und Smartphone ab. Dank des neuen asynchronen E2E-Postfachs müssen beide Geräte <strong>nicht mehr gleichzeitig eingeschaltet sein</strong>!</p>
+    <h2>📱 Multi-Geräte-Synchronisation &amp; Verschlüsseltes E2E-Postfach</h2>
+    <p class="view-desc">Gleiche deine Finanzdaten per Ende-zu-Ende-Verschlüsselung (AES-256-GCM) zwischen beliebig vielen Geräten ab (z. B. <strong>PC, Laptop und Smartphone</strong>). <strong>Automatische Gruppen-Kopplung:</strong> Wenn dein PC bereits mit dem Handy gekoppelt ist und du deinen Laptop mit dem Handy koppelst, ist der Laptop automatisch auch mit dem PC verbunden!</p>
   </div>
 
   <!-- ASYNCHRONER E2E-POSTFACH-SYNC (BRIEFKASTEN) -->
   <div id="sync-mailbox-card" class="section-card" style="margin-bottom: 20px; border: 2px solid #0284c7; background: #f0f9ff; border-radius: 10px; padding: 18px;">
     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
       <h3 style="margin: 0; font-size: 19px; color: #0369a1; display: flex; align-items: center; gap: 8px;">
-        📬 <strong>Asynchroner Postfach-Sync (E2E-Tresor)</strong>
+        📬 <strong>Asynchroner Multi-Geräte-Postfach-Sync (E2E-Tresor)</strong>
       </h3>
       <span id="sync-mailbox-badge" style="font-size: 13px; font-weight: bold; padding: 4px 10px; border-radius: 9999px; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;">
         ⚪ Noch nicht gekoppelt
@@ -4267,30 +4267,30 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
 
     <p style="margin: 0 0 14px 0; font-size: 15px; color: #0c4a6e; line-height: 1.5;">
-      <strong>Kein gleichzeitiges Einschalten nötig!</strong> Deine Finanzdaten werden versiegelt in einem anonymen, mit deinem Kopplungscode Ende-zu-Ende verschlüsselten E2E-Postfach hinterlegt. Sobald dein Computer oder Smartphone gestartet wird, holt es die neuesten Buchungen automatisch ab.
+      <strong>Kein gleichzeitiges Einschalten nötig!</strong> Deine Finanzdaten werden versiegelt in eurem gemeinsamen, Ende-zu-Ende verschlüsselten E2E-Postfach hinterlegt. Egal ob du am <strong>Laptop, am PC oder am Smartphone</strong> etwas einträgst – sobald eines der anderen Geräte gestartet wird, holt es die neuesten Buchungen automatisch ab.
     </p>
 
     <!-- Inhalt wenn gekoppelt -->
     <div id="sync-mailbox-paired-content" style="display: none; background: #ffffff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; margin-bottom: 12px;">
       <div style="font-size: 15px; margin-bottom: 8px; color: #0369a1;">
-        🤝 Gekoppelt mit: <strong id="sync-mailbox-partner-name">Partnergerät</strong>
+        🤝 Gekoppelte Geräte im Sync-Verbund: <strong id="sync-mailbox-partner-name">Partnergerät</strong>
       </div>
       <div style="font-size: 14px; margin-bottom: 12px; color: #475569;">
         🕒 Letzter Postfach-Abgleich: <strong id="sync-mailbox-last-sync-time">Noch nie</strong>
       </div>
       <div style="display: flex; flex-direction: column; gap: 8px;">
         <button type="button" id="btn-manual-mailbox-sync" class="btn btn-primary" onclick="triggerManualMailboxSync()" style="width: 100%; font-size: 16px; padding: 12px 18px; background-color: #0284c7;">
-          📬 <strong>Jetzt Postfach prüfen &amp; abgleichen</strong>
+          📬 <strong>Jetzt Postfach prüfen &amp; mit allen Geräten abgleichen</strong>
         </button>
-        <button type="button" id="btn-manual-mailbox-push-master" class="btn btn-secondary" onclick="triggerPushMasterToMailbox()" style="width: 100%; font-size: 14px; padding: 10px 14px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.08);" title="Legt den exakten Stand dieses Computers als Master ins Postfach. Sobald das Smartphone startet, übernimmt es 1:1.">
-          📤 <strong>Aktuellen Stand als Master ins Postfach legen (Handy übernimmt 1:1)</strong>
+        <button type="button" id="btn-manual-mailbox-push-master" class="btn btn-secondary" onclick="triggerPushMasterToMailbox()" style="width: 100%; font-size: 14px; padding: 10px 14px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.08);" title="Legt den exakten Stand dieses Geräts als Master ins Postfach. Alle anderen gekoppelten Geräte übernehmen ihn beim Start 1:1.">
+          📤 <strong>Aktuellen Stand als Master ins Postfach legen (alle Geräte übernehmen 1:1)</strong>
         </button>
       </div>
     </div>
 
     <!-- Hinweis wenn noch nicht gekoppelt -->
     <div id="sync-mailbox-unpaired-notice" style="background: rgba(255,255,255,0.8); border: 1px dashed #7dd3fc; border-radius: 8px; padding: 12px; font-size: 14px; color: #0369a1;">
-      ℹ️ Kopple PC und Smartphone einmalig über die Auswahlen unten (Gerätename &amp; Kopplungscode). Danach funktioniert der Postfach-Abgleich dauerhaft automatisch bei jedem Speichern!
+      ℹ️ Kopple deine Geräte (PC, Laptop, Smartphone) einmalig über Gerätename &amp; Kopplungscode unten. Wenn du deinen Laptop mit dem Handy koppelst, ist er automatisch auch mit deinem PC gekoppelt!
     </div>
 
     <div id="sync-mailbox-last-status" aria-live="polite" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 6px; font-size: 14px; font-weight: bold; background: #ffffff; border: 1px solid #e2e8f0;">
@@ -4299,42 +4299,48 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <div style="display: flex; gap: 10px; margin-bottom: 16px;">
     <button type="button" id="btn-sync-mode-mobile" class="btn btn-secondary" onclick="setSyncMode('mobile')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-      📲 Smartphone (Empfangen)
+      📲 Eigener Code &amp; Empfangen (Handy / Laptop)
     </button>
     <button type="button" id="btn-sync-mode-desktop" class="btn btn-secondary" onclick="setSyncMode('desktop')" style="flex: 1; font-weight: bold; padding: 10px; font-size: 15px;">
-      💻 Computer (Senden)
+      💻 Gekoppelte Geräte &amp; Verbinden (PC / Laptop)
     </button>
   </div>
 
-  <!-- BEREICH FÜR SMARTPHONE (EMPFÄNGER) -->
+  <!-- BEREICH FÜR SMARTPHONE / EMPFÄNGER (EIGENER GERÄTENAME & CODE) -->
   <div id="sync-mobile-box" class="section-card" style="display: none;">
-    <!-- STATUS WENN BEREITS MIT COMPUTER VERBUNDEN -->
+    <!-- STATUS WENN BEREITS MIT GERÄTEN VERBUNDEN -->
     <div id="sync-mobile-connected" style="display: none; background: rgba(76, 175, 80, 0.12); border: 2px solid #2E7D32; border-radius: 8px; padding: 18px; text-align: center; margin-bottom: 16px;">
       <h3 style="font-size: 20px; font-weight: bold; color: #1B5E20; margin: 0 0 8px 0;">
-        🟢 Verbunden mit Computer (<span id="sync-mobile-connected-dev">PC</span>)
+        🟢 Im Sync-Verbund gekoppelt mit: <span id="sync-mobile-connected-dev">PC</span>
       </h3>
-      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 14px 0;">
+      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 12px 0;">
         Zuletzt synchronisiert: <strong id="sync-mobile-connected-time">Heute</strong>
       </p>
+      <div id="sync-mobile-paired-list" style="text-align: left; margin-bottom: 14px;"></div>
       <div id="sync-mobile-status-connected" aria-live="polite" style="font-size: 15px; font-weight: bold; color: #1565C0; margin-bottom: 14px; padding: 10px 14px; background: rgba(255,255,255,0.9); border-radius: 6px; border: 1px solid #BBDEFB;">
-        🟢 Bereit für Live-Synchronisation
+        🟢 Bereit für Live- &amp; Postfach-Synchronisation (PC, Laptop &amp; Handy)
       </div>
-      <button type="button" class="btn btn-secondary" onclick="disconnectSyncPairing()" style="font-size: 14px; padding: 10px 16px; width: 100%;">
-        🔄 <strong>Verbindung trennen / Neu koppeln</strong>
-      </button>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithPaired()" style="flex: 1; font-size: 15px; padding: 10px 16px; background-color: #2E7D32;">
+          ⚡ <strong>Jetzt alle Geräte abgleichen</strong>
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="disconnectSyncPairing()" style="flex: 1; font-size: 14px; padding: 10px 16px;">
+          🔄 <strong>Alle Verbindungen trennen</strong>
+        </button>
+      </div>
     </div>
 
-    <!-- STATUS WENN NOCH NICHT VERBUNDEN (GERÄTENAME & KOPPLUNGSCODE) -->
+    <!-- GERÄTENAME & KOPPLUNGSCODE (BLEIBT AUCH BEI BESTEHENDER KOPPLUNG SICHTBAR ZUM KOPPELN EINES LAPTOPS!) -->
     <div id="sync-mobile-unconnected">
       <div style="background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-        <h3 style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät ist bereit zur Verbindung</h3>
-        <p style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben in deiner Desktop-App auf dem Computer ein, um die verschlüsselte Live-Synchronisation zu starten:</p>
+        <h3 id="sync-mobile-code-heading" style="margin: 0 0 8px 0; color: #1976D2;">📲 Dieses Gerät mit PC oder Laptop verbinden</h3>
+        <p id="sync-mobile-code-desc" style="margin: 0; font-size: 15px;">Gib die folgenden zwei Angaben auf deinem <strong>PC oder Laptop</strong> ein. Wenn dieses Gerät bereits mit deinem PC gekoppelt ist und du denselben Code auf deinem Laptop eingibst, sind <strong>Handy, Laptop und PC sofort alle miteinander verbunden</strong>:</p>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px;">
         <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
           <label for="sync-my-device-name" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
-            1. Dein Smartphone-Gerätename (am PC eingeben):
+            1. Gerätename dieses Geräts (am PC / Laptop eingeben):
           </label>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="sync-my-device-name" readonly value="Wird generiert..."
@@ -4354,7 +4360,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
         <div style="background: var(--card-bg, #fff); border: 2px solid var(--border-color, #ccc); border-radius: 8px; padding: 14px 18px;">
           <label for="sync-my-code" style="font-size: 14px; color: var(--text-muted, #666); font-weight: bold; display: block; margin-bottom: 6px;">
-            2. Dein einmaliger Kopplungscode (am PC eingeben):
+            2. Gemeinsamer Kopplungscode (am PC / Laptop eingeben):
           </label>
           <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
             <input type="text" id="sync-my-code" readonly value="--- ---"
@@ -4380,42 +4386,46 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </div>
 
       <div id="sync-receiver-status" style="padding: 12px 16px; border-radius: 6px; font-size: 15px; font-weight: bold; background: var(--bg-hover, #eee); text-align: center;">
-        Warte auf Synchronisation vom Computer...
+        Warte auf Synchronisation von PC, Laptop oder Smartphone...
       </div>
     </div>
   </div>
 
-  <!-- BEREICH FÜR DESKTOP (SENDER) -->
+  <!-- BEREICH FÜR DESKTOP / LAPTOP (GEKOPPELTE GERÄTE & SENDER) -->
   <div id="sync-desktop-box" class="section-card" style="display: none;">
     <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Synchronisation mit Smartphone starten</h3>
-      <p style="margin: 0; font-size: 15px;">Öffne die App auf deinem Smartphone, gehe auf <strong>Reiter 8 (Smartphone-Sync)</strong> und trage die dort angezeigten Daten hier ein:</p>
+      <h3 style="margin: 0 0 8px 0; color: #2E7D32;">💻 Geräte koppeln &amp; synchronisieren (Smartphone, Laptop &amp; PC)</h3>
+      <p style="margin: 0; font-size: 15px;">Gib hier den Gerätenamen und Kopplungscode deines <strong>Smartphones</strong> (oder eines anderen PCs/Laptops) ein. <strong>Tipp:</strong> Wenn du deinen Laptop einfach mit deinem Smartphone koppelst, verbindet er sich automatisch auch mit deinem PC!</p>
     </div>
 
-    <!-- STATUS WENN BEREITS MIT SMARTPHONE GEKOPPELT (1-KLICK-ABGLEICH) -->
+    <!-- STATUS WENN BEREITS MIT MINDESTENS EINEM GERÄT GEKOPPELT (MULTI-GERÄTE-ÜBERSICHT & 1-KLICK-ABGLEICH) -->
     <div id="sync-desktop-paired-card" style="display: none; background: rgba(76, 175, 80, 0.12); border: 2px solid #2E7D32; border-radius: 8px; padding: 18px; margin-bottom: 20px;">
       <h3 style="font-size: 20px; font-weight: bold; color: #1B5E20; margin: 0 0 8px 0;">
-        🟢 Gekoppeltes Smartphone: <span id="sync-desktop-paired-name">Handy</span>
+        🟢 Gekoppelte Geräte (<span id="sync-desktop-paired-count">1</span>): <span id="sync-desktop-paired-name">Handy</span>
       </h3>
       <p style="font-size: 15px; color: #2E7D32; margin: 0 0 6px 0;">
-        Kopplungscode: <strong id="sync-desktop-paired-code">Gespeichert</strong>
+        Aktiver Gruppen-Kopplungscode: <strong id="sync-desktop-paired-code">Gespeichert</strong>
       </p>
-      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 16px 0;">
+      <p style="font-size: 15px; color: #2E7D32; margin: 0 0 14px 0;">
         Zuletzt synchronisiert: <strong id="sync-desktop-paired-time">Heute</strong>
       </p>
+
+      <!-- Dynamische Liste aller gekoppelten Geräte (z. B. Handy-7X49, Laptop-B2K9, PC-A1C3) -->
+      <div id="sync-paired-devices-list" role="region" aria-label="Liste der gekoppelten Geräte" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;"></div>
+
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithPaired()" style="width: 100%; font-size: 18px; padding: 14px 20px; background-color: #2E7D32;">
-          <span>⚡ <strong>1-Klick-Abgleich mit <span id="sync-quick-btn-devname">Smartphone</span></strong></span>
+          <span>⚡ <strong>1-Klick-Abgleich mit <span id="sync-quick-btn-devname">allen gekoppelten Geräten</span></strong></span>
         </button>
-        <button type="button" id="btn-force-overwrite-paired" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 18px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf dem Smartphone zu 100% durch den aktuellen Stand dieses Computers.">
-          <span>📲 <strong>Smartphone komplett überschreiben (1:1 PC-Stand erzwingen)</strong></span>
+        <button type="button" id="btn-force-overwrite-paired" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 18px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf den gekoppelten Geräten zu 100% durch den aktuellen Stand dieses Computers.">
+          <span>📲 <strong>Gekoppeltes Gerät komplett überschreiben (1:1 Stand erzwingen)</strong></span>
         </button>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button type="button" class="btn btn-secondary" onclick="editSyncConnection()" style="flex: 1; font-size: 14px; padding: 10px 14px;">
-            ✏️ <strong>Anderes Smartphone / Code eingeben</strong>
+            ➕ <strong>Weiteres Gerät hinzufügen (Laptop / Handy / PC)</strong>
           </button>
           <button type="button" class="btn btn-danger" onclick="disconnectSyncPairing()" style="flex: 1; font-size: 14px; padding: 10px 14px;">
-            ❌ <strong>Kopplung aufheben</strong>
+            ❌ <strong>Alle Kopplungen aufheben</strong>
           </button>
         </div>
       </div>
@@ -4423,26 +4433,36 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
     <form id="sync-desktop-form" onsubmit="handleStartSync(event)" class="accessible-form">
       <div class="form-group">
-        <label for="input-target-device" class="field-label"><strong>1. Smartphone-Gerätename:</strong><span class="required-star">*</span></label>
-        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49" required style="font-weight: bold; font-size: 18px;">
+        <label for="input-target-device" class="field-label"><strong>1. Gerätename des Partnergeräts (Smartphone, Laptop oder PC):</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-device" class="large-input" placeholder="z. B. Handy-7X49 oder PC-B2K9" required style="font-weight: bold; font-size: 18px;">
       </div>
 
       <div class="form-group">
-        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Smartphone:</strong><span class="required-star">*</span></label>
-        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. 682-419" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
+        <label for="input-target-code" class="field-label"><strong>2. Kopplungscode vom Partnergerät:</strong><span class="required-star">*</span></label>
+        <input type="text" id="input-target-code" class="large-input" placeholder="z. B. ABCD-1234-EFGH" required style="font-weight: bold; font-size: 20px; letter-spacing: 2px;">
       </div>
 
       <div class="form-actions" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;">
         <button type="submit" id="btn-trigger-sync" class="btn btn-primary" style="width: 100%; font-size: 18px; padding: 14px 24px; background-color: #2E7D32;">
-          <span>⚡ <strong>Jetzt sicher mit Smartphone synchronisieren (Enter)</strong></span>
+          <span>⚡ <strong>Jetzt Gerät koppeln &amp; sicher synchronisieren (Enter)</strong></span>
         </button>
-        <button type="button" id="btn-trigger-overwrite" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 20px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf dem Smartphone zu 100% durch den aktuellen Stand dieses Computers.">
-          <span>📲 <strong>Smartphone komplett überschreiben (1:1 PC-Stand senden)</strong></span>
+        <button type="button" id="btn-trigger-overwrite" class="btn btn-secondary" onclick="triggerForceOverwriteSmartphone()" style="width: 100%; font-size: 15px; padding: 12px 20px; color: #b45309; border-color: #f59e0b; background: rgba(245, 158, 11, 0.12);" title="Ersetzt alle Daten auf dem Zielgerät zu 100% durch den aktuellen Stand dieses Computers.">
+          <span>📲 <strong>Zielgerät komplett überschreiben (1:1 Stand senden)</strong></span>
         </button>
       </div>
     </form>
 
     <div id="sync-sender-status" style="display: none; margin-top: 16px; padding: 14px 18px; border-radius: 6px; font-size: 16px; font-weight: bold;">
+    </div>
+
+    <!-- EIGENE KOPPLUNGSDATEN DIESES COMPUTERS / LAPTOPS (FALLS DIREKT VON ANDEREM PC/LAPTOP GEKOPPELT WIRD) -->
+    <div style="margin-top: 22px; padding: 14px 16px; border-radius: 8px; background: rgba(33, 150, 243, 0.06); border: 1px solid #90CAF9;">
+      <div style="font-size: 15px; font-weight: bold; color: #1565C0; margin-bottom: 6px;">
+        🆔 Eigene Kennung dieses Geräts: <strong id="sync-desktop-own-name" style="font-family: monospace;">PC-....</strong> &nbsp;|&nbsp; Kopplungscode: <strong id="sync-desktop-own-code" style="font-family: monospace;">....</strong>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: var(--text-muted, #555);">
+        Du kannst dieses Gerät entweder über dein Smartphone koppeln (dann verbindet es sich automatisch mit allen Geräten deines Smartphones) oder diese Kennung direkt auf einem anderen Computer/Laptop eingeben.
+      </p>
     </div>
   </div>
 </div>

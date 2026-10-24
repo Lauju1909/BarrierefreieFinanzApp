@@ -276,16 +276,260 @@ const SyncEngine = {
   ],
 
   getActivePairingCode() {
+    const paired = this.getPairedDevices();
+    if (paired.length > 0 && paired[0].code) {
+      return paired[0].code;
+    }
     return localStorage.getItem('haushaltsbuch_sync_connected_code') || 
            localStorage.getItem('haushaltsbuch_sync_code') || 
-           (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || 
+           (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || 
            null;
   },
 
+  getAllActivePairingCodes() {
+    const codes = new Set();
+    const addCode = (c) => {
+      if (c && typeof c === 'string' && c.trim().length >= 4) {
+        codes.add(c.trim().toUpperCase());
+      }
+    };
+    const paired = this.getPairedDevices();
+    paired.forEach(d => addCode(d.code));
+    addCode(localStorage.getItem('haushaltsbuch_sync_connected_code'));
+    if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
+      addCode(window.__PAIRED_DEVICE__.code);
+      if (Array.isArray(window.__PAIRED_DEVICE__.devices)) {
+        window.__PAIRED_DEVICE__.devices.forEach(d => d && addCode(d.code));
+      }
+    }
+    addCode(localStorage.getItem('haushaltsbuch_sync_code'));
+    return Array.from(codes);
+  },
+
   isPaired() {
+    const paired = this.getPairedDevices();
+    if (paired.length > 0) return true;
     return !!localStorage.getItem('haushaltsbuch_sync_connected') || 
            !!localStorage.getItem('haushaltsbuch_sync_connected_code') || 
-           (window.__PAIRED_DEVICE__ && !!window.__PAIRED_DEVICE__.code);
+           (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && !!window.__PAIRED_DEVICE__.code);
+  },
+
+  getRemovedDevices() {
+    try {
+      const raw = localStorage.getItem('haushaltsbuch_sync_removed_devices');
+      if (raw) {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr.map(s => String(s).toLowerCase());
+      }
+    } catch (e) {}
+    return [];
+  },
+
+  markDeviceRemoved(deviceName) {
+    if (!deviceName) return;
+    const clean = String(deviceName).trim().toLowerCase();
+    const list = this.getRemovedDevices();
+    if (!list.includes(clean)) {
+      list.push(clean);
+      try { localStorage.setItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list)); } catch (e) {}
+    }
+  },
+
+  unmarkDeviceRemoved(deviceName) {
+    if (!deviceName) return;
+    const clean = String(deviceName).trim().toLowerCase();
+    const list = this.getRemovedDevices().filter(n => n !== clean);
+    try { localStorage.setItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list)); } catch (e) {}
+  },
+
+  getPairedDevices() {
+    const myDev = (localStorage.getItem('haushaltsbuch_sync_devicename') || '').trim().toLowerCase();
+    const removed = this.getRemovedDevices();
+    const isAndroid = typeof window !== 'undefined' && (
+      !!window.__IS_ANDROID__ || 
+      (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+      (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+    );
+
+    const map = new Map();
+    const addEntry = (name, code, time) => {
+      if (!name || typeof name !== 'string') return;
+      const cleanName = name.trim();
+      if (!cleanName) return;
+      const lower = cleanName.toLowerCase();
+      if (myDev && lower === myDev) return;
+      if (!isAndroid && (lower === 'computer' || lower === 'pc')) return;
+      if (removed.includes(lower)) return;
+
+      const cleanCode = (code && typeof code === 'string') ? code.trim().toUpperCase() : '';
+      const cleanTime = (time && typeof time === 'string') ? time.trim() : 'Heute';
+
+      if (!map.has(lower)) {
+        map.set(lower, { name: cleanName, code: cleanCode, time: cleanTime });
+      } else {
+        const existing = map.get(lower);
+        if (cleanCode && !existing.code) existing.code = cleanCode;
+        if (cleanTime && cleanTime !== 'Heute') existing.time = cleanTime;
+      }
+    };
+
+    try {
+      const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(d => {
+            if (d && d.name) addEntry(d.name, d.code, d.time);
+          });
+        }
+      }
+    } catch (e) {}
+
+    const legacyDev = localStorage.getItem('haushaltsbuch_sync_connected_device');
+    const legacyCode = localStorage.getItem('haushaltsbuch_sync_connected_code');
+    const legacyTime = localStorage.getItem('haushaltsbuch_sync_connected_time');
+    if (legacyDev) {
+      addEntry(legacyDev, legacyCode || localStorage.getItem('haushaltsbuch_sync_code') || '', legacyTime);
+    }
+
+    if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
+      if (Array.isArray(window.__PAIRED_DEVICE__.devices)) {
+        window.__PAIRED_DEVICE__.devices.forEach(d => {
+          if (d && d.name) addEntry(d.name, d.code, d.time);
+        });
+      }
+      if (window.__PAIRED_DEVICE__.device) {
+        addEntry(window.__PAIRED_DEVICE__.device, window.__PAIRED_DEVICE__.code, window.__PAIRED_DEVICE__.time);
+      }
+    }
+
+    const result = Array.from(map.values()).filter(d => !!d.code);
+    return result;
+  },
+
+  savePairedDevice(deviceName, pairingCode, timeStr = null, isExplicitUserAction = false) {
+    if (!deviceName || typeof deviceName !== 'string') return;
+    const cleanName = deviceName.trim();
+    if (!cleanName) return;
+
+    const myDev = this.getDeviceName();
+    if (cleanName.toLowerCase() === myDev.toLowerCase()) return;
+
+    const isAndroid = typeof window !== 'undefined' && (
+      !!window.__IS_ANDROID__ || 
+      (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+      (typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+    );
+    if (!isAndroid && (cleanName.toLowerCase() === 'computer' || cleanName.toLowerCase() === 'pc')) return;
+
+    if (isExplicitUserAction) {
+      this.unmarkDeviceRemoved(cleanName);
+    } else if (this.getRemovedDevices().includes(cleanName.toLowerCase())) {
+      return;
+    }
+
+    const cleanCode = (pairingCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
+    if (!cleanCode) return;
+
+    const nowStr = timeStr || (new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+
+    const current = this.getPairedDevices();
+    const filtered = current.filter(d => d.name.toLowerCase() !== cleanName.toLowerCase());
+    const updatedEntry = { name: cleanName, code: cleanCode, time: nowStr };
+    const newList = [updatedEntry, ...filtered];
+
+    try {
+      localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(newList));
+      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+      localStorage.setItem('haushaltsbuch_sync_connected_device', cleanName);
+      localStorage.setItem('haushaltsbuch_sync_connected_code', cleanCode);
+      localStorage.setItem('haushaltsbuch_sync_connected_time', nowStr);
+      // Gemeinsamen Gruppen-Kopplungscode auch als eigenen Sync-Code übernehmen,
+      // damit Laptop, PC und Smartphone automatisch denselben Gruppen-Schlüssel teilen!
+      localStorage.setItem('haushaltsbuch_sync_code', cleanCode);
+    } catch (e) {}
+
+    this._persistPairingToDisk(newList);
+  },
+
+  removePairedDevice(deviceName) {
+    if (!deviceName) return;
+    const lower = String(deviceName).trim().toLowerCase();
+    this.markDeviceRemoved(deviceName);
+
+    const remaining = this.getPairedDevices().filter(d => d.name.toLowerCase() !== lower);
+    try {
+      if (remaining.length > 0) {
+        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(remaining));
+        localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+        localStorage.setItem('haushaltsbuch_sync_connected_device', remaining[0].name);
+        localStorage.setItem('haushaltsbuch_sync_connected_code', remaining[0].code);
+        localStorage.setItem('haushaltsbuch_sync_connected_time', remaining[0].time || 'Heute');
+        this._persistPairingToDisk(remaining);
+      } else {
+        localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+        localStorage.removeItem('haushaltsbuch_sync_connected');
+        localStorage.removeItem('haushaltsbuch_sync_connected_device');
+        localStorage.removeItem('haushaltsbuch_sync_connected_code');
+        localStorage.removeItem('haushaltsbuch_sync_connected_time');
+        this._persistPairingToDisk([]);
+      }
+    } catch (e) {}
+  },
+
+  _persistPairingToDisk(pairedList) {
+    try {
+      const primary = (pairedList && pairedList.length > 0) ? pairedList[0] : null;
+      const payloadObj = primary ? {
+        device: primary.name,
+        code: primary.code,
+        time: primary.time,
+        devices: pairedList
+      } : {};
+
+      if (typeof window !== 'undefined') {
+        window.__PAIRED_DEVICE__ = primary ? payloadObj : null;
+      }
+
+      if (typeof fetch === 'function' && typeof window !== 'undefined') {
+        const port = window.__LOCAL_PORT__ || 48123;
+        const headers = (typeof getVaultApiHeaders === 'function') ? getVaultApiHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' };
+        fetch(`http://127.0.0.1:${port}/api/save_pairing`, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(payloadObj)
+        }).catch(() => {});
+      }
+    } catch (e) {}
+  },
+
+  getExportablePeers(activeCode = null) {
+    const myName = this.getDeviceName();
+    const myCode = (activeCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
+    const nowStr = new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const list = this.getPairedDevices().map(d => ({
+      name: d.name,
+      code: d.code || myCode,
+      time: d.time || nowStr
+    }));
+    if (myName && myCode) {
+      list.unshift({ name: myName, code: myCode, time: nowStr });
+    }
+    return list;
+  },
+
+  registerIncomingPeerAndGroup(senderName, usedCode, packetPeers = [], timeStr = null) {
+    const cleanCode = (usedCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
+    if (senderName && cleanCode) {
+      this.savePairedDevice(senderName, cleanCode, timeStr, false);
+    }
+    if (Array.isArray(packetPeers)) {
+      packetPeers.forEach(peer => {
+        if (peer && peer.name && (peer.code || cleanCode)) {
+          this.savePairedDevice(peer.name, peer.code || cleanCode, peer.time || timeStr, false);
+        }
+      });
+    }
   },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
@@ -404,6 +648,22 @@ const SyncEngine = {
     return JSON.parse(dec.decode(decrypted));
   },
 
+  async decryptWithAnyKnownCode(payload, preferredCode = null) {
+    const candidates = new Set();
+    if (preferredCode) candidates.add(preferredCode.trim().toUpperCase());
+    const myCode = this.getPairingCode();
+    if (myCode) candidates.add(myCode.trim().toUpperCase());
+    this.getAllActivePairingCodes().forEach(c => candidates.add(c));
+
+    for (const code of candidates) {
+      try {
+        const data = await this.decrypt(payload, code);
+        if (data) return { decrypted: data, usedCode: code };
+      } catch (e) {}
+    }
+    return null;
+  },
+
   // 4. TOPIC FÜR GERÄT BERECHNEN (Zero-Knowledge: SHA-256 Hash)
   async getTopicForDevice(deviceName) {
     const clean = (deviceName || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -424,7 +684,7 @@ const SyncEngine = {
     return base;
   },
 
-  // 5. HANDY / RECEIVER: AUF SYNCHRONISATION LAUSCHEN
+  // 5. GERÄT / RECEIVER: AUF SYNCHRONISATION LAUSCHEN (HANDY, LAPTOP & PC)
   async startListening(onStatusUpdate) {
     this.isListening = true;
     this.processedMessageIds.clear();
@@ -433,9 +693,8 @@ const SyncEngine = {
     const myCode = this.getPairingCode();
     const topicReq = await this.getTopicForDevice(myDevice);
     const topicResp = topicReq + '_resp';
-    const boxTopic = await this.getMailboxTopic(myCode);
 
-    if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Warte auf Signal vom PC (Gerät: ${myDevice})...`);
+    if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Warte auf Signal (Gerät: ${myDevice})...`);
 
     try {
       if (this.mqttClient) {
@@ -445,22 +704,23 @@ const SyncEngine = {
       this.mqttClient = new MiniMqttClient(this.BROKERS);
       await this.mqttClient.connect('dev_' + myDevice.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6));
 
-      // 1. Live-Sync Kanal
+      // 1. Live-Sync Kanal (akzeptiert eigenen Code sowie alle gekoppelten Gruppen-Codes)
       this.mqttClient.subscribe(topicReq, async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
-            // Mit Pairing-Code entschlüsseln
-            const decrypted = await this.decrypt(payload, myCode);
-            if (decrypted && decrypted.type === 'SYNC_REQUEST') {
+            const res = await this.decryptWithAnyKnownCode(payload, myCode);
+            if (res && res.decrypted && res.decrypted.type === 'SYNC_REQUEST') {
+              const decrypted = res.decrypted;
+              const usedCode = res.usedCode || myCode;
               const msgId = decrypted.timestamp + '_' + decrypted.sender;
               if (this.processedMessageIds.has(msgId)) return;
               this.processedMessageIds.add(msgId);
 
-              if (onStatusUpdate) onStatusUpdate('syncing', '⚡ Signal vom Computer empfangen! Sende Antwort...');
-              if (typeof announceNVDA === 'function') announceNVDA('Signal vom Computer empfangen! Synchronisiere...', true);
+              if (onStatusUpdate) onStatusUpdate('syncing', `⚡ Signal von ${decrypted.sender || 'Partnergerät'} empfangen! Sende Antwort...`);
+              if (typeof announceNVDA === 'function') announceNVDA(`Signal von ${decrypted.sender || 'Partnergerät'} empfangen! Synchronisiere...`, true);
 
-              await this.handleIncomingSyncRequest(decrypted, topicResp, myCode, onStatusUpdate);
+              await this.handleIncomingSyncRequest(decrypted, topicResp, usedCode, onStatusUpdate);
             }
           }
         } catch (e) {
@@ -468,29 +728,36 @@ const SyncEngine = {
         }
       });
 
-      // 2. Asynchrones E2E-Postfach abonnieren (empfängt auch Retained Messages, falls PC längst aus ist!)
-      if (boxTopic) {
-        const handleMailbox = async (topic, msgStr) => {
-          try {
-            const payload = JSON.parse(msgStr);
-            if (payload && payload.ct && payload.iv && payload.salt) {
-              const decrypted = await this.decrypt(payload, myCode);
-              if (decrypted && decrypted.type === 'MAILBOX_UPDATE') {
-                await this.handleIncomingMailboxUpdate(decrypted, onStatusUpdate);
-              }
-            }
-          } catch (e) {
-            // Ignorieren
-          }
-        };
-        this.mqttClient.subscribe(boxTopic, handleMailbox);
-        this.mqttClient.subscribe(boxTopic + '/#', handleMailbox);
-      }
+      // 2. Asynchrones E2E-Postfach für ALLE aktiven Codes abonnieren (empfängt auch Retained Messages von PC, Laptop & Handy!)
+      await this._subscribeAllActiveMailboxes(this.mqttClient, onStatusUpdate);
 
-      if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Bereit für Synchronisation & Postfach aktiv (Gerät: ${myDevice})`);
+      if (onStatusUpdate) onStatusUpdate('waiting', `🟢 Bereit für Synchronisation & Multi-Geräte-Postfach aktiv (Gerät: ${myDevice})`);
     } catch (err) {
       console.warn('[SyncEngine] startListening Verbindungsfehler:', err.message);
       if (onStatusUpdate) onStatusUpdate('error', '⚠️ Verbindung wird aufgebaut... (Offline-Modus aktiv)');
+    }
+  },
+
+  async _subscribeAllActiveMailboxes(client, onStatusUpdate, onFoundCallback = null) {
+    if (!client) return;
+    const allCodes = this.getAllActivePairingCodes();
+    for (const code of allCodes) {
+      const boxTopic = await this.getMailboxTopic(code);
+      if (!boxTopic) continue;
+      const handleMailbox = async (topic, msgStr) => {
+        try {
+          const payload = JSON.parse(msgStr);
+          if (payload && payload.ct && payload.iv && payload.salt) {
+            const res = await this.decryptWithAnyKnownCode(payload, code);
+            if (res && res.decrypted && res.decrypted.type === 'MAILBOX_UPDATE') {
+              if (onFoundCallback) onFoundCallback(res.decrypted);
+              await this.handleIncomingMailboxUpdate(res.decrypted, onStatusUpdate, res.usedCode || code);
+            }
+          }
+        } catch (e) {}
+      };
+      client.subscribe(boxTopic, handleMailbox);
+      client.subscribe(boxTopic + '/#', handleMailbox);
     }
   },
 
@@ -505,20 +772,25 @@ const SyncEngine = {
   async handleIncomingSyncRequest(request, topicResp, myCode, onStatusUpdate) {
     try {
       const isForceOverwrite = Boolean(request.forceOverwrite || request.mode === 'FORCE_OVERWRITE');
+      const nowStr = new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+      // Sender und dessen gekoppelte Geräte (z.B. PC + Laptop + Handy) sofort in den Sync-Verbund aufnehmen!
+      this.registerIncomingPeerAndGroup(request.sender || 'Computer', myCode, request.peers || [], nowStr);
 
       if (isForceOverwrite) {
-        // 1. Smartphone wird KOMPLETT mit dem empfangenen PC-Stand überschrieben!
+        // 1. Gerät wird KOMPLETT mit dem empfangenen Master-Stand überschrieben!
         if (request.vault) {
           await this.importSyncedVaultData(request.vault, onStatusUpdate, true);
         }
 
-        // 2. Bestätigung ohne altes lokales Vault zurücksenden, damit PC nicht durch alte Handydaten verunreinigt wird!
+        // 2. Bestätigung ohne altes lokales Vault zurücksenden, aber mit vollständiger Peer-Liste!
         const responsePayload = {
           type: 'SYNC_RESPONSE',
           mode: 'FORCE_OVERWRITE',
           overwritten: true,
           timestamp: Date.now(),
-          sender: this.getDeviceName()
+          sender: this.getDeviceName(),
+          peers: this.getExportablePeers(myCode)
         };
         const encrypted = await this.encrypt(responsePayload, myCode);
         if (this.mqttClient && this.mqttClient.connected) {
@@ -526,19 +798,13 @@ const SyncEngine = {
         }
 
         this.lastSyncTime = new Date();
-        localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-        localStorage.setItem('haushaltsbuch_sync_connected_device', request.sender || 'Computer');
-        if (myCode) {
-          localStorage.setItem('haushaltsbuch_sync_connected_code', myCode);
-        }
-        localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
         if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
         if (onStatusUpdate) {
           const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
-          onStatusUpdate('success', `🎉 Smartphone wurde komplett mit PC-Stand überschrieben um ${timeStr}!`);
+          onStatusUpdate('success', `🎉 Gerät wurde komplett mit Stand von ${request.sender || 'Computer'} überschrieben um ${timeStr}!`);
         }
         if (typeof announceNVDA === 'function') {
-          announceNVDA('Smartphone wurde komplett mit dem Stand des Computers überschrieben!', true);
+          announceNVDA('Gerät wurde komplett mit dem Stand des Partnergeräts überschrieben!', true);
         }
         if (window.navigator && window.navigator.vibrate) {
           try { window.navigator.vibrate([100, 50, 100]); } catch(e) {}
@@ -547,14 +813,19 @@ const SyncEngine = {
       }
 
       // Normaler 2-Wege-Sync:
-      // 1. Lokale Tresordaten auslesen
-      const vaultData = await this.exportCurrentVaultData();
+      // 1. Falls Partnergerät neuere Daten mitgeschickt hat, diese zuerst zusammenführen,
+      //    damit die Antwort bereits den kombinierten Stand aller Geräte enthält!
+      if (request.vault) {
+        await this.importSyncedVaultData(request.vault, onStatusUpdate);
+      }
 
-      // 2. Antwortpaket verschlüsseln
+      // 2. Kombinierten lokalen Tresorstand + alle gekoppelten Geräte (Peers) exportieren
+      const vaultData = await this.exportCurrentVaultData();
       const responsePayload = {
         type: 'SYNC_RESPONSE',
         timestamp: Date.now(),
         sender: this.getDeviceName(),
+        peers: this.getExportablePeers(myCode),
         vault: vaultData
       };
       const encrypted = await this.encrypt(responsePayload, myCode);
@@ -564,25 +835,18 @@ const SyncEngine = {
         this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
       }
 
-      // 4. Falls PC neuere Daten mitgeschickt hat, diese übernehmen
-      if (request.vault) {
-        await this.importSyncedVaultData(request.vault, onStatusUpdate);
-      }
-
       this.lastSyncTime = new Date();
-      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-      localStorage.setItem('haushaltsbuch_sync_connected_device', request.sender || 'Computer');
-      if (myCode) {
-        localStorage.setItem('haushaltsbuch_sync_connected_code', myCode);
-      }
-      localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+      // Gemeinsames Postfach aktualisieren, damit auch ein drittes Gerät (z.B. ausgeschalteter PC oder Laptop)
+      // sofort die neue Gruppen-Kopplung und den zusammengeführten Datenstand erhält!
+      this.scheduleMailboxPush(false);
+
       if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
       if (onStatusUpdate) {
         const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
-        onStatusUpdate('success', `✅ Erfolgreich mit PC synchronisiert um ${timeStr}!`);
+        onStatusUpdate('success', `✅ Erfolgreich mit ${request.sender || 'Partnergerät'} synchronisiert um ${timeStr}!`);
       }
       if (typeof announceNVDA === 'function') {
-        announceNVDA('Synchronisation mit Computer erfolgreich abgeschlossen!', true);
+        announceNVDA(`Synchronisation mit ${request.sender || 'Partnergerät'} erfolgreich abgeschlossen!`, true);
       }
 
       // Vibration (Haptisches Feedback auf dem Smartphone)
@@ -595,20 +859,24 @@ const SyncEngine = {
     }
   },
 
-  // 6. PC: SYNCHRONISATION MIT HANDY STARTEN (INITIATOR)
+  // 6. SYNCHRONISATION MIT ZIELGERÄT STARTEN (INITIATOR: PC, LAPTOP ODER HANDY)
   async syncWithSmartphone(targetDeviceName, pairingCode, onStatusUpdate, forceOverwrite = false) {
     if (!targetDeviceName || !pairingCode) {
       throw new Error('Bitte Gerätename und Kopplungscode angeben!');
     }
 
     const cleanTargetName = targetDeviceName.trim();
-    const cleanPairCode = pairingCode.trim();
+    const cleanPairCode = pairingCode.trim().toUpperCase();
     const topicReq = await this.getTopicForDevice(cleanTargetName);
     const topicResp = topicReq + '_resp';
 
+    // Zielgerät sofort als gekoppelt speichern, damit Postfach-Fallback & Multi-Geräte-Gruppe den Code kennen
+    this.savePairedDevice(cleanTargetName, cleanPairCode, null, true);
+    if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+
     const connectMsg = forceOverwrite 
-      ? `🔗 Verbinde mit Smartphone (${cleanTargetName}) zum vollständigen Überschreiben...`
-      : `🔗 Verbinde mit Smartphone (${cleanTargetName})...`;
+      ? `🔗 Verbinde mit ${cleanTargetName} zum vollständigen Überschreiben...`
+      : `🔗 Verbinde mit ${cleanTargetName}...`;
     if (onStatusUpdate) onStatusUpdate('connecting', connectMsg);
     if (typeof announceNVDA === 'function') announceNVDA(connectMsg, true);
 
@@ -628,18 +896,24 @@ const SyncEngine = {
           try {
             if (onStatusUpdate) {
               onStatusUpdate('syncing', forceOverwrite 
-                ? '📬 Smartphone antwortet gerade nicht. Hinterlege Master-Stand versiegelt im Postfach...' 
-                : '📬 Smartphone antwortet gerade nicht. Hinterlege Daten versiegelt im Postfach...');
+                ? `📬 ${cleanTargetName} antwortet gerade nicht. Hinterlege Master-Stand versiegelt im Postfach...` 
+                : `📬 ${cleanTargetName} antwortet gerade nicht. Synchronisiere über das verschlüsselte E2E-Postfach...`);
+            }
+            // Falls kein Force-Overwrite: Zuerst vorhandene Postfach-Daten (z.B. von Handy & PC) abholen und zusammenführen!
+            if (!forceOverwrite) {
+              await this.checkMailbox(onStatusUpdate, false);
+              await new Promise(r => setTimeout(r, 1200));
             }
             await this.postToMailbox(onStatusUpdate, forceOverwrite);
+            const pairedNames = this.getPairedDevices().map(d => d.name).join(', ') || cleanTargetName;
             const msg = forceOverwrite
-              ? `📬 Smartphone ist gerade offline. Dein PC-Stand wurde als Master im Postfach hinterlegt und überschreibt das Smartphone automatisch, sobald die App dort geöffnet wird!`
-              : `📬 Smartphone ist gerade offline. Deine Daten wurden versiegelt im Postfach hinterlegt und werden automatisch geladen, sobald das Smartphone gestartet wird!`;
+              ? `📬 ${cleanTargetName} ist gerade im Standby/Offline. Dein Stand wurde als Master im Postfach hinterlegt und überschreibt die gekoppelten Geräte (${pairedNames}) automatisch beim nächsten Start!`
+              : `📬 ${cleanTargetName} ist gerade im Standby/Offline. Daten & Gruppen-Kopplung (${pairedNames}) wurden über das verschlüsselte Postfach abgeglichen!`;
             if (onStatusUpdate) onStatusUpdate('success', msg);
             if (typeof announceNVDA === 'function') announceNVDA(msg, true);
             resolve({ type: 'MAILBOX_SAVED', vault: null, overwritten: forceOverwrite });
           } catch(boxErr) {
-            reject(new Error('Das Smartphone ist offline und das Postfach konnte nicht erreicht werden: ' + boxErr.message));
+            reject(new Error('Das Zielgerät ist offline und das Postfach konnte nicht erreicht werden: ' + boxErr.message));
           }
         }
       }, 10000);
@@ -648,11 +922,11 @@ const SyncEngine = {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
-            const decrypted = await this.decrypt(payload, cleanPairCode);
-            if (decrypted && decrypted.type === 'SYNC_RESPONSE') {
+            const res = await this.decryptWithAnyKnownCode(payload, cleanPairCode);
+            if (res && res.decrypted && res.decrypted.type === 'SYNC_RESPONSE') {
               responseReceived = true;
               clearTimeout(timer);
-              resolve(decrypted);
+              resolve(res.decrypted);
             }
           }
         } catch (e) {
@@ -665,12 +939,12 @@ const SyncEngine = {
     await new Promise(r => setTimeout(r, 250));
 
     const sendMsg = forceOverwrite 
-      ? '📡 Sende Master-Stand an Smartphone zum vollständigen Überschreiben...' 
-      : '📡 Sende verschlüsselte Daten an Smartphone...';
+      ? `📡 Sende Master-Stand an ${cleanTargetName} zum vollständigen Überschreiben...` 
+      : `📡 Sende verschlüsselte Daten an ${cleanTargetName}...`;
     if (onStatusUpdate) onStatusUpdate('waiting_reply', sendMsg);
     if (typeof announceNVDA === 'function') announceNVDA(sendMsg, true);
 
-    // 3. Eigene Tresordaten exportieren und Anfrage senden
+    // 3. Eigene Tresordaten + bekannte Gruppen-Geräte exportieren und Anfrage senden
     const localVault = await this.exportCurrentVaultData();
     const requestPayload = {
       type: 'SYNC_REQUEST',
@@ -678,21 +952,29 @@ const SyncEngine = {
       forceOverwrite: Boolean(forceOverwrite),
       timestamp: Date.now(),
       sender: this.getDeviceName(),
+      peers: this.getExportablePeers(cleanPairCode),
       vault: localVault
     };
 
     const encryptedReq = await this.encrypt(requestPayload, cleanPairCode);
     client.publish(topicReq, JSON.stringify(encryptedReq));
 
-    if (onStatusUpdate) onStatusUpdate('waiting_reply', '⚡ Signal übertragen. Warte auf Bestätigung vom Smartphone...');
+    if (onStatusUpdate) onStatusUpdate('waiting_reply', `⚡ Signal übertragen. Warte auf Bestätigung von ${cleanTargetName}...`);
 
     // 4. Antwort abwarten
     const response = await responsePromise;
     client.close(); // Temporären Client schließen
 
-    // Falls Master-Overwrite: Keine alten Handydaten zurück auf den PC importieren!
+    const nowStr = new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    // Empfangene Peer-Liste (z.B. PC, der bereits mit dem Handy gekoppelt war!) automatisch übernehmen!
+    if (response && response.type === 'SYNC_RESPONSE') {
+      this.registerIncomingPeerAndGroup(response.sender || cleanTargetName, cleanPairCode, response.peers || [], nowStr);
+    }
+    this.savePairedDevice(cleanTargetName, cleanPairCode, nowStr, true);
+
+    // Falls Master-Overwrite: Keine alten Daten zurück importieren!
     if (forceOverwrite) {
-      const succMsg = '🎉 Smartphone wurde erfolgreich zu 100% mit deinen Computer-Daten überschrieben!';
+      const succMsg = `🎉 ${cleanTargetName} wurde erfolgreich zu 100% mit deinen Daten überschrieben!`;
       if (onStatusUpdate) onStatusUpdate('success', succMsg);
       if (typeof announceNVDA === 'function') announceNVDA(succMsg, true);
     } else if (response && response.type === 'SYNC_RESPONSE' && response.vault) {
@@ -701,34 +983,21 @@ const SyncEngine = {
     }
 
     this.lastSyncTime = new Date();
-    localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-    localStorage.setItem('haushaltsbuch_sync_connected_device', cleanTargetName);
-    localStorage.setItem('haushaltsbuch_sync_connected_code', cleanPairCode);
-    localStorage.setItem('haushaltsbuch_sync_connected_time', new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
     
-    // Auch Postfach aktualisieren, damit immer der neueste Stand im Briefkasten liegt
+    // Auch Postfach aktualisieren (für alle gekoppelten Geräte im Verbund, z.B. PC + Laptop + Handy)
     this.scheduleMailboxPush(forceOverwrite);
 
-    // An den lokalen Desktop-Server senden zur dauerhaften Speicherung in Haushaltsbuch_Kopplung.json
-    try {
-      const port = window.__LOCAL_PORT__ || 48123;
-      const headers = (typeof getVaultApiHeaders === 'function') ? getVaultApiHeaders({ 'Content-Type': 'application/json' }) : { 'Content-Type': 'application/json' };
-      fetch(`http://127.0.0.1:${port}/api/save_pairing`, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify({
-          device: cleanTargetName,
-          code: cleanPairCode,
-          time: localStorage.getItem('haushaltsbuch_sync_connected_time')
-        })
-      }).catch(() => {});
-    } catch(e) {}
+    // Hintergrund-Listener aktualisieren, damit neu gelernte Gruppen-Codes sofort abonniert sind
+    if (this.mqttClient && this.mqttClient.connected) {
+      this._subscribeAllActiveMailboxes(this.mqttClient, null).catch(() => {});
+    }
 
     if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
     const timeStr = this.lastSyncTime.toLocaleTimeString('de-DE');
     if (response && response.type === 'SYNC_RESPONSE') {
-      if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}!`);
-      if (typeof announceNVDA === 'function') announceNVDA('Synchronisation mit Smartphone erfolgreich abgeschlossen!', true);
+      const allPeers = this.getPairedDevices().map(d => d.name).join(', ');
+      if (onStatusUpdate) onStatusUpdate('success', `✅ Synchronisation erfolgreich abgeschlossen um ${timeStr}! Gekoppelte Geräte: ${allPeers}`);
+      if (typeof announceNVDA === 'function') announceNVDA(`Synchronisation erfolgreich abgeschlossen! Gekoppelte Geräte: ${allPeers}`, true);
     }
 
     // Vibration / Feedback
@@ -737,10 +1006,41 @@ const SyncEngine = {
     }
   },
 
-  // 6b. ASYNCHRONES E2E-POSTFACH: DATEN IM BRIEFKASTEN HINTERLEGEN (RETAINED)
+  async syncAllPairedDevices(onStatusUpdate, forceOverwrite = false) {
+    const devices = this.getPairedDevices();
+    if (!devices || devices.length === 0) {
+      throw new Error('Noch keine gekoppelten Geräte vorhanden.');
+    }
+    if (devices.length === 1) {
+      return await this.syncWithSmartphone(devices[0].name, devices[0].code, onStatusUpdate, forceOverwrite);
+    }
+
+    // Zuerst das gemeinsame Postfach prüfen und dann alle Geräte abgleichen
+    if (!forceOverwrite) {
+      await this.checkMailbox(onStatusUpdate, false);
+    }
+    for (let i = 0; i < devices.length; i++) {
+      const dev = devices[i];
+      if (onStatusUpdate) {
+        onStatusUpdate('connecting', `🔄 Synchronisiere Gerät ${i + 1} von ${devices.length}: ${dev.name}...`);
+      }
+      try {
+        await this.syncWithSmartphone(dev.name, dev.code, onStatusUpdate, forceOverwrite);
+      } catch (e) {
+        console.warn(`[SyncEngine] Sync mit ${dev.name} über Postfach fortgesetzt:`, e.message);
+      }
+    }
+    await this.postToMailbox(onStatusUpdate, forceOverwrite);
+    const names = this.getPairedDevices().map(d => d.name).join(', ');
+    const msg = `✅ Alle gekoppelten Geräte (${names}) sind synchronisiert!`;
+    if (onStatusUpdate) onStatusUpdate('success', msg);
+    if (typeof announceNVDA === 'function') announceNVDA(msg, true);
+  },
+
+  // 6b. ASYNCHRONES E2E-POSTFACH: DATEN IM BRIEFKASTEN HINTERLEGEN (RETAINED FÜR ALLE GRUPPEN-GERÄTE)
   async postToMailbox(onStatusUpdate, forceOverwrite = false) {
-    const code = this.getActivePairingCode();
-    if (!code) {
+    const allCodes = this.getAllActivePairingCodes();
+    if (!allCodes || allCodes.length === 0) {
       if (onStatusUpdate) onStatusUpdate('error', '⚠️ Noch kein Kopplungscode vorhanden.');
       return false;
     }
@@ -749,13 +1049,10 @@ const SyncEngine = {
     this.isPostingMailbox = true;
 
     try {
-      const baseTopic = await this.getMailboxTopic(code);
-      if (!baseTopic) return false;
-
       const myDevice = this.getDeviceName();
-      const devTopic = await this.getMailboxTopic(code, myDevice);
       const timestamp = Date.now();
       const vaultData = await this.exportCurrentVaultData();
+      const primaryCode = allCodes[0];
 
       const envelope = {
         type: 'MAILBOX_UPDATE',
@@ -764,11 +1061,9 @@ const SyncEngine = {
         forceOverwrite: Boolean(forceOverwrite),
         timestamp: timestamp,
         sender: myDevice,
+        peers: this.getExportablePeers(primaryCode),
         vault: vaultData
       };
-
-      const encrypted = await this.encrypt(envelope, code);
-      const payloadStr = JSON.stringify(encrypted);
 
       localStorage.setItem('haushaltsbuch_last_sent_mailbox_ts', String(timestamp));
 
@@ -781,8 +1076,16 @@ const SyncEngine = {
         needClose = true;
       }
 
-      client.publish(devTopic, payloadStr, true); // retain = true (0x31)
-      client.publish(baseTopic, payloadStr, true); // retain = true (0x31)
+      // In alle aktiven Postfächer der gekoppelten Geräte (PC, Laptop, Handy) publizieren
+      for (const code of allCodes) {
+        const baseTopic = await this.getMailboxTopic(code);
+        const devTopic = await this.getMailboxTopic(code, myDevice);
+        if (!baseTopic || !devTopic) continue;
+        const encrypted = await this.encrypt(envelope, code);
+        const payloadStr = JSON.stringify(encrypted);
+        client.publish(devTopic, payloadStr, true); // retain = true (pro Gerät eigener Slot!)
+        client.publish(baseTopic, payloadStr, true); // retain = true (Basis-Slot)
+      }
 
       if (needClose) {
         setTimeout(() => {
@@ -796,13 +1099,13 @@ const SyncEngine = {
 
       if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
       const statusMsg = forceOverwrite
-        ? `📬 Master-Stand versiegelt im Postfach hinterlegt (Stand: ${timeStr})! Handy übernimmt 1:1.`
-        : `📬 Daten versiegelt im Postfach hinterlegt (Stand: ${timeStr})!`;
+        ? `📬 Master-Stand versiegelt im Postfach hinterlegt (Stand: ${timeStr})! Alle gekoppelten Geräte übernehmen 1:1.`
+        : `📬 Daten versiegelt für alle gekoppelten Geräte im Postfach hinterlegt (Stand: ${timeStr})!`;
       if (onStatusUpdate) onStatusUpdate('success', statusMsg);
       if (typeof announceNVDA === 'function') {
         announceNVDA(forceOverwrite
-          ? 'Master-Finanzdaten erfolgreich im Postfach hinterlegt. Das Smartphone übernimmt diesen Stand zu 100%!'
-          : 'Finanzdaten erfolgreich im verschlüsselten Postfach hinterlegt!', true);
+          ? 'Master-Finanzdaten erfolgreich im Postfach hinterlegt. Alle gekoppelten Geräte übernehmen diesen Stand zu 100%!'
+          : 'Finanzdaten erfolgreich im verschlüsselten Multi-Geräte-Postfach hinterlegt!', true);
       }
       return true;
     } catch (err) {
@@ -823,10 +1126,10 @@ const SyncEngine = {
     }, 800);
   },
 
-  // 6c. ASYNCHRONES E2E-POSTFACH: BRIEFKASTEN PRÜFEN & NEUE DATEN ABHOLEN
+  // 6c. ASYNCHRONES E2E-POSTFACH: BRIEFKASTEN PRÜFEN & NEUE DATEN VON ALLEN GERÄTEN ABHOLEN
   async checkMailbox(onStatusUpdate, isManual = false) {
-    const code = this.getActivePairingCode();
-    if (!code) {
+    const allCodes = this.getAllActivePairingCodes();
+    if (!allCodes || allCodes.length === 0) {
       if (onStatusUpdate) onStatusUpdate('error', '⚠️ Noch kein Kopplungscode vorhanden.');
       return false;
     }
@@ -835,10 +1138,7 @@ const SyncEngine = {
     this.isCheckingMailbox = true;
 
     try {
-      const baseTopic = await this.getMailboxTopic(code);
-      if (!baseTopic) return false;
-
-      if (onStatusUpdate) onStatusUpdate('connecting', '📬 Prüfe verschlüsseltes Postfach auf neue Daten...');
+      if (onStatusUpdate) onStatusUpdate('connecting', '📬 Prüfe verschlüsseltes Postfach auf neue Daten von allen Geräten...');
 
       let client = this.mqttClient;
       if (!client || !client.connected) {
@@ -848,23 +1148,9 @@ const SyncEngine = {
       }
 
       let updateFound = false;
-      const onMailboxMsg = async (recvTopic, msgStr) => {
-        try {
-          const payload = JSON.parse(msgStr);
-          if (payload && payload.ct && payload.iv && payload.salt) {
-            const decrypted = await this.decrypt(payload, code);
-            if (decrypted && decrypted.type === 'MAILBOX_UPDATE') {
-              updateFound = true;
-              await this.handleIncomingMailboxUpdate(decrypted, onStatusUpdate);
-            }
-          }
-        } catch (e) {
-          console.warn('[SyncEngine] Fehler beim Entschlüsseln der Postfach-Nachricht:', e.message);
-        }
-      };
-
-      client.subscribe(baseTopic, onMailboxMsg);
-      client.subscribe(baseTopic + '/#', onMailboxMsg);
+      await this._subscribeAllActiveMailboxes(client, onStatusUpdate, () => {
+        updateFound = true;
+      });
 
       if (isManual) {
         if (typeof announceNVDA === 'function') {
@@ -874,7 +1160,7 @@ const SyncEngine = {
           if (!updateFound && onStatusUpdate) {
             const lastSync = localStorage.getItem('haushaltsbuch_mailbox_last_sync');
             const info = lastSync ? ` (Zuletzt synchronisiert: ${lastSync})` : '';
-            onStatusUpdate('success', `✅ Postfach ist auf dem neuesten Stand! Keine neueren Daten vom Partnergerät vorhanden${info}.`);
+            onStatusUpdate('success', `✅ Postfach ist auf dem neuesten Stand! Alle gekoppelten Geräte sind synchron${info}.`);
           }
         }, 1500);
       }
@@ -888,28 +1174,39 @@ const SyncEngine = {
     }
   },
 
-  async handleIncomingMailboxUpdate(update, onStatusUpdate) {
+  async handleIncomingMailboxUpdate(update, onStatusUpdate, usedCode = null) {
+    if (!update) return;
     const myDevice = this.getDeviceName();
+    const timeStr = new Date(update.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date(update.timestamp || Date.now()).toLocaleDateString('de-DE');
+    const fullTimeStr = `${dateStr} um ${timeStr}`;
+    const activeCode = usedCode || this.getActivePairingCode() || this.getPairingCode();
+
+    // Auch wenn ein Paket eine bekannte Peer-Liste mitbringt, Gruppen-Geräte (z.B. Laptop <-> Handy <-> PC) immer registrieren!
+    if (update.sender && update.sender !== myDevice) {
+      this.registerIncomingPeerAndGroup(update.sender, activeCode, update.peers || [], fullTimeStr);
+    } else if (Array.isArray(update.peers) && update.peers.length > 0) {
+      this.registerIncomingPeerAndGroup(null, activeCode, update.peers, fullTimeStr);
+    }
+
     if (update.sender === myDevice) {
-      return; // Eigene Aktualisierung ignorieren
+      if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+      return; // Eigenes Datenpaket nicht erneut importieren
     }
 
-    const lastReceivedTs = Number(localStorage.getItem('haushaltsbuch_last_received_mailbox_ts') || 0);
-    if (update.timestamp <= lastReceivedTs) {
-      return; // Bereits verarbeitet
+    // Zeitstempel pro Absender-Gerät prüfen, damit Laptop, PC und Handy sich niemals gegenseitig durch Uhrzeit-Abweichungen blockieren!
+    const cleanSenderKey = 'haushaltsbuch_last_received_mailbox_ts_' + String(update.sender || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const lastSenderTs = Number(localStorage.getItem(cleanSenderKey) || 0);
+    if (update.timestamp && update.timestamp <= lastSenderTs) {
+      if (typeof updateSyncConnectedUI === 'function') updateSyncConnectedUI();
+      return; // Dieses Paket dieses Absenders wurde bereits verarbeitet
     }
 
-    localStorage.setItem('haushaltsbuch_last_received_mailbox_ts', String(update.timestamp));
-    localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-    localStorage.setItem('haushaltsbuch_sync_connected_device', update.sender || 'Gekoppeltes Gerät');
-    const curCode = this.getActivePairingCode();
-    if (curCode) {
-      localStorage.setItem('haushaltsbuch_sync_connected_code', curCode);
+    localStorage.setItem(cleanSenderKey, String(update.timestamp));
+    const globalLastTs = Number(localStorage.getItem('haushaltsbuch_last_received_mailbox_ts') || 0);
+    if (update.timestamp > globalLastTs) {
+      localStorage.setItem('haushaltsbuch_last_received_mailbox_ts', String(update.timestamp));
     }
-    
-    const timeStr = new Date(update.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    const dateStr = new Date(update.timestamp).toLocaleDateString('de-DE');
-    localStorage.setItem('haushaltsbuch_sync_connected_time', `${dateStr} um ${timeStr}`);
     localStorage.setItem('haushaltsbuch_mailbox_last_sync', timeStr);
 
     const isForceOverwrite = Boolean(update.forceOverwrite || update.mode === 'FORCE_OVERWRITE');

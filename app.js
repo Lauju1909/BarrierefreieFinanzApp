@@ -13250,33 +13250,58 @@ function setSyncMode(mode) {
     btnDesk.style.color = mode === 'desktop' ? '#fff' : '';
   }
 
+  const myName = (typeof SyncEngine !== 'undefined' && SyncEngine.getDeviceName) ? SyncEngine.getDeviceName() : '';
+  const myCode = (typeof SyncEngine !== 'undefined' && SyncEngine.getPairingCode) ? SyncEngine.getPairingCode() : '';
+
+  const nameEl = document.getElementById('sync-my-device-name');
+  const codeEl = document.getElementById('sync-my-code');
+  if (typeof setAccessibleCodeValue === 'function') {
+    if (nameEl) setAccessibleCodeValue(nameEl, myName, 'Gerätename');
+    if (codeEl) setAccessibleCodeValue(codeEl, myCode, 'Kopplungscode');
+  } else {
+    if (nameEl) { if (nameEl.tagName === 'INPUT') nameEl.value = myName; else nameEl.textContent = myName; }
+    if (codeEl) { if (codeEl.tagName === 'INPUT') codeEl.value = myCode; else codeEl.textContent = myCode; }
+  }
+
+  const deskOwnName = document.getElementById('sync-desktop-own-name');
+  const deskOwnCode = document.getElementById('sync-desktop-own-code');
+  if (deskOwnName) deskOwnName.textContent = myName;
+  if (deskOwnCode) deskOwnCode.textContent = myCode;
+
+  // Immer im Hintergrund auf eingehende Synchronisationen (von PC, Laptop oder Handy) lauschen
+  restartSyncListener();
+
   if (mode === 'mobile') {
     if (mobileBox) mobileBox.style.display = 'block';
     if (desktopBox) desktopBox.style.display = 'none';
-
-    const myName = SyncEngine.getDeviceName();
-    const myCode = SyncEngine.getPairingCode();
-
-    const nameEl = document.getElementById('sync-my-device-name');
-    const codeEl = document.getElementById('sync-my-code');
-    if (nameEl) nameEl.textContent = myName;
-    if (codeEl) codeEl.textContent = myCode;
-
-    restartSyncListener();
-    announceNVDA(`Smartphone-Synchronisation bereit. Gerätename: ${myName}. Kopplungscode: ${myCode}. Warte auf PC.`);
+    announceNVDA(`Eigener Kopplungscode geöffnet. Gerätename: ${myName}. Kopplungscode: ${myCode}. Bereit für Verbindung mit PC oder Laptop.`);
   } else {
     if (mobileBox) mobileBox.style.display = 'none';
     if (desktopBox) desktopBox.style.display = 'block';
 
     const targetDevInput = document.getElementById('input-target-device');
-    if (targetDevInput) {
+    if (targetDevInput && (!isSyncConnected() || window.__MANUAL_SYNC_EDIT__)) {
       targetDevInput.focus();
     }
-    announceNVDA('Smartphone-Synchronisation geöffnet. Bitte Gerätename und Kopplungscode vom Smartphone eingeben.');
+    announceNVDA('Multi-Geräte-Synchronisation geöffnet.');
   }
 }
 
+function getPairedDevicesList() {
+  if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getPairedDevices === 'function') {
+    return SyncEngine.getPairedDevices();
+  }
+  const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
+  const code = localStorage.getItem('haushaltsbuch_sync_connected_code');
+  const time = localStorage.getItem('haushaltsbuch_sync_connected_time') || 'Heute';
+  if (dev && code) return [{ name: dev, code: code, time: time }];
+  return [];
+}
+
 function isSyncConnected() {
+  const list = getPairedDevicesList();
+  if (list.length > 0) return true;
+
   const isConn = localStorage.getItem('haushaltsbuch_sync_connected') === 'true';
   const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
   const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || 
@@ -13309,6 +13334,10 @@ function isSyncConnected() {
 }
 
 function getConnectedDevice() {
+  const list = getPairedDevicesList();
+  if (list.length > 0) {
+    return list.map(d => d.name).join(', ');
+  }
   const dev = localStorage.getItem('haushaltsbuch_sync_connected_device');
   const isAndroid = !!window.__IS_ANDROID__ || 
                     (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
@@ -13318,10 +13347,30 @@ function getConnectedDevice() {
 }
 
 function getConnectedTime() {
+  const list = getPairedDevicesList();
+  if (list.length > 0 && list[0].time) {
+    return list[0].time;
+  }
   return localStorage.getItem('haushaltsbuch_sync_connected_time') || '';
 }
 
+function removeSinglePairedDevice(deviceName) {
+  if (!deviceName) return;
+  if (!confirm(`Möchtest du das Gerät "${deviceName}" wirklich aus der Kopplungsliste entfernen?`)) {
+    return;
+  }
+  if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.removePairedDevice === 'function') {
+    SyncEngine.removePairedDevice(deviceName);
+  }
+  updateSyncConnectedUI();
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Gerät ${deviceName} wurde aus der Kopplung entfernt.`);
+  }
+}
+
 function disconnectSyncPairing() {
+  localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+  localStorage.removeItem('haushaltsbuch_sync_removed_devices');
   localStorage.removeItem('haushaltsbuch_sync_connected');
   localStorage.removeItem('haushaltsbuch_sync_connected_device');
   localStorage.removeItem('haushaltsbuch_sync_connected_code');
@@ -13357,29 +13406,65 @@ function disconnectSyncPairing() {
     initLockScreenSync();
   }
   if (typeof announceNVDA === 'function') {
-    announceNVDA('Kopplung aufgehoben. Beide Geräte sind nun getrennt.');
+    announceNVDA('Alle Geräte-Kopplungen wurden aufgehoben.');
   }
 }
 
 function updateSyncConnectedUI() {
-  // Falls window.__PAIRED_DEVICE__ vom C# Server bereitsteht, in LocalStorage übernehmen
-  if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device && window.__PAIRED_DEVICE__.device !== 'Computer' && window.__PAIRED_DEVICE__.device !== 'PC') {
-    if (!localStorage.getItem('haushaltsbuch_sync_connected_device')) {
-      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-      localStorage.setItem('haushaltsbuch_sync_connected_device', window.__PAIRED_DEVICE__.device);
-      if (window.__PAIRED_DEVICE__.code) {
-        localStorage.setItem('haushaltsbuch_sync_connected_code', window.__PAIRED_DEVICE__.code);
+  // Falls window.__PAIRED_DEVICE__ vom C# Server bereitsteht, in LocalStorage / SyncEngine übernehmen
+  if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
+    if (Array.isArray(window.__PAIRED_DEVICE__.devices) && typeof SyncEngine !== 'undefined' && typeof SyncEngine.savePairedDevice === 'function') {
+      const existingRaw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
+      if (!existingRaw) {
+        window.__PAIRED_DEVICE__.devices.slice().reverse().forEach(d => {
+          if (d && d.name && d.code) {
+            SyncEngine.savePairedDevice(d.name, d.code, d.time || 'Heute', false);
+          }
+        });
       }
-      if (window.__PAIRED_DEVICE__.time) {
-        localStorage.setItem('haushaltsbuch_sync_connected_time', window.__PAIRED_DEVICE__.time);
+    } else if (window.__PAIRED_DEVICE__.device && window.__PAIRED_DEVICE__.device !== 'Computer' && window.__PAIRED_DEVICE__.device !== 'PC') {
+      if (!localStorage.getItem('haushaltsbuch_sync_connected_device')) {
+        if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.savePairedDevice === 'function') {
+          SyncEngine.savePairedDevice(window.__PAIRED_DEVICE__.device, window.__PAIRED_DEVICE__.code, window.__PAIRED_DEVICE__.time, false);
+        } else {
+          localStorage.setItem('haushaltsbuch_sync_connected', 'true');
+          localStorage.setItem('haushaltsbuch_sync_connected_device', window.__PAIRED_DEVICE__.device);
+          if (window.__PAIRED_DEVICE__.code) {
+            localStorage.setItem('haushaltsbuch_sync_connected_code', window.__PAIRED_DEVICE__.code);
+          }
+          if (window.__PAIRED_DEVICE__.time) {
+            localStorage.setItem('haushaltsbuch_sync_connected_time', window.__PAIRED_DEVICE__.time);
+          }
+        }
       }
     }
   }
 
-  const connected = isSyncConnected();
-  const devName = getConnectedDevice();
-  const pairedCode = localStorage.getItem('haushaltsbuch_sync_connected_code') || '';
+  const pairedList = getPairedDevicesList();
+  const connected = pairedList.length > 0 || isSyncConnected();
+  const allNamesStr = pairedList.length > 0 ? pairedList.map(d => d.name).join(', ') : getConnectedDevice();
+  const primaryDev = pairedList.length > 0 ? pairedList[0].name : getConnectedDevice();
+  const pairedCode = (pairedList.length > 0 ? pairedList[0].code : localStorage.getItem('haushaltsbuch_sync_connected_code')) || '';
   const syncTime = getConnectedTime() || 'Heute';
+
+  // Eigene Kennung & Code aktualisieren (falls Gruppen-Code bei Kopplung übernommen wurde)
+  if (typeof SyncEngine !== 'undefined') {
+    const myName = SyncEngine.getDeviceName();
+    const myCode = SyncEngine.getPairingCode();
+    const mainNameEl = document.getElementById('sync-my-device-name');
+    const mainCodeEl = document.getElementById('sync-my-code');
+    if (typeof setAccessibleCodeValue === 'function') {
+      if (mainNameEl) setAccessibleCodeValue(mainNameEl, myName, 'Gerätename');
+      if (mainCodeEl) setAccessibleCodeValue(mainCodeEl, myCode, 'Kopplungscode');
+    } else {
+      if (mainNameEl) { if (mainNameEl.tagName === 'INPUT') mainNameEl.value = myName; else mainNameEl.textContent = myName; }
+      if (mainCodeEl) { if (mainCodeEl.tagName === 'INPUT') mainCodeEl.value = myCode; else mainCodeEl.textContent = myCode; }
+    }
+    const deskOwnName = document.getElementById('sync-desktop-own-name');
+    const deskOwnCode = document.getElementById('sync-desktop-own-code');
+    if (deskOwnName) deskOwnName.textContent = myName;
+    if (deskOwnCode) deskOwnCode.textContent = myCode;
+  }
 
   // Lockscreen
   const lockConnectedBox = document.getElementById('lock-sync-connected');
@@ -13389,42 +13474,106 @@ function updateSyncConnectedUI() {
 
   if (lockConnectedBox) lockConnectedBox.style.display = connected ? 'block' : 'none';
   if (lockUnconnectedBox) lockUnconnectedBox.style.display = connected ? 'none' : 'block';
-  if (lockDevSpan) lockDevSpan.textContent = devName;
+  if (lockDevSpan) lockDevSpan.textContent = allNamesStr;
   if (lockTimeSpan) lockTimeSpan.textContent = syncTime;
 
-  // Reiter 8 (Smartphone-Ansicht)
+  // Reiter 8 (Smartphone / Empfänger-Ansicht)
   const mainConnectedBox = document.getElementById('sync-mobile-connected');
   const mainUnconnectedBox = document.getElementById('sync-mobile-unconnected');
   const mainDevSpan = document.getElementById('sync-mobile-connected-dev');
   const mainTimeSpan = document.getElementById('sync-mobile-connected-time');
+  const mobilePairedListEl = document.getElementById('sync-mobile-paired-list');
+  const mobileCodeHeading = document.getElementById('sync-mobile-code-heading');
 
   if (mainConnectedBox) mainConnectedBox.style.display = connected ? 'block' : 'none';
-  if (mainUnconnectedBox) mainUnconnectedBox.style.display = connected ? 'none' : 'block';
-  if (mainDevSpan) mainDevSpan.textContent = devName;
+  // WICHTIG: #sync-mobile-unconnected bleibt immer sichtbar, damit man auf dem Handy jederzeit den Code ablesen kann,
+  // um zusätzlich einen Laptop oder Zweit-PC zu koppeln (der dann automatisch auch mit dem ersten PC verbunden ist)!
+  if (mainUnconnectedBox) mainUnconnectedBox.style.display = 'block';
+  if (mobileCodeHeading) {
+    mobileCodeHeading.textContent = connected
+      ? '📲 Weiteres Gerät koppeln (z. B. Laptop oder Zweit-PC)'
+      : '📲 Dieses Gerät mit PC oder Laptop verbinden';
+  }
+  if (mainDevSpan) mainDevSpan.textContent = allNamesStr;
   if (mainTimeSpan) mainTimeSpan.textContent = syncTime;
 
-  // Reiter 8 (Desktop-Ansicht): Gespeichertes Smartphone & 1-Klick-Abgleich
+  if (mobilePairedListEl) {
+    if (pairedList.length > 0) {
+      mobilePairedListEl.innerHTML = pairedList.map(d => {
+        const isPhone = /handy|phone|mobil|android/i.test(d.name);
+        const icon = isPhone ? '📱' : '💻';
+        const safeName = escapeHtml(d.name);
+        const safeTime = escapeHtml(d.time || 'Heute');
+        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
+          <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
+          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHtml(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
+        </div>`;
+      }).join('');
+    } else {
+      mobilePairedListEl.innerHTML = '';
+    }
+  }
+
+  // Reiter 8 (Desktop / Laptop-Ansicht): Gespeicherte Geräte & 1-Klick-Abgleich
   const pairedCard = document.getElementById('sync-desktop-paired-card');
   const manualForm = document.getElementById('sync-desktop-form');
+  const pairedCountSpan = document.getElementById('sync-desktop-paired-count');
   const pairedDevSpan = document.getElementById('sync-desktop-paired-name');
   const pairedCodeSpan = document.getElementById('sync-desktop-paired-code');
   const pairedTimeSpan = document.getElementById('sync-desktop-paired-time');
+  const pairedListContainer = document.getElementById('sync-paired-devices-list');
   const quickBtnDevName = document.getElementById('sync-quick-btn-devname');
   const targetDevInput = document.getElementById('input-target-device');
   const targetCodeInput = document.getElementById('input-target-code');
 
-  if (connected && devName) {
-    if (targetDevInput && !targetDevInput.value) targetDevInput.value = devName;
-    if (targetCodeInput && !targetCodeInput.value && pairedCode) targetCodeInput.value = pairedCode;
+  if (connected && allNamesStr) {
+    if (targetDevInput && !targetDevInput.value && !window.__MANUAL_SYNC_EDIT__) targetDevInput.value = primaryDev;
+    if (targetCodeInput && !targetCodeInput.value && pairedCode && !window.__MANUAL_SYNC_EDIT__) targetCodeInput.value = pairedCode;
 
     if (pairedCard) pairedCard.style.display = 'block';
-    if (pairedDevSpan) pairedDevSpan.textContent = devName;
+    if (pairedCountSpan) pairedCountSpan.textContent = String(pairedList.length || 1);
+    if (pairedDevSpan) pairedDevSpan.textContent = allNamesStr;
     if (pairedCodeSpan) pairedCodeSpan.textContent = pairedCode || 'Gespeichert';
     if (pairedTimeSpan) pairedTimeSpan.textContent = syncTime;
-    if (quickBtnDevName) quickBtnDevName.textContent = devName;
+    if (quickBtnDevName) {
+      quickBtnDevName.textContent = pairedList.length > 1
+        ? `allen ${pairedList.length} Geräten (${allNamesStr})`
+        : primaryDev;
+    }
+
+    if (pairedListContainer) {
+      pairedListContainer.innerHTML = pairedList.map(d => {
+        const isPhone = /handy|phone|mobil|android/i.test(d.name);
+        const icon = isPhone ? '📱' : '💻';
+        const safeName = escapeHtml(d.name);
+        const safeCode = escapeHtml(d.code || pairedCode);
+        const safeTime = escapeHtml(d.time || 'Heute');
+        const jsName = safeName.replace(/'/g, "\\'");
+        const jsCode = safeCode.replace(/'/g, "\\'");
+        return `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 14px; background:#ffffff; border:1px solid #86efac; border-radius:8px;">
+          <div>
+            <div style="font-size:16px; font-weight:bold; color:#14532d;">${icon} ${safeName}</div>
+            <div style="font-size:13px; color:#475569;">Code: <code>${safeCode}</code> &bull; Letzter Abgleich: ${safeTime}</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithDevice('${jsName}', '${jsCode}')" aria-label="1-Klick-Abgleich mit ${safeName}" style="font-size:13px; padding:6px 12px; background-color:#15803d;">
+              ⚡ Sync mit ${safeName}
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="triggerForceOverwriteDevice('${jsName}', '${jsCode}')" aria-label="${safeName} komplett mit Stand dieses Geräts überschreiben" style="font-size:13px; padding:6px 10px; color:#b45309; border-color:#f59e0b;">
+              📲 1:1 Überschreiben
+            </button>
+            <button type="button" class="btn btn-danger" onclick="removeSinglePairedDevice('${jsName}')" aria-label="Kopplung mit ${safeName} entfernen" style="font-size:13px; padding:6px 10px;">
+              ❌
+            </button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
     if (manualForm && !window.__MANUAL_SYNC_EDIT__) manualForm.style.display = 'none';
   } else {
     if (pairedCard) pairedCard.style.display = 'none';
+    if (pairedListContainer) pairedListContainer.innerHTML = '';
     if (manualForm) manualForm.style.display = 'block';
   }
 
@@ -13437,8 +13586,9 @@ function updateSyncConnectedUI() {
   const lastSyncTimeStr = localStorage.getItem('haushaltsbuch_mailbox_last_sync') || syncTime;
 
   if (mailboxBadge) {
-    if (connected && devName) {
-      mailboxBadge.textContent = '🟢 Postfach aktiv & gekoppelt';
+    if (connected && allNamesStr) {
+      const countLabel = pairedList.length > 1 ? ` (${pairedList.length} Geräte im Verbund)` : '';
+      mailboxBadge.textContent = `🟢 Postfach aktiv & gekoppelt${countLabel}`;
       mailboxBadge.style.color = '#15803d';
       mailboxBadge.style.background = '#dcfce7';
       mailboxBadge.style.border = '1px solid #86efac';
@@ -13450,20 +13600,76 @@ function updateSyncConnectedUI() {
     }
   }
   if (mailboxDevSpan) {
-    mailboxDevSpan.textContent = devName || 'Gekoppeltes Partnergerät';
+    mailboxDevSpan.textContent = allNamesStr || 'Gekoppeltes Partnergerät';
   }
   if (mailboxLastSync && lastSyncTimeStr) {
     mailboxLastSync.textContent = lastSyncTimeStr;
   }
   if (mailboxNotice && mailboxContent) {
-    mailboxNotice.style.display = (connected && devName) ? 'none' : 'block';
-    mailboxContent.style.display = (connected && devName) ? 'block' : 'none';
+    mailboxNotice.style.display = (connected && allNamesStr) ? 'none' : 'block';
+    mailboxContent.style.display = (connected && allNamesStr) ? 'block' : 'none';
   }
 }
 
-function triggerQuickSyncWithPaired() {
-  const devName = localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
-  const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
+async function triggerQuickSyncWithDevice(deviceName, pairingCode) {
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+
+  if (targetDevInput && deviceName) targetDevInput.value = deviceName;
+  if (targetCodeInput && pairingCode) targetCodeInput.value = pairingCode;
+
+  await handleStartSync(null, false);
+}
+
+async function triggerForceOverwriteDevice(deviceName, pairingCode) {
+  if (!deviceName || !pairingCode) return;
+  const confirmMsg = `ACHTUNG - GERÄT KOMPLETT ÜBERSCHREIBEN:\n\nMöchtest du das Gerät "${deviceName}" wirklich zu 100% mit dem aktuellen Stand dieses Geräts überschreiben?\n\nAlle abweichenden oder veralteten Daten auf "${deviceName}" werden dabei restlos ersetzt.`;
+  if (!confirm(confirmMsg)) return;
+
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+  if (targetDevInput) targetDevInput.value = deviceName;
+  if (targetCodeInput) targetCodeInput.value = pairingCode;
+
+  await handleStartSync(null, true);
+}
+
+async function triggerQuickSyncWithPaired() {
+  const pairedList = getPairedDevicesList();
+  if (pairedList.length > 1 && typeof SyncEngine !== 'undefined' && typeof SyncEngine.syncAllPairedDevices === 'function') {
+    const statusBox = document.getElementById('sync-sender-status');
+    const mobileStatus = document.getElementById('sync-mobile-status-connected');
+    if (statusBox) {
+      statusBox.style.display = 'block';
+      statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
+      statusBox.style.color = '#0284c7';
+      statusBox.textContent = `🔄 Synchronisiere mit allen ${pairedList.length} gekoppelten Geräten (${pairedList.map(d => d.name).join(', ')})...`;
+    }
+    try {
+      await SyncEngine.syncAllPairedDevices((state, msg) => {
+        if (statusBox) {
+          statusBox.textContent = msg;
+          if (state === 'success') {
+            statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
+            statusBox.style.color = '#15803d';
+          }
+        }
+        if (mobileStatus) {
+          mobileStatus.textContent = msg;
+        }
+      }, false);
+    } catch (err) {
+      if (statusBox) {
+        statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+        statusBox.style.color = '#b91c1c';
+        statusBox.textContent = '❌ ' + err.message;
+      }
+    }
+    return;
+  }
+
+  const devName = (pairedList[0] && pairedList[0].name) || localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
+  const code = (pairedList[0] && pairedList[0].code) || localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
 
   const targetDevInput = document.getElementById('input-target-device');
   const targetCodeInput = document.getElementById('input-target-code');
@@ -13471,12 +13677,13 @@ function triggerQuickSyncWithPaired() {
   if (targetDevInput && devName) targetDevInput.value = devName;
   if (targetCodeInput && code) targetCodeInput.value = code;
 
-  handleStartSync(null, false);
+  await handleStartSync(null, false);
 }
 
 function triggerForceOverwriteSmartphone() {
-  const devName = localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
-  const code = localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
+  const pairedList = getPairedDevicesList();
+  const devName = (pairedList[0] && pairedList[0].name) || localStorage.getItem('haushaltsbuch_sync_connected_device') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.device);
+  const code = (pairedList[0] && pairedList[0].code) || localStorage.getItem('haushaltsbuch_sync_connected_code') || (window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code);
 
   const targetDevInput = document.getElementById('input-target-device');
   const targetCodeInput = document.getElementById('input-target-code');
@@ -13485,11 +13692,11 @@ function triggerForceOverwriteSmartphone() {
   const finalCode = (targetCodeInput && targetCodeInput.value.trim()) ? targetCodeInput.value.trim() : code;
 
   if (!finalName || !finalCode) {
-    alert('Bitte gib zuerst den Smartphone-Namen und den Kopplungscode ein!');
+    alert('Bitte gib zuerst den Gerätenamen und den Kopplungscode ein!');
     return;
   }
 
-  const confirmMsg = `ACHTUNG - SMARTPHONE KOMPLETT ÜBERSCHREIBEN:\n\nMöchtest du das Smartphone "${finalName}" wirklich zu 100% mit dem aktuellen Stand dieses Computers überschreiben?\n\nAlle abweichenden oder veralteten Daten auf dem Smartphone werden dabei restlos durch die exakten Daten dieses PCs ersetzt.`;
+  const confirmMsg = `ACHTUNG - ZIELGERÄT KOMPLETT ÜBERSCHREIBEN:\n\nMöchtest du "${finalName}" wirklich zu 100% mit dem aktuellen Stand dieses Geräts überschreiben?\n\nAlle abweichenden oder veralteten Daten auf "${finalName}" werden dabei restlos durch die exakten Daten dieses Geräts ersetzt.`;
   if (!confirm(confirmMsg)) {
     return;
   }
@@ -13505,7 +13712,7 @@ async function triggerPushMasterToMailbox() {
   const statusEl = document.getElementById('sync-mailbox-last-status');
   const btn = document.getElementById('btn-manual-mailbox-push-master');
 
-  const confirmMsg = "ACHTUNG - MASTER-STAND INS POSTFACH LEGEN:\n\nMöchtest du den aktuellen Stand dieses Computers als Master im Postfach hinterlegen?\n\nSobald das Smartphone das Postfach abfragt, wird es zu 100% mit deinen Computer-Daten überschrieben.";
+  const confirmMsg = "ACHTUNG - MASTER-STAND INS POSTFACH LEGEN:\n\nMöchtest du den aktuellen Stand dieses Computers als Master im Postfach hinterlegen?\n\nSobald deine anderen gekoppelten Geräte (Smartphone, Laptop, PC) das Postfach abfragen, werden sie zu 100% mit diesen Daten überschrieben.";
   if (!confirm(confirmMsg)) {
     return;
   }
@@ -13540,13 +13747,20 @@ async function triggerPushMasterToMailbox() {
 function editSyncConnection() {
   window.__MANUAL_SYNC_EDIT__ = true;
   const manualForm = document.getElementById('sync-desktop-form');
+  const targetDevInput = document.getElementById('input-target-device');
+  const targetCodeInput = document.getElementById('input-target-code');
+  if (targetDevInput) targetDevInput.value = '';
+  // Falls bereits ein Gruppen-Code existiert, als praktischen Standard vorausfüllen (kann überschrieben werden)
+  if (targetCodeInput) {
+    const activeCode = (typeof SyncEngine !== 'undefined' && SyncEngine.getActivePairingCode) ? SyncEngine.getActivePairingCode() : '';
+    targetCodeInput.value = activeCode || '';
+  }
   if (manualForm) {
     manualForm.style.display = 'block';
-    const input = document.getElementById('input-target-device');
-    if (input) input.focus();
+    if (targetDevInput) targetDevInput.focus();
   }
   if (typeof announceNVDA === 'function') {
-    announceNVDA('Eingabefelder für Smartphone-Name und Code eingeblendet.');
+    announceNVDA('Eingabefelder zum Hinzufügen eines weiteren Geräts (z. B. Laptop, Smartphone oder PC) eingeblendet.');
   }
 }
 
@@ -13672,7 +13886,7 @@ async function handleStartSync(e, forceOverwrite = false) {
 
   const myDevice = (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getDeviceName === 'function') ? SyncEngine.getDeviceName() : '';
   if (!isAndroid && (targetName.toLowerCase() === 'computer' || targetName.toLowerCase() === 'pc' || (myDevice && targetName.toLowerCase() === myDevice.toLowerCase()))) {
-    const msg = '⚠️ Bitte gib den Namen deines Smartphones ein (z. B. Handy-XXXX), nicht deinen eigenen Computer. Den Gerätenamen findest du auf deinem Smartphone unter Reiter 8 (Smartphone-Sync).';
+    const msg = '⚠️ Bitte gib den Gerätenamen deines Partnergeräts ein (z. B. Handy-XXXX oder PC-XXXX), nicht dieses eigene Gerät.';
     if (statusBox) {
       statusBox.style.display = 'block';
       statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
@@ -13689,8 +13903,8 @@ async function handleStartSync(e, forceOverwrite = false) {
     statusBox.style.background = forceOverwrite ? 'rgba(245, 158, 11, 0.15)' : 'rgba(33, 150, 243, 0.1)';
     statusBox.style.color = forceOverwrite ? '#b45309' : '#0284c7';
     statusBox.textContent = forceOverwrite 
-      ? '📲 Starte vollständiges Überschreiben des Smartphones mit PC-Stand...' 
-      : '🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung...';
+      ? `📲 Starte vollständiges Überschreiben von ${targetName}...` 
+      : `🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung mit ${targetName}...`;
   }
 
   if (btnTrigger) btnTrigger.disabled = true;
@@ -13698,6 +13912,7 @@ async function handleStartSync(e, forceOverwrite = false) {
   if (btnPairedForce) btnPairedForce.disabled = true;
 
   try {
+    window.__MANUAL_SYNC_EDIT__ = false;
     await SyncEngine.syncWithSmartphone(targetName, targetCode, (state, msg) => {
       if (statusBox) {
         statusBox.textContent = msg;
@@ -13708,6 +13923,7 @@ async function handleStartSync(e, forceOverwrite = false) {
       }
       announceNVDA(msg);
     }, forceOverwrite);
+    updateSyncConnectedUI();
   } catch(err) {
     if (statusBox) {
       statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
