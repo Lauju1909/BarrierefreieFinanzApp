@@ -2,6 +2,30 @@
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
 const CURRENT_APP_VERSION = 'v6.9.30';
+
+const _nativeParseFloat = globalThis.parseFloat;
+function parseEuroInput(val) {
+  if (typeof val === 'number') return val;
+  if (val === null || val === undefined) return NaN;
+  let str = String(val).trim();
+  if (!str) return NaN;
+  // Semikolon und Doppelpunkt (gleiche Taste wie Komma/Punkt auf DE-Tastatur) automatisch als Komma werten
+  str = str.replace(/[;:]/g, ',');
+  if (str.includes(',') && str.includes('.')) {
+    if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else {
+      str = str.replace(/,/g, '');
+    }
+  } else if (str.includes(',')) {
+    str = str.replace(/,/g, '.');
+  }
+  return _nativeParseFloat(str);
+}
+globalThis.parseFloat = parseEuroInput;
+if (typeof window !== 'undefined') {
+  window.parseFloat = parseEuroInput;
+}
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -5400,18 +5424,102 @@ function initAndroidBackButton() {
   }
 }
 
-// Android Dezimal-Tastatur automatisch für Geldbeträge aktivieren
+// Dezimal-Tastatur & Komma/Semikolon/Punkt-Unterstützung für alle Geldbeträge (Desktop & Android)
+let _decimalInputHandlersInitialized = false;
+
+function isDecimalAmountInput(el) {
+  if (!el || el.tagName !== 'INPUT') return false;
+  if (el.getAttribute('data-decimal-input') === 'true') return true;
+  if (el.getAttribute('inputmode') === 'decimal') return true;
+  const step = el.getAttribute('step');
+  if (step && (step === '0.01' || step.includes('.'))) return true;
+  const id = (el.id || '').toLowerCase();
+  if (/amount|price|balance|dispo|rate|downpayment|interest|balloon|amt|budget/.test(id) && el.type !== 'checkbox' && el.type !== 'date') {
+    return true;
+  }
+  return false;
+}
+
 function initMobileInputModes() {
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    if (!input.hasAttribute('inputmode')) {
-      const step = input.getAttribute('step');
-      if (step && (step === '0.01' || step.includes('.'))) {
-        input.setAttribute('inputmode', 'decimal');
-      } else {
-        input.setAttribute('inputmode', 'numeric');
+  document.querySelectorAll('input[type="number"], input[data-decimal-input="true"], input[step="0.01"]').forEach(input => {
+    const step = input.getAttribute('step');
+    if (input.getAttribute('data-decimal-input') === 'true' || (step && (step === '0.01' || step.includes('.')))) {
+      if (input.type === 'number') {
+        try { input.type = 'text'; } catch (e) {}
       }
+      input.setAttribute('inputmode', 'decimal');
+      input.setAttribute('data-decimal-input', 'true');
+    } else if (!input.hasAttribute('inputmode')) {
+      input.setAttribute('inputmode', 'numeric');
     }
   });
+
+  if (_decimalInputHandlersInitialized) return;
+  _decimalInputHandlersInitialized = true;
+
+  document.addEventListener('keydown', (e) => {
+    const el = e.target;
+    if (!isDecimalAmountInput(el)) return;
+
+    // Sicherstellen, dass das Feld als type="text" arbeitet, damit Komma & Semikolon niemals vom Browser verschluckt werden
+    if (el.type === 'number') {
+      try {
+        const curVal = el.value;
+        el.type = 'text';
+        el.setAttribute('inputmode', 'decimal');
+        el.setAttribute('data-decimal-input', 'true');
+        if (curVal) el.value = curVal;
+      } catch (err) {}
+    }
+
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const navKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (navKeys.includes(e.key)) return;
+
+    const val = el.value || '';
+    const start = typeof el.selectionStart === 'number' ? el.selectionStart : val.length;
+    const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : val.length;
+    const unselectedVal = val.slice(0, start) + val.slice(end);
+    const alreadyHasSep = /[,.]/.test(unselectedVal);
+
+    // Komma, Semikolon (; liegt auf der Komma-Taste!), Punkt, Doppelpunkt oder Numpad-Decimal als Komma einfügen
+    if (e.key === ',' || e.key === ';' || e.key === '.' || e.key === ':' || e.key === 'Decimal') {
+      e.preventDefault();
+      if (alreadyHasSep) return; // Kein zweites Komma zulassen
+      const sep = ',';
+      el.value = val.slice(0, start) + sep + val.slice(end);
+      try {
+        el.setSelectionRange(start + 1, start + 1);
+      } catch (err) {}
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+
+    // Minuszeichen nur am Anfang zulassen
+    if (e.key === '-') {
+      if (start !== 0 || unselectedVal.includes('-')) {
+        e.preventDefault();
+      }
+      return;
+    }
+
+    // Nur Ziffern 0-9 erlauben, Buchstaben/Sonderzeichen blockieren
+    if (e.key && e.key.length === 1 && !/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!isDecimalAmountInput(el)) return;
+    const raw = el.value || '';
+    if (/[;:]/.test(raw)) {
+      const pos = typeof el.selectionStart === 'number' ? el.selectionStart : raw.length;
+      el.value = raw.replace(/[;:]/g, ',');
+      try { el.setSelectionRange(pos, pos); } catch (err) {}
+    }
+  }, true);
 }
 document.addEventListener('DOMContentLoaded', () => {
   initAndroidBackButton();
@@ -6227,7 +6335,7 @@ function renderExpenseSplitRows() {
           <label for="exp-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `
@@ -7085,7 +7193,7 @@ function renderIncomeSplitRows() {
           <label for="inc-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `
@@ -7917,7 +8025,7 @@ function renderEditSplitRows() {
           <label for="edit-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `

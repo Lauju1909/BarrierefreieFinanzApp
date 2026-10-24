@@ -1786,7 +1786,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <div class="form-group">
     <label for="edit-tx-amount" class="field-label"><strong>Betrag in Euro (€):</strong><span class="required-star">*</span></label>
-    <input type="number" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="edit-tx-amount" class="large-input" required>
   </div>
 </div>
 
@@ -1985,7 +1985,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <div class="form-group">
     <label for="edit-rec-amount" class="field-label"><strong>Betrag in Euro (€):</strong><span class="required-star">*</span></label>
-    <input type="number" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="edit-rec-amount" class="large-input" required>
   </div>
 </div>
 
@@ -2122,7 +2122,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <div class="form-row-2">
     <div class="form-group">
       <label for="edit-rec-future-amount" class="field-label" style="font-size: 13px;"><strong>Neuer Betrag in Euro (€):</strong></label>
-      <input type="number" step="0.01" min="0" id="edit-rec-future-amount" class="large-input" placeholder="z. B. 17.99">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="edit-rec-future-amount" class="large-input" placeholder="z. B. 17.99">
     </div>
     <div class="form-group">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -2213,7 +2213,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <div class="form-row-2">
     <div class="form-group">
       <label for="edit-rec-discount-amount" class="field-label" style="font-size: 13px;"><strong>Vergünstigter Preis (€):</strong></label>
-      <input type="number" step="0.01" min="0" id="edit-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="edit-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
     </div>
     <div class="form-group">
       <label for="edit-rec-discount-end-month" class="field-label" style="font-size: 13px;"><strong>Rabatt gültig bis Monat:</strong></label>
@@ -2222,7 +2222,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <div class="form-group" style="margin-top: 6px;">
     <label for="edit-rec-discount-regular" class="field-label" style="font-size: 13px;"><strong>Regulärer Preis danach (€):</strong></label>
-    <input type="number" step="0.01" min="0" id="edit-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="edit-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
   </div>
 </div>
 
@@ -2393,7 +2393,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         🪙 Zähler
       </button>
     </div>
-    <input type="number" step="0.01" id="account-modal-balance" class="large-input" placeholder="0,00" value="0.00">
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" id="account-modal-balance" class="large-input" placeholder="0,00" value="0.00">
   </div>
 </div>
 
@@ -2464,7 +2464,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
     <div class="form-group">
       <label for="account-modal-dispo" class="field-label" style="font-size: 13px;"><strong>Dispolimit / Kreditrahmen in Euro (€):</strong></label>
-      <input type="number" step="0.01" min="0" id="account-modal-dispo" class="large-input" placeholder="0,00">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="account-modal-dispo" class="large-input" placeholder="0,00">
     </div>
   </div>
   <div class="form-group" style="margin-top: 6px;">
@@ -2820,7 +2820,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <form onsubmit="handleConfirmShoppingBooking(event)" class="accessible-form" style="margin-top: 14px;">
     <div class="form-group">
       <label for="shopping-book-amount" class="field-label"><strong>Tatsächlicher Gesamtbetrag laut Bon (€):</strong></label>
-      <input type="number" step="0.01" min="0.01" id="shopping-book-amount" class="large-input" required>
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="shopping-book-amount" class="large-input" required>
       <span class="field-hint">Wurde aus den abgehakten Artikeln summiert. Du kannst ihn an den genauen Kassenbon anpassen.</span>
     </div>
 
@@ -2944,7 +2944,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       </div>
       <div class="form-group">
         <label for="peer-loan-amount" class="field-label"><strong>Geliehener Betrag (€):</strong></label>
-        <input type="number" step="0.01" min="0.01" id="peer-loan-amount" class="large-input" placeholder="0,00 €" required>
+        <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="peer-loan-amount" class="large-input" placeholder="0,00 €" required>
       </div>
     </div>
 
@@ -3010,7 +3010,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
     <div class="form-group">
       <label for="peer-loan-repay-amount" class="field-label"><strong>Rückzahlungsbetrag (€):</strong></label>
-      <input type="number" step="0.01" min="0.01" id="peer-loan-repay-amount" class="large-input" required>
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="peer-loan-repay-amount" class="large-input" required>
       <div style="display: flex; gap: 6px; margin-top: 4px;">
         <button type="button" class="btn btn-secondary" onclick="setPeerLoanRepayFull()" style="padding: 2px 8px; font-size: 12px;">Restbetrag voll zurückzahlen</button>
       </div>
@@ -3584,7 +3584,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="number" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()">
+<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()">
 </div>
 
 <div class="form-group">
@@ -3637,7 +3637,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
   <div class="form-group" style="margin-top: 8px; margin-bottom: 6px;">
     <label for="exp-installment-rate" class="field-label"><strong>Berechnete monatliche Rate (€):</strong></label>
-    <input type="number" step="0.01" min="0.01" id="exp-installment-rate" class="large-input" style="font-weight: bold; color: #D32F2F;" placeholder="0,00 €" oninput="handleInstallmentRateManualChange()">
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-installment-rate" class="large-input" style="font-weight: bold; color: #D32F2F;" placeholder="0,00 €" oninput="handleInstallmentRateManualChange()">
   </div>
 
   <div id="exp-installment-calc-hint" style="font-size: 13px; font-weight: bold; color: #E65100; margin-top: 6px; padding: 6px 10px; background: rgba(255, 152, 0, 0.1); border-radius: 4px;" aria-live="polite">
@@ -3668,7 +3668,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         </div>
         <div class="form-group">
           <label for="exp-installment-downpayment" class="field-label"><strong>Anzahlung zu Beginn (€):</strong></label>
-          <input type="number" step="0.01" min="0" id="exp-installment-downpayment" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="exp-installment-downpayment" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
         </div>
       </div>
 
@@ -3676,7 +3676,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <div class="form-group" id="group-installment-interest">
           <label for="exp-installment-interest" class="field-label"><strong>Zinsen / Gebühren (optional):</strong></label>
           <div style="display: flex; gap: 6px;">
-            <input type="number" step="0.01" min="0" id="exp-installment-interest" class="large-input" placeholder="0" oninput="handleInstallmentCalculation()" style="flex: 1;">
+            <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="exp-installment-interest" class="large-input" placeholder="0" oninput="handleInstallmentCalculation()" style="flex: 1;">
             <select id="exp-installment-interest-type" class="large-select" onchange="handleInstallmentCalculation()" style="flex: 1;">
               <option value="percent" selected>% p. a.</option>
               <option value="euro">€ Gesamt</option>
@@ -3685,7 +3685,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         </div>
         <div class="form-group" id="group-installment-balloon">
           <label for="exp-installment-balloon" class="field-label"><strong>Schlussrate / Restwert (€):</strong></label>
-          <input type="number" step="0.01" min="0" id="exp-installment-balloon" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="exp-installment-balloon" class="large-input" placeholder="0,00" value="0.00" oninput="handleInstallmentCalculation()">
         </div>
       </div>
 
@@ -3983,7 +3983,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <div class="form-row-2">
     <div class="form-group">
       <label for="exp-rec-discount-amount" class="field-label" style="font-size: 13px;"><strong>Vergünstigter Preis (€):</strong></label>
-      <input type="number" step="0.01" min="0" id="exp-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="exp-rec-discount-amount" class="large-input" placeholder="z. B. 19.99">
     </div>
     <div class="form-group">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
@@ -3999,7 +3999,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <div class="form-group" style="margin-top: 6px;">
     <label for="exp-rec-discount-regular" class="field-label" style="font-size: 13px;"><strong>Regulärer Preis danach (€):</strong></label>
-    <input type="number" step="0.01" min="0" id="exp-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="exp-rec-discount-regular" class="large-input" placeholder="z. B. 39.99">
   </div>
 </div>
 
@@ -4108,7 +4108,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="number" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()">
+<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()">
 </div>
 
 <div class="form-group">
@@ -4379,7 +4379,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <label for="trf-amount" class="field-label">
 <strong>Betrag zum Umbuchen in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
 </label>
-<input type="number" step="0.01" min="0.01" id="trf-amount" class="large-input" placeholder="z. B. 25 oder 50" required autofocus autocomplete="off">
+<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="trf-amount" class="large-input" placeholder="z. B. 25 oder 50" required autofocus autocomplete="off">
 </div>
 
 <div class="form-group">
@@ -4626,7 +4626,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
     <div class="form-group">
       <label for="budget-amount-input" class="field-label"><strong>Monats-Limit in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
-      <input type="number" step="1" min="1" id="budget-amount-input" class="large-input" placeholder="z. B. 350" required>
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="1" min="1" id="budget-amount-input" class="large-input" placeholder="z. B. 350" required>
     </div>
   </div>
   <div class="form-actions" style="margin-top: 12px;">
@@ -4964,7 +4964,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <div class="form-group">
     <label for="new-acc-balance" class="field-label"><strong>Startguthaben in Euro (€):</strong></label>
-    <input type="number" step="0.01" id="new-acc-balance" class="large-input" placeholder="0,00" value="0.00">
+    <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" id="new-acc-balance" class="large-input" placeholder="0,00" value="0.00">
   </div>
 </div>
 
@@ -5020,11 +5020,11 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   <div class="form-row-2">
     <div class="form-group">
       <label for="pot-current-amount" class="field-label"><strong>Bereits angesparter Startbetrag (€):</strong></label>
-      <input type="number" step="0.01" min="0" id="pot-current-amount" class="large-input" placeholder="0,00" value="0.00">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="pot-current-amount" class="large-input" placeholder="0,00" value="0.00">
     </div>
     <div class="form-group">
       <label for="pot-target-amount" class="field-label"><strong>Sparziel / Zielsumme in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
-      <input type="number" step="0.01" min="0.01" id="pot-target-amount" class="large-input" placeholder="z. B. 1000 oder 2500" required>
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="pot-target-amount" class="large-input" placeholder="z. B. 1000 oder 2500" required>
     </div>
   </div>
 
@@ -5103,7 +5103,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         </div>
         <div class="form-group">
           <label for="wish-amount" class="field-label"><strong id="wish-amount-label">Geschätzte Kosten in Euro (€):</strong><span class="required-star" aria-hidden="true">*</span></label>
-          <input type="number" step="0.01" min="0.01" id="wish-amount" class="large-input" placeholder="z. B. 14.99 oder 450" required autocomplete="off" oninput="handleWishAmountInput()">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="wish-amount" class="large-input" placeholder="z. B. 14.99 oder 450" required autocomplete="off" oninput="handleWishAmountInput()">
           <div id="wish-amount-calc-hint" style="font-size: 13px; color: #9C27B0; font-weight: bold; margin-top: 4px;" aria-live="polite"></div>
         </div>
       </div>
@@ -5222,7 +5222,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
     <div style="flex: 1; min-width: 110px;">
       <label for="shopping-new-price" class="sr-only">Preis in Euro (optional)</label>
-      <input type="number" step="0.01" min="0" id="shopping-new-price" class="large-input" placeholder="Preis € (opt.)" style="width: 100%;">
+      <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0" id="shopping-new-price" class="large-input" placeholder="Preis € (opt.)" style="width: 100%;">
     </div>
     <div style="flex: 1.5; min-width: 140px;">
       <label for="shopping-new-store" class="sr-only">Supermarkt oder Geschäft (optional)</label>
@@ -7342,6 +7342,30 @@ if (typeof module !== 'undefined' && module.exports) {
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
 const CURRENT_APP_VERSION = 'v6.9.30';
+
+const _nativeParseFloat = globalThis.parseFloat;
+function parseEuroInput(val) {
+  if (typeof val === 'number') return val;
+  if (val === null || val === undefined) return NaN;
+  let str = String(val).trim();
+  if (!str) return NaN;
+  // Semikolon und Doppelpunkt (gleiche Taste wie Komma/Punkt auf DE-Tastatur) automatisch als Komma werten
+  str = str.replace(/[;:]/g, ',');
+  if (str.includes(',') && str.includes('.')) {
+    if (str.lastIndexOf(',') > str.lastIndexOf('.')) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else {
+      str = str.replace(/,/g, '');
+    }
+  } else if (str.includes(',')) {
+    str = str.replace(/,/g, '.');
+  }
+  return _nativeParseFloat(str);
+}
+globalThis.parseFloat = parseEuroInput;
+if (typeof window !== 'undefined') {
+  window.parseFloat = parseEuroInput;
+}
 const STORAGE_DATA_KEY = 'barrierefreie_finanzen_enc_v1';
 const STORAGE_SALT_KEY = 'barrierefreie_finanzen_salt_v1';
 const STORAGE_THEME_KEY = 'barrierefreie_finanzen_theme_v1';
@@ -12740,18 +12764,102 @@ function initAndroidBackButton() {
   }
 }
 
-// Android Dezimal-Tastatur automatisch für Geldbeträge aktivieren
+// Dezimal-Tastatur & Komma/Semikolon/Punkt-Unterstützung für alle Geldbeträge (Desktop & Android)
+let _decimalInputHandlersInitialized = false;
+
+function isDecimalAmountInput(el) {
+  if (!el || el.tagName !== 'INPUT') return false;
+  if (el.getAttribute('data-decimal-input') === 'true') return true;
+  if (el.getAttribute('inputmode') === 'decimal') return true;
+  const step = el.getAttribute('step');
+  if (step && (step === '0.01' || step.includes('.'))) return true;
+  const id = (el.id || '').toLowerCase();
+  if (/amount|price|balance|dispo|rate|downpayment|interest|balloon|amt|budget/.test(id) && el.type !== 'checkbox' && el.type !== 'date') {
+    return true;
+  }
+  return false;
+}
+
 function initMobileInputModes() {
-  document.querySelectorAll('input[type="number"]').forEach(input => {
-    if (!input.hasAttribute('inputmode')) {
-      const step = input.getAttribute('step');
-      if (step && (step === '0.01' || step.includes('.'))) {
-        input.setAttribute('inputmode', 'decimal');
-      } else {
-        input.setAttribute('inputmode', 'numeric');
+  document.querySelectorAll('input[type="number"], input[data-decimal-input="true"], input[step="0.01"]').forEach(input => {
+    const step = input.getAttribute('step');
+    if (input.getAttribute('data-decimal-input') === 'true' || (step && (step === '0.01' || step.includes('.')))) {
+      if (input.type === 'number') {
+        try { input.type = 'text'; } catch (e) {}
       }
+      input.setAttribute('inputmode', 'decimal');
+      input.setAttribute('data-decimal-input', 'true');
+    } else if (!input.hasAttribute('inputmode')) {
+      input.setAttribute('inputmode', 'numeric');
     }
   });
+
+  if (_decimalInputHandlersInitialized) return;
+  _decimalInputHandlersInitialized = true;
+
+  document.addEventListener('keydown', (e) => {
+    const el = e.target;
+    if (!isDecimalAmountInput(el)) return;
+
+    // Sicherstellen, dass das Feld als type="text" arbeitet, damit Komma & Semikolon niemals vom Browser verschluckt werden
+    if (el.type === 'number') {
+      try {
+        const curVal = el.value;
+        el.type = 'text';
+        el.setAttribute('inputmode', 'decimal');
+        el.setAttribute('data-decimal-input', 'true');
+        if (curVal) el.value = curVal;
+      } catch (err) {}
+    }
+
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    const navKeys = ['Backspace', 'Delete', 'Tab', 'Enter', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'];
+    if (navKeys.includes(e.key)) return;
+
+    const val = el.value || '';
+    const start = typeof el.selectionStart === 'number' ? el.selectionStart : val.length;
+    const end = typeof el.selectionEnd === 'number' ? el.selectionEnd : val.length;
+    const unselectedVal = val.slice(0, start) + val.slice(end);
+    const alreadyHasSep = /[,.]/.test(unselectedVal);
+
+    // Komma, Semikolon (; liegt auf der Komma-Taste!), Punkt, Doppelpunkt oder Numpad-Decimal als Komma einfügen
+    if (e.key === ',' || e.key === ';' || e.key === '.' || e.key === ':' || e.key === 'Decimal') {
+      e.preventDefault();
+      if (alreadyHasSep) return; // Kein zweites Komma zulassen
+      const sep = ',';
+      el.value = val.slice(0, start) + sep + val.slice(end);
+      try {
+        el.setSelectionRange(start + 1, start + 1);
+      } catch (err) {}
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      return;
+    }
+
+    // Minuszeichen nur am Anfang zulassen
+    if (e.key === '-') {
+      if (start !== 0 || unselectedVal.includes('-')) {
+        e.preventDefault();
+      }
+      return;
+    }
+
+    // Nur Ziffern 0-9 erlauben, Buchstaben/Sonderzeichen blockieren
+    if (e.key && e.key.length === 1 && !/[0-9]/.test(e.key)) {
+      e.preventDefault();
+    }
+  }, true);
+
+  document.addEventListener('input', (e) => {
+    const el = e.target;
+    if (!isDecimalAmountInput(el)) return;
+    const raw = el.value || '';
+    if (/[;:]/.test(raw)) {
+      const pos = typeof el.selectionStart === 'number' ? el.selectionStart : raw.length;
+      el.value = raw.replace(/[;:]/g, ',');
+      try { el.setSelectionRange(pos, pos); } catch (err) {}
+    }
+  }, true);
 }
 document.addEventListener('DOMContentLoaded', () => {
   initAndroidBackButton();
@@ -13567,7 +13675,7 @@ function renderExpenseSplitRows() {
           <label for="exp-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onExpenseSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `
@@ -14425,7 +14533,7 @@ function renderIncomeSplitRows() {
           <label for="inc-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onIncomeSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `
@@ -15257,7 +15365,7 @@ function renderEditSplitRows() {
           <label for="edit-split-amt-${idx}" class="field-label" style="font-size: 13px; margin-bottom: 2px;">
             <strong>Teilbetrag (€):</strong>
           </label>
-          <input type="number" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
+          <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="edit-split-amt-${idx}" class="large-input" value="${row.amount !== '' ? row.amount : ''}" placeholder="0,00" oninput="onEditSplitAmountInput(${idx}, this.value)">
         </div>
 
         ${canRemove ? `

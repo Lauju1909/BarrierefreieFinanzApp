@@ -1319,6 +1319,22 @@ if (pcPairedNames.length !== 2 || pcPairedNames[0] !== 'Handy-7X49' || pcPairedN
 
 console.log('Multi-Device & Transitive Pairing (PC <-> Handy <-> Laptop): 100% PASS!');
 
+// 14. Test Decimal Input (Comma, Semicolon, Dot) Support
+console.log('Testing Decimal Amount Input (Comma, Semicolon, Dot) Support...');
+if (!appJs.includes('function parseEuroInput') || !appJs.includes('function isDecimalAmountInput')) {
+  console.error('Missing parseEuroInput or isDecimalAmountInput in app.js');
+  process.exit(1);
+}
+const decimalFieldIds = ['exp-amount', 'inc-amount', 'trf-amount', 'edit-tx-amount', 'wish-amount', 'pot-target-amount'];
+decimalFieldIds.forEach(id => {
+  const reg = new RegExp(`id="${id}"[^>]*data-decimal-input="true"|data-decimal-input="true"[^>]*id="${id}"`);
+  if (!reg.test(html)) {
+    console.error(`Amount input #${id} is missing data-decimal-input="true"`);
+    process.exit(1);
+  }
+});
+console.log('Decimal Amount Input (Comma, Semicolon, Dot) Support: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');
