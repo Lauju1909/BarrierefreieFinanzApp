@@ -2334,7 +2334,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
   <div id="tx-search-results-banner" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(33, 150, 243, 0.1); border-left: 5px solid #2196F3; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="status" aria-live="polite">
     <span id="tx-search-results-text" style="font-weight: 500;"></span>
-    <button type="button" class="btn btn-secondary" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
+    <button type="button" class="btn btn-secondary" id="btn-clear-search-filter" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
   </div>
 </section>
 
@@ -2382,13 +2382,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="tx-filter-bar" role="search" aria-label="Buchungen durchsuchen und filtern">
   <div class="filter-item">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label for="tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
+      <label for="tx-search-query" id="lbl-tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
       <button type="button" id="btn-clear-tx-search" onclick="clearTxSearch()" style="display: none; background: none; border: none; font-size: 13px; cursor: pointer; color: #D32F2F;">✖️ Suche leeren</button>
     </div>
     <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal..." oninput="handleTxSearchFilterChange()" onkeydown="handleTxSearchKeyDown(event)" style="padding: 6px 10px; font-size: 15px;">
     </div>
   <div class="filter-item">
-    <label for="tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
+    <label for="tx-filter-status" id="lbl-tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
     <select id="tx-filter-status" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Buchungen</option>
       <option value="booked">✅ Nur Gebucht / Erledigt</option>
@@ -2397,13 +2397,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </select>
   </div>
   <div class="filter-item">
-    <label for="tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
+    <label for="tx-filter-account" id="lbl-tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
     <select id="tx-filter-account" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Konten</option>
     </select>
   </div>
   <div class="filter-item">
-    <label for="tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
+    <label for="tx-sort-order" id="lbl-tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
     <select id="tx-sort-order" class="large-select" onchange="handleTxSortChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="date-desc" selected>📅 Datum: Neueste zuerst (Neu bis Alt)</option>
       <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
@@ -2515,7 +2515,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
       <div class="stat-big-val" id="card-month-peer-loans" style="color: #8E24AA;">0,00 €</div>
-      <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 6px 14px; border: 2px solid #8E24AA; color: #8E24AA; font-weight: bold;" aria-label="Neues geliehenes oder verliehenes Geld eintragen">➕ Neuer Eintrag</button>
+      <button type="button" class="btn btn-secondary" id="peer-loan-new-entry-btn" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 6px 14px; border: 2px solid #8E24AA; color: #8E24AA; font-weight: bold;" aria-label="Neues geliehenes oder verliehenes Geld eintragen">➕ Neuer Eintrag</button>
     </div>
   </div>
 
@@ -2531,6 +2531,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
+
+<!-- WÄHRUNGS-AUFSCHLÜSSELUNG DER ÜBERSICHT -->
+<div id="overview-currency-breakdown-card" class="section-card" style="display: none; margin-bottom: 18px; border-left: 6px solid var(--accent-action); background: var(--bg-card); padding: 14px 18px; border-radius: 8px;">
+  <h4 id="heading-curr-breakdown" style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-color);">💱 Beträge nach Währungen aufgeteilt:</h4>
+  <div id="overview-currency-breakdown-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 15px;"></div>
+</div>
+
 <section class="overview-section" aria-labelledby="section-total-heading">
 <div class="balance-hero-card" tabindex="0">
 <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
@@ -2664,7 +2671,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-expense" class="view-panel" role="tabpanel" aria-labelledby="tab-expense" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-expense-view" data-emoji="🔴">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
-<p class="view-sub">Trage hier getätigte Ausgaben oder<strong>geplante Anschaffungen für die Zukunft</strong>ein.</p>
+<p class="view-sub" id="sub-expense-view">Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.</p>
 
 <form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
 <div class="form-group">
@@ -2707,7 +2714,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </optgroup>
   </select>
 </div>
-<div id="exp-currency-convert-hint" style="display: none; font-size: 13px; color: var(--accent-action); margin-top: 4px; font-weight: 500;" aria-live="polite"></div>
+<div id="exp-currency-convert-hint" style="display: none; font-size: 14px; font-weight: bold; color: var(--accent-action); margin-top: 6px; padding: 8px 12px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196F3; border-radius: 6px;" role="status" aria-live="polite"></div>
 </div>
 
 <div class="form-group">
@@ -2983,8 +2990,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <strong>📅 Datum der Ausgabe (Kaufdatum):</strong>
     </label>
     <div style="display: flex; gap: 6px;">
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
+      <button type="button" class="btn btn-secondary" id="btn-exp-date-today" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" id="btn-exp-date-yesterday" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
   <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')">
@@ -3219,19 +3226,23 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-income" class="view-panel" role="tabpanel" aria-labelledby="tab-income" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-income-view" data-emoji="🟢">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
-<p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
+<p class="view-sub" id="sub-income-view">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
 
 <form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
 <div class="form-group">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-  <label for="inc-amount" class="field-label" style="margin: 0;">
-    <strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
+  <label for="inc-amount" class="field-label" style="margin: 0;"><strong id="lbl-inc-amount">Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
   </label>
   <button type="button" class="btn btn-secondary" id="btn-open-cash-counter-from-income" onclick="openCashCounterModal('income')" style="padding: 2px 8px; font-size: 11px;" title="Münz- und Scheinezähler öffnen">
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()">
+<div style="display: flex; gap: 8px; align-items: center;">
+  <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()" style="flex: 1;">
+  <select id="inc-currency" class="large-select" style="max-width: 180px; min-width: 140px;" onchange="handleIncomeCurrencyChange(this.value)" aria-label="Währung der Einnahme">
+  </select>
+</div>
+<div id="inc-currency-convert-hint" style="display: none; font-size: 14px; font-weight: bold; color: var(--accent-income); margin-top: 6px; padding: 8px 12px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; border-radius: 6px;" role="status" aria-live="polite"></div>
 </div>
 
 <div class="form-group">
@@ -3388,8 +3399,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <strong>📅 Datum der Einnahme (Geldeingang):</strong>
     </label>
     <div style="display: flex; gap: 6px;">
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
+      <button type="button" class="btn btn-secondary" id="btn-inc-date-today" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" id="btn-inc-date-yesterday" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
   <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')">
@@ -3495,7 +3506,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-transfer" class="view-panel" role="tabpanel" aria-labelledby="tab-transfer" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-transfer-view" data-emoji="🔄">🔄 Geld umbuchen & auf anderes Konto sparen</h2>
-<p class="view-sub">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
+<p class="view-sub" id="sub-transfer-view">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
 
 <form id="form-add-transfer" class="accessible-form" onsubmit="handleAddTransfer(event)">
 <div class="form-group">
@@ -4460,7 +4471,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="view-header">
-    <h2>📱 Smartphone-Sync (E2E)</h2>
+    <h2 id="heading-sync-view">📱 Smartphone-Sync (E2E)</h2>
     <p class="view-desc">Wähle oben einen der drei Bereiche: <strong>1. Gekoppelte Geräte</strong>, <strong>2. Gerät koppeln</strong> oder <strong>3. Kopplungsdaten</strong>. Es wird immer nur der gewählte Bereich angezeigt.</p>
   </div>
 

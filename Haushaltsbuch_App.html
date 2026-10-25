@@ -3378,7 +3378,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </div>
   <div id="tx-search-results-banner" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(33, 150, 243, 0.1); border-left: 5px solid #2196F3; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="status" aria-live="polite">
     <span id="tx-search-results-text" style="font-weight: 500;"></span>
-    <button type="button" class="btn btn-secondary" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
+    <button type="button" class="btn btn-secondary" id="btn-clear-search-filter" onclick="clearTxSearch()" style="padding: 3px 10px; font-size: 12px;">✖️ Filter aufheben</button>
   </div>
 </section>
 
@@ -3426,13 +3426,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="tx-filter-bar" role="search" aria-label="Buchungen durchsuchen und filtern">
   <div class="filter-item">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <label for="tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
+      <label for="tx-search-query" id="lbl-tx-search-query" class="field-label" style="font-size: 13px; margin: 0;">🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong></label>
       <button type="button" id="btn-clear-tx-search" onclick="clearTxSearch()" style="display: none; background: none; border: none; font-size: 13px; cursor: pointer; color: #D32F2F;">✖️ Suche leeren</button>
     </div>
     <input type="text" id="tx-search-query" class="large-input" placeholder="z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal..." oninput="handleTxSearchFilterChange()" onkeydown="handleTxSearchKeyDown(event)" style="padding: 6px 10px; font-size: 15px;">
     </div>
   <div class="filter-item">
-    <label for="tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
+    <label for="tx-filter-status" id="lbl-tx-filter-status" class="field-label" style="font-size: 13px;">🎯 <strong>Status:</strong></label>
     <select id="tx-filter-status" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Buchungen</option>
       <option value="booked">✅ Nur Gebucht / Erledigt</option>
@@ -3441,13 +3441,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </select>
   </div>
   <div class="filter-item">
-    <label for="tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
+    <label for="tx-filter-account" id="lbl-tx-filter-account" class="field-label" style="font-size: 13px;">💳 <strong>Konto:</strong></label>
     <select id="tx-filter-account" class="large-select" onchange="handleTxSearchFilterChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="all" selected>Alle Konten</option>
     </select>
   </div>
   <div class="filter-item">
-    <label for="tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
+    <label for="tx-sort-order" id="lbl-tx-sort-order" class="field-label" style="font-size: 13px;">↕️ <strong>Sortierung:</strong></label>
     <select id="tx-sort-order" class="large-select" onchange="handleTxSortChange()" style="padding: 6px 10px; font-size: 15px;">
       <option value="date-desc" selected>📅 Datum: Neueste zuerst (Neu bis Alt)</option>
       <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
@@ -3559,7 +3559,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </div>
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
       <div class="stat-big-val" id="card-month-peer-loans" style="color: #8E24AA;">0,00 €</div>
-      <button type="button" class="btn btn-secondary" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 6px 14px; border: 2px solid #8E24AA; color: #8E24AA; font-weight: bold;" aria-label="Neues geliehenes oder verliehenes Geld eintragen">➕ Neuer Eintrag</button>
+      <button type="button" class="btn btn-secondary" id="peer-loan-new-entry-btn" onclick="openPeerLoanModal()" style="font-size: 14px; padding: 6px 14px; border: 2px solid #8E24AA; color: #8E24AA; font-weight: bold;" aria-label="Neues geliehenes oder verliehenes Geld eintragen">➕ Neuer Eintrag</button>
     </div>
   </div>
 
@@ -3575,6 +3575,13 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 </section>
 
 <!-- 4. DANN: GESAMT ÜBER ALLE KONTEN & SALDO -->
+
+<!-- WÄHRUNGS-AUFSCHLÜSSELUNG DER ÜBERSICHT -->
+<div id="overview-currency-breakdown-card" class="section-card" style="display: none; margin-bottom: 18px; border-left: 6px solid var(--accent-action); background: var(--bg-card); padding: 14px 18px; border-radius: 8px;">
+  <h4 id="heading-curr-breakdown" style="margin: 0 0 8px 0; font-size: 16px; color: var(--text-color);">💱 Beträge nach Währungen aufgeteilt:</h4>
+  <div id="overview-currency-breakdown-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 15px;"></div>
+</div>
+
 <section class="overview-section" aria-labelledby="section-total-heading">
 <div class="balance-hero-card" tabindex="0">
 <h3 id="section-total-heading" class="hero-label">4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS</h3>
@@ -3708,7 +3715,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-expense" class="view-panel" role="tabpanel" aria-labelledby="tab-expense" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-expense-view" data-emoji="🔴">🔴 Ausgabe eintragen oder für die Zukunft planen</h2>
-<p class="view-sub">Trage hier getätigte Ausgaben oder<strong>geplante Anschaffungen für die Zukunft</strong>ein.</p>
+<p class="view-sub" id="sub-expense-view">Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.</p>
 
 <form id="form-add-expense" class="accessible-form" onsubmit="handleAddExpense(event)">
 <div class="form-group">
@@ -3751,7 +3758,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     </optgroup>
   </select>
 </div>
-<div id="exp-currency-convert-hint" style="display: none; font-size: 13px; color: var(--accent-action); margin-top: 4px; font-weight: 500;" aria-live="polite"></div>
+<div id="exp-currency-convert-hint" style="display: none; font-size: 14px; font-weight: bold; color: var(--accent-action); margin-top: 6px; padding: 8px 12px; background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196F3; border-radius: 6px;" role="status" aria-live="polite"></div>
 </div>
 
 <div class="form-group">
@@ -4027,8 +4034,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <strong>📅 Datum der Ausgabe (Kaufdatum):</strong>
     </label>
     <div style="display: flex; gap: 6px;">
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
+      <button type="button" class="btn btn-secondary" id="btn-exp-date-today" onclick="setQuickDate('exp', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" id="btn-exp-date-yesterday" onclick="setQuickDate('exp', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Ausgabedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
   <input type="date" id="exp-date" class="large-input" aria-label="Datum der Ausgabe" onchange="autoUpdateFrequencyByDate('exp')">
@@ -4263,19 +4270,23 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-income" class="view-panel" role="tabpanel" aria-labelledby="tab-income" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-income-view" data-emoji="🟢">🟢 Einnahme eintragen oder für die Zukunft planen</h2>
-<p class="view-sub">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
+<p class="view-sub" id="sub-income-view">Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).</p>
 
 <form id="form-add-income" class="accessible-form" onsubmit="handleAddIncome(event)">
 <div class="form-group">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-  <label for="inc-amount" class="field-label" style="margin: 0;">
-    <strong>Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
+  <label for="inc-amount" class="field-label" style="margin: 0;"><strong id="lbl-inc-amount">Betrag in Euro (€)</strong><span class="required-star" aria-hidden="true">*</span>
   </label>
   <button type="button" class="btn btn-secondary" id="btn-open-cash-counter-from-income" onclick="openCashCounterModal('income')" style="padding: 2px 8px; font-size: 11px;" title="Münz- und Scheinezähler öffnen">
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()">
+<div style="display: flex; gap: 8px; align-items: center;">
+  <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="inc-amount" class="large-input" placeholder="z. B. 50 oder 150" required autofocus autocomplete="off" oninput="handleMainIncomeAmountInput()" style="flex: 1;">
+  <select id="inc-currency" class="large-select" style="max-width: 180px; min-width: 140px;" onchange="handleIncomeCurrencyChange(this.value)" aria-label="Währung der Einnahme">
+  </select>
+</div>
+<div id="inc-currency-convert-hint" style="display: none; font-size: 14px; font-weight: bold; color: var(--accent-income); margin-top: 6px; padding: 8px 12px; background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4CAF50; border-radius: 6px;" role="status" aria-live="polite"></div>
 </div>
 
 <div class="form-group">
@@ -4432,8 +4443,8 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
       <strong>📅 Datum der Einnahme (Geldeingang):</strong>
     </label>
     <div style="display: flex; gap: 6px;">
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
-      <button type="button" class="btn btn-secondary" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
+      <button type="button" class="btn btn-secondary" id="btn-inc-date-today" onclick="setQuickDate('inc', 0)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Heute setzen">Heute</button>
+      <button type="button" class="btn btn-secondary" id="btn-inc-date-yesterday" onclick="setQuickDate('inc', -1)" style="padding: 2px 8px; font-size: 12px;" aria-label="Einnahmedatum auf Gestern setzen">Gestern</button>
     </div>
   </div>
   <input type="date" id="inc-date" class="large-input" aria-label="Datum der Einnahme" onchange="autoUpdateFrequencyByDate('inc')">
@@ -4539,7 +4550,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="view-transfer" class="view-panel" role="tabpanel" aria-labelledby="tab-transfer" style="display: none;">
 <div class="form-container">
 <h2 class="view-heading" tabindex="-1" id="heading-transfer-view" data-emoji="🔄">🔄 Geld umbuchen & auf anderes Konto sparen</h2>
-<p class="view-sub">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
+<p class="view-sub" id="sub-transfer-view">Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.</p>
 
 <form id="form-add-transfer" class="accessible-form" onsubmit="handleAddTransfer(event)">
 <div class="form-group">
@@ -5504,7 +5515,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <div id="view-sync" class="view-panel" role="tabpanel" aria-labelledby="tab-sync" style="display: none;">
   <div class="view-header">
-    <h2>📱 Smartphone-Sync (E2E)</h2>
+    <h2 id="heading-sync-view">📱 Smartphone-Sync (E2E)</h2>
     <p class="view-desc">Wähle oben einen der drei Bereiche: <strong>1. Gekoppelte Geräte</strong>, <strong>2. Gerät koppeln</strong> oder <strong>3. Kopplungsdaten</strong>. Es wird immer nur der gewählte Bereich angezeigt.</p>
   </div>
 
@@ -7557,7 +7568,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.9.36';
+const CURRENT_APP_VERSION = 'v6.9.37';
 
 const _nativeParseFloat = globalThis.parseFloat;
 function parseEuroInput(val) {
@@ -7800,10 +7811,11 @@ function getLocalizedMonthNames() {
 
 function applyAppLanguage() {
   const lang = getEffectiveLanguage();
+  const isEn = lang === 'en';
   const dict = I18N_TRANSLATIONS[lang] || I18N_TRANSLATIONS.de;
 
   // Reassign or update MONTH_NAMES array
-  const targetMonths = lang === 'en' ? MONTH_NAMES_EN : MONTH_NAMES_DE;
+  const targetMonths = isEn ? MONTH_NAMES_EN : MONTH_NAMES_DE;
   for (let i = 0; i < 12; i++) {
     MONTH_NAMES[i] = targetMonths[i];
   }
@@ -7817,10 +7829,28 @@ function applyAppLanguage() {
   const brandTag = document.querySelector('.brand .security-badge');
   if (brandTag) brandTag.textContent = dict.appTagline;
   const headerPrivText = document.getElementById('header-privacy-text');
-  if (headerPrivText) headerPrivText.textContent = dict.btnPrivacy;
+  if (headerPrivText) headerPrivText.textContent = isEn ? 'Hide or show amounts (Ctrl+H)' : 'Beträge verbergen oder anzeigen, Tastenkürzel Strg + H';
   const lockBtnSpan = document.querySelector('.btn-lock span:last-child');
   if (lockBtnSpan) lockBtnSpan.textContent = dict.btnLock;
 
+  // Header Today Display
+  const lblTodayPrefix = document.getElementById('lbl-today-prefix');
+  if (lblTodayPrefix) lblTodayPrefix.textContent = isEn ? 'Today:' : 'Heute:';
+  if (typeof updateTodayDisplay === 'function') {
+    updateTodayDisplay();
+  }
+
+  // Skip Navigation
+  const skipNav = document.getElementById('skip-nav-bar');
+  if (skipNav) skipNav.setAttribute('aria-label', isEn ? 'Keyboard quick navigation' : 'Tastatur-Schnellnavigation');
+  const slNav = document.getElementById('skip-link-nav');
+  if (slNav) slNav.textContent = isEn ? 'Skip to menu selection' : 'Zur Menüauswahl springen';
+  const slTime = document.getElementById('skip-link-time');
+  if (slTime) slTime.textContent = isEn ? 'Skip to period selection' : 'Zur Zeitraumauswahl springen';
+  const slContent = document.getElementById('skip-link-content');
+  if (slContent) slContent.textContent = isEn ? 'Skip to main content' : 'Direkt zum Hauptinhalt springen';
+
+  // Lock View (PIN dialog)
   const lockHeading = document.getElementById('lock-heading');
   if (lockHeading) lockHeading.textContent = dict.lockHeading;
   const lockInstructions = document.getElementById('lock-instructions');
@@ -7830,6 +7860,7 @@ function applyAppLanguage() {
   const btnUnlockText = document.getElementById('btn-unlock-text');
   if (btnUnlockText) btnUnlockText.textContent = dict.btnUnlock;
 
+  // Tabs
   const tabMap = {
     'tab-overview': dict.tabOverview,
     'tab-expense': dict.tabExpense,
@@ -7849,20 +7880,7 @@ function applyAppLanguage() {
     }
   });
 
-  const lblSettingsLang = document.getElementById('lbl-settings-language');
-  if (lblSettingsLang) lblSettingsLang.innerHTML = '<strong>' + dict.settingsLangLabel + '</strong>';
-  const lblSettingsTheme = document.getElementById('lbl-settings-theme');
-  if (lblSettingsTheme) lblSettingsTheme.innerHTML = '<strong>' + dict.settingsThemeLabel + '</strong>';
-  const lblSettingsFont = document.getElementById('lbl-settings-fontsize');
-  if (lblSettingsFont) lblSettingsFont.innerHTML = '<strong>' + dict.settingsFontLabel + '</strong>';
-  const headingSettings = document.getElementById('heading-settings-view');
-  if (headingSettings) headingSettings.textContent = dict.settingsHeading;
-
-  const langSel = document.getElementById('settings-language-select');
-  if (langSel) {
-    langSel.value = getCurrentLanguagePreference();
-  }
-
+  // Time Period Dropdown
   const periodSel = document.getElementById('overview-period-select');
   if (periodSel) {
     const val = periodSel.value;
@@ -7877,10 +7895,287 @@ function applyAppLanguage() {
     periodSel.value = val;
   }
 
+  // Overview Search Bar & Filters
+  const lblSearch = document.getElementById('lbl-tx-search-query');
+  if (lblSearch) lblSearch.innerHTML = isEn ? '🔍 <strong>Smart Search (Text, amount, typos, date):</strong>' : '🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong>';
+  const searchInput = document.getElementById('tx-search-query');
+  if (searchInput) searchInput.placeholder = isEn ? 'e.g. Groceries, 45$, >50, 20-100, October, today, -PayPal...' : 'z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal...';
+  const btnClearSearch = document.getElementById('btn-clear-tx-search');
+  if (btnClearSearch) btnClearSearch.textContent = isEn ? '✖️ Clear search' : '✖️ Suche leeren';
+  const btnClearFilter = document.getElementById('btn-clear-search-filter');
+  if (btnClearFilter) btnClearFilter.textContent = isEn ? '✖️ Clear filter' : '✖️ Filter aufheben';
+
+  const filterBar = document.querySelector('.tx-filter-bar');
+  if (filterBar) filterBar.setAttribute('aria-label', isEn ? 'Search and filter transactions' : 'Buchungen durchsuchen und filtern');
+
+  const lblStatus = document.getElementById('lbl-tx-filter-status');
+  if (lblStatus) lblStatus.innerHTML = isEn ? '🎯 <strong>Status:</strong>' : '🎯 <strong>Status:</strong>';
+  const statusSel = document.getElementById('tx-filter-status');
+  if (statusSel) {
+    const curVal = statusSel.value;
+    statusSel.innerHTML = isEn ? `
+      <option value="all">All Transactions</option>
+      <option value="booked">✅ Booked / Completed only</option>
+      <option value="planned">🎯 Planned for Future only</option>
+      <option value="recurring">🔁 Standing Orders only</option>
+    ` : `
+      <option value="all">Alle Buchungen</option>
+      <option value="booked">✅ Nur Gebucht / Erledigt</option>
+      <option value="planned">🎯 Nur Geplant für die Zukunft</option>
+      <option value="recurring">🔁 Nur Daueraufträge</option>
+    `;
+    statusSel.value = curVal;
+  }
+
+  const lblAccFilter = document.getElementById('lbl-tx-filter-account');
+  if (lblAccFilter) lblAccFilter.innerHTML = isEn ? '💳 <strong>Account:</strong>' : '💳 <strong>Konto:</strong>';
+  const accSel = document.getElementById('tx-filter-account');
+  if (accSel && accSel.options && accSel.options[0]) {
+    accSel.options[0].textContent = isEn ? 'All Accounts' : 'Alle Konten';
+  }
+
+  const lblSort = document.getElementById('lbl-tx-sort-order');
+  if (lblSort) lblSort.innerHTML = isEn ? '↕️ <strong>Sorting:</strong>' : '↕️ <strong>Sortierung:</strong>';
+  const sortSel = document.getElementById('tx-sort-order');
+  if (sortSel) {
+    const curSort = sortSel.value;
+    sortSel.innerHTML = isEn ? `
+      <option value="date-desc">📅 Date: Newest first (New to Old)</option>
+      <option value="date-asc">📅 Date: Oldest first (Old to New)</option>
+      <option value="alpha-asc">🔤 Name: Alphabetical (A to Z)</option>
+      <option value="alpha-desc">🔤 Name: Alphabetical (Z to A)</option>
+      <option value="amount-desc">💶 Amount: Highest first (High to Low)</option>
+      <option value="amount-asc">💶 Amount: Lowest first (Low to High)</option>
+      <option value="category-asc">🏷️ Category: Alphabetical (A to Z)</option>
+    ` : `
+      <option value="date-desc">📅 Datum: Neueste zuerst (Neu bis Alt)</option>
+      <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
+      <option value="alpha-asc">🔤 Name: Alphabetisch (A bis Z)</option>
+      <option value="alpha-desc">🔤 Name: Alphabetisch (Z bis A)</option>
+      <option value="amount-desc">💶 Betrag: Höchste zuerst (Groß bis Klein)</option>
+      <option value="amount-asc">💶 Betrag: Niedrigste zuerst (Klein bis Groß)</option>
+      <option value="category-asc">🏷️ Kategorie: Alphabetisch (A bis Z)</option>
+    `;
+    sortSel.value = curSort;
+  }
+
+  // Overview Accordions & Rankings
+  const expRankDetails = document.getElementById('details-expense-rankings');
+  if (expRankDetails) {
+    const summ = expRankDetails.querySelector('summary');
+    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse top expense ranking' : 'Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen');
+  }
+  const expRankHead = document.getElementById('expense-ranking-heading');
+  if (expRankHead) expRankHead.textContent = isEn ? 'Top Expenses of the Month (Expense Ranking)' : 'Größte Geldfresser des Monats (Ausgaben-Rangliste)';
+
+  const sumIncDetails = document.getElementById('details-income-list');
+  if (sumIncDetails) {
+    const summ = sumIncDetails.querySelector('summary');
+    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all income' : 'Alle Einnahmen ausklappen oder einklappen');
+  }
+  const sumInc = document.getElementById('details-income-summary-text');
+  if (sumInc) sumInc.textContent = isEn ? 'Show all income (with date, edit & delete)' : 'Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)';
+
+  const sumExpDetails = document.getElementById('details-expense-list');
+  if (sumExpDetails) {
+    const summ = sumExpDetails.querySelector('summary');
+    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all expenses' : 'Alle Ausgaben ausklappen oder einklappen');
+  }
+  const sumExp = document.getElementById('details-expense-summary-text');
+  if (sumExp) sumExp.textContent = isEn ? 'Show all expenses (with date, edit & delete)' : 'Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)';
+
+  const sumTrfDetails = document.getElementById('details-transfer-list');
+  if (sumTrfDetails) {
+    const summ = sumTrfDetails.querySelector('summary');
+    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all transfers and savings plans' : 'Alle Umbuchungen und Sparpläne ausklappen oder einklappen');
+  }
+  const sumTrf = document.getElementById('details-transfer-summary-text');
+  if (sumTrf) sumTrf.textContent = isEn ? 'Show all transfers & savings plans' : 'Alle Umbuchungen & Sparpläne anzeigen';
+
+  const peerHead = document.getElementById('section-peer-loans-heading');
+  if (peerHead) peerHead.textContent = isEn ? '🤝 Borrowed & Lent Money (Personal Loans)' : '🤝 Geliehenes & Verliehenes Geld (Privatkredite)';
+  const peerDetails = document.getElementById('details-peer-loans-list');
+  if (peerDetails) {
+    const summ = peerDetails.querySelector('summary');
+    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all borrowed and lent amounts' : 'Alle geliehenen und verliehenen Beträge ausklappen oder einklappen');
+  }
+  const peerSummText = document.getElementById('details-peer-loans-summary-text');
+  if (peerSummText) peerSummText.textContent = isEn ? 'Show open debts & receivables' : 'Offene Schulden & Forderungen anzeigen';
+  const peerBtn = document.getElementById('peer-loan-new-entry-btn');
+  if (peerBtn) {
+    peerBtn.textContent = isEn ? '➕ New Entry' : '➕ Neuer Eintrag';
+    peerBtn.setAttribute('aria-label', isEn ? 'Add new borrowed or lent money' : 'Neues geliehenes oder verliehenes Geld eintragen');
+  }
+
+  // Currency breakdown card title
+  const currBreakHead = document.getElementById('heading-curr-breakdown');
+  if (currBreakHead) currBreakHead.textContent = isEn ? '💱 Amounts broken down by currency:' : '💱 Beträge nach Währungen aufgeteilt:';
+
+  // Multi-month table headers
+  const thMonth = document.getElementById('annual-table-th-month');
+  if (thMonth) thMonth.textContent = isEn ? 'Month' : 'Monat';
+  const thInc = document.getElementById('annual-table-th-inc');
+  if (thInc) thInc.textContent = isEn ? 'Income' : 'Einnahmen';
+  const thExp = document.getElementById('annual-table-th-exp');
+  if (thExp) thExp.textContent = isEn ? 'Expenses' : 'Ausgaben';
+  const thResult = document.getElementById('annual-table-th-result');
+  if (thResult) thResult.textContent = isEn ? 'Result (Plus / Minus)' : 'Ergebnis (Plus / Minus)';
+  const thStatus = document.getElementById('annual-table-th-status');
+  if (thStatus) thStatus.textContent = isEn ? 'Status' : 'Status';
+
+  // View 2: Expense
+  const expHeading = document.getElementById('heading-expense-view');
+  if (expHeading) expHeading.textContent = isEn ? '🔴 Add / Plan Expense' : '🔴 Ausgabe eintragen oder für die Zukunft planen';
+  const expSub = document.getElementById('sub-expense-view');
+  if (expSub) expSub.innerHTML = isEn ? 'Record expenses or <strong>planned purchases for the future</strong> here.' : 'Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.';
+  const btnSaveExp = document.getElementById('btn-submit-expense');
+  if (btnSaveExp) {
+    const sp = btnSaveExp.querySelector('span');
+    if (sp) sp.innerHTML = isEn ? '🔴 <strong>Save Expense / Planned Purchase</strong> (Enter)' : '🔴<strong>Ausgabe / Geplanten Kauf speichern</strong>(Enter)';
+  }
+  const btnBackExp = document.getElementById('btn-back-expense');
+  if (btnBackExp) {
+    const sp = btnBackExp.querySelector('span');
+    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
+  }
+  const btnExpToday = document.getElementById('btn-exp-date-today');
+  if (btnExpToday) {
+    btnExpToday.textContent = isEn ? 'Today' : 'Heute';
+    btnExpToday.setAttribute('aria-label', isEn ? 'Set expense date to Today' : 'Ausgabedatum auf Heute setzen');
+  }
+  const btnExpYest = document.getElementById('btn-exp-date-yesterday');
+  if (btnExpYest) {
+    btnExpYest.textContent = isEn ? 'Yesterday' : 'Gestern';
+    btnExpYest.setAttribute('aria-label', isEn ? 'Set expense date to Yesterday' : 'Ausgabedatum auf Gestern setzen');
+  }
+
+  // View 3: Income
+  const incHeading = document.getElementById('heading-income-view');
+  if (incHeading) incHeading.textContent = isEn ? '🟢 Add / Plan Income' : '🟢 Einnahme eintragen oder für die Zukunft planen';
+  const incSub = document.getElementById('sub-income-view');
+  if (incSub) incSub.innerHTML = isEn ? 'Record money received or expected in a future month.' : 'Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).';
+  const btnSaveInc = document.getElementById('btn-submit-income');
+  if (btnSaveInc) {
+    const sp = btnSaveInc.querySelector('span');
+    if (sp) sp.innerHTML = isEn ? '🟢 <strong>Save Income</strong> (Enter)' : '🟢<strong>Einnahme speichern</strong>(Enter)';
+  }
+  const btnBackInc = document.getElementById('btn-back-income');
+  if (btnBackInc) {
+    const sp = btnBackInc.querySelector('span');
+    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
+  }
+  const btnIncToday = document.getElementById('btn-inc-date-today');
+  if (btnIncToday) {
+    btnIncToday.textContent = isEn ? 'Today' : 'Heute';
+    btnIncToday.setAttribute('aria-label', isEn ? 'Set income date to Today' : 'Einnahmedatum auf Heute setzen');
+  }
+  const btnIncYest = document.getElementById('btn-inc-date-yesterday');
+  if (btnIncYest) {
+    btnIncYest.textContent = isEn ? 'Yesterday' : 'Gestern';
+    btnIncYest.setAttribute('aria-label', isEn ? 'Set income date to Yesterday' : 'Einnahmedatum auf Gestern setzen');
+  }
+
+  // View 4: Transfer
+  const trfHeading = document.getElementById('heading-transfer-view');
+  if (trfHeading) trfHeading.textContent = isEn ? '🔄 Transfer & Savings' : '🔄 Geld umbuchen & auf anderes Konto sparen';
+  const trfSub = document.getElementById('sub-transfer-view');
+  if (trfSub) trfSub.textContent = isEn ? 'Transfer money between accounts – either immediately or as a monthly savings plan.' : 'Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.';
+  const btnSaveTrf = document.getElementById('btn-submit-transfer');
+  if (btnSaveTrf) {
+    const sp = btnSaveTrf.querySelector('span');
+    if (sp) sp.innerHTML = isEn ? '🔄 <strong>Save Transfer / Savings Plan</strong> (Enter)' : '🔄<strong>Umbuchung / Sparplan speichern</strong>(Enter)';
+  }
+  const btnBackTrf = document.getElementById('btn-back-transfer');
+  if (btnBackTrf) {
+    const sp = btnBackTrf.querySelector('span');
+    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
+  }
+
+  // View 5: Settings
+  const headingSettings = document.getElementById('heading-settings-view');
+  if (headingSettings) headingSettings.textContent = dict.settingsHeading;
+  const themeHead = document.getElementById('theme-settings-heading');
+  if (themeHead) themeHead.textContent = isEn ? 'Appearance, Theme & Font Size' : 'Darstellung, Design & Schriftgröße';
+  const themeHint = document.getElementById('theme-settings-hint');
+  if (themeHint) themeHint.textContent = isEn ? 'Customize the theme and font size for your eyes:' : 'Passe hier das Design und die Schriftgröße für deine Augen an:';
+  const lblSettingsLang = document.getElementById('lbl-settings-language');
+  if (lblSettingsLang) lblSettingsLang.innerHTML = '<strong>' + dict.settingsLangLabel + '</strong>';
+  const lblSettingsTheme = document.getElementById('lbl-settings-theme');
+  if (lblSettingsTheme) lblSettingsTheme.innerHTML = '<strong>' + dict.settingsThemeLabel + '</strong>';
+  const lblSettingsFont = document.getElementById('lbl-settings-fontsize');
+  if (lblSettingsFont) lblSettingsFont.innerHTML = '<strong>' + dict.settingsFontLabel + '</strong>';
+  const lblSettingsSym = document.getElementById('lbl-settings-symbols');
+  if (lblSettingsSym) lblSettingsSym.innerHTML = '<strong>' + dict.settingsSymbolsLabel + '</strong>';
+  const hintSettingsSym = document.getElementById('hint-settings-symbols');
+  if (hintSettingsSym) hintSettingsSym.textContent = dict.settingsSymbolsHint;
+  const lblSettingsCurr = document.getElementById('lbl-settings-currency');
+  if (lblSettingsCurr) lblSettingsCurr.innerHTML = isEn ? '<strong>💱 Standard Currency / Currency:</strong>' : '<strong>💱 Standard-Währung / Currency:</strong>';
+
+  const langSel = document.getElementById('settings-language-select');
+  if (langSel) {
+    langSel.value = getCurrentLanguagePreference();
+  }
+
+  // Settings category tabs
+  const catBtnAll = document.getElementById('set-cat-btn-all');
+  if (catBtnAll) catBtnAll.innerHTML = isEn ? '<span>📂 <strong>Show All</strong></span>' : '<span>📂 <strong>Alle anzeigen</strong></span>';
+  const catBtnSec = document.getElementById('set-cat-btn-security');
+  if (catBtnSec) catBtnSec.innerHTML = isEn ? '<span>🛡️ <strong>Security &amp; Vault</strong></span>' : '<span>🛡️ <strong>Sicherheit &amp; Tresor</strong></span>';
+  const catBtnDes = document.getElementById('set-cat-btn-design');
+  if (catBtnDes) catBtnDes.innerHTML = isEn ? '<span>🎨 <strong>Appearance &amp; Theme</strong></span>' : '<span>🎨 <strong>Darstellung &amp; Design</strong></span>';
+  const catBtnBac = document.getElementById('set-cat-btn-backup');
+  if (catBtnBac) catBtnBac.innerHTML = isEn ? '<span>💾 <strong>Backup &amp; Import</strong></span>' : '<span>💾 <strong>Datensicherung &amp; Import</strong></span>';
+  const catBtnBud = document.getElementById('set-cat-btn-budgets');
+  if (catBtnBud) catBtnBud.innerHTML = isEn ? '<span>🎯 <strong>Monthly Budgets</strong></span>' : '<span>🎯 <strong>Monats-Budgets</strong></span>';
+  const catBtnCat = document.getElementById('set-cat-btn-categories');
+  if (catBtnCat) catBtnCat.innerHTML = isEn ? '<span>🏷️ <strong>Custom Categories</strong></span>' : '<span>🏷️ <strong>Eigene Kategorien</strong></span>';
+  const catBtnSys = document.getElementById('set-cat-btn-system');
+  if (catBtnSys) catBtnSys.innerHTML = isEn ? '<span>📜 <strong>Info &amp; System</strong></span>' : '<span>📜 <strong>Info &amp; System</strong></span>';
+
+  // View 6: Accounts
+  const accViewHeading = document.getElementById('heading-accounts-view');
+  if (accViewHeading) accViewHeading.innerHTML = isEn ? '💳 Accounts &amp; Options' : '💳 Konto-Optionen &amp; Konten verwalten';
+
+  // View 7: Wishlist
+  const wishViewHeading = document.getElementById('heading-wishlist-view');
+  if (wishViewHeading) wishViewHeading.innerHTML = isEn ? '🎁 Wishlist &amp; Savings Goals' : '🎁 Wunschliste, Sparziele &amp; Anschaffungen';
+
+  // View 8: Shopping
+  const shopViewHeading = document.getElementById('heading-shopping-view');
+  if (shopViewHeading) shopViewHeading.innerHTML = isEn ? '🛒 Shopping List &amp; Checklist' : '🛒 Einkaufsliste &amp; Checkliste';
+
+  // View 9: Sync
+  const syncViewHeading = document.getElementById('heading-sync-view');
+  if (syncViewHeading) syncViewHeading.innerHTML = isEn ? '📱 Smartphone Sync (E2E)' : '📱 Smartphone-Sync (E2E)';
+
+  // Currency Converter Section
+  const convHead = document.getElementById('heading-currency-converter');
+  if (convHead) convHead.textContent = isEn ? 'Currency Converter & Exchange (Euro, Dollar, DM, Schilling...)' : 'Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)';
+  const convHint = document.getElementById('hint-currency-converter');
+  if (convHint) convHint.textContent = isEn ? 'Convert any amount instantly between modern and historical currencies (e.g. Deutsche Mark, Schilling, Franc):' : 'Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:';
+  const lblConvAmt = document.getElementById('lbl-calc-curr-amount');
+  if (lblConvAmt) lblConvAmt.innerHTML = isEn ? '<strong>Amount:</strong>' : '<strong>Betrag:</strong>';
+  const lblConvFrom = document.getElementById('lbl-calc-curr-from');
+  if (lblConvFrom) lblConvFrom.innerHTML = isEn ? '<strong>From Currency (Source):</strong>' : '<strong>Von Währung (Quelle):</strong>';
+  const lblConvTo = document.getElementById('lbl-calc-curr-to');
+  if (lblConvTo) lblConvTo.innerHTML = isEn ? '<strong>To Currency (Target):</strong>' : '<strong>In Währung (Ziel):</strong>';
+
+  // Footer
+  const footerVer = document.getElementById('footer-version-text');
+  if (footerVer) footerVer.textContent = isEn ? 'Accessible Finances ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Encryption & Shopping List. Optimized for NVDA.' : 'Barrierefreie Finanzen ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Verschlüsselung & Einkaufsliste. Optimiert für NVDA.';
+  const footerShort = document.getElementById('footer-shortcuts-text');
+  if (footerShort) footerShort.textContent = isEn ? 'Keyboard shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= To Today | L= Quick Lock' : 'Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre';
+
+  // Refresh currency hints for current view
+  if (typeof updateExpenseCurrencyHint === 'function') updateExpenseCurrencyHint();
+  if (typeof updateIncomeCurrencyHint === 'function') updateIncomeCurrencyHint();
+
+  // Sub Time Navigation
   if (typeof renderSubTimeNavigation === 'function') {
     renderSubTimeNavigation();
   }
 
+  // Update Overview
   if (currentActiveView === 'overview' && typeof updateOverview === 'function') {
     updateOverview();
   }
@@ -8085,6 +8380,62 @@ function changeCurrency(currVal) {
   }
 }
 
+
+function handleIncomeCurrencyChange(selectedCurr) {
+  updateIncomeCurrencyHint();
+  const eff = getEffectiveCurrency();
+  const info = getCurrencyInfo(selectedCurr);
+  const lang = getEffectiveLanguage();
+  const name = lang === 'en' ? info.name_en : info.name_de;
+  const lbl = document.getElementById('lbl-inc-amount');
+  if (lbl) {
+    lbl.textContent = lang === 'en' ? ('Amount in ' + name + ' (' + info.symbol + ')') : ('Betrag in ' + name + ' (' + info.symbol + ')');
+  }
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(lang === 'en' ? ('Income currency set to ' + name + ' (' + info.symbol + ').') : ('Währung der Einnahme auf ' + name + ' (' + info.symbol + ') gesetzt.'));
+  }
+}
+
+function updateIncomeCurrencyHint() {
+  const incCurrSel = document.getElementById('inc-currency');
+  const hintEl = document.getElementById('inc-currency-convert-hint');
+  const amtInput = document.getElementById('inc-amount');
+  if (!incCurrSel || !hintEl) return;
+
+  const chosenCurr = incCurrSel.value || getEffectiveCurrency();
+  const baseCurr = getEffectiveCurrency();
+
+  const info = getCurrencyInfo(chosenCurr);
+  const lang = getEffectiveLanguage();
+  const name = lang === 'en' ? info.name_en : info.name_de;
+  const lbl = document.getElementById('lbl-inc-amount');
+  if (lbl) {
+    lbl.textContent = lang === 'en' ? ('Amount in ' + name + ' (' + info.symbol + ')') : ('Betrag in ' + name + ' (' + info.symbol + ')');
+  }
+
+  if (chosenCurr === baseCurr) {
+    hintEl.style.display = 'none';
+    hintEl.textContent = '';
+    return;
+  }
+
+  const amt = amtInput ? ((typeof parseEuroInput === 'function' ? parseEuroInput(amtInput.value) : parseFloat(amtInput.value)) || 0) : 0;
+  if (amt <= 0) {
+    hintEl.style.display = 'none';
+    hintEl.textContent = '';
+    return;
+  }
+
+  const converted = convertCurrency(amt, chosenCurr, baseCurr);
+  const baseInfo = getCurrencyInfo(baseCurr);
+  const baseName = lang === 'en' ? baseInfo.name_en : baseInfo.name_de;
+
+  hintEl.style.display = 'block';
+  hintEl.textContent = lang === 'en'
+    ? ('💱 ' + formatCurrency(amt, chosenCurr) + ' ≈ ' + formatCurrency(converted, baseCurr) + ' (in your default currency ' + baseName + ')')
+    : ('💱 ' + formatCurrency(amt, chosenCurr) + ' ≈ ' + formatCurrency(converted, baseCurr) + ' (in deiner Standard-Währung ' + baseName + ')');
+}
+
 function handleExpenseCurrencyChange(selectedCurr) {
   updateExpenseCurrencyHint();
   const info = getCurrencyInfo(selectedCurr);
@@ -8104,6 +8455,14 @@ function updateExpenseCurrencyHint() {
   const chosenCurr = expCurrSel.value || getEffectiveCurrency();
   const baseCurr = getEffectiveCurrency();
 
+  const info = getCurrencyInfo(chosenCurr);
+  const lang = getEffectiveLanguage();
+  const name = lang === 'en' ? info.name_en : info.name_de;
+  const lbl = document.getElementById('lbl-exp-amount');
+  if (lbl) {
+    lbl.textContent = lang === 'en' ? ('Amount in ' + name + ' (' + info.symbol + ')') : ('Betrag in ' + name + ' (' + info.symbol + ')');
+  }
+
   if (chosenCurr === baseCurr) {
     hintEl.style.display = 'none';
     hintEl.textContent = '';
@@ -8118,14 +8477,13 @@ function updateExpenseCurrencyHint() {
   }
 
   const converted = convertCurrency(amt, chosenCurr, baseCurr);
-  const lang = getEffectiveLanguage();
   const baseInfo = getCurrencyInfo(baseCurr);
   const baseName = lang === 'en' ? baseInfo.name_en : baseInfo.name_de;
 
   hintEl.style.display = 'block';
   hintEl.textContent = lang === 'en'
-    ? ('≈ ' + formatCurrency(converted, baseCurr) + ' (automatically converted into your base currency ' + baseName + ')')
-    : ('≈ ' + formatCurrency(converted, baseCurr) + ' (wird automatisch in deine Basiswährung ' + baseName + ' umgerechnet)');
+    ? ('💱 ' + formatCurrency(amt, chosenCurr) + ' ≈ ' + formatCurrency(converted, baseCurr) + ' (in your default currency ' + baseName + ')')
+    : ('💱 ' + formatCurrency(amt, chosenCurr) + ' ≈ ' + formatCurrency(converted, baseCurr) + ' (in deiner Standard-Währung ' + baseName + ')');
 }
 
 function applyAppCurrency() {
@@ -8139,6 +8497,19 @@ function applyAppCurrency() {
     setSel.innerHTML = renderCurrencyOptionsHTML(pref, true);
     setSel.value = pref;
   }
+
+  const incSel = document.getElementById('inc-currency');
+  if (incSel) {
+    const prevInc = incSel.value || eff;
+    incSel.innerHTML = renderCurrencyOptionsHTML(prevInc, false);
+    incSel.value = prevInc;
+  }
+  const lblIncAmt = document.getElementById('lbl-inc-amount');
+  if (lblIncAmt) {
+    const curName = lang === 'en' ? info.name_en : info.name_de;
+    lblIncAmt.textContent = lang === 'en' ? ('Amount in ' + curName + ' (' + info.symbol + ')') : ('Betrag in ' + curName + ' (' + info.symbol + ')');
+  }
+  updateIncomeCurrencyHint();
 
   const expSel = document.getElementById('exp-currency');
   if (expSel) {
@@ -12616,6 +12987,9 @@ function renderSubTimeNavigation() {
   const activeId = activeInsideWrapper ? activeEl.id : null;
   const activeOnclick = activeInsideWrapper ? activeEl.getAttribute('onclick') : null;
 
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const isEn = lang === 'en';
+
   const select = document.getElementById('overview-period-select');
   if (select && select.value !== currentOverviewMode) {
     select.value = currentOverviewMode;
@@ -12623,118 +12997,118 @@ function renderSubTimeNavigation() {
 
   if (currentOverviewMode === 'day') {
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="Einen Tag zurückgehen (Gestern)" aria-label="Vorheriger Tag">
-        ◀ Gestern
+      <button class="btn btn-time-nav" onclick="changeDayRelative(-1)" title="${isEn ? 'Go back one day (Yesterday)' : 'Einen Tag zurückgehen (Gestern)'}" aria-label="${isEn ? 'Previous Day' : 'Vorheriger Tag'}">
+        ◀ ${isEn ? 'Yesterday' : 'Gestern'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-day-select" class="time-select-label">📍 <strong>Tag:</strong></label>
+        <label for="global-day-select" class="time-select-label">📍 <strong>${isEn ? 'Day:' : 'Tag:'}</strong></label>
         <input type="date" id="global-day-select" class="time-date-input" value="${selectedDateStr}" onchange="handleDayChange(this.value)">
       </div>
-      <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="Einen Tag vorwärtsgehen (Morgen)" aria-label="Nächster Tag">
-        Morgen ▶
+      <button class="btn btn-time-nav" onclick="changeDayRelative(1)" title="${isEn ? 'Go forward one day (Tomorrow)' : 'Einen Tag vorwärtsgehen (Morgen)'}" aria-label="${isEn ? 'Next Day' : 'Nächster Tag'}">
+        ${isEn ? 'Tomorrow' : 'Morgen'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setDayToToday()" title="Zum heutigen Tag springen (Taste T)">
-        📍 Heute (T)
+      <button class="btn btn-time-today" onclick="setDayToToday()" title="${isEn ? 'Jump to today (Key T)' : 'Zum heutigen Tag springen (Taste T)'}">
+        📍 ${isEn ? 'Today (T)' : 'Heute (T)'}
       </button>
     `;
   } else if (currentOverviewMode === 'week') {
     const wb = getWeekBoundaries(currentWeekDateStr);
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeWeekRelative(-1)" title="Eine Woche zurückgehen" aria-label="Vorherige Woche">
-        ◀ Vorherige Woche
+      <button class="btn btn-time-nav" onclick="changeWeekRelative(-1)" title="${isEn ? 'Go back one week' : 'Eine Woche zurückgehen'}" aria-label="${isEn ? 'Previous Week' : 'Vorherige Woche'}">
+        ◀ ${isEn ? 'Previous Week' : 'Vorherige Woche'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-week-select" class="time-select-label">📆 <strong id="global-week-label-text">Woche (KW ${wb.weekNum}):</strong></label>
-        <select id="global-week-select" class="time-dropdown" aria-label="Kalenderwoche auswählen" onchange="handleWeekChange(this.value)">
+        <label for="global-week-select" class="time-select-label">📆 <strong id="global-week-label-text">${isEn ? `Week (CW ${wb.weekNum}):` : `Woche (KW ${wb.weekNum}):`}</strong></label>
+        <select id="global-week-select" class="time-dropdown" aria-label="${isEn ? 'Select calendar week' : 'Kalenderwoche auswählen'}" onchange="handleWeekChange(this.value)">
           ${generateWeekOptions(currentWeekDateStr)}
         </select>
       </div>
-      <button class="btn btn-time-nav" onclick="changeWeekRelative(1)" title="Eine Woche vorwärtsgehen" aria-label="Nächste Woche">
-        Nächste Woche ▶
+      <button class="btn btn-time-nav" onclick="changeWeekRelative(1)" title="${isEn ? 'Go forward one week' : 'Eine Woche vorwärtsgehen'}" aria-label="${isEn ? 'Next Week' : 'Nächste Woche'}">
+        ${isEn ? 'Next Week' : 'Nächste Woche'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setWeekToCurrent()" title="Zur aktuellen Woche springen">
-        📆 Diese Woche
+      <button class="btn btn-time-today" onclick="setWeekToCurrent()" title="${isEn ? 'Jump to current week' : 'Zur aktuellen Woche springen'}">
+        📆 ${isEn ? 'This Week' : 'Diese Woche'}
       </button>
     `;
   } else if (currentOverviewMode === 'month') {
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="Einen Monat zurückgehen" aria-label="Vorheriger Monat">
-        ◀ Vormonat
+      <button class="btn btn-time-nav" onclick="changeMonthRelative(-1)" title="${isEn ? 'Go back one month' : 'Einen Monat zurückgehen'}" aria-label="${isEn ? 'Previous Month' : 'Vorheriger Monat'}">
+        ◀ ${isEn ? 'Previous Month' : 'Vormonat'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-month-select" class="time-select-label">📅 <strong>Monat:</strong></label>
-        <select id="global-month-select" class="time-dropdown" aria-label="Monat auswählen" onchange="handleMonthChange(this.value)">
+        <label for="global-month-select" class="time-select-label">📅 <strong>${isEn ? 'Month:' : 'Monat:'}</strong></label>
+        <select id="global-month-select" class="time-dropdown" aria-label="${isEn ? 'Select month' : 'Monat auswählen'}" onchange="handleMonthChange(this.value)">
           ${generateMonthOptions(`${selectedYear}-${selectedMonth}`)}
         </select>
       </div>
-      <button class="btn btn-time-nav" onclick="changeMonthRelative(1)" title="Einen Monat vorwärtsgehen" aria-label="Nächster Monat">
-        Nächster Monat ▶
+      <button class="btn btn-time-nav" onclick="changeMonthRelative(1)" title="${isEn ? 'Go forward one month' : 'Einen Monat vorwärtsgehen'}" aria-label="${isEn ? 'Next Month' : 'Nächster Monat'}">
+        ${isEn ? 'Next Month' : 'Nächster Monat'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setMonthToCurrent()" title="Zum aktuellen Monat springen">
-        📍 Aktueller Monat
+      <button class="btn btn-time-today" onclick="setMonthToCurrent()" title="${isEn ? 'Jump to current month' : 'Zum aktuellen Monat springen'}">
+        📍 ${isEn ? 'Current Month' : 'Aktueller Monat'}
       </button>
     `;
   } else if (currentOverviewMode === 'quarter') {
     const currentQ = Math.floor(selectedMonth / 3) + 1;
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeQuarterRelative(-1)" title="Vorheriges Quartal">
-        ◀ Vorheriges Quartal
+      <button class="btn btn-time-nav" onclick="changeQuarterRelative(-1)" title="${isEn ? 'Previous Quarter' : 'Vorheriges Quartal'}" aria-label="${isEn ? 'Previous Quarter' : 'Vorheriges Quartal'}">
+        ◀ ${isEn ? 'Previous Quarter' : 'Vorheriges Quartal'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-quarter-select" class="time-select-label">📊 <strong>Quartal:</strong></label>
-        <select id="global-quarter-select" class="time-dropdown" aria-label="Quartal auswählen" onchange="handleQuarterChange(this.value)">
-          <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>Q1 ${selectedYear} (Januar - März)</option>
-          <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>Q2 ${selectedYear} (April - Juni)</option>
-          <option value="${selectedYear}-3" ${currentQ === 3 ? 'selected' : ''}>Q3 ${selectedYear} (Juli - September)</option>
-          <option value="${selectedYear}-4" ${currentQ === 4 ? 'selected' : ''}>Q4 ${selectedYear} (Oktober - Dezember)</option>
+        <label for="global-quarter-select" class="time-select-label">📊 <strong>${isEn ? 'Quarter:' : 'Quartal:'}</strong></label>
+        <select id="global-quarter-select" class="time-dropdown" aria-label="${isEn ? 'Select quarter' : 'Quartal auswählen'}" onchange="handleQuarterChange(this.value)">
+          <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>${isEn ? `Q1 ${selectedYear} (January - March)` : `Q1 ${selectedYear} (Januar - März)`}</option>
+          <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>${isEn ? `Q2 ${selectedYear} (April - June)` : `Q2 ${selectedYear} (April - Juni)`}</option>
+          <option value="${selectedYear}-3" ${currentQ === 3 ? 'selected' : ''}>${isEn ? `Q3 ${selectedYear} (July - September)` : `Q3 ${selectedYear} (Juli - September)`}</option>
+          <option value="${selectedYear}-4" ${currentQ === 4 ? 'selected' : ''}>${isEn ? `Q4 ${selectedYear} (October - December)` : `Q4 ${selectedYear} (Oktober - Dezember)`}</option>
         </select>
       </div>
-      <button class="btn btn-time-nav" onclick="changeQuarterRelative(1)" title="Nächstes Quartal">
-        Nächstes Quartal ▶
+      <button class="btn btn-time-nav" onclick="changeQuarterRelative(1)" title="${isEn ? 'Next Quarter' : 'Nächstes Quartal'}" aria-label="${isEn ? 'Next Quarter' : 'Nächstes Quartal'}">
+        ${isEn ? 'Next Quarter' : 'Nächstes Quartal'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setQuarterToCurrent()">
-        📍 Aktuelles Quartal
+      <button class="btn btn-time-today" onclick="setQuarterToCurrent()" title="${isEn ? 'Jump to current quarter' : 'Zum aktuellen Quartal springen'}">
+        📍 ${isEn ? 'Current Quarter' : 'Aktuelles Quartal'}
       </button>
     `;
   } else if (currentOverviewMode === 'halfyear') {
     const currentH = selectedMonth < 6 ? 1 : 2;
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(-1)" title="Vorheriges Halbjahr">
-        ◀ Vorheriges Halbjahr
+      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(-1)" title="${isEn ? 'Previous Half-Year' : 'Vorheriges Halbjahr'}" aria-label="${isEn ? 'Previous Half-Year' : 'Vorheriges Halbjahr'}">
+        ◀ ${isEn ? 'Previous Half-Year' : 'Vorheriges Halbjahr'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-halfyear-select" class="time-select-label">📈 <strong>Halbjahr:</strong></label>
-        <select id="global-halfyear-select" class="time-dropdown" aria-label="Halbjahr auswählen" onchange="handleHalfyearChange(this.value)">
-          <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>1. Halbjahr ${selectedYear} (Januar - Juni)</option>
-          <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>2. Halbjahr ${selectedYear} (Juli - Dezember)</option>
+        <label for="global-halfyear-select" class="time-select-label">📈 <strong>${isEn ? 'Half-Year:' : 'Halbjahr:'}</strong></label>
+        <select id="global-halfyear-select" class="time-dropdown" aria-label="${isEn ? 'Select half-year' : 'Halbjahr auswählen'}" onchange="handleHalfyearChange(this.value)">
+          <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>${isEn ? `1st Half-Year ${selectedYear} (January - June)` : `1. Halbjahr ${selectedYear} (Januar - Juni)`}</option>
+          <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>${isEn ? `2nd Half-Year ${selectedYear} (July - December)` : `2. Halbjahr ${selectedYear} (Juli - Dezember)`}</option>
         </select>
       </div>
-      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(1)" title="Nächstes Halbjahr">
-        Nächstes Halbjahr ▶
+      <button class="btn btn-time-nav" onclick="changeHalfyearRelative(1)" title="${isEn ? 'Next Half-Year' : 'Nächstes Halbjahr'}" aria-label="${isEn ? 'Next Half-Year' : 'Nächstes Halbjahr'}">
+        ${isEn ? 'Next Half-Year' : 'Nächstes Halbjahr'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setHalfyearToCurrent()">
-        📍 Aktuelles Halbjahr
+      <button class="btn btn-time-today" onclick="setHalfyearToCurrent()" title="${isEn ? 'Jump to current half-year' : 'Zum aktuellen Halbjahr springen'}">
+        📍 ${isEn ? 'Current Half-Year' : 'Aktuelles Halbjahr'}
       </button>
     `;
   } else if (currentOverviewMode === 'year') {
     container.innerHTML = `
-      <button class="btn btn-time-nav" onclick="changeYearRelative(-1)" title="Vorheriges Jahr">
-        ◀ Vorheriges Jahr
+      <button class="btn btn-time-nav" onclick="changeYearRelative(-1)" title="${isEn ? 'Previous Year' : 'Vorheriges Jahr'}" aria-label="${isEn ? 'Previous Year' : 'Vorheriges Jahr'}">
+        ◀ ${isEn ? 'Previous Year' : 'Vorheriges Jahr'}
       </button>
       <div class="time-select-wrapper">
-        <label for="global-year-select" class="time-select-label">🗓️ <strong>Jahr:</strong></label>
-        <select id="global-year-select" class="time-dropdown" aria-label="Jahr auswählen" onchange="handleYearChange(this.value)">
-          <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>Jahr 2025</option>
-          <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>Jahr 2026</option>
-          <option value="2027" ${selectedYear === 2027 ? 'selected' : ''}>Jahr 2027</option>
-          <option value="2028" ${selectedYear === 2028 ? 'selected' : ''}>Jahr 2028</option>
+        <label for="global-year-select" class="time-select-label">🗓️ <strong>${isEn ? 'Year:' : 'Jahr:'}</strong></label>
+        <select id="global-year-select" class="time-dropdown" aria-label="${isEn ? 'Select year' : 'Jahr auswählen'}" onchange="handleYearChange(this.value)">
+          <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>${isEn ? 'Year 2025' : 'Jahr 2025'}</option>
+          <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>${isEn ? 'Year 2026' : 'Jahr 2026'}</option>
+          <option value="2027" ${selectedYear === 2027 ? 'selected' : ''}>${isEn ? 'Year 2027' : 'Jahr 2027'}</option>
+          <option value="2028" ${selectedYear === 2028 ? 'selected' : ''}>${isEn ? 'Year 2028' : 'Jahr 2028'}</option>
         </select>
       </div>
-      <button class="btn btn-time-nav" onclick="changeYearRelative(1)" title="Nächstes Jahr">
-        Nächstes Jahr ▶
+      <button class="btn btn-time-nav" onclick="changeYearRelative(1)" title="${isEn ? 'Next Year' : 'Nächstes Jahr'}" aria-label="${isEn ? 'Next Year' : 'Nächstes Jahr'}">
+        ${isEn ? 'Next Year' : 'Nächstes Jahr'} ▶
       </button>
-      <button class="btn btn-time-today" onclick="setYearToCurrent()">
-        📍 Aktuelles Jahr
+      <button class="btn btn-time-today" onclick="setYearToCurrent()" title="${isEn ? 'Jump to current year' : 'Zum aktuellen Jahr springen'}">
+        📍 ${isEn ? 'Current Year' : 'Aktuelles Jahr'}
       </button>
     `;
   }
@@ -13215,6 +13589,9 @@ function updateOverview() {
   if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
   if (currentActiveView !== 'overview') return;
 
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const baseCurrency = typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR';
+
   const bannerTitle = document.getElementById('overview-month-title');
   const bannerSub = document.getElementById('overview-banner-subtitle');
   const accHeading = document.getElementById('section-accounts-heading');
@@ -13233,6 +13610,15 @@ function updateOverview() {
   const cardTransfer = document.getElementById('card-month-transfer');
   const transferSummarySub = document.getElementById('transfer-summary-subtext');
 
+  const totalBalSub = document.getElementById('total-balance-sub');
+  if (totalBalSub) {
+    totalBalSub.textContent = lang === 'en' ? 'Available total balance across all accounts' : 'Verfügbares Gesamtguthaben über alle Konten';
+  }
+  const monthLeftoverSub = document.getElementById('month-leftover-sub');
+  if (monthLeftoverSub) {
+    monthLeftoverSub.textContent = lang === 'en' ? 'Income minus expenses' : 'Einnahmen minus Ausgaben';
+  }
+
   if (periodSection) periodSection.style.display = 'none';
 
   // --- ANSICHT: TAG ---
@@ -13240,21 +13626,21 @@ function updateOverview() {
     const dayStats = calculateDayStats(selectedDateStr);
     const dayFormatted = formatDateGerman(selectedDateStr);
 
-    if (bannerTitle) bannerTitle.textContent = `Tagesübersicht für ${dayFormatted}`;
-    if (bannerSub) bannerSub.textContent = `Hier siehst du deine genauen Kontostände an diesem Tag und alle Einnahmen & Ausgaben am ${dayFormatted}.`;
+    if (bannerTitle) bannerTitle.textContent = lang === 'en' ? ('Daily Overview for ' + dayFormatted) : ('Tagesübersicht für ' + dayFormatted);
+    if (bannerSub) bannerSub.textContent = lang === 'en' ? ('Here you can see your exact account balances on this day and all income & expenses on ' + dayFormatted + '.') : ('Hier siehst du deine genauen Kontostände an diesem Tag und alle Einnahmen & Ausgaben am ' + dayFormatted + '.');
 
-    if (accHeading) accHeading.textContent = `1. 💳 Deine Kontostände am ${dayFormatted}`;
-    if (incHeading) incHeading.textContent = `2. 📥 Einnahmen am ${dayFormatted}`;
-    if (expHeading) expHeading.textContent = `3. 📤 Ausgaben am ${dayFormatted}`;
-    if (totalHeading) totalHeading.textContent = `4. 💰 GESAMTER KONTOSTAND AM ${dayFormatted.toUpperCase()}`;
-    if (leftoverLabel) leftoverLabel.textContent = `Tagesergebnis (${dayFormatted}):`;
+    if (accHeading) accHeading.textContent = lang === 'en' ? ('1. 💳 Your Account Balances on ' + dayFormatted) : ('1. 💳 Deine Kontostände am ' + dayFormatted);
+    if (incHeading) incHeading.textContent = lang === 'en' ? ('2. 📥 Income on ' + dayFormatted) : ('2. 📥 Einnahmen am ' + dayFormatted);
+    if (expHeading) expHeading.textContent = lang === 'en' ? ('3. 📤 Expenses on ' + dayFormatted) : ('3. 📤 Ausgaben am ' + dayFormatted);
+    if (totalHeading) totalHeading.textContent = lang === 'en' ? ('4. 💰 TOTAL BALANCE ON ' + dayFormatted.toUpperCase()) : ('4. 💰 GESAMTER KONTOSTAND AM ' + dayFormatted.toUpperCase());
+    if (leftoverLabel) leftoverLabel.textContent = lang === 'en' ? ('Daily Result (' + dayFormatted + '):') : ('Tagesergebnis (' + dayFormatted + '):');
 
-    if (incomeSummarySub) incomeSummarySub.textContent = `${dayStats.incomeList.length} Einnahme(n) an diesem Tag`;
-    if (expenseSummarySub) expenseSummarySub.textContent = `${dayStats.expenseList.length} Ausgabe(n) an diesem Tag`;
-    if (transferSummarySub) transferSummarySub.textContent = `${dayStats.transferList.length} Umbuchung(en) an diesem Tag`;
+    if (incomeSummarySub) incomeSummarySub.textContent = lang === 'en' ? (dayStats.incomeList.length + ' income(s) on this day') : (dayStats.incomeList.length + ' Einnahme(n) an diesem Tag');
+    if (expenseSummarySub) expenseSummarySub.textContent = lang === 'en' ? (dayStats.expenseList.length + ' expense(s) on this day') : (dayStats.expenseList.length + ' Ausgabe(n) an diesem Tag');
+    if (transferSummarySub) transferSummarySub.textContent = lang === 'en' ? (dayStats.transferList.length + ' transfer(s) on this day') : (dayStats.transferList.length + ' Umbuchung(en) an diesem Tag');
 
-    if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(dayStats.dayIncome)}`;
-    if (cardExpense) cardExpense.textContent = `- ${formatCurrency(dayStats.dayExpense)}`;
+    if (cardIncome) cardIncome.textContent = '+ ' + formatCurrency(dayStats.dayIncome);
+    if (cardExpense) cardExpense.textContent = '- ' + formatCurrency(dayStats.dayExpense);
     if (cardTransfer) cardTransfer.textContent = formatCurrency(dayStats.dayTransfer || 0);
     if (cardTotal) cardTotal.textContent = formatCurrency(dayStats.balances.total);
 
@@ -13264,16 +13650,16 @@ function updateOverview() {
     }
 
     renderAccountCardBalances(dayStats.balances);
-    renderTransactionList(dayStats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen an diesem Tag erfasst.');
-    renderTransactionList(dayStats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben an diesem Tag erfasst.');
-    renderTransactionList(dayStats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen an diesem Tag erfasst.');
-        renderShoppingList();
-  populateFilterAccountDropdown();
+    renderTransactionList(dayStats.incomeList, 'overview-income-items-feed', lang === 'en' ? 'No income recorded on this day.' : 'Keine Einnahmen an diesem Tag erfasst.');
+    renderTransactionList(dayStats.expenseList, 'overview-expense-items-feed', lang === 'en' ? 'No expenses recorded on this day.' : 'Keine Ausgaben an diesem Tag erfasst.');
+    renderTransactionList(dayStats.transferList, 'overview-transfer-items-feed', lang === 'en' ? 'No transfers recorded on this day.' : 'Keine Umbuchungen an diesem Tag erfasst.');
+    populateFilterAccountDropdown();
     renderExpenseRankings(dayStats.expenseList);
     checkLiquidityWarning(dayStats.balances);
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    renderOverviewCurrencyBreakdown([...dayStats.incomeList, ...dayStats.expenseList], baseCurrency);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -13295,12 +13681,12 @@ function updateOverview() {
     const m1 = new Date(wb.mondayStr + 'T00:00:00');
     const m2 = new Date(wb.sundayStr + 'T00:00:00');
     const monthKeys = new Set();
-    monthKeys.add(`${m1.getFullYear()}_${m1.getMonth()}`);
-    monthKeys.add(`${m2.getFullYear()}_${m2.getMonth()}`);
+    monthKeys.add(m1.getFullYear() + '_' + m1.getMonth());
+    monthKeys.add(m2.getFullYear() + '_' + m2.getMonth());
 
     monthKeys.forEach(mk => {
-      const [y, m] = mk.split('_').map(Number);
-      const recList = getRecurringTransactionsForMonth(y, m);
+      const parts = mk.split('_').map(Number);
+      const recList = getRecurringTransactionsForMonth(parts[0], parts[1]);
       recList.forEach(r => {
         if (r.date >= wb.mondayStr && r.date <= wb.sundayStr) {
           allTx.push(r);
@@ -13317,21 +13703,21 @@ function updateOverview() {
     const weekTransfer = transferList.reduce((sum, t) => sum + Number(t.amount || 0), 0);
     const weekLeftover = weekIncome - weekExpense;
 
-    if (bannerTitle) bannerTitle.textContent = `Wochenübersicht für KW ${wb.weekNum} (${monFormatted} bis ${sunFormatted})`;
-    if (bannerSub) bannerSub.textContent = `Hier siehst du deine Kontostände am Ende der Woche sowie alle Einnahmen & Ausgaben in dieser Kalenderwoche.`;
+    if (bannerTitle) bannerTitle.textContent = lang === 'en' ? ('Weekly Overview for Week ' + wb.weekNum + ' (' + monFormatted + ' to ' + sunFormatted + ')') : ('Wochenübersicht für KW ' + wb.weekNum + ' (' + monFormatted + ' bis ' + sunFormatted + ')');
+    if (bannerSub) bannerSub.textContent = lang === 'en' ? 'Here you can see your account balances at the end of the week as well as all income & expenses in this calendar week.' : 'Hier siehst du deine Kontostände am Ende der Woche sowie alle Einnahmen & Ausgaben in dieser Kalenderwoche.';
 
-    if (accHeading) accHeading.textContent = `1. 💳 Deine Kontostände am Ende von KW ${wb.weekNum} (${sunFormatted})`;
-    if (incHeading) incHeading.textContent = `2. 📥 Einnahmen in dieser Woche (KW ${wb.weekNum})`;
-    if (expHeading) expHeading.textContent = `3. 📤 Ausgaben in dieser Woche (KW ${wb.weekNum})`;
-    if (totalHeading) totalHeading.textContent = `4. 💰 GESAMTGUTHABEN AM ENDE VON KW ${wb.weekNum}`;
-    if (leftoverLabel) leftoverLabel.textContent = `Wochen-Ergebnis (KW ${wb.weekNum}):`;
+    if (accHeading) accHeading.textContent = lang === 'en' ? ('1. 💳 Your Account Balances at End of Week ' + wb.weekNum + ' (' + sunFormatted + ')') : ('1. 💳 Deine Kontostände am Ende von KW ' + wb.weekNum + ' (' + sunFormatted + ')');
+    if (incHeading) incHeading.textContent = lang === 'en' ? ('2. 📥 Income this week (Week ' + wb.weekNum + ')') : ('2. 📥 Einnahmen in dieser Woche (KW ' + wb.weekNum + ')');
+    if (expHeading) expHeading.textContent = lang === 'en' ? ('3. 📤 Expenses this week (Week ' + wb.weekNum + ')') : ('3. 📤 Ausgaben in dieser Woche (KW ' + wb.weekNum + ')');
+    if (totalHeading) totalHeading.textContent = lang === 'en' ? ('4. 💰 TOTAL BALANCE AT END OF WEEK ' + wb.weekNum) : ('4. 💰 GESAMTGUTHABEN AM ENDE VON KW ' + wb.weekNum);
+    if (leftoverLabel) leftoverLabel.textContent = lang === 'en' ? ('Weekly Result (Week ' + wb.weekNum + '):') : ('Wochen-Ergebnis (KW ' + wb.weekNum + '):');
 
-    if (incomeSummarySub) incomeSummarySub.textContent = `${incomeList.length} Einnahme(n) in dieser Woche`;
-    if (expenseSummarySub) expenseSummarySub.textContent = `${expenseList.length} Ausgabe(n) in dieser Woche`;
-    if (transferSummarySub) transferSummarySub.textContent = `${transferList.length} Umbuchung(en) in dieser Woche`;
+    if (incomeSummarySub) incomeSummarySub.textContent = lang === 'en' ? (incomeList.length + ' income(s) this week') : (incomeList.length + ' Einnahme(n) in dieser Woche');
+    if (expenseSummarySub) expenseSummarySub.textContent = lang === 'en' ? (expenseList.length + ' expense(s) this week') : (expenseList.length + ' Ausgabe(n) in dieser Woche');
+    if (transferSummarySub) transferSummarySub.textContent = lang === 'en' ? (transferList.length + ' transfer(s) this week') : (transferList.length + ' Umbuchung(en) in dieser Woche');
 
-    if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(weekIncome)}`;
-    if (cardExpense) cardExpense.textContent = `- ${formatCurrency(weekExpense)}`;
+    if (cardIncome) cardIncome.textContent = '+ ' + formatCurrency(weekIncome);
+    if (cardExpense) cardExpense.textContent = '- ' + formatCurrency(weekExpense);
     if (cardTransfer) cardTransfer.textContent = formatCurrency(weekTransfer);
     if (cardTotal) cardTotal.textContent = formatCurrency(weekBalances.total);
 
@@ -13341,15 +13727,16 @@ function updateOverview() {
     }
 
     renderAccountCardBalances(weekBalances);
-    renderTransactionList(incomeList, 'overview-income-items-feed', 'Keine Einnahmen in dieser Kalenderwoche erfasst.');
-    renderTransactionList(expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in dieser Kalenderwoche erfasst.');
-    renderTransactionList(transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen in dieser Kalenderwoche erfasst.');
-        populateFilterAccountDropdown();
+    renderTransactionList(incomeList, 'overview-income-items-feed', lang === 'en' ? 'No income recorded in this calendar week.' : 'Keine Einnahmen in dieser Kalenderwoche erfasst.');
+    renderTransactionList(expenseList, 'overview-expense-items-feed', lang === 'en' ? 'No expenses recorded in this calendar week.' : 'Keine Ausgaben in dieser Kalenderwoche erfasst.');
+    renderTransactionList(transferList, 'overview-transfer-items-feed', lang === 'en' ? 'No transfers recorded in this calendar week.' : 'Keine Umbuchungen in dieser Kalenderwoche erfasst.');
+    populateFilterAccountDropdown();
     renderExpenseRankings(allTx.filter(t => t.type === 'expense'));
     checkLiquidityWarning(weekBalances);
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    renderOverviewCurrencyBreakdown([...incomeList, ...expenseList], baseCurrency);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -13359,21 +13746,21 @@ function updateOverview() {
     const stats = calculateMonthStats(selectedYear, selectedMonth);
     const monthName = MONTH_NAMES[selectedMonth];
 
-    if (bannerTitle) bannerTitle.textContent = `Monatsübersicht für ${monthName} ${selectedYear}`;
-    if (bannerSub) bannerSub.textContent = `Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis für ${monthName} ${selectedYear}.`;
+    if (bannerTitle) bannerTitle.textContent = lang === 'en' ? ('Monthly Overview for ' + monthName + ' ' + selectedYear) : ('Monatsübersicht für ' + monthName + ' ' + selectedYear);
+    if (bannerSub) bannerSub.textContent = lang === 'en' ? ('Here you can see your accounts, income, expenses and your total result for ' + monthName + ' ' + selectedYear + '.') : ('Hier siehst du deine Konten, Einnahmen, Ausgaben und dein Gesamtergebnis für ' + monthName + ' ' + selectedYear + '.');
 
-    if (accHeading) accHeading.textContent = `1. 💳 Deine Kontostände (Ende ${monthName} ${selectedYear})`;
-    if (incHeading) incHeading.textContent = `2. 📥 Einnahmen im ${monthName} ${selectedYear}`;
-    if (expHeading) expHeading.textContent = `3. 📤 Ausgaben im ${monthName} ${selectedYear}`;
-    if (totalHeading) totalHeading.textContent = `4. 💰 GESAMTER KONTOSTAND & ERGEBNIS (${monthName.toUpperCase()} ${selectedYear})`;
-    if (leftoverLabel) leftoverLabel.textContent = `Ergebnis im ${monthName}:`;
+    if (accHeading) accHeading.textContent = lang === 'en' ? ('1. 💳 Your Account Balances (End of ' + monthName + ' ' + selectedYear + ')') : ('1. 💳 Deine Kontostände (Ende ' + monthName + ' ' + selectedYear + ')');
+    if (incHeading) incHeading.textContent = lang === 'en' ? ('2. 📥 Income in ' + monthName + ' ' + selectedYear) : ('2. 📥 Einnahmen im ' + monthName + ' ' + selectedYear);
+    if (expHeading) expHeading.textContent = lang === 'en' ? ('3. 📤 Expenses in ' + monthName + ' ' + selectedYear) : ('3. 📤 Ausgaben im ' + monthName + ' ' + selectedYear);
+    if (totalHeading) totalHeading.textContent = lang === 'en' ? ('4. 💰 TOTAL BALANCE & RESULT (' + monthName.toUpperCase() + ' ' + selectedYear + ')') : ('4. 💰 GESAMTER KONTOSTAND & ERGEBNIS (' + monthName.toUpperCase() + ' ' + selectedYear + ')');
+    if (leftoverLabel) leftoverLabel.textContent = lang === 'en' ? ('Result in ' + monthName + ':') : ('Ergebnis im ' + monthName + ':');
 
-    if (incomeSummarySub) incomeSummarySub.textContent = `${stats.incomeList.length} Einnahme(n) in diesem Monat`;
-    if (expenseSummarySub) expenseSummarySub.textContent = `${stats.expenseList.length} Ausgabe(n) in diesem Monat`;
-    if (transferSummarySub) transferSummarySub.textContent = `${stats.transferList.length} Umbuchung(en) & Sparpläne im ${monthName}`;
+    if (incomeSummarySub) incomeSummarySub.textContent = lang === 'en' ? (stats.incomeList.length + ' income(s) this month') : (stats.incomeList.length + ' Einnahme(n) in diesem Monat');
+    if (expenseSummarySub) expenseSummarySub.textContent = lang === 'en' ? (stats.expenseList.length + ' expense(s) this month') : (stats.expenseList.length + ' Ausgabe(n) in diesem Monat');
+    if (transferSummarySub) transferSummarySub.textContent = lang === 'en' ? (stats.transferList.length + ' transfer(s) & savings plans in ' + monthName) : (stats.transferList.length + ' Umbuchung(en) & Sparpläne im ' + monthName);
 
-    if (cardIncome) cardIncome.textContent = `+ ${formatCurrency(stats.totalIncome)}`;
-    if (cardExpense) cardExpense.textContent = `- ${formatCurrency(stats.totalExpense)}`;
+    if (cardIncome) cardIncome.textContent = '+ ' + formatCurrency(stats.totalIncome);
+    if (cardExpense) cardExpense.textContent = '- ' + formatCurrency(stats.totalExpense);
     if (cardTransfer) cardTransfer.textContent = formatCurrency(stats.totalTransfer || 0);
     if (cardTotal) cardTotal.textContent = formatCurrency(stats.balances.total);
 
@@ -13383,15 +13770,16 @@ function updateOverview() {
     }
 
     renderAccountCardBalances(stats.balances);
-    renderTransactionList(stats.incomeList, 'overview-income-items-feed', 'Keine Einnahmen in diesem Monat erfasst.');
-    renderTransactionList(stats.expenseList, 'overview-expense-items-feed', 'Keine Ausgaben in diesem Monat erfasst.');
-    renderTransactionList(stats.transferList, 'overview-transfer-items-feed', 'Keine Umbuchungen oder Sparpläne in diesem Monat erfasst.');
-        populateFilterAccountDropdown();
+    renderTransactionList(stats.incomeList, 'overview-income-items-feed', lang === 'en' ? 'No income recorded in this month.' : 'Keine Einnahmen in diesem Monat erfasst.');
+    renderTransactionList(stats.expenseList, 'overview-expense-items-feed', lang === 'en' ? 'No expenses recorded in this month.' : 'Keine Ausgaben in diesem Monat erfasst.');
+    renderTransactionList(stats.transferList, 'overview-transfer-items-feed', lang === 'en' ? 'No transfers or savings plans recorded in this month.' : 'Keine Umbuchungen oder Sparpläne in diesem Monat erfasst.');
+    populateFilterAccountDropdown();
     renderExpenseRankings(stats.expenseList);
     checkLiquidityWarning(stats.balances);
     renderBudgetsList();
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
+    renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -13729,6 +14117,120 @@ document.addEventListener('DOMContentLoaded', () => {
 // ----------------------------------------------------------------------------
 // 10. LISTE RENDERN: BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG IN DER ÜBERSICHT
 // ----------------------------------------------------------------------------
+
+function renderOverviewCurrencyBreakdown(allTx, baseCurrency) {
+  const card = document.getElementById('overview-currency-breakdown-card');
+  const list = document.getElementById('overview-currency-breakdown-list');
+  const head = document.getElementById('heading-curr-breakdown');
+  if (!card || !list) return;
+
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const baseInfo = getCurrencyInfo(baseCurrency);
+  const baseName = lang === 'en' ? baseInfo.name_en : baseInfo.name_de;
+
+  if (head) {
+    head.textContent = lang === 'en' ? '💱 Breakdown by Currencies & Total Result:' : '💱 Beträge nach Währungen aufgeteilt & Gesamtergebnis:';
+  }
+
+  // Check if there are transactions in foreign currencies
+  const foreignTx = allTx.filter(t => t.originalCurrency && t.originalCurrency !== baseCurrency);
+  if (foreignTx.length === 0) {
+    card.style.display = 'none';
+    list.innerHTML = '';
+    return;
+  }
+
+  card.style.display = 'block';
+
+  // 1. Group by currency
+  const currStats = {};
+  // Base currency
+  currStats[baseCurrency] = { income: 0, expense: 0, count: 0, isBase: true };
+
+  allTx.forEach(t => {
+    const isInc = t.type === 'income';
+    const isExp = t.type === 'expense';
+    if (!isInc && !isExp) return;
+
+    const c = (t.originalCurrency && CURRENCY_DATABASE[t.originalCurrency]) ? t.originalCurrency : baseCurrency;
+    if (!currStats[c]) {
+      currStats[c] = { income: 0, expense: 0, count: 0, isBase: false, origIncome: 0, origExpense: 0 };
+    }
+
+    currStats[c].count++;
+    const amtBase = Number(t.amount || 0);
+    const amtOrig = Number(t.originalAmount || t.amount || 0);
+
+    if (isInc) {
+      currStats[c].income += amtBase;
+      if (currStats[c].origIncome !== undefined) currStats[c].origIncome += amtOrig;
+    } else if (isExp) {
+      currStats[c].expense += amtBase;
+      if (currStats[c].origExpense !== undefined) currStats[c].origExpense += amtOrig;
+    }
+  });
+
+  let outHtml = '';
+
+  // STEP 1: STANDARD WÄHRUNG ZUERST
+  const baseStat = currStats[baseCurrency] || { income: 0, expense: 0 };
+  const baseLeftover = baseStat.income - baseStat.expense;
+  outHtml += '<div style="padding: 10px 14px; background: rgba(33, 150, 243, 0.08); border-radius: 6px; border-left: 4px solid #2196F3; margin-bottom: 8px;">';
+  outHtml += '<div style="font-weight: bold; color: var(--accent-action); margin-bottom: 4px;">';
+  outHtml += baseInfo.flag + ' ' + (lang === 'en' ? '1. Default Currency (' : '1. Standard-Währung (') + baseName + ' ' + baseInfo.symbol + '):';
+  outHtml += '</div>';
+  outHtml += '<div style="display: flex; gap: 16px; flex-wrap: wrap;">';
+  outHtml += '<span>' + (lang === 'en' ? 'Income: ' : 'Einnahmen: ') + '<strong style="color: var(--accent-income);">' + formatCurrency(baseStat.income, baseCurrency) + '</strong></span>';
+  outHtml += '<span>' + (lang === 'en' ? 'Expenses: ' : 'Ausgaben: ') + '<strong style="color: var(--accent-expense);">' + formatCurrency(baseStat.expense, baseCurrency) + '</strong></span>';
+  outHtml += '<span>' + (lang === 'en' ? 'Balance: ' : 'Saldo: ') + '<strong>' + formatCurrency(baseLeftover, baseCurrency) + '</strong></span>';
+  outHtml += '</div></div>';
+
+  // STEP 2: ANDERE WÄHRUNGEN DANACH
+  outHtml += '<div style="font-weight: bold; margin: 10px 0 6px 0; color: var(--text-color);">' + (lang === 'en' ? '2. Other Currencies:' : '2. Andere Währungen:') + '</div>';
+  for (const [cCode, stat] of Object.entries(currStats)) {
+    if (cCode === baseCurrency) continue;
+    const cInfo = getCurrencyInfo(cCode);
+    const cName = lang === 'en' ? cInfo.name_en : cInfo.name_de;
+    const origLeftover = (stat.origIncome || 0) - (stat.origExpense || 0);
+    const baseEquivLeftover = stat.income - stat.expense;
+
+    outHtml += '<div style="padding: 10px 14px; background: rgba(255, 152, 0, 0.08); border-radius: 6px; border-left: 4px solid #FF9800; margin-bottom: 8px;">';
+    outHtml += '<div style="font-weight: bold; color: #E65100; margin-bottom: 4px;">';
+    outHtml += cInfo.flag + ' ' + cCode + ' - ' + cName + ' (' + cInfo.symbol + '): ' + stat.count + ' ' + (lang === 'en' ? 'transaction(s)' : 'Buchung(en)');
+    outHtml += '</div>';
+    outHtml += '<div style="display: flex; gap: 16px; flex-wrap: wrap;">';
+    if (stat.origIncome > 0) {
+      outHtml += '<span>' + (lang === 'en' ? 'Income: ' : 'Einnahmen: ') + '<strong style="color: var(--accent-income);">' + formatCurrency(stat.origIncome, cCode) + ' (≈ ' + formatCurrency(stat.income, baseCurrency) + ')</strong></span>';
+    }
+    if (stat.origExpense > 0) {
+      outHtml += '<span>' + (lang === 'en' ? 'Expenses: ' : 'Ausgaben: ') + '<strong style="color: var(--accent-expense);">' + formatCurrency(stat.origExpense, cCode) + ' (≈ ' + formatCurrency(stat.expense, baseCurrency) + ')</strong></span>';
+    }
+    outHtml += '<span>' + (lang === 'en' ? 'Balance: ' : 'Saldo: ') + '<strong>' + formatCurrency(origLeftover, cCode) + ' (≈ ' + formatCurrency(baseEquivLeftover, baseCurrency) + ')</strong></span>';
+    outHtml += '</div></div>';
+  }
+
+  // STEP 3: GESAMT-ÜBERSICHT DAHINTER IN DER STANDARD-WÄHRUNG
+  let totalAllIncome = 0;
+  let totalAllExpense = 0;
+  Object.values(currStats).forEach(s => {
+    totalAllIncome += s.income;
+    totalAllExpense += s.expense;
+  });
+  const totalAllLeftover = totalAllIncome - totalAllExpense;
+
+  outHtml += '<div style="padding: 12px 16px; background: rgba(76, 175, 80, 0.12); border-radius: 6px; border-left: 5px solid #4CAF50; margin-top: 10px;">';
+  outHtml += '<div style="font-weight: bold; font-size: 16px; color: #2E7D32; margin-bottom: 4px;">';
+  outHtml += '💰 ' + (lang === 'en' ? '3. Overall Total (All Currencies Converted to ' : '3. Gesamt-Übersicht (Alle Währungen umgerechnet in ') + baseName + '):';
+  outHtml += '</div>';
+  outHtml += '<div style="display: flex; gap: 20px; flex-wrap: wrap; font-size: 16px;">';
+  outHtml += '<span>' + (lang === 'en' ? 'Total Income: ' : 'Gesamteinnahmen: ') + '<strong style="color: var(--accent-income);">+ ' + formatCurrency(totalAllIncome, baseCurrency) + '</strong></span>';
+  outHtml += '<span>' + (lang === 'en' ? 'Total Expenses: ' : 'Gesamtausgaben: ') + '<strong style="color: var(--accent-expense);">- ' + formatCurrency(totalAllExpense, baseCurrency) + '</strong></span>';
+  outHtml += '<span>' + (lang === 'en' ? 'Total Result: ' : 'Gesamtergebnis: ') + '<strong style="color: ' + (totalAllLeftover >= 0 ? 'var(--accent-income)' : 'var(--accent-expense)') + ';">' + (totalAllLeftover >= 0 ? '+ ' : '') + formatCurrency(totalAllLeftover, baseCurrency) + '</strong></span>';
+  outHtml += '</div></div>';
+
+  list.innerHTML = outHtml;
+}
+
 function renderTransactionList(list, containerId, emptyText) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -13919,6 +14421,7 @@ function toggleExpenseFrequencyFields() {
 }
 
 function handleMainExpenseAmountInput() {
+  if (typeof updateExpenseCurrencyHint === 'function') updateExpenseCurrencyHint();
   const mainAmountInput = document.getElementById('exp-amount');
   const freq = document.getElementById('exp-frequency') ? document.getElementById('exp-frequency').value : 'once';
   if (freq === 'installment') {
@@ -13941,6 +14444,7 @@ function handleMainExpenseAmountInput() {
 }
 
 function handleMainIncomeAmountInput() {
+  if (typeof updateIncomeCurrencyHint === 'function') updateIncomeCurrencyHint();
   const mainAmountInput = document.getElementById('inc-amount');
   const splitToggle = document.getElementById('inc-split-toggle');
   if (splitToggle && splitToggle.checked) {
@@ -15615,7 +16119,17 @@ function updateIncomeSplitSummary() {
 
 async function handleAddIncome(e) {
   e.preventDefault();
-  const amount = parseFloat(document.getElementById('inc-amount').value);
+  let amount = parseFloat(document.getElementById('inc-amount').value);
+  const incCurrEl = document.getElementById('inc-currency');
+  const incCurr = incCurrEl ? incCurrEl.value : (typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR');
+  const baseCurr = typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR';
+  let origIncAmount = amount;
+  let incCurrencyTag = '';
+  if (incCurr !== baseCurr && typeof convertCurrency === 'function') {
+    amount = convertCurrency(amount, incCurr, baseCurr);
+    amount = Math.round(amount * 100) / 100;
+    incCurrencyTag = '[' + formatCurrency(origIncAmount, incCurr) + ']';
+  }
   const freq = document.getElementById('inc-frequency').value;
   const account = document.getElementById('inc-account') ? document.getElementById('inc-account').value : 'bank';
   const category = document.getElementById('inc-category').value;
@@ -15623,7 +16137,10 @@ async function handleAddIncome(e) {
   const dateInputVal = document.getElementById('inc-date') ? document.getElementById('inc-date').value : '';
   const todayStr = new Date().toISOString().split('T')[0];
   const date = dateInputVal || todayStr;
-  const desc = document.getElementById('inc-desc').value.trim();
+  let desc = document.getElementById('inc-desc').value.trim();
+  if (incCurrencyTag) {
+    desc = desc ? (desc + ' ' + incCurrencyTag) : incCurrencyTag;
+  }
 
   if (isNaN(amount) || amount <= 0) return;
 
@@ -20176,19 +20693,20 @@ function renderOverviewPeerLoans() {
   const net = lentRemainingTotal - borrowedRemainingTotal;
   if (totalEl) {
     if (net > 0) {
-      totalEl.textContent = `+ ${formatCurrency(net)} Forderung`;
+      const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+    totalEl.textContent = `+ ${formatCurrency(net)} ${lang === 'en' ? 'Claim / Receivable' : 'Forderung'}`;
       totalEl.style.color = 'var(--accent-income, #2E7D32)';
     } else if (net < 0) {
-      totalEl.textContent = `- ${formatCurrency(Math.abs(net))} Verbindlichkeit`;
+      totalEl.textContent = `- ${formatCurrency(Math.abs(net))} ${lang === 'en' ? 'Liability / Debt' : 'Verbindlichkeit'}`;
       totalEl.style.color = '#D32F2F';
     } else {
-      totalEl.textContent = '0,00 € ausgeglichen';
+      totalEl.textContent = lang === 'en' ? '0.00 settled' : '0,00 € ausgeglichen';
       totalEl.style.color = '#8E24AA';
     }
   }
 
   if (subText) {
-    subText.textContent = `${activeLoans.length} offene Leihgabe(n) (Verliehen: ${formatCurrency(lentRemainingTotal)} | Geliehen: ${formatCurrency(borrowedRemainingTotal)})`;
+    subText.textContent = lang === 'en' ? `${activeLoans.length} open loan(s) (Lent: ${formatCurrency(lentRemainingTotal)} | Borrowed: ${formatCurrency(borrowedRemainingTotal)})` : `${activeLoans.length} offene Leihgabe(n) (Verliehen: ${formatCurrency(lentRemainingTotal)} | Geliehen: ${formatCurrency(borrowedRemainingTotal)})`;
   }
 
   let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
