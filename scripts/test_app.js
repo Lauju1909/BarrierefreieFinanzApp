@@ -1335,6 +1335,26 @@ decimalFieldIds.forEach(id => {
 });
 console.log('Decimal Amount Input (Comma, Semicolon, Dot) Support: 100% PASS!');
 
+// 15. Test 3-Tab Smartphone-Sync Menu Structure (1. Gekoppelte Geräte | 2. Gerät koppeln | 3. Kopplungsdaten)
+console.log('Testing 3-Tab Smartphone-Sync Menu Structure...');
+const syncTabIds = [
+  'btn-sync-tab-paired',
+  'btn-sync-mode-desktop',
+  'btn-sync-mode-mobile',
+  'sync-panel-paired',
+  'sync-no-paired-placeholder',
+  'sync-paired-status',
+  'sync-desktop-box',
+  'sync-mobile-box'
+];
+syncTabIds.forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing 3-Tab Sync HTML element id="${id}"`);
+    process.exit(1);
+  }
+});
+console.log('3-Tab Smartphone-Sync Menu Structure: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');

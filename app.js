@@ -13337,25 +13337,42 @@ function setQuickRecDay(type, dayVal) {
 // SMARTPHONE & DESKTOP LIVE-SYNCHRONISATION CONTROLLER (E2EE)
 // =============================================================================
 function getSyncMode() {
-  const isAndroid = !!window.__IS_ANDROID__ || 
-                    (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
-                    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  return isAndroid ? 'mobile' : 'desktop';
+  return 'paired';
 }
 
 function setSyncMode(mode) {
-  const mobileBox = document.getElementById('sync-mobile-box');
-  const desktopBox = document.getElementById('sync-desktop-box');
-  const btnMob = document.getElementById('btn-sync-mode-mobile');
-  const btnDesk = document.getElementById('btn-sync-mode-desktop');
+  let normMode = 'paired';
+  if (mode === 'connect' || mode === 'desktop') normMode = 'connect';
+  else if (mode === 'owndata' || mode === 'mobile') normMode = 'owndata';
+  else normMode = 'paired';
 
-  if (btnMob) {
-    btnMob.style.background = mode === 'mobile' ? 'var(--primary, #1976D2)' : '';
-    btnMob.style.color = mode === 'mobile' ? '#fff' : '';
+  window.__CURRENT_SYNC_TAB__ = normMode;
+
+  const pairedPanel = document.getElementById('sync-panel-paired');
+  const desktopBox = document.getElementById('sync-desktop-box');
+  const mobileBox = document.getElementById('sync-mobile-box');
+
+  const btnPaired = document.getElementById('btn-sync-tab-paired');
+  const btnDesk = document.getElementById('btn-sync-mode-desktop');
+  const btnMob = document.getElementById('btn-sync-mode-mobile');
+
+  if (btnPaired) {
+    const active = normMode === 'paired';
+    btnPaired.setAttribute('aria-selected', active ? 'true' : 'false');
+    btnPaired.style.background = active ? 'var(--primary, #1976D2)' : '';
+    btnPaired.style.color = active ? '#fff' : '';
   }
   if (btnDesk) {
-    btnDesk.style.background = mode === 'desktop' ? 'var(--primary, #1976D2)' : '';
-    btnDesk.style.color = mode === 'desktop' ? '#fff' : '';
+    const active = normMode === 'connect';
+    btnDesk.setAttribute('aria-selected', active ? 'true' : 'false');
+    btnDesk.style.background = active ? 'var(--primary, #1976D2)' : '';
+    btnDesk.style.color = active ? '#fff' : '';
+  }
+  if (btnMob) {
+    const active = normMode === 'owndata';
+    btnMob.setAttribute('aria-selected', active ? 'true' : 'false');
+    btnMob.style.background = active ? 'var(--primary, #1976D2)' : '';
+    btnMob.style.color = active ? '#fff' : '';
   }
 
   const myName = (typeof SyncEngine !== 'undefined' && SyncEngine.getDeviceName) ? SyncEngine.getDeviceName() : '';
@@ -13379,19 +13396,34 @@ function setSyncMode(mode) {
   // Immer im Hintergrund auf eingehende Synchronisationen (von PC, Laptop oder Handy) lauschen
   restartSyncListener();
 
-  if (mode === 'mobile') {
-    if (mobileBox) mobileBox.style.display = 'block';
+  if (normMode === 'paired') {
+    if (pairedPanel) pairedPanel.style.display = 'block';
     if (desktopBox) desktopBox.style.display = 'none';
-    announceNVDA(`Eigener Kopplungscode geöffnet. Gerätename: ${myName}. Kopplungscode: ${myCode}. Bereit für Verbindung mit PC oder Laptop.`);
-  } else {
     if (mobileBox) mobileBox.style.display = 'none';
+    const list = getPairedDevicesList();
+    if (list.length > 0) {
+      announceNVDA(`1. Gekoppelte Geräte geöffnet. Verbunden mit: ${list.map(d => d.name).join(', ')}.`);
+    } else {
+      announceNVDA('1. Gekoppelte Geräte geöffnet. Aktuell ist noch kein Gerät gekoppelt.');
+    }
+  } else if (normMode === 'connect') {
+    if (pairedPanel) pairedPanel.style.display = 'none';
     if (desktopBox) desktopBox.style.display = 'block';
+    if (mobileBox) mobileBox.style.display = 'none';
+
+    const manualForm = document.getElementById('sync-desktop-form');
+    if (manualForm) manualForm.style.display = 'block';
 
     const targetDevInput = document.getElementById('input-target-device');
-    if (targetDevInput && (!isSyncConnected() || window.__MANUAL_SYNC_EDIT__)) {
+    if (targetDevInput) {
       targetDevInput.focus();
     }
-    announceNVDA('Multi-Geräte-Synchronisation geöffnet.');
+    announceNVDA('2. Gerät koppeln geöffnet. Bitte Gerätename und Kopplungscode des anderen Geräts eingeben.');
+  } else {
+    if (pairedPanel) pairedPanel.style.display = 'none';
+    if (desktopBox) desktopBox.style.display = 'none';
+    if (mobileBox) mobileBox.style.display = 'block';
+    announceNVDA(`3. Kopplungsdaten geöffnet. Eigener Gerätename: ${myName}. Eigener Kopplungscode: ${myCode}.`);
   }
 }
 
@@ -13623,6 +13655,7 @@ function updateSyncConnectedUI() {
   }
 
   // Reiter 8 (Desktop / Laptop-Ansicht): Gespeicherte Geräte & 1-Klick-Abgleich
+  const noPairedPlaceholder = document.getElementById('sync-no-paired-placeholder');
   const pairedCard = document.getElementById('sync-desktop-paired-card');
   const manualForm = document.getElementById('sync-desktop-form');
   const pairedCountSpan = document.getElementById('sync-desktop-paired-count');
@@ -13638,6 +13671,7 @@ function updateSyncConnectedUI() {
     if (targetDevInput && !targetDevInput.value && !window.__MANUAL_SYNC_EDIT__) targetDevInput.value = primaryDev;
     if (targetCodeInput && !targetCodeInput.value && pairedCode && !window.__MANUAL_SYNC_EDIT__) targetCodeInput.value = pairedCode;
 
+    if (noPairedPlaceholder) noPairedPlaceholder.style.display = 'none';
     if (pairedCard) pairedCard.style.display = 'block';
     if (pairedCountSpan) pairedCountSpan.textContent = String(pairedList.length || 1);
     if (pairedDevSpan) pairedDevSpan.textContent = allNamesStr;
@@ -13678,8 +13712,9 @@ function updateSyncConnectedUI() {
       }).join('');
     }
 
-    if (manualForm && !window.__MANUAL_SYNC_EDIT__) manualForm.style.display = 'none';
+    if (manualForm) manualForm.style.display = 'block';
   } else {
+    if (noPairedPlaceholder) noPairedPlaceholder.style.display = 'block';
     if (pairedCard) pairedCard.style.display = 'none';
     if (pairedListContainer) pairedListContainer.innerHTML = '';
     if (manualForm) manualForm.style.display = 'block';
@@ -13746,32 +13781,40 @@ async function triggerQuickSyncWithPaired() {
   const pairedList = getPairedDevicesList();
   if (pairedList.length > 1 && typeof SyncEngine !== 'undefined' && typeof SyncEngine.syncAllPairedDevices === 'function') {
     const statusBox = document.getElementById('sync-sender-status');
+    const pairedStatusBox = document.getElementById('sync-paired-status');
     const mobileStatus = document.getElementById('sync-mobile-status-connected');
-    if (statusBox) {
-      statusBox.style.display = 'block';
-      statusBox.style.background = 'rgba(33, 150, 243, 0.1)';
-      statusBox.style.color = '#0284c7';
-      statusBox.textContent = `🔄 Synchronisiere mit allen ${pairedList.length} gekoppelten Geräten (${pairedList.map(d => d.name).join(', ')})...`;
-    }
+    const initMsg = `🔄 Synchronisiere mit allen ${pairedList.length} gekoppelten Geräten (${pairedList.map(d => d.name).join(', ')})...`;
+    [statusBox, pairedStatusBox].forEach(box => {
+      if (box) {
+        box.style.display = 'block';
+        box.style.background = 'rgba(33, 150, 243, 0.1)';
+        box.style.color = '#0284c7';
+        box.textContent = initMsg;
+      }
+    });
     try {
       await SyncEngine.syncAllPairedDevices((state, msg) => {
-        if (statusBox) {
-          statusBox.textContent = msg;
-          if (state === 'success') {
-            statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
-            statusBox.style.color = '#15803d';
+        [statusBox, pairedStatusBox].forEach(box => {
+          if (box) {
+            box.textContent = msg;
+            if (state === 'success') {
+              box.style.background = 'rgba(76, 175, 80, 0.15)';
+              box.style.color = '#15803d';
+            }
           }
-        }
+        });
         if (mobileStatus) {
           mobileStatus.textContent = msg;
         }
       }, false);
     } catch (err) {
-      if (statusBox) {
-        statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-        statusBox.style.color = '#b91c1c';
-        statusBox.textContent = '❌ ' + err.message;
-      }
+      [statusBox, pairedStatusBox].forEach(box => {
+        if (box) {
+          box.style.background = 'rgba(239, 68, 68, 0.15)';
+          box.style.color = '#b91c1c';
+          box.textContent = '❌ ' + err.message;
+        }
+      });
     }
     return;
   }
@@ -13854,7 +13897,6 @@ async function triggerPushMasterToMailbox() {
 
 function editSyncConnection() {
   window.__MANUAL_SYNC_EDIT__ = true;
-  const manualForm = document.getElementById('sync-desktop-form');
   const targetDevInput = document.getElementById('input-target-device');
   const targetCodeInput = document.getElementById('input-target-code');
   if (targetDevInput) targetDevInput.value = '';
@@ -13863,13 +13905,7 @@ function editSyncConnection() {
     const activeCode = (typeof SyncEngine !== 'undefined' && SyncEngine.getActivePairingCode) ? SyncEngine.getActivePairingCode() : '';
     targetCodeInput.value = activeCode || '';
   }
-  if (manualForm) {
-    manualForm.style.display = 'block';
-    if (targetDevInput) targetDevInput.focus();
-  }
-  if (typeof announceNVDA === 'function') {
-    announceNVDA('Eingabefelder zum Hinzufügen eines weiteren Geräts (z. B. Laptop, Smartphone oder PC) eingeblendet.');
-  }
+  setSyncMode('connect');
 }
 
 function initLockScreenSync() {
@@ -13976,6 +14012,7 @@ async function handleStartSync(e, forceOverwrite = false) {
   const devInput = document.getElementById('input-target-device');
   const codeInput = document.getElementById('input-target-code');
   const statusBox = document.getElementById('sync-sender-status');
+  const pairedStatusBox = document.getElementById('sync-paired-status');
   const btnTrigger = document.getElementById('btn-trigger-sync');
   const btnForce = document.getElementById('btn-trigger-overwrite');
   const btnPairedForce = document.getElementById('btn-force-overwrite-paired');
@@ -13995,25 +14032,30 @@ async function handleStartSync(e, forceOverwrite = false) {
   const myDevice = (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getDeviceName === 'function') ? SyncEngine.getDeviceName() : '';
   if (!isAndroid && (targetName.toLowerCase() === 'computer' || targetName.toLowerCase() === 'pc' || (myDevice && targetName.toLowerCase() === myDevice.toLowerCase()))) {
     const msg = '⚠️ Bitte gib den Gerätenamen deines Partnergeräts ein (z. B. Handy-XXXX oder PC-XXXX), nicht dieses eigene Gerät.';
-    if (statusBox) {
-      statusBox.style.display = 'block';
-      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-      statusBox.style.color = '#b91c1c';
-      statusBox.textContent = msg;
-    }
+    [statusBox, pairedStatusBox].forEach(box => {
+      if (box) {
+        box.style.display = 'block';
+        box.style.background = 'rgba(239, 68, 68, 0.15)';
+        box.style.color = '#b91c1c';
+        box.textContent = msg;
+      }
+    });
     if (typeof announceNVDA === 'function') announceNVDA(msg, true);
     else alert(msg);
     return;
   }
 
-  if (statusBox) {
-    statusBox.style.display = 'block';
-    statusBox.style.background = forceOverwrite ? 'rgba(245, 158, 11, 0.15)' : 'rgba(33, 150, 243, 0.1)';
-    statusBox.style.color = forceOverwrite ? '#b45309' : '#0284c7';
-    statusBox.textContent = forceOverwrite 
-      ? `📲 Starte vollständiges Überschreiben von ${targetName}...` 
-      : `🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung mit ${targetName}...`;
-  }
+  const startMsg = forceOverwrite 
+    ? `📲 Starte vollständiges Überschreiben von ${targetName}...` 
+    : `🚀 Starte hochsichere Ende-zu-Ende verschlüsselte Verbindung mit ${targetName}...`;
+  [statusBox, pairedStatusBox].forEach(box => {
+    if (box) {
+      box.style.display = 'block';
+      box.style.background = forceOverwrite ? 'rgba(245, 158, 11, 0.15)' : 'rgba(33, 150, 243, 0.1)';
+      box.style.color = forceOverwrite ? '#b45309' : '#0284c7';
+      box.textContent = startMsg;
+    }
+  });
 
   if (btnTrigger) btnTrigger.disabled = true;
   if (btnForce) btnForce.disabled = true;
@@ -14022,22 +14064,29 @@ async function handleStartSync(e, forceOverwrite = false) {
   try {
     window.__MANUAL_SYNC_EDIT__ = false;
     await SyncEngine.syncWithSmartphone(targetName, targetCode, (state, msg) => {
-      if (statusBox) {
-        statusBox.textContent = msg;
-        if (state === 'success') {
-          statusBox.style.background = 'rgba(76, 175, 80, 0.15)';
-          statusBox.style.color = '#15803d';
+      [statusBox, pairedStatusBox].forEach(box => {
+        if (box) {
+          box.textContent = msg;
+          if (state === 'success') {
+            box.style.background = 'rgba(76, 175, 80, 0.15)';
+            box.style.color = '#15803d';
+          }
         }
-      }
+      });
       announceNVDA(msg);
     }, forceOverwrite);
     updateSyncConnectedUI();
-  } catch(err) {
-    if (statusBox) {
-      statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-      statusBox.style.color = '#b91c1c';
-      statusBox.textContent = '❌ ' + err.message;
+    if (window.__CURRENT_SYNC_TAB__ === 'connect') {
+      setSyncMode('paired');
     }
+  } catch(err) {
+    [statusBox, pairedStatusBox].forEach(box => {
+      if (box) {
+        box.style.background = 'rgba(239, 68, 68, 0.15)';
+        box.style.color = '#b91c1c';
+        box.textContent = '❌ ' + err.message;
+      }
+    });
     announceNVDA('Synchronisationsfehler: ' + err.message);
   } finally {
     if (btnTrigger) btnTrigger.disabled = false;
