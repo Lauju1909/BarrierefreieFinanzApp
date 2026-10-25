@@ -33,6 +33,7 @@ const STORAGE_FONTSIZE_KEY = 'barrierefreie_finanzen_fontsize_v1';
 const STORAGE_LOCKOUT_KEY = 'barrierefreie_finanzen_lockout_v1';
 const STORAGE_ATTEMPTS_KEY = 'barrierefreie_finanzen_attempts_v1';
 const STORAGE_SHOW_SYMBOLS_KEY = 'haushaltsbuch_show_symbols_enabled_v1';
+const STORAGE_LANGUAGE_KEY = 'haushaltsbuch_app_language_v1';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 2 * 60 * 60 * 1000; // 2 Stunden
@@ -45,7 +46,299 @@ function getVaultApiHeaders(customHeaders = {}) {
   return headers;
 }
 
-const MONTH_NAMES = [
+// =============================================================================
+// I18N SPRACH-ENGINE (DEUTSCH / ENGLISCH / AUTOMATISCHE SYSTEMSPRACHE)
+// =============================================================================
+const I18N_TRANSLATIONS = {
+  de: {
+    appName: "Meine Finanzen & Haushaltsbuch",
+    appTagline: "🔒 AES-256 Verschlüsselt & DSGVO-Konform",
+    lockHeading: "Sicherer AES-256 Zugang",
+    lockInstructions: "Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:",
+    pinLabel: "PIN oder Passwort:",
+    btnUnlock: "🔓 Entschlüsseln & Öffnen (Enter)",
+    btnBioUnlock: "👆 Mit Fingerabdruck / Biometrie entsperren",
+    lockSyncHeading: "📱 Daten vom Computer übertragen (Smartphone-Sync)",
+    lockSyncSub: "Kopple dein Smartphone mit dem PC, um deine Finanzen mobil zu synchronisieren.",
+    lockOldBackup: "📥 Alte Sicherung oder Daten-Datei importieren (.json / .vault)",
+    lockForgotPin: "🔄 PIN vergessen / Neuen leeren Tresor einrichten",
+    lockWhatIsNew: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)",
+    lockPrivacyGuarantee: "🔒 100% DSGVO & EU-Datenschutz: Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.",
+    lockFirstTimeHint: "💡 Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).",
+    btnLock: "Sperren (L)",
+    btnPrivacy: "Diskretion (Strg+H)",
+    today: "Heute",
+    
+    // Tabs
+    tabOverview: "📊 Übersicht & Zeiträume",
+    tabExpense: "🔴 Ausgabe eintragen / planen",
+    tabIncome: "🟢 Einnahme eintragen / planen",
+    tabTransfer: "🔄 Umbuchen & Sparen",
+    tabSettings: "⚙️ Einstellungen & Backup",
+    tabAccounts: "💳 Konto-Optionen & Konten",
+    tabWishlist: "🎁 Wunschliste & Sparziele",
+    tabShopping: "🛒 Einkaufsliste & Checkliste",
+    tabSync: "📱 Smartphone-Sync (E2E)",
+
+    // Time picker
+    periodLabel: "Zeitraum:",
+    periodDay: "📍 Tag (Tagesgenau)",
+    periodWeek: "📆 Woche (Kalenderwoche: Mo - So)",
+    periodMonth: "📅 Monat (Gesamter Monat)",
+    periodQuarter: "📊 3 Monate (Quartal)",
+    periodHalfyear: "📈 6 Monate (Halbjahr)",
+    periodYear: "🗓 Ganzes Jahr",
+    prevMonth: "◀ Vormonat",
+    nextMonth: "Nächster Monat ▶",
+    currentMonth: "📍 Aktueller Monat",
+    prevWeek: "◀ Vorherige Woche",
+    nextWeek: "Nächste Woche ▶",
+    currentWeek: "📆 Diese Woche",
+    yesterday: "◀ Gestern",
+    tomorrow: "Morgen ▶",
+    todayBtn: "📍 Heute (T)",
+
+    // Overview headings
+    accHeading: "1. 💳 Deine Kontostände im Detail",
+    incHeading: "2. 📥 Einnahmen",
+    expHeading: "3. 📤 Ausgaben",
+    totalHeading: "4. 💰 GESAMTER KONTOSTAND & ERGEBNIS",
+    leftoverLabel: "Ergebnis:",
+
+    // Settings
+    settingsHeading: "Einstellungen, Design & Datensicherung",
+    settingsThemeLabel: "Farbkontrast / Design:",
+    settingsFontLabel: "Schriftgröße / Textgröße:",
+    settingsLangLabel: "🌐 Sprache / Language:",
+    settingsSymbolsLabel: "Symbole & Emojis in der App anzeigen",
+    settingsSymbolsHint: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.",
+
+    // Announce
+    langChanged: "Sprache auf Deutsch gesetzt.",
+    overviewOpened: "Übersicht geöffnet."
+  },
+  en: {
+    appName: "My Finances & Budget Book",
+    appTagline: "🔒 AES-256 Encrypted & GDPR-Compliant",
+    lockHeading: "Secure AES-256 Access",
+    lockInstructions: "Your financial data is protected on this computer. Please enter your PIN or password:",
+    pinLabel: "PIN or password:",
+    btnUnlock: "🔓 Decrypt & Open (Enter)",
+    btnBioUnlock: "👆 Unlock with fingerprint / biometrics",
+    lockSyncHeading: "📱 Transfer data from computer (Smartphone Sync)",
+    lockSyncSub: "Pair your smartphone with your PC to sync your finances on the go.",
+    lockOldBackup: "📥 Import old backup or vault file (.json / .vault)",
+    lockForgotPin: "🔄 Forgot PIN / Set up new empty vault",
+    lockWhatIsNew: "📜 What's new in this update? (Changelog)",
+    lockPrivacyGuarantee: "🔒 100% GDPR & EU Privacy: All data stays exclusively on your computer and is never sent to servers or third parties.",
+    lockFirstTimeHint: "💡 First launch: Set your desired PIN now (e.g. 1234 or your secure password).",
+    btnLock: "Lock (L)",
+    btnPrivacy: "Privacy (Ctrl+H)",
+    today: "Today",
+
+    // Tabs
+    tabOverview: "📊 Overview & Periods",
+    tabExpense: "🔴 Add / Plan Expense",
+    tabIncome: "🟢 Add / Plan Income",
+    tabTransfer: "🔄 Transfer & Savings",
+    tabSettings: "⚙️ Settings & Backup",
+    tabAccounts: "💳 Accounts & Options",
+    tabWishlist: "🎁 Wishlist & Savings Goals",
+    tabShopping: "🛒 Shopping List & Checklist",
+    tabSync: "📱 Smartphone Sync (E2E)",
+
+    // Time picker
+    periodLabel: "Period:",
+    periodDay: "📍 Day (Exact Day)",
+    periodWeek: "📆 Week (Mon - Sun)",
+    periodMonth: "📅 Month (Full Month)",
+    periodQuarter: "📊 3 Months (Quarter)",
+    periodHalfyear: "📈 6 Months (Half-Year)",
+    periodYear: "🗓 Full Year",
+    prevMonth: "◀ Previous Month",
+    nextMonth: "Next Month ▶",
+    currentMonth: "📍 Current Month",
+    prevWeek: "◀ Previous Week",
+    nextWeek: "Next Week ▶",
+    currentWeek: "📆 This Week",
+    yesterday: "◀ Yesterday",
+    tomorrow: "Tomorrow ▶",
+    todayBtn: "📍 Today (T)",
+
+    // Overview headings
+    accHeading: "1. 💳 Your Account Balances",
+    incHeading: "2. 📥 Incomes",
+    expHeading: "3. 📤 Expenses",
+    totalHeading: "4. 💰 TOTAL BALANCE & RESULT",
+    leftoverLabel: "Net result:",
+
+    // Settings
+    settingsHeading: "Settings, Theme & Data Backup",
+    settingsThemeLabel: "Color Theme / Contrast:",
+    settingsFontLabel: "Font Size / Text Size:",
+    settingsLangLabel: "🌐 Language / Sprache:",
+    settingsSymbolsLabel: "Show symbols & emojis in app",
+    settingsSymbolsHint: "When disabled, the app is displayed in clean, pure text without symbols.",
+
+    // Announce
+    langChanged: "Language set to English.",
+    overviewOpened: "Overview opened."
+  }
+};
+
+const MONTH_NAMES_DE = [
+  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
+  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
+];
+
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+function getSystemLanguage() {
+  try {
+    const navLang = (navigator.languages && navigator.languages[0]) || navigator.language || navigator.userLanguage || '';
+    if (navLang.toLowerCase().startsWith('de')) return 'de';
+    return 'en';
+  } catch (e) {
+    return 'de';
+  }
+}
+
+function getCurrentLanguagePreference() {
+  return localStorage.getItem(STORAGE_LANGUAGE_KEY) || 'auto';
+}
+
+function getEffectiveLanguage() {
+  const pref = getCurrentLanguagePreference();
+  if (pref === 'de' || pref === 'en') return pref;
+  return getSystemLanguage();
+}
+
+function t(key) {
+  const lang = getEffectiveLanguage();
+  if (I18N_TRANSLATIONS[lang] && I18N_TRANSLATIONS[lang][key] !== undefined) {
+    return I18N_TRANSLATIONS[lang][key];
+  }
+  if (I18N_TRANSLATIONS.de && I18N_TRANSLATIONS.de[key] !== undefined) {
+    return I18N_TRANSLATIONS.de[key];
+  }
+  return key;
+}
+
+function getLocalizedMonthNames() {
+  return getEffectiveLanguage() === 'en' ? MONTH_NAMES_EN : MONTH_NAMES_DE;
+}
+
+function applyAppLanguage() {
+  const lang = getEffectiveLanguage();
+  const dict = I18N_TRANSLATIONS[lang] || I18N_TRANSLATIONS.de;
+
+  // Reassign or update MONTH_NAMES array
+  const targetMonths = lang === 'en' ? MONTH_NAMES_EN : MONTH_NAMES_DE;
+  for (let i = 0; i < 12; i++) {
+    MONTH_NAMES[i] = targetMonths[i];
+  }
+
+  if (document.documentElement) {
+    document.documentElement.lang = lang;
+  }
+
+  const brandTitle = document.querySelector('.brand h1');
+  if (brandTitle) brandTitle.textContent = dict.appName;
+  const brandTag = document.querySelector('.brand .security-badge');
+  if (brandTag) brandTag.textContent = dict.appTagline;
+  const headerPrivText = document.getElementById('header-privacy-text');
+  if (headerPrivText) headerPrivText.textContent = dict.btnPrivacy;
+  const lockBtnSpan = document.querySelector('.btn-lock span:last-child');
+  if (lockBtnSpan) lockBtnSpan.textContent = dict.btnLock;
+
+  const lockHeading = document.getElementById('lock-heading');
+  if (lockHeading) lockHeading.textContent = dict.lockHeading;
+  const lockInstructions = document.getElementById('lock-instructions');
+  if (lockInstructions) lockInstructions.textContent = dict.lockInstructions;
+  const pinInputLabel = document.getElementById('pin-input-label');
+  if (pinInputLabel) pinInputLabel.textContent = dict.pinLabel;
+  const btnUnlockText = document.getElementById('btn-unlock-text');
+  if (btnUnlockText) btnUnlockText.textContent = dict.btnUnlock;
+
+  const tabMap = {
+    'tab-overview': dict.tabOverview,
+    'tab-expense': dict.tabExpense,
+    'tab-income': dict.tabIncome,
+    'tab-transfer': dict.tabTransfer,
+    'tab-settings': dict.tabSettings,
+    'tab-accounts': dict.tabAccounts,
+    'tab-wishlist': dict.tabWishlist,
+    'tab-shopping': dict.tabShopping,
+    'tab-sync': dict.tabSync
+  };
+  Object.keys(tabMap).forEach(tabId => {
+    const tabEl = document.getElementById(tabId);
+    if (tabEl) {
+      const span = tabEl.querySelector('span:last-child');
+      if (span) span.innerHTML = '<strong>' + tabMap[tabId] + '</strong>';
+    }
+  });
+
+  const lblSettingsLang = document.getElementById('lbl-settings-language');
+  if (lblSettingsLang) lblSettingsLang.innerHTML = '<strong>' + dict.settingsLangLabel + '</strong>';
+  const lblSettingsTheme = document.getElementById('lbl-settings-theme');
+  if (lblSettingsTheme) lblSettingsTheme.innerHTML = '<strong>' + dict.settingsThemeLabel + '</strong>';
+  const lblSettingsFont = document.getElementById('lbl-settings-fontsize');
+  if (lblSettingsFont) lblSettingsFont.innerHTML = '<strong>' + dict.settingsFontLabel + '</strong>';
+  const headingSettings = document.getElementById('heading-settings-view');
+  if (headingSettings) headingSettings.textContent = dict.settingsHeading;
+
+  const langSel = document.getElementById('settings-language-select');
+  if (langSel) {
+    langSel.value = getCurrentLanguagePreference();
+  }
+
+  const periodSel = document.getElementById('overview-period-select');
+  if (periodSel) {
+    const val = periodSel.value;
+    periodSel.innerHTML = `
+      <option value="day">${dict.periodDay}</option>
+      <option value="week">${dict.periodWeek}</option>
+      <option value="month">${dict.periodMonth}</option>
+      <option value="quarter">${dict.periodQuarter}</option>
+      <option value="halfyear">${dict.periodHalfyear}</option>
+      <option value="year">${dict.periodYear}</option>
+    `;
+    periodSel.value = val;
+  }
+
+  if (typeof renderSubTimeNavigation === 'function') {
+    renderSubTimeNavigation();
+  }
+
+  if (currentActiveView === 'overview' && typeof updateOverview === 'function') {
+    updateOverview();
+  }
+}
+
+function changeLanguage(langVal) {
+  const valid = ['auto', 'de', 'en'].includes(langVal) ? langVal : 'auto';
+  localStorage.setItem(STORAGE_LANGUAGE_KEY, valid);
+
+  applyAppLanguage();
+
+  const lang = getEffectiveLanguage();
+  const msg = lang === 'en'
+    ? (valid === 'auto' ? 'Language set to Automatic (English detected).' : 'Language changed to English.')
+    : (valid === 'auto' ? 'Sprache auf Automatisch gesetzt (Deutsch erkannt).' : 'Sprache auf Deutsch gewechselt.');
+
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(msg, true);
+  }
+}
+
+function initLanguage() {
+  applyAppLanguage();
+}
+let MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
 ];
@@ -4126,6 +4419,7 @@ let lockoutTimerInterval = null;
 // 2. INITIALISIERUNG
 // ----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
+  initLanguage();
   initTheme();
   initDatePickers();
   setupGlobalKeyboardShortcuts();

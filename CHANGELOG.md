@@ -1,6 +1,25 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## 🌐 Sprachauswahl (Systemsprache / Deutsch / Englisch) & Barrierefreie Verbesserungen (v6.9.34)
+*Datum: 25. Oktober 2026*
+
+### 🌐 1. Sprachauswahl in den Einstellungen (Reiter 5 -> Darstellung & Design)
+- **Automatische Systemsprache:** Erkennt beim Start automatisch, ob das Betriebssystem auf Deutsch oder Englisch eingestellt ist (`navigator.languages` / `navigator.language`).
+- **Flexible Sprachwahl:** In den Einstellungen unter *Darstellung & Design* kann jederzeit zwischen drei Optionen gewählt werden:
+  1. 🌐 *Automatisch (Systemsprache / System Language)*
+  2. 🇩🇪 *Deutsch (German)*
+  3. 🇬🇧 *English (Englisch)*
+- **Umfassende Lokalisierung:**
+  - Hauptnavigation (Reiter 1 bis 9)
+  - Kopfbereich & Sperrbildschirm
+  - Zeitraum-Filter und Dropdowns
+  - Monatsnamen in allen Diagrammen, Akkordeons und Übersichten
+  - Einstellungs-Beschriftungen und Formulare
+- **Barrierefreie Screenreader-Ansage:** Beim Umschalten informiert NVDA / TalkBack sofort über die geänderte Sprache, und das HTML-`lang`-Attribut wird dynamisch aktualisiert.
+
+---
+
 ## 🚀 Multi-Geräte-Sync (3 Reiter), Komma/Semikolon-Eingabe, Dauerauftrag-Fokus & Monats-/Wochen-Ansage
 *Datum: 25. Oktober 2026*
 

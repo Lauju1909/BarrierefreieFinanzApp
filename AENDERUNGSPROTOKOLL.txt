@@ -3,6 +3,52 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 6.9.34 (Aktuelle Version - 25. Oktober 2026)
+--------------------------------------------------------------------------------
+
+* SPRACHAUSWAHL & MEHRSPRACHIGKEIT (SYSTEMSPRACHE / DEUTSCH / ENGLISCH):
+  - In Reiter 5 (Einstellungen -> Darstellung & Design) gibt es eine neue Sprachauswahl.
+  - Automatische Erkennung der Betriebssystem-Sprache (Windows / Android).
+  - Volle Umschaltbarkeit zwischen:
+    1. Automatisch (Systemsprache)
+    2. Deutsch
+    3. English
+  - Dynamische Übersetzung der Hauptreiter 1 bis 9, Sperrbildschirm, Monatsnamen,
+    Zeitraumfilter und Einstellungen.
+  - Sofortige Screenreader-Ansage beim Wechsel (NVDA / TalkBack).
+
+* AUFGERAEUMTES 3-REITER SMARTPHONE-SYNC-MENUE (REITER 8):
+  - Klare Trennung oben in drei uebersichtliche Bereiche:
+    1. [1. Gekoppelte Geraete] - Zeigt ausschliesslich verbundene Geraete & Postfach
+    2. [2. Geraet koppeln] - Zeigt ausschliesslich das Formular zum Verbinden
+    3. [3. Kopplungsdaten] - Zeigt ausschliesslich den eigenen Code & Geraetenamen
+  - Beim Klick wird immer nur der gewaehlte Bereich eingeblendet.
+
+* TRANSITIVE MULTI-GERAETE-KOPPLUNG (PC <-> SMARTPHONE <-> LAPTOP):
+  - Beliebig viele Geraete gleichzeitig verwalten.
+  - Koppelt man den Laptop mit dem Smartphone, ist er automatisch auch mit dem PC
+    gekoppelt, ohne den Code nochmals am PC eingeben zu muessen.
+
+* KOMMA (,), SEMIKOLON (;) & PUNKT (.) BEI ALLEN BETRAEGEN:
+  - In saemtlichen Betragsfeldern koennen Betraege flexibel mit Komma, Semikolon
+    oder Punkt fuer die Cent-Trennung eingetippt werden.
+
+* DAUERAUFTRAG BEENDEN / LOESCHEN MIT DIREKTEM FOKUS-SPRUNG:
+  - Klickt man auf "Beenden / Loeschen", springt der Fokus fuer Tastatur und
+    Screenreader sofort in das Auswahlfenster auf Option 1 (Beenden mit Historie).
+
+* KLARE MONATS- UND WOCHEN-ANSAGE BEI ZEITRAUM-AUSWAHL:
+  - Beim Auswaehlen von Monaten oder Kalenderwochen wird direkt der Zeitraum
+    vorgelesen, ohne dass der Kontostand ungewollt dazwischenfunkt.
+  - Kalenderwochen-Auswahlfeld (KW 1 bis KW 52) in der Wochenansicht.
+
+* KEEPASS 2 SICHERHEITS-SUITE & ARGON2ID SCHLUESSELABLEITUNG:
+  - Hoechster kryptografischer Schutz mit Argon2id (64 MB RAM, 3 Runden).
+  - 100% abwaertskompatible Dual-Engine fuer bisherige PBKDF2-Tresore.
+  - Strukturierte Einstellungs-Tabs (7 Kategorien).
+  - Automatisches Sperren & Speicherbereinigung (Zeroization) bei Bildschirmsperre (Win+L) und Standby.
+
+--------------------------------------------------------------------------------
 VERSION 6.2.0 (Aktuelle Version)
 --------------------------------------------------------------------------------
 

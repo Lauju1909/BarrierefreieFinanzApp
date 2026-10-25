@@ -21,12 +21,21 @@
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.33)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.34)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(2, 136, 209, 0.1); border-left: 6px solid #0288D1; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #01579B; font-size: 20px;">🌐 Neu: Sprachauswahl (Systemsprache / Deutsch / Englisch) in Einstellungen</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>🌐 Automatische Systemsprache:</strong> Erkennt beim App-Start automatisch die Systemsprache deines Computers oder Smartphones (Deutsch oder Englisch).</li>
+<li><strong>⚙️ Umschaltbar in den Einstellungen:</strong> In Reiter 5 (Darstellung &amp; Design) kann jederzeit frei zwischen <em>Automatisch</em>, <em>Deutsch</em> und <em>English</em> gewechselt werden.</li>
+<li><strong>🧭 Lokalisierte Navigation &amp; Übersichten:</strong> Alle 9 Hauptreiter, Kopfzeilen, Sperrbildschirm, Monatsnamen und Zeitraumfilter passen sich sofort barrierefrei an.</li>
+<li><strong>🗣️ Screenreader-Rückmeldung:</strong> Beim Sprachwechsel kündigt NVDA / TalkBack die neue Sprache sofort an und setzt das Dokumenten-Sprachattribut.</li>
+</ul>
+</div>
 <div style="background: rgba(25, 118, 210, 0.1); border-left: 6px solid #1976D2; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #0d47a1; font-size: 20px;">🚀 Neu: Multi-Geräte-Sync (3 Reiter), Komma/Semikolon-Eingabe, Dauerauftrag-Fokus &amp; Monats-/Wochen-Ansage</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -3516,6 +3525,15 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
 
 <div class="form-row-2" style="margin-top: 10px;">
+<div class="form-group">
+<label for="settings-language-select" class="field-label" id="lbl-settings-language"><strong>🌐 Sprache / Language:</strong></label>
+<select id="settings-language-select" class="large-select" onchange="changeLanguage(this.value)">
+<option value="auto" selected>🌐 Automatisch (Systemsprache / System Language)</option>
+<option value="de">🇩🇪 Deutsch (German)</option>
+<option value="en">🇬🇧 English (Englisch)</option>
+</select>
+</div>
+
 <div class="form-group">
 <label for="settings-theme-select" class="field-label"><strong>Farbkontrast / Design:</strong></label>
 <select id="settings-theme-select" class="large-select" onchange="changeTheme(this.value)">

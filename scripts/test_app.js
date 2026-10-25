@@ -1373,6 +1373,21 @@ if (!appJs.includes('function generateWeekOptions')) {
 }
 console.log('Recurring End/Delete Modal Focus & Month/Week Speech Clarity: 100% PASS!');
 
+// 17. Test Language Selector & I18N Engine (System Language / English / German)
+console.log('Testing Language Selector & I18N Engine (System Language / English / German)...');
+if (!html.includes('id="settings-language-select"')) {
+  console.error('Missing settings-language-select element in index.html');
+  process.exit(1);
+}
+const requiredLangFuncs = ['changeLanguage', 'applyAppLanguage', 'getEffectiveLanguage', 'getSystemLanguage'];
+requiredLangFuncs.forEach(fn => {
+  if (!appJs.includes(fn)) {
+    console.error('Missing required I18N function: ' + fn);
+    process.exit(1);
+  }
+});
+console.log('Language Selector & I18N Engine: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');
