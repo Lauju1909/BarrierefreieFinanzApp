@@ -1,6 +1,26 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## 💱 Multi-Währungs-System, Währungsauswahl bei Ausgaben & Währungsrechner (v6.9.35)
+*Datum: 25. Oktober 2026*
+
+### 💱 1. Standard-Währung in den Einstellungen (Reiter 5 -> Darstellung & Design)
+- **Automatisch nach Sprache:** Standardmäßig wird bei deutscher Sprache Euro (€) und bei englischer Sprache US-Dollar ($) oder Britisches Pfund (£) verwendet.
+- **Große Währungsauswahl:**
+  - **Aktuelle Hauptwährungen:** Euro (€), US-Dollar ($), Britisches Pfund (£), Schweizer Franken (CHF), Japanischer Yen (¥), Kanadischer Dollar (CA$), Australischer Dollar (AU$), Polnischer Złoty (zł), Tschechische Krone (Kč), Dänische Krone (kr), Schwedische Krone (kr), Norwegische Krone (kr), Türkische Lira (₺), Bitcoin (₿).
+  - **Historische & frühere Währungen:** Deutsche Mark (DM), Österreichischer Schilling (öS), Französischer Franc (FF), Italienische Lira (L.), Spanische Peseta (Ptas), Niederländischer Gulden (fl.), Belgischer Franc (BFR), Griechische Drachme (Dr.) mit offiziellen unwiderruflichen EZB-Umrechnungskursen.
+- **Vollständige Formatierung:** Alle Kontostände, Statistiken, Akkordeons und Übersichten formatieren sich sofort mit dem passenden Währungssymbol.
+
+### 🔴 2. Währungsauswahl beim Eintragen von Ausgaben (Reiter 2)
+- **Währung pro Buchung wählbar:** Direkt neben dem Betragsfeld steht eine Währungsauswahl bereit, die automatisch mit deiner Standard-Währung vorbelegt ist.
+- **Automatische Umrechnung:** Wählst du eine abweichende Währung (z. B. Ausgabe in USD im Urlaub oder historische Anschaffung in DM), rechnet die App den Betrag live centgenau in deine Basiswährung um und vermerkt den Originalbetrag in den Buchungsdetails.
+
+### 💱 3. Aufklappbarer Währungsrechner in der Übersicht (Reiter 1)
+- **Komfortables Akkordeon:** Am Ende von Reiter 1 steht ein barrierefreier Währungsrechner bereit, der jederzeit ein- und ausgeklappt werden kann.
+- **Live-Umrechnung & Währungstausch:** Betrag eingeben, Quell- und Zielwährung wählen – mit Klick auf „💱 Jetzt umrechnen“ oder „🔄 Währungen tauschen“ liest NVDA / TalkBack das exakte Umrechnungsergebnis samt offiziellem Wechselkurs vor.
+
+---
+
 ## 🌐 Sprachauswahl (Systemsprache / Deutsch / Englisch) & Barrierefreie Verbesserungen (v6.9.34)
 *Datum: 25. Oktober 2026*
 

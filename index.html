@@ -27,6 +27,14 @@
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(0, 150, 136, 0.1); border-left: 6px solid #009688; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #004D40; font-size: 20px;">💱 Neu: Multi-Währungs-System, Währungsauswahl bei Ausgaben &amp; Währungsrechner</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>💱 Standard-Währung in den Einstellungen:</strong> Wähle in Reiter 5 (Darstellung &amp; Design) deine Hauptwährung – automatisch nach Sprache (Euro bei Deutsch, Dollar bei Englisch) oder frei aus aktuellen Hauptwährungen und historischen Währungen (Deutsche Mark, Schilling, Franc).</li>
+<li><strong>🔴 Währung bei Ausgaben frei wählbar:</strong> Beim Buchen einer Ausgabe in Reiter 2 kann neben dem Betrag direkt die Währung bestimmt werden. Bei Fremdwährungen wird automatisch centgenau in deine Basiswährung umgerechnet.</li>
+<li><strong>💱 Aufklappbarer Währungsrechner in der Übersicht:</strong> Am Ende von Reiter 1 steht ein barrierefreier Währungsrechner zum Aufklappen bereit, der beliebige Beträge blitzschnell umrechnet und per Sprachausgabe für NVDA / TalkBack ansagt.</li>
+</ul>
+</div>
 <div style="background: rgba(2, 136, 209, 0.1); border-left: 6px solid #0288D1; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #01579B; font-size: 20px;">🌐 Neu: Sprachauswahl (Systemsprache / Deutsch / Englisch) in Einstellungen</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
@@ -2545,6 +2553,112 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 </div>
 
+
+<!-- =======================================================================
+     WÄHRUNGSRECHNER (AUFKLAPPBARER BEREICH IN DER ÜBERSICHT)
+     ======================================================================= -->
+<section class="overview-section" id="section-currency-converter" aria-labelledby="heading-currency-converter" style="margin-top: 24px; margin-bottom: 24px;">
+  <div class="section-card" style="border: 2px solid var(--accent-action); border-radius: 8px; padding: 0; overflow: hidden; background: var(--bg-card);">
+    <details id="accordion-currency-converter" class="accordion-item" style="border: none; margin: 0;">
+      <summary class="accordion-summary" id="summary-currency-converter" style="cursor: pointer; padding: 14px 18px; font-weight: bold; font-size: 17px; display: flex; align-items: center; justify-content: space-between; list-style: none;">
+        <span style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 24px;" aria-hidden="true">💱</span>
+          <strong id="heading-currency-converter">Währungsrechner &amp; Umrechnung (Euro, Dollar, DM, Schilling...)</strong>
+        </span>
+        <span class="accordion-icon" id="currency-converter-arrow" aria-hidden="true" style="font-size: 14px;">▼</span>
+      </summary>
+      <div class="accordion-content" style="padding: 18px 20px 22px 20px; border-top: 1px solid var(--border-color);">
+        <p class="field-hint" id="hint-currency-converter" style="margin-top: 0; margin-bottom: 16px; font-size: 14px;">
+          Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:
+        </p>
+        
+        <div class="form-row-2" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 14px;">
+          <div class="form-group" style="margin: 0;">
+            <label for="calc-curr-amount" class="field-label" id="lbl-calc-curr-amount"><strong>Betrag:</strong></label>
+            <input type="text" inputmode="decimal" data-decimal-input="true" id="calc-curr-amount" class="large-input" value="100,00" placeholder="z. B. 100,00" oninput="calculateCurrencyConversion()">
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label for="calc-curr-from" class="field-label" id="lbl-calc-curr-from"><strong>Von Währung (Quelle):</strong></label>
+            <select id="calc-curr-from" class="large-select" onchange="calculateCurrencyConversion()">
+              <optgroup label="Aktuelle Hauptwährungen">
+                <option value="EUR" selected>💶 EUR - Euro (€)</option>
+                <option value="USD">💵 USD - US-Dollar ($)</option>
+                <option value="GBP">💷 GBP - Britisches Pfund (£)</option>
+                <option value="CHF">🇨🇭 CHF - Schweizer Franken (CHF)</option>
+                <option value="JPY">💴 JPY - Japanischer Yen (¥)</option>
+                <option value="CAD">🇨🇦 CAD - Kanadischer Dollar (CA$)</option>
+                <option value="AUD">🇦🇺 AUD - Australischer Dollar (AU$)</option>
+                <option value="PLN">🇵🇱 PLN - Polnischer Złoty (zł)</option>
+                <option value="CZK">🇨🇿 CZK - Tschechische Krone (Kč)</option>
+                <option value="DKK">🇩🇰 DKK - Dänische Krone (kr)</option>
+                <option value="SEK">🇸🇪 SEK - Schwedische Krone (kr)</option>
+                <option value="NOK">🇳🇴 NOK - Norwegische Krone (kr)</option>
+                <option value="TRY">🇹🇷 TRY - Türkische Lira (₺)</option>
+                <option value="BTC">₿ BTC - Bitcoin (BTC)</option>
+              </optgroup>
+              <optgroup label="Historische Währungen">
+                <option value="DEM">🇩🇪 DEM - Deutsche Mark (DM)</option>
+                <option value="ATS">🇦🇹 ATS - Österreichischer Schilling (öS)</option>
+                <option value="FRF">🇫🇷 FRF - Französischer Franc (FF)</option>
+                <option value="ITL">🇮🇹 ITL - Italienische Lira (L.)</option>
+                <option value="ESP">🇪🇸 ESP - Spanische Peseta (Ptas)</option>
+                <option value="NLG">🇳🇱 NLG - Niederländischer Gulden (fl.)</option>
+                <option value="BEF">🇧🇪 BEF - Belgischer Franc (BFR)</option>
+                <option value="GRD">🇬🇷 GRD - Griechische Drachme (Dr.)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="form-group" style="margin: 0;">
+            <label for="calc-curr-to" class="field-label" id="lbl-calc-curr-to"><strong>In Währung (Ziel):</strong></label>
+            <select id="calc-curr-to" class="large-select" onchange="calculateCurrencyConversion()">
+              <optgroup label="Aktuelle Hauptwährungen">
+                <option value="EUR">💶 EUR - Euro (€)</option>
+                <option value="USD" selected>💵 USD - US-Dollar ($)</option>
+                <option value="GBP">💷 GBP - Britisches Pfund (£)</option>
+                <option value="CHF">🇨🇭 CHF - Schweizer Franken (CHF)</option>
+                <option value="JPY">💴 JPY - Japanischer Yen (¥)</option>
+                <option value="CAD">🇨🇦 CAD - Kanadischer Dollar (CA$)</option>
+                <option value="AUD">🇦🇺 AUD - Australischer Dollar (AU$)</option>
+                <option value="PLN">🇵🇱 PLN - Polnischer Złoty (zł)</option>
+                <option value="CZK">🇨🇿 CZK - Tschechische Krone (Kč)</option>
+                <option value="DKK">🇩🇰 DKK - Dänische Krone (kr)</option>
+                <option value="SEK">🇸🇪 SEK - Schwedische Krone (kr)</option>
+                <option value="NOK">🇳🇴 NOK - Norwegische Krone (kr)</option>
+                <option value="TRY">🇹🇷 TRY - Türkische Lira (₺)</option>
+                <option value="BTC">₿ BTC - Bitcoin (BTC)</option>
+              </optgroup>
+              <optgroup label="Historische Währungen">
+                <option value="DEM">🇩🇪 DEM - Deutsche Mark (DM)</option>
+                <option value="ATS">🇦🇹 ATS - Österreichischer Schilling (öS)</option>
+                <option value="FRF">🇫🇷 FRF - Französischer Franc (FF)</option>
+                <option value="ITL">🇮🇹 ITL - Italienische Lira (L.)</option>
+                <option value="ESP">🇪🇸 ESP - Spanische Peseta (Ptas)</option>
+                <option value="NLG">🇳🇱 NLG - Niederländischer Gulden (fl.)</option>
+                <option value="BEF">🇧🇪 BEF - Belgischer Franc (BFR)</option>
+                <option value="GRD">🇬🇷 GRD - Griechische Drachme (Dr.)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+          <button type="button" class="btn btn-primary" id="btn-calc-curr-convert" onclick="calculateCurrencyConversion(true)">
+            💱 Jetzt umrechnen
+          </button>
+          <button type="button" class="btn btn-secondary" id="btn-calc-curr-swap" onclick="swapConverterCurrencies()">
+            🔄 Währungen tauschen
+          </button>
+        </div>
+
+        <div id="calc-curr-result-box" style="padding: 14px 18px; background: rgba(33, 150, 243, 0.08); border-left: 6px solid #2196F3; border-radius: 8px;" role="region" aria-live="polite">
+          <div style="font-size: 14px; color: var(--sub-text);" id="calc-curr-rate-info">Offizieller Wechselkurs: 1 EUR = 1,08 USD</div>
+          <div style="font-size: 24px; font-weight: bold; margin-top: 6px; color: var(--text-color);" id="calc-curr-result-text">100,00 EUR = 108,00 USD</div>
+        </div>
+      </div>
+    </details>
+  </div>
+</section>
+
 <!-- =======================================================================
  ANSICHT 2: AUSGABE EINTRAGEN
  ======================================================================= -->
@@ -2563,7 +2677,38 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
     🪙 Münz- &amp; Scheinezähler
   </button>
 </div>
-<input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()">
+<div style="display: flex; gap: 8px; align-items: center;">
+  <input type="text" inputmode="decimal" data-decimal-input="true" step="0.01" min="0.01" id="exp-amount" class="large-input" placeholder="z. B. 4,50 oder 12.99" required autofocus autocomplete="off" oninput="handleMainExpenseAmountInput()" style="flex: 1;">
+  <select id="exp-currency" class="large-select" style="max-width: 180px; min-width: 140px;" onchange="handleExpenseCurrencyChange(this.value)" aria-label="Währung der Ausgabe">
+    <optgroup label="Aktuelle Hauptwährungen">
+      <option value="EUR" selected>💶 EUR (€)</option>
+      <option value="USD">💵 USD ($)</option>
+      <option value="GBP">💷 GBP (£)</option>
+      <option value="CHF">🇨🇭 CHF (CHF)</option>
+      <option value="JPY">💴 JPY (¥)</option>
+      <option value="CAD">🇨🇦 CAD (CA$)</option>
+      <option value="AUD">🇦🇺 AUD (AU$)</option>
+      <option value="PLN">🇵🇱 PLN (zł)</option>
+      <option value="CZK">🇨🇿 CZK (Kč)</option>
+      <option value="DKK">🇩🇰 DKK (kr)</option>
+      <option value="SEK">🇸🇪 SEK (kr)</option>
+      <option value="NOK">🇳🇴 NOK (kr)</option>
+      <option value="TRY">🇹🇷 TRY (₺)</option>
+      <option value="BTC">₿ BTC (BTC)</option>
+    </optgroup>
+    <optgroup label="Historische Währungen">
+      <option value="DEM">🇩🇪 DEM (DM)</option>
+      <option value="ATS">🇦🇹 ATS (öS)</option>
+      <option value="FRF">🇫🇷 FRF (FF)</option>
+      <option value="ITL">🇮🇹 ITL (L.)</option>
+      <option value="ESP">🇪🇸 ESP (Ptas)</option>
+      <option value="NLG">🇳🇱 NLG (fl.)</option>
+      <option value="BEF">🇧🇪 BEF (BFR)</option>
+      <option value="GRD">🇬🇷 GRD (Dr.)</option>
+    </optgroup>
+  </select>
+</div>
+<div id="exp-currency-convert-hint" style="display: none; font-size: 13px; color: var(--accent-action); margin-top: 4px; font-weight: 500;" aria-live="polite"></div>
 </div>
 
 <div class="form-group">
@@ -3531,6 +3676,39 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <option value="auto" selected>🌐 Automatisch (Systemsprache / System Language)</option>
 <option value="de">🇩🇪 Deutsch (German)</option>
 <option value="en">🇬🇧 English (Englisch)</option>
+</select>
+</div>
+
+<div class="form-group">
+<label for="settings-currency-select" class="field-label" id="lbl-settings-currency"><strong>💱 Standard-Währung / Currency:</strong></label>
+<select id="settings-currency-select" class="large-select" onchange="changeCurrency(this.value)">
+  <option value="auto" selected>🌐 Automatisch nach Sprache (DE: Euro € / EN: Dollar $)</option>
+  <optgroup label="Aktuelle Hauptwährungen">
+    <option value="EUR">💶 EUR - Euro (€)</option>
+    <option value="USD">💵 USD - US-Dollar ($)</option>
+    <option value="GBP">💷 GBP - Britisches Pfund (£)</option>
+    <option value="CHF">🇨🇭 CHF - Schweizer Franken (CHF)</option>
+    <option value="JPY">💴 JPY - Japanischer Yen (¥)</option>
+    <option value="CAD">🇨🇦 CAD - Kanadischer Dollar (CA$)</option>
+    <option value="AUD">🇦🇺 AUD - Australischer Dollar (AU$)</option>
+    <option value="PLN">🇵🇱 PLN - Polnischer Złoty (zł)</option>
+    <option value="CZK">🇨🇿 CZK - Tschechische Krone (Kč)</option>
+    <option value="DKK">🇩🇰 DKK - Dänische Krone (kr)</option>
+    <option value="SEK">🇸🇪 SEK - Schwedische Krone (kr)</option>
+    <option value="NOK">🇳🇴 NOK - Norwegische Krone (kr)</option>
+    <option value="TRY">🇹🇷 TRY - Türkische Lira (₺)</option>
+    <option value="BTC">₿ BTC - Bitcoin (BTC)</option>
+  </optgroup>
+  <optgroup label="Historische & frühere Währungen">
+    <option value="DEM">🇩🇪 DEM - Deutsche Mark (DM)</option>
+    <option value="ATS">🇦🇹 ATS - Österreichischer Schilling (öS)</option>
+    <option value="FRF">🇫🇷 FRF - Französischer Franc (FF)</option>
+    <option value="ITL">🇮🇹 ITL - Italienische Lira (L.)</option>
+    <option value="ESP">🇪🇸 ESP - Spanische Peseta (Ptas)</option>
+    <option value="NLG">🇳🇱 NLG - Niederländischer Gulden (fl.)</option>
+    <option value="BEF">🇧🇪 BEF - Belgischer Franc (BFR)</option>
+    <option value="GRD">🇬🇷 GRD - Griechische Drachme (Dr.)</option>
+  </optgroup>
 </select>
 </div>
 

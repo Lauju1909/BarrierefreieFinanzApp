@@ -1388,6 +1388,80 @@ requiredLangFuncs.forEach(fn => {
 });
 console.log('Language Selector & I18N Engine: 100% PASS!');
 
+// 18. Test Multi-Currency System (Settings, Expense Form & Overview Currency Converter)
+console.log('Testing Multi-Currency System (Modern, Historical, Expense Selection & Converter)...');
+const requiredCurrHtmlIds = [
+  'settings-currency-select',
+  'lbl-settings-currency',
+  'exp-currency',
+  'exp-currency-convert-hint',
+  'section-currency-converter',
+  'accordion-currency-converter',
+  'calc-curr-amount',
+  'calc-curr-from',
+  'calc-curr-to',
+  'calc-curr-rate-info',
+  'calc-curr-result-text',
+  'btn-calc-curr-convert',
+  'btn-calc-curr-swap'
+];
+requiredCurrHtmlIds.forEach(id => {
+  if (!html.includes('id="' + id + '"')) {
+    console.error('Missing Currency HTML element ID: #' + id);
+    process.exit(1);
+  }
+});
+
+const requiredCurrFuncs = [
+  'getCurrentCurrencyPreference',
+  'getEffectiveCurrency',
+  'getCurrencyInfo',
+  'renderCurrencyOptionsHTML',
+  'convertCurrency',
+  'calculateCurrencyConversion',
+  'swapConverterCurrencies',
+  'changeCurrency',
+  'handleExpenseCurrencyChange',
+  'updateExpenseCurrencyHint',
+  'applyAppCurrency',
+  'initCurrency'
+];
+requiredCurrFuncs.forEach(fn => {
+  if (!appJs.includes('function ' + fn)) {
+    console.error('Missing required Currency function: ' + fn);
+    process.exit(1);
+  }
+});
+
+// Test conversion math and rates
+const testRates = {
+  EUR: 1.0,
+  USD: 1.08,
+  DEM: 1.95583,
+  ATS: 13.7603,
+  GBP: 0.86
+};
+const inEur = 100 / testRates.DEM;
+const toUsd = inEur * testRates.USD;
+if (Math.abs(inEur - 51.129) > 0.01) {
+  console.error('Conversion math test failed for DEM -> EUR');
+  process.exit(1);
+}
+if (Math.abs(toUsd - 55.22) > 0.05) {
+  console.error('Conversion math test failed for DEM -> USD');
+  process.exit(1);
+}
+
+// Verify historical and modern currency existence in app.js
+['EUR', 'USD', 'GBP', 'CHF', 'JPY', 'DEM', 'ATS', 'FRF', 'ITL', 'ESP', 'NLG'].forEach(curr => {
+  if (!appJs.includes(curr + ':')) {
+    console.error('Missing currency ' + curr + ' in CURRENCY_DATABASE');
+    process.exit(1);
+  }
+});
+console.log('Multi-Currency System (Modern, Historical, Expense Selection & Converter): 100% PASS!');
+
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');

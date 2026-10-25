@@ -7,9 +7,12 @@ const baseDir = path.resolve(__dirname, '..');
 const versionFile = path.join(baseDir, 'version.json');
 if (fs.existsSync(versionFile)) {
   const vData = JSON.parse(fs.readFileSync(versionFile, 'utf8'));
-  vData.version = '6.9.34';
+  vData.version = '6.9.35';
   vData.buildDate = '2026-10-25';
   const newFeatures = [
+    '💱 Multi-Währungs-System & Standard-Währung: Wähle in den Einstellungen (Reiter 5) deine Hauptwährung (Automatisch nach Sprache mit EUR/USD, oder manuell aus modernen & historischen Währungen wie DM, Schilling, Franc)',
+    '🔴 Währungsauswahl bei Ausgaben (Reiter 2): Flexibles Erfassen von Ausgaben in Fremdwährungen mit automatischer Cent-genauer Umrechnung in die Basiswährung',
+    '💱 Aufklappbarer Währungsrechner (Reiter 1): Komfortables Umrechnen beliebiger Beträge zwischen aktuellen und historischen Währungen mit 1-Klick-Tausch und NVDA-Sprachansage',
     '🌐 Sprachauswahl & Mehrsprachigkeit (Automatische Erkennung der Systemsprache, Deutsch, Englisch): Wählbar in den Einstellungen unter Darstellung & Design mit automatischer Erkennung beim Erststart und vollständiger NVDA/TalkBack Sprachunterstützung',
     '📱 Aufgeräumtes 3-Reiter Smartphone-Sync-Menü (Reiter 8): Klare Trennung in 1. Gekoppelte Geräte, 2. Gerät koppeln und 3. Kopplungsdaten mit fokussierter Einzelansicht',
     '🔗 Multi-Geräte & Transitive Gruppen-Kopplung: PC, Smartphone und Laptop koppeln sich automatisch im Verbund – einmal gekoppelt sind alle Geräte synchron',
@@ -19,37 +22,38 @@ if (fs.existsSync(versionFile)) {
   ];
   vData.features = [...newFeatures, ...vData.features.filter(f => !newFeatures.includes(f))];
   fs.writeFileSync(versionFile, JSON.stringify(vData, null, 2), 'utf8');
-  console.log('✅ version.json updated to 6.9.34');
+  console.log('✅ version.json updated to 6.9.35');
 }
 
 // 2. Update CHANGELOG.md
 const changelogFile = path.join(baseDir, 'CHANGELOG.md');
 if (fs.existsSync(changelogFile)) {
   let cl = fs.readFileSync(changelogFile, 'utf8');
-  const newChangelogEntry = `## 🌐 Sprachauswahl (Systemsprache / Deutsch / Englisch) & Barrierefreie Verbesserungen (v6.9.34)
+  const newChangelogEntry = `## 💱 Multi-Währungs-System, Währungsauswahl bei Ausgaben & Währungsrechner (v6.9.35)
 *Datum: 25. Oktober 2026*
 
-### 🌐 1. Sprachauswahl in den Einstellungen (Reiter 5 -> Darstellung & Design)
-- **Automatische Systemsprache:** Erkennt beim Start automatisch, ob das Betriebssystem auf Deutsch oder Englisch eingestellt ist (\`navigator.languages\` / \`navigator.language\`).
-- **Flexible Sprachwahl:** In den Einstellungen unter *Darstellung & Design* kann jederzeit zwischen drei Optionen gewählt werden:
-  1. 🌐 *Automatisch (Systemsprache / System Language)*
-  2. 🇩🇪 *Deutsch (German)*
-  3. 🇬🇧 *English (Englisch)*
-- **Umfassende Lokalisierung:**
-  - Hauptnavigation (Reiter 1 bis 9)
-  - Kopfbereich & Sperrbildschirm
-  - Zeitraum-Filter und Dropdowns
-  - Monatsnamen in allen Diagrammen, Akkordeons und Übersichten
-  - Einstellungs-Beschriftungen und Formulare
-- **Barrierefreie Screenreader-Ansage:** Beim Umschalten informiert NVDA / TalkBack sofort über die geänderte Sprache, und das HTML-\`lang\`-Attribut wird dynamisch aktualisiert.
+### 💱 1. Standard-Währung in den Einstellungen (Reiter 5 -> Darstellung & Design)
+- **Automatisch nach Sprache:** Standardmäßig wird bei deutscher Sprache Euro (€) und bei englischer Sprache US-Dollar ($) oder Britisches Pfund (£) verwendet.
+- **Große Währungsauswahl:**
+  - **Aktuelle Hauptwährungen:** Euro (€), US-Dollar ($), Britisches Pfund (£), Schweizer Franken (CHF), Japanischer Yen (¥), Kanadischer Dollar (CA$), Australischer Dollar (AU$), Polnischer Złoty (zł), Tschechische Krone (Kč), Dänische Krone (kr), Schwedische Krone (kr), Norwegische Krone (kr), Türkische Lira (₺), Bitcoin (₿).
+  - **Historische & frühere Währungen:** Deutsche Mark (DM), Österreichischer Schilling (öS), Französischer Franc (FF), Italienische Lira (L.), Spanische Peseta (Ptas), Niederländischer Gulden (fl.), Belgischer Franc (BFR), Griechische Drachme (Dr.) mit offiziellen unwiderruflichen EZB-Umrechnungskursen.
+- **Vollständige Formatierung:** Alle Kontostände, Statistiken, Akkordeons und Übersichten formatieren sich sofort mit dem passenden Währungssymbol.
+
+### 🔴 2. Währungsauswahl beim Eintragen von Ausgaben (Reiter 2)
+- **Währung pro Buchung wählbar:** Direkt neben dem Betragsfeld steht eine Währungsauswahl bereit, die automatisch mit deiner Standard-Währung vorbelegt ist.
+- **Automatische Umrechnung:** Wählst du eine abweichende Währung (z. B. Ausgabe in USD im Urlaub oder historische Anschaffung in DM), rechnet die App den Betrag live centgenau in deine Basiswährung um und vermerkt den Originalbetrag in den Buchungsdetails.
+
+### 💱 3. Aufklappbarer Währungsrechner in der Übersicht (Reiter 1)
+- **Komfortables Akkordeon:** Am Ende von Reiter 1 steht ein barrierefreier Währungsrechner bereit, der jederzeit ein- und ausgeklappt werden kann.
+- **Live-Umrechnung & Währungstausch:** Betrag eingeben, Quell- und Zielwährung wählen – mit Klick auf „💱 Jetzt umrechnen“ oder „🔄 Währungen tauschen“ liest NVDA / TalkBack das exakte Umrechnungsergebnis samt offiziellem Wechselkurs vor.
 
 ---
 
 `;
-  if (!cl.includes('v6.9.34')) {
+  if (!cl.includes('v6.9.35')) {
     cl = cl.replace(/(# 📜 Offizielles Änderungsprotokoll \(Changelog\)\r?\n\*\*Barrierefreie Finanz-App & Haushaltsbuch\*\*\r?\n\r?\n)/i, `$1${newChangelogEntry}`);
     fs.writeFileSync(changelogFile, cl, 'utf8');
-    console.log('✅ CHANGELOG.md updated to 6.9.34');
+    console.log('✅ CHANGELOG.md updated to 6.9.35');
   }
 }
 
@@ -58,56 +62,37 @@ const protoFile = path.join(baseDir, 'AENDERUNGSPROTOKOLL.txt');
 if (fs.existsSync(protoFile)) {
   let ap = fs.readFileSync(protoFile, 'utf8');
   const newProtoEntry = `--------------------------------------------------------------------------------
-VERSION 6.9.34 (Aktuelle Version - 25. Oktober 2026)
+VERSION 6.9.35 (Aktuelle Version - 25. Oktober 2026)
 --------------------------------------------------------------------------------
 
-* SPRACHAUSWAHL & MEHRSPRACHIGKEIT (SYSTEMSPRACHE / DEUTSCH / ENGLISCH):
-  - In Reiter 5 (Einstellungen -> Darstellung & Design) gibt es eine neue Sprachauswahl.
-  - Automatische Erkennung der Betriebssystem-Sprache (Windows / Android).
-  - Volle Umschaltbarkeit zwischen:
-    1. Automatisch (Systemsprache)
-    2. Deutsch
-    3. English
-  - Dynamische Übersetzung der Hauptreiter 1 bis 9, Sperrbildschirm, Monatsnamen,
-    Zeitraumfilter und Einstellungen.
-  - Sofortige Screenreader-Ansage beim Wechsel (NVDA / TalkBack).
+* MULTI-WAEHRUNGS-SYSTEM & STANDARD-WAEHRUNG (EINSTELLUNGEN):
+  - In Reiter 5 (Einstellungen -> Darstellung & Design) kann die Hauptwaehrung
+    flexibel eingestellt werden.
+  - Automatische Vorbelegung je nach Sprache:
+    * Deutsch: Euro (€)
+    * Englisch: US-Dollar ($) oder Britisches Pfund (£)
+  - Vollstaendige Unterstuetzung moderner Hauptwaehrungen (EUR, USD, GBP, CHF,
+    JPY, CAD, AUD, PLN, CZK, DKK, SEK, NOK, TRY, BTC).
+  - Volle Unterstuetzung historischer Waehrungen mit offiziellen EZB-Wechselkursen:
+    * Deutsche Mark (1 EUR = 1,95583 DM)
+    * Oesterreichischer Schilling (1 EUR = 13,7603 oeS)
+    * Franzoesischer Franc, Italienische Lira, Spanische Peseta, Gulden uvm.
 
-* AUFGERAEUMTES 3-REITER SMARTPHONE-SYNC-MENUE (REITER 8):
-  - Klare Trennung oben in drei uebersichtliche Bereiche:
-    1. [1. Gekoppelte Geraete] - Zeigt ausschliesslich verbundene Geraete & Postfach
-    2. [2. Geraet koppeln] - Zeigt ausschliesslich das Formular zum Verbinden
-    3. [3. Kopplungsdaten] - Zeigt ausschliesslich den eigenen Code & Geraetenamen
-  - Beim Klick wird immer nur der gewaehlte Bereich eingeblendet.
+* WAEHRUNGSAUSWAHL BEI AUSGABEN (REITER 2):
+  - Beim Erfassen einer Ausgabe kann die Waehrung flexibel gewaehlt werden.
+  - Automatische Cent-genaue Umrechnung in die Basiswaehrung mit Live-Vorschau.
+  - Originalbetrag und Waehrung werden transparent an der Buchung hinterlegt.
 
-* TRANSITIVE MULTI-GERAETE-KOPPLUNG (PC <-> SMARTPHONE <-> LAPTOP):
-  - Beliebig viele Geraete gleichzeitig verwalten.
-  - Koppelt man den Laptop mit dem Smartphone, ist er automatisch auch mit dem PC
-    gekoppelt, ohne den Code nochmals am PC eingeben zu muessen.
-
-* KOMMA (,), SEMIKOLON (;) & PUNKT (.) BEI ALLEN BETRAEGEN:
-  - In saemtlichen Betragsfeldern koennen Betraege flexibel mit Komma, Semikolon
-    oder Punkt fuer die Cent-Trennung eingetippt werden.
-
-* DAUERAUFTRAG BEENDEN / LOESCHEN MIT DIREKTEM FOKUS-SPRUNG:
-  - Klickt man auf "Beenden / Loeschen", springt der Fokus fuer Tastatur und
-    Screenreader sofort in das Auswahlfenster auf Option 1 (Beenden mit Historie).
-
-* KLARE MONATS- UND WOCHEN-ANSAGE BEI ZEITRAUM-AUSWAHL:
-  - Beim Auswaehlen von Monaten oder Kalenderwochen wird direkt der Zeitraum
-    vorgelesen, ohne dass der Kontostand ungewollt dazwischenfunkt.
-  - Kalenderwochen-Auswahlfeld (KW 1 bis KW 52) in der Wochenansicht.
-
-* KEEPASS 2 SICHERHEITS-SUITE & ARGON2ID SCHLUESSELABLEITUNG:
-  - Hoechster kryptografischer Schutz mit Argon2id (64 MB RAM, 3 Runden).
-  - 100% abwaertskompatible Dual-Engine fuer bisherige PBKDF2-Tresore.
-  - Strukturierte Einstellungs-Tabs (7 Kategorien).
-  - Automatisches Sperren & Speicherbereinigung (Zeroization) bei Bildschirmsperre (Win+L) und Standby.
+* AUFKLAPPBARER WAEHRUNGSRECHNER IN DER UEBERSICHT (REITER 1):
+  - Am Ende von Reiter 1 steht ein barrierefreier Waehrungsrechner bereit.
+  - Schnelle Umrechnung beliebiger Betraege mit Wechselkursanzeige.
+  - "Jetzt umrechnen" und "Waehrungen tauschen" mit NVDA/TalkBack Sprachausgabe.
 
 `;
-  if (!ap.includes('VERSION 6.9.34')) {
+  if (!ap.includes('VERSION 6.9.35')) {
     ap = ap.replace(/(================================================================================\r?\n\s*HAUSHALTSBUCH - AENDERUNGSPROTOKOLL\r?\n================================================================================\r?\n\r?\n)/i, `$1${newProtoEntry}`);
     fs.writeFileSync(protoFile, ap, 'utf8');
-    console.log('✅ AENDERUNGSPROTOKOLL.txt updated to 6.9.34');
+    console.log('✅ AENDERUNGSPROTOKOLL.txt updated to 6.9.35');
   }
 }
 
@@ -115,21 +100,20 @@ VERSION 6.9.34 (Aktuelle Version - 25. Oktober 2026)
 const indexFile = path.join(baseDir, 'index.html');
 if (fs.existsSync(indexFile)) {
   let html = fs.readFileSync(indexFile, 'utf8');
-  html = html.replace(/Was ist neu in diesem Update\? \(v[\d\.]+\)/, 'Was ist neu in diesem Update? (v6.9.34)');
+  html = html.replace(/Was ist neu in diesem Update\? \(v[\d\.]+\)/, 'Was ist neu in diesem Update? (v6.9.35)');
   
-  const changelogHtmlSnippet = `<div style="background: rgba(2, 136, 209, 0.1); border-left: 6px solid #0288D1; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #01579B; font-size: 20px;">🌐 Neu: Sprachauswahl (Systemsprache / Deutsch / Englisch) in Einstellungen</h3>
+  const changelogHtmlSnippet = `<div style="background: rgba(0, 150, 136, 0.1); border-left: 6px solid #009688; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #004D40; font-size: 20px;">💱 Neu: Multi-Währungs-System, Währungsauswahl bei Ausgaben &amp; Währungsrechner</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-<li><strong>🌐 Automatische Systemsprache:</strong> Erkennt beim App-Start automatisch die Systemsprache deines Computers oder Smartphones (Deutsch oder Englisch).</li>
-<li><strong>⚙️ Umschaltbar in den Einstellungen:</strong> In Reiter 5 (Darstellung &amp; Design) kann jederzeit frei zwischen <em>Automatisch</em>, <em>Deutsch</em> und <em>English</em> gewechselt werden.</li>
-<li><strong>🧭 Lokalisierte Navigation &amp; Übersichten:</strong> Alle 9 Hauptreiter, Kopfzeilen, Sperrbildschirm, Monatsnamen und Zeitraumfilter passen sich sofort barrierefrei an.</li>
-<li><strong>🗣️ Screenreader-Rückmeldung:</strong> Beim Sprachwechsel kündigt NVDA / TalkBack die neue Sprache sofort an und setzt das Dokumenten-Sprachattribut.</li>
+<li><strong>💱 Standard-Währung in den Einstellungen:</strong> Wähle in Reiter 5 (Darstellung &amp; Design) deine Hauptwährung – automatisch nach Sprache (Euro bei Deutsch, Dollar bei Englisch) oder frei aus aktuellen Hauptwährungen und historischen Währungen (Deutsche Mark, Schilling, Franc).</li>
+<li><strong>🔴 Währung bei Ausgaben frei wählbar:</strong> Beim Buchen einer Ausgabe in Reiter 2 kann neben dem Betrag direkt die Währung bestimmt werden. Bei Fremdwährungen wird automatisch centgenau in deine Basiswährung umgerechnet.</li>
+<li><strong>💱 Aufklappbarer Währungsrechner in der Übersicht:</strong> Am Ende von Reiter 1 steht ein barrierefreier Währungsrechner zum Aufklappen bereit, der beliebige Beträge blitzschnell umrechnet und per Sprachausgabe für NVDA / TalkBack ansagt.</li>
 </ul>
 </div>\n`;
 
-  if (!html.includes('🌐 Neu: Sprachauswahl (Systemsprache / Deutsch / Englisch)')) {
+  if (!html.includes('💱 Neu: Multi-Währungs-System, Währungsauswahl bei Ausgaben')) {
     html = html.replace(/(<div class="changelog-content"[^>]*>\r?\n)/i, `$1${changelogHtmlSnippet}`);
     fs.writeFileSync(indexFile, html, 'utf8');
-    console.log('✅ index.html changelog modal updated to 6.9.34');
+    console.log('✅ index.html changelog modal updated to 6.9.35');
   }
 }

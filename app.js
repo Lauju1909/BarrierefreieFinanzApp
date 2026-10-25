@@ -112,6 +112,16 @@ const I18N_TRANSLATIONS = {
     settingsLangLabel: "🌐 Sprache / Language:",
     settingsSymbolsLabel: "Symbole & Emojis in der App anzeigen",
     settingsSymbolsHint: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.",
+    settingsCurrencyLabel: "💱 Standard-Währung / Currency:",
+    lblExpAmount: "Betrag in",
+    lblCalcCurrAmount: "Betrag:",
+    lblCalcCurrFrom: "Von Währung (Quelle):",
+    lblCalcCurrTo: "In Währung (Ziel):",
+    btnCalcCurrConvert: "💱 Jetzt umrechnen",
+    btnCalcCurrSwap: "🔄 Währungen tauschen",
+    headingCurrencyConverter: "Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)",
+    hintCurrencyConverter: "Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:",
+    currRateInfoPrefix: "Offizieller Wechselkurs:",
 
     // Announce
     langChanged: "Sprache auf Deutsch gesetzt.",
@@ -207,7 +217,8 @@ function getSystemLanguage() {
 }
 
 function getCurrentLanguagePreference() {
-  return localStorage.getItem(STORAGE_LANGUAGE_KEY) || 'auto';
+  if (typeof localStorage !== 'undefined') return localStorage.getItem(STORAGE_LANGUAGE_KEY) || 'auto';
+  return 'auto';
 }
 
 function getEffectiveLanguage() {
@@ -338,6 +349,273 @@ function changeLanguage(langVal) {
 function initLanguage() {
   applyAppLanguage();
 }
+
+// =============================================================================
+// CURRENCY ENGINE & WECHSELKURSE (MODERN & HISTORISCH)
+// =============================================================================
+const STORAGE_CURRENCY_KEY = 'haushaltsbuch_app_currency_v1';
+
+const CURRENCY_DATABASE = {
+  EUR: { code: 'EUR', symbol: '€', name_de: 'Euro', name_en: 'Euro', rate: 1.0, type: 'modern', flag: '💶', symbolPlacement: 'after' },
+  USD: { code: 'USD', symbol: '$', name_de: 'US-Dollar', name_en: 'US Dollar', rate: 1.08, type: 'modern', flag: '💵', symbolPlacement: 'before' },
+  GBP: { code: 'GBP', symbol: '£', name_de: 'Britisches Pfund', name_en: 'British Pound', rate: 0.86, type: 'modern', flag: '💷', symbolPlacement: 'before' },
+  CHF: { code: 'CHF', symbol: 'CHF', name_de: 'Schweizer Franken', name_en: 'Swiss Franc', rate: 0.95, type: 'modern', flag: '🇨🇭', symbolPlacement: 'after' },
+  JPY: { code: 'JPY', symbol: '¥', name_de: 'Japanischer Yen', name_en: 'Japanese Yen', rate: 165.0, type: 'modern', flag: '💴', symbolPlacement: 'before' },
+  CAD: { code: 'CAD', symbol: 'CA$', name_de: 'Kanadischer Dollar', name_en: 'Canadian Dollar', rate: 1.48, type: 'modern', flag: '🇨🇦', symbolPlacement: 'before' },
+  AUD: { code: 'AUD', symbol: 'AU$', name_de: 'Australischer Dollar', name_en: 'Australian Dollar', rate: 1.65, type: 'modern', flag: '🇦🇺', symbolPlacement: 'before' },
+  PLN: { code: 'PLN', symbol: 'zł', name_de: 'Polnischer Złoty', name_en: 'Polish Zloty', rate: 4.30, type: 'modern', flag: '🇵🇱', symbolPlacement: 'after' },
+  CZK: { code: 'CZK', symbol: 'Kč', name_de: 'Tschechische Krone', name_en: 'Czech Koruna', rate: 25.2, type: 'modern', flag: '🇨🇿', symbolPlacement: 'after' },
+  DKK: { code: 'DKK', symbol: 'kr', name_de: 'Dänische Krone', name_en: 'Danish Krone', rate: 7.46, type: 'modern', flag: '🇩🇰', symbolPlacement: 'after' },
+  SEK: { code: 'SEK', symbol: 'kr', name_de: 'Schwedische Krone', name_en: 'Swedish Krona', rate: 11.4, type: 'modern', flag: '🇸🇪', symbolPlacement: 'after' },
+  NOK: { code: 'NOK', symbol: 'kr', name_de: 'Norwegische Krone', name_en: 'Norwegian Krone', rate: 11.6, type: 'modern', flag: '🇳🇴', symbolPlacement: 'after' },
+  TRY: { code: 'TRY', symbol: '₺', name_de: 'Türkische Lira', name_en: 'Turkish Lira', rate: 37.0, type: 'modern', flag: '🇹🇷', symbolPlacement: 'after' },
+  BTC: { code: 'BTC', symbol: '₿', name_de: 'Bitcoin', name_en: 'Bitcoin', rate: 0.000015, type: 'modern', flag: '₿', symbolPlacement: 'before', decimals: 6 },
+  
+  // Historische / Frühere Währungen (unwiderrufliche offizielle Umrechnungskurse der EZB / Bundesbank):
+  DEM: { code: 'DEM', symbol: 'DM', name_de: 'Deutsche Mark', name_en: 'German Mark (DM)', rate: 1.95583, type: 'historic', flag: '🇩🇪', symbolPlacement: 'after' },
+  ATS: { code: 'ATS', symbol: 'öS', name_de: 'Österreichischer Schilling', name_en: 'Austrian Schilling', rate: 13.7603, type: 'historic', flag: '🇦🇹', symbolPlacement: 'after' },
+  FRF: { code: 'FRF', symbol: 'FF', name_de: 'Französischer Franc', name_en: 'French Franc', rate: 6.55957, type: 'historic', flag: '🇫🇷', symbolPlacement: 'after' },
+  ITL: { code: 'ITL', symbol: 'L.', name_de: 'Italienische Lira', name_en: 'Italian Lira', rate: 1936.27, type: 'historic', flag: '🇮🇹', symbolPlacement: 'after' },
+  ESP: { code: 'ESP', symbol: 'Ptas', name_de: 'Spanische Peseta', name_en: 'Spanish Peseta', rate: 166.386, type: 'historic', flag: '🇪🇸', symbolPlacement: 'after' },
+  NLG: { code: 'NLG', symbol: 'fl.', name_de: 'Niederländischer Gulden', name_en: 'Dutch Guilder', rate: 2.20371, type: 'historic', flag: '🇳🇱', symbolPlacement: 'after' },
+  BEF: { code: 'BEF', symbol: 'BFR', name_de: 'Belgischer Franc', name_en: 'Belgian Franc', rate: 40.3399, type: 'historic', flag: '🇧🇪', symbolPlacement: 'after' },
+  GRD: { code: 'GRD', symbol: 'Dr.', name_de: 'Griechische Drachme', name_en: 'Greek Drachma', rate: 340.75, type: 'historic', flag: '🇬🇷', symbolPlacement: 'after' }
+};
+
+function getCurrentCurrencyPreference() {
+  if (typeof localStorage !== 'undefined') {
+    return localStorage.getItem(STORAGE_CURRENCY_KEY) || 'auto';
+  }
+  return 'auto';
+}
+
+function getEffectiveCurrency() {
+  const pref = getCurrentCurrencyPreference();
+  if (pref && pref !== 'auto' && CURRENCY_DATABASE[pref]) {
+    return pref;
+  }
+  const lang = getEffectiveLanguage();
+  if (lang === 'en') {
+    if (typeof navigator !== 'undefined' && (navigator.language === 'en-GB' || (navigator.languages && navigator.languages.some(l => l.startsWith('en-GB'))))) {
+      return 'GBP';
+    }
+    return 'USD';
+  }
+  return 'EUR';
+}
+
+function getCurrencyInfo(code) {
+  return CURRENCY_DATABASE[code] || CURRENCY_DATABASE['EUR'];
+}
+
+function renderCurrencyOptionsHTML(selectedCode, includeAuto) {
+  let out = '';
+  const lang = getEffectiveLanguage();
+  if (includeAuto) {
+    const isAuto = selectedCode === 'auto' || !selectedCode;
+    const autoLabel = lang === 'en'
+      ? '🌐 Automatic by language (German: Euro € / English: Dollar $)'
+      : '🌐 Automatisch nach Sprache (DE: Euro € / EN: Dollar $)';
+    out += '<option value="auto"' + (isAuto ? ' selected' : '') + '>' + autoLabel + '</option>';
+  }
+  
+  out += '<optgroup label="' + (lang === 'en' ? 'Modern Major Currencies' : 'Aktuelle Hauptwährungen') + '">';
+  for (const c of Object.keys(CURRENCY_DATABASE)) {
+    const info = CURRENCY_DATABASE[c];
+    if (info.type === 'modern') {
+      const name = lang === 'en' ? info.name_en : info.name_de;
+      const isSel = selectedCode === c;
+      out += '<option value="' + c + '"' + (isSel ? ' selected' : '') + '>' + info.flag + ' ' + c + ' - ' + name + ' (' + info.symbol + ')</option>';
+    }
+  }
+  out += '</optgroup>';
+
+  out += '<optgroup label="' + (lang === 'en' ? 'Historical / Classic Currencies' : 'Historische & frühere Währungen') + '">';
+  for (const c of Object.keys(CURRENCY_DATABASE)) {
+    const info = CURRENCY_DATABASE[c];
+    if (info.type === 'historic') {
+      const name = lang === 'en' ? info.name_en : info.name_de;
+      const isSel = selectedCode === c;
+      out += '<option value="' + c + '"' + (isSel ? ' selected' : '') + '>' + info.flag + ' ' + c + ' - ' + name + ' (' + info.symbol + ')</option>';
+    }
+  }
+  out += '</optgroup>';
+  return out;
+}
+
+function convertCurrency(amount, fromCode, toCode) {
+  const from = getCurrencyInfo(fromCode);
+  const to = getCurrencyInfo(toCode);
+  if (!from || !to) return amount;
+  const inEur = Number(amount || 0) / from.rate;
+  return inEur * to.rate;
+}
+
+function calculateCurrencyConversion(announce) {
+  const amtInput = document.getElementById('calc-curr-amount');
+  const fromSel = document.getElementById('calc-curr-from');
+  const toSel = document.getElementById('calc-curr-to');
+  const rateInfo = document.getElementById('calc-curr-rate-info');
+  const resText = document.getElementById('calc-curr-result-text');
+
+  if (!amtInput || !fromSel || !toSel || !resText) return;
+
+  const amount = (typeof parseEuroInput === 'function' ? parseEuroInput(amtInput.value) : parseFloat(amtInput.value)) || 0;
+  const fromCode = fromSel.value || 'EUR';
+  const toCode = toSel.value || 'USD';
+
+  const fromInfo = getCurrencyInfo(fromCode);
+  const toInfo = getCurrencyInfo(toCode);
+
+  const converted = convertCurrency(amount, fromCode, toCode);
+
+  const rate1 = convertCurrency(1, fromCode, toCode);
+  const lang = getEffectiveLanguage();
+  const prefix = lang === 'en' ? 'Official exchange rate:' : 'Offizieller Wechselkurs:';
+  
+  const rateDecimals = toInfo.decimals !== undefined ? toInfo.decimals : (toInfo.rate > 500 ? 0 : (rate1 < 0.01 ? 6 : 4));
+  const rateStr = rate1.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: rateDecimals
+  });
+
+  if (rateInfo) {
+    rateInfo.textContent = prefix + ' 1 ' + fromCode + ' = ' + rateStr + ' ' + toCode;
+  }
+
+  const fromFormatted = formatCurrency(amount, fromCode);
+  const toFormatted = formatCurrency(converted, toCode);
+
+  resText.textContent = fromFormatted + ' = ' + toFormatted;
+
+  if (announce && typeof announceNVDA === 'function') {
+    const fromName = lang === 'en' ? fromInfo.name_en : fromInfo.name_de;
+    const toName = lang === 'en' ? toInfo.name_en : toInfo.name_de;
+    const speech = lang === 'en'
+      ? fromFormatted + ' equals ' + toFormatted + '. Exchange rate: 1 ' + fromName + ' is ' + rateStr + ' ' + toName + '.'
+      : fromFormatted + ' entspricht ' + toFormatted + '. Wechselkurs: 1 ' + fromName + ' ist ' + rateStr + ' ' + toName + '.';
+    announceNVDA(speech, true);
+  }
+}
+
+function swapConverterCurrencies() {
+  const fromSel = document.getElementById('calc-curr-from');
+  const toSel = document.getElementById('calc-curr-to');
+  if (!fromSel || !toSel) return;
+  const temp = fromSel.value;
+  fromSel.value = toSel.value;
+  toSel.value = temp;
+  calculateCurrencyConversion(true);
+}
+
+function changeCurrency(currVal) {
+  const valid = (currVal === 'auto' || CURRENCY_DATABASE[currVal]) ? currVal : 'auto';
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(STORAGE_CURRENCY_KEY, valid);
+  }
+  applyAppCurrency();
+  if (typeof updateOverview === 'function') {
+    updateOverview();
+  }
+  const lang = getEffectiveLanguage();
+  const eff = getEffectiveCurrency();
+  const info = getCurrencyInfo(eff);
+  const name = lang === 'en' ? info.name_en : info.name_de;
+  const msg = lang === 'en'
+    ? (valid === 'auto' ? ('Currency set to Automatic (' + name + ' ' + info.symbol + ' active).') : ('Currency changed to ' + name + ' (' + info.symbol + ').'))
+    : (valid === 'auto' ? ('Standard-Währung auf Automatisch gesetzt (' + name + ' ' + info.symbol + ' aktiv).') : ('Standard-Währung auf ' + name + ' (' + info.symbol + ') geändert.'));
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(msg, true);
+  }
+}
+
+function handleExpenseCurrencyChange(selectedCurr) {
+  updateExpenseCurrencyHint();
+  const info = getCurrencyInfo(selectedCurr);
+  const lang = getEffectiveLanguage();
+  const name = lang === 'en' ? info.name_en : info.name_de;
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(lang === 'en' ? ('Expense currency set to ' + name + ' (' + info.symbol + ').') : ('Währung der Ausgabe auf ' + name + ' (' + info.symbol + ') gesetzt.'));
+  }
+}
+
+function updateExpenseCurrencyHint() {
+  const expCurrSel = document.getElementById('exp-currency');
+  const hintEl = document.getElementById('exp-currency-convert-hint');
+  const amtInput = document.getElementById('exp-amount');
+  if (!expCurrSel || !hintEl) return;
+
+  const chosenCurr = expCurrSel.value || getEffectiveCurrency();
+  const baseCurr = getEffectiveCurrency();
+
+  if (chosenCurr === baseCurr) {
+    hintEl.style.display = 'none';
+    hintEl.textContent = '';
+    return;
+  }
+
+  const amt = amtInput ? ((typeof parseEuroInput === 'function' ? parseEuroInput(amtInput.value) : parseFloat(amtInput.value)) || 0) : 0;
+  if (amt <= 0) {
+    hintEl.style.display = 'none';
+    hintEl.textContent = '';
+    return;
+  }
+
+  const converted = convertCurrency(amt, chosenCurr, baseCurr);
+  const lang = getEffectiveLanguage();
+  const baseInfo = getCurrencyInfo(baseCurr);
+  const baseName = lang === 'en' ? baseInfo.name_en : baseInfo.name_de;
+
+  hintEl.style.display = 'block';
+  hintEl.textContent = lang === 'en'
+    ? ('≈ ' + formatCurrency(converted, baseCurr) + ' (automatically converted into your base currency ' + baseName + ')')
+    : ('≈ ' + formatCurrency(converted, baseCurr) + ' (wird automatisch in deine Basiswährung ' + baseName + ' umgerechnet)');
+}
+
+function applyAppCurrency() {
+  const eff = getEffectiveCurrency();
+  const pref = getCurrentCurrencyPreference();
+  const info = getCurrencyInfo(eff);
+  const lang = getEffectiveLanguage();
+
+  const setSel = document.getElementById('settings-currency-select');
+  if (setSel) {
+    setSel.innerHTML = renderCurrencyOptionsHTML(pref, true);
+    setSel.value = pref;
+  }
+
+  const expSel = document.getElementById('exp-currency');
+  if (expSel) {
+    const prevVal = expSel.value || eff;
+    expSel.innerHTML = renderCurrencyOptionsHTML(prevVal, false);
+    expSel.value = prevVal;
+  }
+
+  const lblExpAmt = document.getElementById('lbl-exp-amount');
+  if (lblExpAmt) {
+    const curName = lang === 'en' ? info.name_en : info.name_de;
+    lblExpAmt.textContent = lang === 'en' ? ('Amount in ' + curName + ' (' + info.symbol + ')') : ('Betrag in ' + curName + ' (' + info.symbol + ')');
+  }
+
+  const calcFrom = document.getElementById('calc-curr-from');
+  const calcTo = document.getElementById('calc-curr-to');
+  if (calcFrom && calcTo) {
+    const curFrom = calcFrom.value || eff;
+    const curTo = calcTo.value || (curFrom === 'USD' ? 'EUR' : (curFrom === 'EUR' ? 'USD' : 'EUR'));
+    calcFrom.innerHTML = renderCurrencyOptionsHTML(curFrom, false);
+    calcTo.innerHTML = renderCurrencyOptionsHTML(curTo, false);
+    calcFrom.value = curFrom;
+    calcTo.value = curTo;
+  }
+
+  calculateCurrencyConversion(false);
+  updateExpenseCurrencyHint();
+}
+
+function initCurrency() {
+  applyAppCurrency();
+}
+
 let MONTH_NAMES = [
   'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
   'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
@@ -4420,6 +4698,7 @@ let lockoutTimerInterval = null;
 // ----------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', () => {
   initLanguage();
+  initCurrency();
   initTheme();
   initDatePickers();
   setupGlobalKeyboardShortcuts();
@@ -6909,7 +7188,17 @@ function updateExpenseSplitSummary() {
 
 async function handleAddExpense(e) {
   e.preventDefault();
-  const amount = parseFloat(document.getElementById('exp-amount').value);
+  let amount = parseFloat(document.getElementById('exp-amount').value);
+  const expCurrEl = document.getElementById('exp-currency');
+  const expCurr = expCurrEl ? expCurrEl.value : (typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR');
+  const baseCurr = typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR';
+  let origExpAmount = amount;
+  let expCurrencyTag = '';
+  if (expCurr !== baseCurr && typeof convertCurrency === 'function') {
+    amount = convertCurrency(amount, expCurr, baseCurr);
+    amount = Math.round(amount * 100) / 100;
+    expCurrencyTag = '[' + formatCurrency(origExpAmount, expCurr) + ']';
+  }
   const freq = document.getElementById('exp-frequency').value;
   const account = document.getElementById('exp-account') ? document.getElementById('exp-account').value : 'bank';
   const category = document.getElementById('exp-category').value;
@@ -6917,7 +7206,10 @@ async function handleAddExpense(e) {
   const dateInputVal = document.getElementById('exp-date') ? document.getElementById('exp-date').value : '';
   const todayStr = new Date().toISOString().split('T')[0];
   const date = dateInputVal || todayStr;
-  const desc = document.getElementById('exp-desc').value.trim();
+  let desc = document.getElementById('exp-desc').value.trim();
+  if (expCurrencyTag) {
+    desc = desc ? (desc + ' ' + expCurrencyTag) : expCurrencyTag;
+  }
 
   if (isNaN(amount) || amount <= 0) return;
 
@@ -11636,15 +11928,24 @@ async function importEncryptedBackup(event) {
 // ----------------------------------------------------------------------------
 // 18. FORMATIERUNGS-HILFSFUNKTIONEN
 // ----------------------------------------------------------------------------
-function formatCurrency(num) {
-  if (appState && appState.securitySettings && appState.securitySettings.privacyMask) {
-    return '•••• €';
+function formatCurrency(num, customCurr) {
+  const code = customCurr || (typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR');
+  const info = typeof getCurrencyInfo === 'function' ? getCurrencyInfo(code) : { symbol: '€', symbolPlacement: 'after', decimals: 2 };
+  const sym = info.symbol || '€';
+  if (typeof appState !== 'undefined' && appState && appState.securitySettings && appState.securitySettings.privacyMask) {
+    return '•••• ' + sym;
   }
   const val = Number(num || 0);
-  return val.toLocaleString('de-DE', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }) + ' €';
+  const decimals = info.decimals !== undefined ? info.decimals : 2;
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const formatted = val.toLocaleString(lang === 'en' ? 'en-US' : 'de-DE', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+  if (info.symbolPlacement === 'before') {
+    return sym + (lang === 'en' ? '' : ' ') + formatted;
+  }
+  return formatted + ' ' + sym;
 }
 
 function formatDateDisplay(dateStr) {

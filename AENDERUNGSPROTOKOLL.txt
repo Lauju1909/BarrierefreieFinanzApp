@@ -3,6 +3,33 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 6.9.35 (Aktuelle Version - 25. Oktober 2026)
+--------------------------------------------------------------------------------
+
+* MULTI-WAEHRUNGS-SYSTEM & STANDARD-WAEHRUNG (EINSTELLUNGEN):
+  - In Reiter 5 (Einstellungen -> Darstellung & Design) kann die Hauptwaehrung
+    flexibel eingestellt werden.
+  - Automatische Vorbelegung je nach Sprache:
+    * Deutsch: Euro (€)
+    * Englisch: US-Dollar ($) oder Britisches Pfund (£)
+  - Vollstaendige Unterstuetzung moderner Hauptwaehrungen (EUR, USD, GBP, CHF,
+    JPY, CAD, AUD, PLN, CZK, DKK, SEK, NOK, TRY, BTC).
+  - Volle Unterstuetzung historischer Waehrungen mit offiziellen EZB-Wechselkursen:
+    * Deutsche Mark (1 EUR = 1,95583 DM)
+    * Oesterreichischer Schilling (1 EUR = 13,7603 oeS)
+    * Franzoesischer Franc, Italienische Lira, Spanische Peseta, Gulden uvm.
+
+* WAEHRUNGSAUSWAHL BEI AUSGABEN (REITER 2):
+  - Beim Erfassen einer Ausgabe kann die Waehrung flexibel gewaehlt werden.
+  - Automatische Cent-genaue Umrechnung in die Basiswaehrung mit Live-Vorschau.
+  - Originalbetrag und Waehrung werden transparent an der Buchung hinterlegt.
+
+* AUFKLAPPBARER WAEHRUNGSRECHNER IN DER UEBERSICHT (REITER 1):
+  - Am Ende von Reiter 1 steht ein barrierefreier Waehrungsrechner bereit.
+  - Schnelle Umrechnung beliebiger Betraege mit Wechselkursanzeige.
+  - "Jetzt umrechnen" und "Waehrungen tauschen" mit NVDA/TalkBack Sprachausgabe.
+
+--------------------------------------------------------------------------------
 VERSION 6.9.34 (Aktuelle Version - 25. Oktober 2026)
 --------------------------------------------------------------------------------
 
