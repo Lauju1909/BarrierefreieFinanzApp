@@ -3247,10 +3247,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="app-wrapper" style="display: none;">
 
 <!-- Schnellsprunglinks für NVDA -->
-<nav class="skip-links" aria-label="Schnellnavigation">
-<a href="#main-nav-tabs" class="skip-link">Zur Menüauswahl springen</a>
-<a href="#time-picker-bar" class="skip-link">Zur Zeitraumauswahl springen</a>
-<a href="#view-content-area" class="skip-link">Direkt zum Hauptinhalt springen</a>
+<nav class="skip-links" aria-label="Schnellnavigation" id="skip-nav-bar">
+<a href="#main-nav-tabs" class="skip-link" id="skip-link-nav">Zur Menüauswahl springen</a>
+<a href="#time-picker-bar" class="skip-link" id="skip-link-time">Zur Zeitraumauswahl springen</a>
+<a href="#view-content-area" class="skip-link" id="skip-link-content">Direkt zum Hauptinhalt springen</a>
 </nav>
 
 <!-- Header -->
@@ -3268,8 +3268,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <span aria-hidden="true" id="header-privacy-icon">👁️</span>
 <span id="header-privacy-text">Diskretion (Strg+H)</span>
 </button>
-<span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum">
- 📅 Heute:<strong id="today-date-text">Lade Datum...</strong></span>
+<span id="today-indicator-badge" class="today-badge" aria-label="Heutiges Datum"><span aria-hidden="true">📅</span> <span id="lbl-today-prefix">Heute:</span> <strong id="today-date-text">Lade Datum...</strong></span>
 <button class="btn btn-lock" onclick="lockApp()" title="App sofort sperren (Taste L oder Strg + L)">
 <span aria-hidden="true">🔒</span>
 <span>Sperren (L)</span>
@@ -4711,7 +4710,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- 1. DARSTELLUNG, DESIGN & SCHRIFTGRÖSSE -->
 <section class="settings-box" data-settings-cat="design" aria-labelledby="theme-settings-heading" style="border-left: 8px solid var(--accent-action);">
 <h3 id="theme-settings-heading" data-emoji="🎨">Darstellung, Design & Schriftgröße</h3>
-<p class="field-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
+<p class="field-hint" id="theme-settings-hint">Passe hier das Design und die Schriftgröße für deine Augen an:</p>
 
 <div class="form-row-2" style="margin-top: 10px;">
 <div class="form-group">
@@ -4778,7 +4777,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div class="form-group" style="margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 17px; font-weight: bold;">
 <input type="checkbox" id="settings-show-symbols" onchange="toggleSymbolsDisplay(this.checked)" onclick="toggleSymbolsDisplay(this.checked)" checked style="width: 22px; height: 22px;">
-<span>Symbole & Emojis in der App anzeigen</span>
+<span id="lbl-settings-symbols">Symbole & Emojis in der App anzeigen</span>
 </label>
 <p class="field-hint" style="margin-top: 4px;">Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.</p>
 </div>
@@ -5732,7 +5731,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
 <p><strong>Barrierefreie Finanzen v6.9.36</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
-<p>Tastaturkürzel:<strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
+<p id="footer-shortcuts-text">Tastaturkürzel: <strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
 </div>

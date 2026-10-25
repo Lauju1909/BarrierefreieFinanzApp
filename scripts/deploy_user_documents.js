@@ -9,9 +9,17 @@ const targetExe = path.join(userDir, 'Haushaltsbuch.exe');
 const vaultPath = path.join(userDir, 'Haushaltsbuch_Daten.vault');
 const pairingPath = path.join(userDir, 'Haushaltsbuch_Kopplung.json');
 
-// 1. Copy EXE
-fs.copyFileSync(srcExe, targetExe);
-console.log('✅ Haushaltsbuch.exe copied to user documents folder');
+// 1. Copy EXE (catch if currently running in user background)
+try {
+  fs.copyFileSync(srcExe, targetExe);
+  console.log('✅ Haushaltsbuch.exe copied to user documents folder');
+} catch (exeErr) {
+  if (exeErr.code === 'EBUSY') {
+    console.log('ℹ️ Haushaltsbuch.exe is currently running (in use). Will update on next close.');
+  } else {
+    console.error('Error copying EXE:', exeErr);
+  }
+}
 
 // 2. Read HTML and inject disk vault data so browser direct-open works immediately
 let html = fs.readFileSync(srcHtml, 'utf8');
