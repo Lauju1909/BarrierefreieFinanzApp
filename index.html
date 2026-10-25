@@ -27,8 +27,19 @@
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(25, 118, 210, 0.1); border-left: 6px solid #1976D2; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #0d47a1; font-size: 20px;">🚀 Neu: Multi-Geräte-Sync (3 Reiter), Komma/Semikolon-Eingabe, Dauerauftrag-Fokus &amp; Monats-/Wochen-Ansage</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>📱 Aufgeräumtes 3-Reiter Smartphone-Sync-Menü (Reiter 8):</strong> Oben stehen nun drei klar getrennte Auswahl-Bereiche zur Verfügung: <strong>1. Gekoppelte Geräte</strong>, <strong>2. Gerät koppeln</strong> und <strong>3. Kopplungsdaten</strong>. Beim Anklicken wird immer nur der gewählte Bereich angezeigt.</li>
+<li><strong>🔗 Multi-Geräte &amp; Automatische Gruppen-Kopplung (PC ↔ Smartphone ↔ Laptop):</strong> Es können beliebig viele Geräte verbunden werden. Wenn du deinen Laptop mit dem Smartphone koppelst, ist er automatisch auch mit deinem PC gekoppelt – ohne den Code ein zweites Mal am PC eingeben zu müssen.</li>
+<li><strong>🔢 Komma (<code>,</code>), Semikolon (<code>;</code>) &amp; Punkt (<code>.</code>) bei Geldbeträgen:</strong> In allen Betragsfeldern der Desktop- und Android-App funktionieren ab sofort Komma, Semikolon und Punkt zuverlässig als Dezimaltrennzeichen für Cent-Beträge.</li>
+<li><strong>🔁 Dauerauftrag Beenden / Löschen mit direktem Fokus-Sprung:</strong> Klickt man bei einem Dauerauftrag auf „🗑️ Beenden / Löschen“, springt der Fokus für Tastatur und Screenreader (NVDA / TalkBack) sofort direkt auf die Auswahl zwischen <em>„Option 1: Ab jetzt beenden &amp; Historie behalten“</em> und <em>„Option 2: Komplett überall löschen“</em> (steuerbar per Pfeiltasten oder Tab).</li>
+<li><strong>📅 Klare Monats- &amp; Wochen-Ansage statt Kontostand:</strong> Beim Auswählen eines Monats oder einer Kalenderwoche liest der Screenreader jetzt direkt den gewählten Monat bzw. die Kalenderwoche vor, ohne dass der Kontostand dazwischenfunkt. Zudem besitzt die Wochen-Ansicht nun ebenfalls ein direktes Auswahlfeld für alle Kalenderwochen.</li>
+</ul>
+</div>
+
 <div style="background: rgba(46, 125, 50, 0.08); border-left: 6px solid #2e7d32; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
-<h3 style="margin: 0 0 8px 0; color: #1b5e20; font-size: 20px;">🛡️ Neu: KeePass 2 Sicherheits-Suite &amp; Argon2id Schlüsselableitung</h3>
+<h3 style="margin: 0 0 8px 0; color: #1b5e20; font-size: 20px;">🛡️ KeePass 2 Sicherheits-Suite &amp; Argon2id Schlüsselableitung</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
 <li><strong>⚡ Argon2id Schlüsselableitung (KeePass 2 Standard):</strong> Modernste Memory-Hard KDF-Technologie schützt den Tresor gegen Wörterbuch- und GPU/ASIC-Angriffe mit 64 MB Arbeitsspeicher und 3 Runden. Dank intelligenter Dual-Engine bleiben alle bisherigen PBKDF2-Tresore 100% abwärtskompatibel.</li>
 <li><strong>📂 Strukturierte Einstellungs-Kategorien:</strong> Die Einstellungen (Reiter 5) sind nun übersichtlich in 7 thematische Reiter unterteilt (Alle, Sicherheit &amp; Tresor, Darstellung &amp; Design, Datensicherung, Monats-Budgets, Eigene Kategorien, Info &amp; System).</li>
@@ -1243,9 +1254,12 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
 </div>
 
-<div class="form-actions" style="margin-top: 14px;">
+<div class="form-actions" style="margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap;">
   <button type="submit" class="btn btn-primary">
     <span><strong>Dauerauftrag speichern</strong> (Enter)</span>
+  </button>
+  <button type="button" class="btn btn-secondary" onclick="const rId = document.getElementById('edit-rec-id').value; closeEditRecModal(); openEndOrDeleteRecModal(rId);" style="color: #C62828; border-color: #EF9A9A;">
+    <span>🗑️ Beenden / Löschen</span>
   </button>
   <button type="button" class="btn btn-secondary" onclick="closeEditRecModal()">
     <span>Abbrechen</span>
@@ -1258,7 +1272,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <!-- =========================================================================
      MODAL DIALOG: DAUERAUFTRAG BEENDEN ODER LÖSCHEN (HISTORIEN-SCHUTZ)
      ========================================================================= -->
-<div id="end-or-delete-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="end-or-delete-rec-heading" style="display: none;">
+<div id="end-or-delete-rec-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="end-or-delete-rec-heading" aria-describedby="end-or-delete-rec-sub" style="display: none;">
   <div class="modal-dialog-box" style="max-width: 580px; border-top: 8px solid #1976D2;">
     <h2 id="end-or-delete-rec-heading" tabindex="-1" style="margin: 0 0 8px 0; color: #0D47A1; font-size: 22px;">
       Dauerauftrag beenden oder löschen
@@ -1274,7 +1288,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <span style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 8px;">
           Alle alten Monate bleiben unverändert in deinen Statistiken und Kontoständen erhalten. Der Dauerauftrag stoppt einfach für alle zukünftigen Monate.
         </span>
-        <button type="button" class="btn btn-primary" onclick="confirmEndRecurring()" style="background-color: #2E7D32; border-color: #1B5E20; width: 100%; font-size: 14px; padding: 10px;">
+        <button type="button" id="btn-end-rec-option" class="btn btn-primary" onclick="confirmEndRecurring()" style="background-color: #2E7D32; border-color: #1B5E20; width: 100%; font-size: 14px; padding: 10px;">
           📅 <strong>Dauerauftrag ab jetzt beenden (Vergangenheit behalten)</strong>
         </button>
       </div>
@@ -1284,14 +1298,14 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <span style="font-size: 14px; color: var(--text-primary); display: block; margin-bottom: 8px;">
           Entfernt den Dauerauftrag restlos aus allen vergangenen und zukünftigen Monaten. Nur verwenden, falls der Eintrag versehentlich falsch angelegt wurde.
         </span>
-        <button type="button" class="btn btn-secondary" onclick="confirmHardDeleteRecurring()" style="color: #C62828; border-color: #EF9A9A; width: 100%; font-size: 14px; padding: 10px;">
+        <button type="button" id="btn-delete-rec-option" class="btn btn-secondary" onclick="confirmHardDeleteRecurring()" style="color: #C62828; border-color: #EF9A9A; width: 100%; font-size: 14px; padding: 10px;">
           🗑️ <strong>Komplett überall löschen (auch in der Vergangenheit)</strong>
         </button>
       </div>
     </div>
 
     <div style="display: flex; justify-content: flex-end;">
-      <button type="button" class="btn btn-secondary" onclick="closeEndOrDeleteRecModal()" style="padding: 8px 18px;">
+      <button type="button" id="btn-cancel-end-or-delete-rec" class="btn btn-secondary" onclick="closeEndOrDeleteRecModal()" style="padding: 8px 18px;">
         Abbrechen
       </button>
     </div>
@@ -2299,7 +2313,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <section class="overview-section" aria-labelledby="section-accounts-heading">
 <h3 id="section-accounts-heading" class="section-title">1. 💳 Deine Kontostände im Detail</h3>
  
-<div class="accounts-grid" id="overview-accounts-grid" aria-live="polite">
+<div class="accounts-grid" id="overview-accounts-grid">
 <!-- Dynamisch befüllt durch renderAccountCardBalances -->
 </div>
   <div id="tx-search-results-banner" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(33, 150, 243, 0.1); border-left: 5px solid #2196F3; border-radius: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="status" aria-live="polite">

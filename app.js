@@ -4218,6 +4218,7 @@ function setupGlobalKeyboardShortcuts() {
       closeReceiptTextPrompt();
       closeEditModal();
       closeEditRecModal();
+      closeEndOrDeleteRecModal();
       closeAccountModal();
       closeCashCounterModal();
       return;
@@ -4390,21 +4391,31 @@ function changeWeekRelative(direction) {
   renderSubTimeNavigation();
   updateOverview();
   const w = getWeekBoundaries(currentWeekDateStr);
-  announceNVDA(`Gewechselt zu Kalenderwoche ${w.weekNum}.`);
+  announceNVDA(`Kalenderwoche ${w.weekNum} (${formatDateGerman(w.mondayStr)} bis ${formatDateGerman(w.sundayStr)}).`, true);
 }
 
 function setWeekToCurrent() {
   currentWeekDateStr = new Date().toISOString().split('T')[0];
   renderSubTimeNavigation();
   updateOverview();
-  announceNVDA('Zur aktuellen Kalenderwoche gesprungen.');
+  const w = getWeekBoundaries(currentWeekDateStr);
+  announceNVDA(`Aktuelle Kalenderwoche ${w.weekNum} (${formatDateGerman(w.mondayStr)} bis ${formatDateGerman(w.sundayStr)}).`, true);
 }
 
 function handleWeekChange(val) {
   if (!val) return;
   currentWeekDateStr = val;
-  renderSubTimeNavigation();
+  const wb = getWeekBoundaries(currentWeekDateStr);
+  const weekLabel = document.getElementById('global-week-label-text');
+  if (weekLabel) {
+    weekLabel.textContent = `KW ${wb.weekNum} (${wb.mondayStr.slice(8,10)}.${wb.mondayStr.slice(5,7)}. - ${wb.sundayStr.slice(8,10)}.${wb.sundayStr.slice(5,7)}.):`;
+  }
+  const weekSelect = document.getElementById('global-week-select');
+  if (!weekSelect || weekSelect.value !== wb.mondayStr) {
+    renderSubTimeNavigation();
+  }
   updateOverview();
+  announceNVDA(`Kalenderwoche ${wb.weekNum} ausgewählt: ${formatDateGerman(wb.mondayStr)} bis ${formatDateGerman(wb.sundayStr)}.`, true);
 }
 
 function handlePeriodDropdownChange(mode) {
@@ -4412,15 +4423,26 @@ function handlePeriodDropdownChange(mode) {
   renderSubTimeNavigation();
   updateOverview();
 
-  const names = {
-    day: 'Tages-Ansicht',
-    week: 'Wochen-Ansicht (Kalenderwoche)',
-    month: 'Monats-Ansicht',
-    quarter: '3-Monate-Ansicht (Quartal)',
-    halfyear: '6-Monate-Ansicht (Halbjahr)',
-    year: 'Jahres-Ansicht'
-  };
-  announceNVDA(`Zeitraum gewechselt zu ${names[mode] || mode}.`);
+  let detailMsg = '';
+  if (mode === 'day') {
+    detailMsg = `Tages-Ansicht: ${formatDateGerman(selectedDateStr)}.`;
+  } else if (mode === 'week') {
+    const wb = getWeekBoundaries(currentWeekDateStr);
+    detailMsg = `Wochen-Ansicht: Kalenderwoche ${wb.weekNum} (${formatDateGerman(wb.mondayStr)} bis ${formatDateGerman(wb.sundayStr)}).`;
+  } else if (mode === 'month') {
+    detailMsg = `Monats-Ansicht: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`;
+  } else if (mode === 'quarter') {
+    const currentQ = Math.floor(selectedMonth / 3) + 1;
+    detailMsg = `Quartals-Ansicht: Q${currentQ} ${selectedYear}.`;
+  } else if (mode === 'halfyear') {
+    const currentH = selectedMonth < 6 ? 1 : 2;
+    detailMsg = `Halbjahres-Ansicht: ${currentH}. Halbjahr ${selectedYear}.`;
+  } else if (mode === 'year') {
+    detailMsg = `Jahres-Ansicht: Jahr ${selectedYear}.`;
+  } else {
+    detailMsg = `Zeitraum gewechselt zu ${mode}.`;
+  }
+  announceNVDA(detailMsg, true);
 }
 
 function setOverviewMode(mode) {
@@ -4431,9 +4453,39 @@ function setOverviewMode(mode) {
   updateOverview();
 }
 
+function generateWeekOptions(selectedDateVal) {
+  const targetWb = getWeekBoundaries(selectedDateVal || new Date().toISOString().split('T')[0]);
+  let html = '';
+  const seenMondays = new Set();
+  // Start am Montag der ersten Woche 2025 bis Ende 2027
+  let cursor = new Date('2024-12-30T00:00:00');
+  const endCursor = new Date('2028-01-03T00:00:00');
+  while (cursor <= endCursor) {
+    const y = cursor.getFullYear();
+    const m = String(cursor.getMonth() + 1).padStart(2, '0');
+    const d = String(cursor.getDate()).padStart(2, '0');
+    const dateStr = `${y}-${m}-${d}`;
+    const wb = getWeekBoundaries(dateStr);
+    if (!seenMondays.has(wb.mondayStr)) {
+      seenMondays.add(wb.mondayStr);
+      const isSel = wb.mondayStr === targetWb.mondayStr ? 'selected' : '';
+      const monShort = `${wb.mondayStr.slice(8, 10)}.${wb.mondayStr.slice(5, 7)}.${wb.mondayStr.slice(0, 4)}`;
+      const sunShort = `${wb.sundayStr.slice(8, 10)}.${wb.sundayStr.slice(5, 7)}.${wb.sundayStr.slice(0, 4)}`;
+      html += `<option value="${wb.mondayStr}" ${isSel}>KW ${wb.weekNum} (${monShort} – ${sunShort})</option>`;
+    }
+    cursor.setDate(cursor.getDate() + 7);
+  }
+  return html;
+}
+
 function renderSubTimeNavigation() {
   const container = document.getElementById('sub-time-navigation-wrapper');
   if (!container) return;
+
+  const activeEl = document.activeElement;
+  const activeInsideWrapper = activeEl && container.contains(activeEl);
+  const activeId = activeInsideWrapper ? activeEl.id : null;
+  const activeOnclick = activeInsideWrapper ? activeEl.getAttribute('onclick') : null;
 
   const select = document.getElementById('overview-period-select');
   if (select && select.value !== currentOverviewMode) {
@@ -4463,8 +4515,10 @@ function renderSubTimeNavigation() {
         ◀ Vorherige Woche
       </button>
       <div class="time-select-wrapper">
-        <label for="global-week-select" class="time-select-label">📆 <strong>KW ${wb.weekNum} (${wb.mondayStr.slice(8,10)}.${wb.mondayStr.slice(5,7)}. - ${wb.sundayStr.slice(8,10)}.${wb.sundayStr.slice(5,7)}.):</strong></label>
-        <input type="date" id="global-week-select" class="time-date-input" value="${currentWeekDateStr}" onchange="handleWeekChange(this.value)" title="Datum in der gewünschten Woche wählen">
+        <label for="global-week-select" class="time-select-label">📆 <strong id="global-week-label-text">Woche (KW ${wb.weekNum}):</strong></label>
+        <select id="global-week-select" class="time-dropdown" aria-label="Kalenderwoche auswählen" onchange="handleWeekChange(this.value)">
+          ${generateWeekOptions(currentWeekDateStr)}
+        </select>
       </div>
       <button class="btn btn-time-nav" onclick="changeWeekRelative(1)" title="Eine Woche vorwärtsgehen" aria-label="Nächste Woche">
         Nächste Woche ▶
@@ -4480,7 +4534,7 @@ function renderSubTimeNavigation() {
       </button>
       <div class="time-select-wrapper">
         <label for="global-month-select" class="time-select-label">📅 <strong>Monat:</strong></label>
-        <select id="global-month-select" class="time-dropdown" onchange="handleMonthChange(this.value)">
+        <select id="global-month-select" class="time-dropdown" aria-label="Monat auswählen" onchange="handleMonthChange(this.value)">
           ${generateMonthOptions(`${selectedYear}-${selectedMonth}`)}
         </select>
       </div>
@@ -4499,7 +4553,7 @@ function renderSubTimeNavigation() {
       </button>
       <div class="time-select-wrapper">
         <label for="global-quarter-select" class="time-select-label">📊 <strong>Quartal:</strong></label>
-        <select id="global-quarter-select" class="time-dropdown" onchange="handleQuarterChange(this.value)">
+        <select id="global-quarter-select" class="time-dropdown" aria-label="Quartal auswählen" onchange="handleQuarterChange(this.value)">
           <option value="${selectedYear}-1" ${currentQ === 1 ? 'selected' : ''}>Q1 ${selectedYear} (Januar - März)</option>
           <option value="${selectedYear}-2" ${currentQ === 2 ? 'selected' : ''}>Q2 ${selectedYear} (April - Juni)</option>
           <option value="${selectedYear}-3" ${currentQ === 3 ? 'selected' : ''}>Q3 ${selectedYear} (Juli - September)</option>
@@ -4521,7 +4575,7 @@ function renderSubTimeNavigation() {
       </button>
       <div class="time-select-wrapper">
         <label for="global-halfyear-select" class="time-select-label">📈 <strong>Halbjahr:</strong></label>
-        <select id="global-halfyear-select" class="time-dropdown" onchange="handleHalfyearChange(this.value)">
+        <select id="global-halfyear-select" class="time-dropdown" aria-label="Halbjahr auswählen" onchange="handleHalfyearChange(this.value)">
           <option value="${selectedYear}-1" ${currentH === 1 ? 'selected' : ''}>1. Halbjahr ${selectedYear} (Januar - Juni)</option>
           <option value="${selectedYear}-2" ${currentH === 2 ? 'selected' : ''}>2. Halbjahr ${selectedYear} (Juli - Dezember)</option>
         </select>
@@ -4540,7 +4594,7 @@ function renderSubTimeNavigation() {
       </button>
       <div class="time-select-wrapper">
         <label for="global-year-select" class="time-select-label">🗓️ <strong>Jahr:</strong></label>
-        <select id="global-year-select" class="time-dropdown" onchange="handleYearChange(this.value)">
+        <select id="global-year-select" class="time-dropdown" aria-label="Jahr auswählen" onchange="handleYearChange(this.value)">
           <option value="2025" ${selectedYear === 2025 ? 'selected' : ''}>Jahr 2025</option>
           <option value="2026" ${selectedYear === 2026 ? 'selected' : ''}>Jahr 2026</option>
           <option value="2027" ${selectedYear === 2027 ? 'selected' : ''}>Jahr 2027</option>
@@ -4554,6 +4608,17 @@ function renderSubTimeNavigation() {
         📍 Aktuelles Jahr
       </button>
     `;
+  }
+
+  // Fokus im Navigationsbereich wiederherstellen, damit Screenreader nicht zum Seitenanfang/Kontostand springt
+  if (activeInsideWrapper) {
+    if (activeId) {
+      const restored = document.getElementById(activeId);
+      if (restored && typeof restored.focus === 'function') restored.focus();
+    } else if (activeOnclick) {
+      const restoredBtn = container.querySelector ? container.querySelector(`button[onclick="${activeOnclick}"]`) : null;
+      if (restoredBtn && typeof restoredBtn.focus === 'function') restoredBtn.focus();
+    }
   }
 }
 
@@ -4583,7 +4648,7 @@ function handleMonthChange(val) {
   selectedMonth = parseInt(parts[1], 10);
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   updateOverview();
-  announceNVDA(`Monat ausgewählt: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+  announceNVDA(`Monat ${MONTH_NAMES[selectedMonth]} ${selectedYear} ausgewählt.`, true);
 }
 
 function changeMonthRelative(offset) {
@@ -4597,7 +4662,7 @@ function changeMonthRelative(offset) {
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   renderTimePickerBar();
   updateOverview();
-  announceNVDA(`Monat gewechselt zu ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+  announceNVDA(`Monat ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`, true);
 }
 
 function setMonthToCurrent() {
@@ -4607,7 +4672,7 @@ function setMonthToCurrent() {
   selectedDateStr = now.toISOString().split('T')[0];
   renderTimePickerBar();
   updateOverview();
-  announceNVDA(`Zum aktuellen Monat gewechselt: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`);
+  announceNVDA(`Aktueller Monat: ${MONTH_NAMES[selectedMonth]} ${selectedYear}.`, true);
 }
 
 function handleDayChange(val) {
@@ -4617,7 +4682,7 @@ function handleDayChange(val) {
   selectedYear = d.getFullYear();
   selectedMonth = d.getMonth();
   updateOverview();
-  announceNVDA(`Tag ausgewählt: ${formatDateDisplay(selectedDateStr)}.`);
+  announceNVDA(`Tag ausgewählt: ${formatDateDisplay(selectedDateStr)}.`, true);
 }
 
 function changeDayRelative(offset) {
@@ -4631,7 +4696,7 @@ function changeDayRelative(offset) {
   selectedMonth = d.getMonth();
   renderTimePickerBar();
   updateOverview();
-  announceNVDA(`Tag gewechselt zu ${formatDateDisplay(selectedDateStr)}.`);
+  announceNVDA(`Tag: ${formatDateDisplay(selectedDateStr)}.`, true);
 }
 
 function setDayToToday() {
@@ -4641,7 +4706,7 @@ function setDayToToday() {
   selectedMonth = now.getMonth();
   currentOverviewMode = 'day';
   setOverviewMode('day');
-  announceNVDA(`Zum heutigen Tag gewechselt: ${formatDateDisplay(selectedDateStr)}.`);
+  announceNVDA(`Heute: ${formatDateDisplay(selectedDateStr)}.`, true);
 }
 
 function handleQuarterChange(val) {
@@ -4651,7 +4716,7 @@ function handleQuarterChange(val) {
   selectedMonth = (q - 1) * 3;
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   updateOverview();
-  announceNVDA(`Quartal ausgewählt: Q${q} ${selectedYear}.`);
+  announceNVDA(`Quartal Q${q} ${selectedYear} ausgewählt.`, true);
 }
 
 function changeQuarterRelative(offset) {
@@ -4664,7 +4729,7 @@ function changeQuarterRelative(offset) {
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   renderTimePickerBar();
   updateOverview();
-  announceNVDA(`Gewechselt zu Q${q} ${selectedYear}.`);
+  announceNVDA(`Quartal Q${q} ${selectedYear}.`, true);
 }
 
 function setQuarterToCurrent() {
@@ -4674,6 +4739,7 @@ function setQuarterToCurrent() {
   selectedMonth = (currentQ - 1) * 3;
   renderTimePickerBar();
   updateOverview();
+  announceNVDA(`Aktuelles Quartal Q${currentQ} ${selectedYear}.`, true);
 }
 
 function handleHalfyearChange(val) {
@@ -4683,7 +4749,7 @@ function handleHalfyearChange(val) {
   selectedMonth = (h - 1) * 6;
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   updateOverview();
-  announceNVDA(`Halbjahr ausgewählt: ${h}. Halbjahr ${selectedYear}.`);
+  announceNVDA(`${h}. Halbjahr ${selectedYear} ausgewählt.`, true);
 }
 
 function changeHalfyearRelative(offset) {
@@ -4696,14 +4762,17 @@ function changeHalfyearRelative(offset) {
   selectedDateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-01`;
   renderTimePickerBar();
   updateOverview();
+  announceNVDA(`${h}. Halbjahr ${selectedYear}.`, true);
 }
 
 function setHalfyearToCurrent() {
   const now = new Date();
   selectedYear = now.getFullYear();
   selectedMonth = now.getMonth() < 6 ? 0 : 6;
+  const h = selectedMonth < 6 ? 1 : 2;
   renderTimePickerBar();
   updateOverview();
+  announceNVDA(`Aktuelles ${h}. Halbjahr ${selectedYear}.`, true);
 }
 
 function handleYearChange(val) {
@@ -4711,7 +4780,7 @@ function handleYearChange(val) {
   selectedMonth = 0;
   selectedDateStr = `${selectedYear}-01-01`;
   updateOverview();
-  announceNVDA(`Jahr ausgewählt: ${selectedYear}.`);
+  announceNVDA(`Jahr ${selectedYear} ausgewählt.`, true);
 }
 
 function changeYearRelative(offset) {
@@ -4720,6 +4789,7 @@ function changeYearRelative(offset) {
   selectedDateStr = `${selectedYear}-01-01`;
   renderTimePickerBar();
   updateOverview();
+  announceNVDA(`Jahr ${selectedYear}.`, true);
 }
 
 function setYearToCurrent() {
@@ -4728,6 +4798,7 @@ function setYearToCurrent() {
   selectedMonth = 0;
   renderTimePickerBar();
   updateOverview();
+  announceNVDA(`Aktuelles Jahr ${selectedYear}.`, true);
 }
 
 // ----------------------------------------------------------------------------
@@ -6095,22 +6166,82 @@ function addMonthsToYearMonth(year, month, addM) {
 // ----------------------------------------------------------------------------
 // MODAL: DAUERAUFTRAG BEENDEN ODER LÖSCHEN (HISTORIEN-SCHUTZ)
 // ----------------------------------------------------------------------------
+let _lastEndOrDeleteRecTriggerEl = null;
+
 function openEndOrDeleteRecModal(recId) {
   const rec = (appState.recurring || []).find(r => r.id === recId);
   if (!rec) return;
 
+  _lastEndOrDeleteRecTriggerEl = document.activeElement || null;
+
+  const recLabel = rec.name || rec.category || 'Dauerauftrag';
   const idInput = document.getElementById('end-or-delete-rec-id');
   const subText = document.getElementById('end-or-delete-rec-sub');
+  const btnEnd = document.getElementById('btn-end-rec-option');
+  const btnDelete = document.getElementById('btn-delete-rec-option');
+  const btnCancel = document.getElementById('btn-cancel-end-or-delete-rec');
+  const heading = document.getElementById('end-or-delete-rec-heading');
+
   if (idInput) idInput.value = recId;
   if (subText) {
-    subText.innerHTML = `Wie möchtest du mit dem Dauerauftrag <strong>"${escapeHTML(rec.name || rec.category)}"</strong> (${formatCurrency(rec.amount)}) verfahren?`;
+    subText.innerHTML = `Wie möchtest du mit dem Dauerauftrag <strong>"${escapeHTML(recLabel)}"</strong> (${formatCurrency(rec.amount)}) verfahren?`;
+  }
+  if (btnEnd) {
+    btnEnd.setAttribute('aria-label', `Option 1 Empfohlen: Dauerauftrag ${recLabel} (${formatCurrency(rec.amount)}) ab jetzt beenden und Vergangenheit behalten`);
+  }
+  if (btnDelete) {
+    btnDelete.setAttribute('aria-label', `Option 2: Dauerauftrag ${recLabel} (${formatCurrency(rec.amount)}) komplett überall löschen, auch in der Vergangenheit`);
   }
 
   const modal = document.getElementById('end-or-delete-rec-modal');
   if (modal) {
     modal.style.display = 'flex';
+
+    // Tastatur-Fokusfalle & Pfeiltasten-Navigation zwischen Beenden, Löschen und Abbrechen
+    modal.onkeydown = function(ev) {
+      const buttons = [btnEnd, btnDelete, btnCancel].filter(Boolean);
+      if (buttons.length === 0) return;
+      const idx = buttons.indexOf(document.activeElement);
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowRight') {
+        ev.preventDefault();
+        const next = buttons[(idx + 1) % buttons.length] || buttons[0];
+        if (next && typeof next.focus === 'function') next.focus();
+      } else if (ev.key === 'ArrowUp' || ev.key === 'ArrowLeft') {
+        ev.preventDefault();
+        const prev = buttons[(idx - 1 + buttons.length) % buttons.length] || buttons[0];
+        if (prev && typeof prev.focus === 'function') prev.focus();
+      } else if (ev.key === 'Tab') {
+        if (ev.shiftKey) {
+          if (idx <= 0) {
+            ev.preventDefault();
+            const last = buttons[buttons.length - 1];
+            if (last && typeof last.focus === 'function') last.focus();
+          }
+        } else {
+          if (idx === buttons.length - 1) {
+            ev.preventDefault();
+            const first = buttons[0];
+            if (first && typeof first.focus === 'function') first.focus();
+          }
+        }
+      } else if (ev.key === 'Escape') {
+        ev.preventDefault();
+        closeEndOrDeleteRecModal();
+      }
+    };
+
+    const focusTarget = btnEnd || heading;
+    if (focusTarget && typeof focusTarget.focus === 'function') {
+      focusTarget.focus();
+      setTimeout(() => {
+        if (modal.style.display !== 'none' && typeof focusTarget.focus === 'function') {
+          focusTarget.focus();
+        }
+      }, 40);
+    }
+
     if (typeof announceNVDA === 'function') {
-      announceNVDA(`Dauerauftrag ${rec.name || rec.category} beenden oder löschen geöffnet.`);
+      announceNVDA(`Dauerauftrag ${recLabel} (${formatCurrency(rec.amount)}) beenden oder löschen geöffnet. Option 1: Ab jetzt beenden. Mit Pfeil runter oder Tab zu Option 2: Komplett überall löschen.`, true);
     }
   }
 }
@@ -6118,6 +6249,10 @@ function openEndOrDeleteRecModal(recId) {
 function closeEndOrDeleteRecModal() {
   const modal = document.getElementById('end-or-delete-rec-modal');
   if (modal) modal.style.display = 'none';
+  if (_lastEndOrDeleteRecTriggerEl && typeof _lastEndOrDeleteRecTriggerEl.focus === 'function') {
+    try { _lastEndOrDeleteRecTriggerEl.focus(); } catch (e) {}
+  }
+  _lastEndOrDeleteRecTriggerEl = null;
 }
 
 async function confirmEndRecurring() {

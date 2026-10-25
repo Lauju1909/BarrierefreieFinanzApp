@@ -1355,6 +1355,24 @@ syncTabIds.forEach(id => {
 });
 console.log('3-Tab Smartphone-Sync Menu Structure: 100% PASS!');
 
+// 16. Test Recurring End/Delete Modal Focus & Month/Week Speech Clarity
+console.log('Testing Recurring End/Delete Modal Focus & Month/Week Speech Clarity...');
+['btn-end-rec-option', 'btn-delete-rec-option', 'btn-cancel-end-or-delete-rec'].forEach(id => {
+  if (!html.includes(`id="${id}"`)) {
+    console.error(`Missing Recurring End/Delete Modal Button ID: ${id}`);
+    process.exit(1);
+  }
+});
+if (/id=["']overview-accounts-grid["'][^>]*aria-live/.test(html)) {
+  console.error('overview-accounts-grid must NOT have aria-live so it does not interrupt month/week announcements!');
+  process.exit(1);
+}
+if (!appJs.includes('function generateWeekOptions')) {
+  console.error('Missing generateWeekOptions in app.js');
+  process.exit(1);
+}
+console.log('Recurring End/Delete Modal Focus & Month/Week Speech Clarity: 100% PASS!');
+
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');
 console.log('======================================');

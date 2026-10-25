@@ -1,6 +1,33 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## 🚀 Multi-Geräte-Sync (3 Reiter), Komma/Semikolon-Eingabe, Dauerauftrag-Fokus & Monats-/Wochen-Ansage
+*Datum: 25. Oktober 2026*
+
+### 📱 1. Aufgeräumtes 3-Reiter Smartphone-Sync-Menü (Reiter 8)
+- **Drei klar getrennte Auswahl-Bereiche oben:**
+  1. **[🟢 1. Gekoppelte Geräte]** – Zeigt ausschließlich die verbundenen Geräte, 1-Klick-Synchronisation und das asynchrone E2E-Postfach.
+  2. **[🔗 2. Gerät koppeln]** – Zeigt ausschließlich das Eingabeformular zum Koppeln eines neuen Geräts (Smartphone, Laptop oder PC).
+  3. **[🆔 3. Kopplungsdaten]** – Zeigt ausschließlich den eigenen Gerätenamen und Kopplungscode dieses Geräts (inklusive Buchstabier- und Kopier-Button).
+- **Übersichtliche Einzelansicht:** Beim Anklicken eines der drei Bereiche wird immer nur der gewählte Bereich eingeblendet.
+
+### 🔗 2. Multi-Geräte & Automatische Gruppen-Kopplung (PC ↔ Smartphone ↔ Laptop)
+- **Transitive Gruppen-Kopplung:** Wenn du deinen Laptop mit dem Smartphone koppelst, wird er automatisch auch mit deinem PC gekoppelt – ohne den Code ein zweites Mal am PC eingeben zu müssen.
+- **Mehrgeräte-Verwaltung:** Beliebig viele Geräte gleichzeitig verwalten, einzeln oder gemeinsam per 1-Klick abgleichen.
+
+### 🔢 3. Komma (`,`), Semikolon (`;`) & Punkt (`.`) bei allen Geldbeträgen
+- **Flexible Dezimaleingabe:** In allen Betragsfeldern der Desktop- und Android-App werden Komma (`,`), Semikolon (`;`) und Punkt (`.`) zuverlässig als Dezimaltrennzeichen erkannt und verarbeitet.
+
+### 🔁 4. Dauerauftrag Beenden / Löschen mit direktem Fokus-Sprung
+- **Sofortiger Fokus-Sprung:** Klickt man bei einem Dauerauftrag auf „🗑️ Beenden / Löschen“, springt der Fokus für Tastatur und Screenreader (NVDA / TalkBack) sofort in das Auswahlfenster auf *„Option 1: Dauerauftrag ab jetzt beenden (Vergangenheit behalten)“*.
+- **Pfeiltasten- & Tab-Steuerung:** Zwischen *Option 1 (Beenden)*, *Option 2 (Komplett überall löschen)* und *Abbrechen* kann direkt mit den Pfeiltasten (Hoch/Runter) oder Tab gewechselt werden.
+
+### 📅 5. Klare Monats- & Wochen-Ansage statt Kontostand
+- **Kein Dazwischenfunken des Kontostands mehr:** Beim Auswählen eines Monats oder einer Kalenderwoche liest NVDA / TalkBack jetzt direkt den gewählten Monat bzw. die gewählte Kalenderwoche vor (das ungewollte Vorlesen der Kontostände bei jedem Zeitraumwechsel wurde behoben).
+- **Komfortables Kalenderwochen-Auswahlfeld:** In der Wochen-Ansicht gibt es nun analog zur Monats-Ansicht ein direktes Auswahlfeld für alle Kalenderwochen (`KW 1` bis `KW 52`).
+
+---
+
 ## 🛡️ KeePass 2 Sicherheits-Suite & Argon2id Schlüsselableitung
 *Datum: 11. Oktober 2026*
 
