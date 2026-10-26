@@ -408,8 +408,9 @@
     let currentAppFilter = 'all';
     let allFetchedMessages = [];
 
-    const STORAGE_DELETED_KEY = 'deleted_feedback_ids_v4';
-    const STORAGE_DELETED_SIGS_KEY = 'deleted_feedback_sigs_v4';
+    const STORAGE_DELETED_KEY = 'deleted_feedback_ids_v5';
+    const STORAGE_CLEAR_BEFORE_KEY = 'lauju_clear_before_ts_v5';
+    const INITIAL_CLEAR_TIMESTAMP_MS = 1793042000000; // Alle bisherigen Test-Nachrichten sind gelöscht
 
     const APP_DEFS = {
       haushaltsbuch: { name: 'Barrierefreie FinanzApp / Haushaltsbuch', badge: '💰 FinanzApp', class: 'app-haushaltsbuch' },
@@ -429,33 +430,29 @@
       }
     }
 
-    function getDeletedSigs() {
+    function getClearBefore() {
       try {
-        const raw = localStorage.getItem(STORAGE_DELETED_SIGS_KEY);
-        return raw ? JSON.parse(raw) : [];
+        const raw = localStorage.getItem(STORAGE_CLEAR_BEFORE_KEY);
+        return raw ? parseInt(raw, 10) : INITIAL_CLEAR_TIMESTAMP_MS;
       } catch(e) {
-        return [];
+        return INITIAL_CLEAR_TIMESTAMP_MS;
       }
     }
 
-    function saveDeleted(id, sig) {
+    function saveDeleted(id) {
+      if (!id) return;
       const ids = getDeletedIds();
-      if (id && !ids.includes(id)) {
+      if (!ids.includes(id)) {
         ids.push(id);
         try { localStorage.setItem(STORAGE_DELETED_KEY, JSON.stringify(ids)); } catch(e) {}
       }
-      const sigs = getDeletedSigs();
-      if (sig && !sigs.includes(sig)) {
-        sigs.push(sig);
-        try { localStorage.setItem(STORAGE_DELETED_SIGS_KEY, JSON.stringify(sigs)); } catch(e) {}
-      }
     }
 
-    function isItemDeleted(id, sig) {
+    function isItemDeleted(id, timeMs) {
+      const clearBefore = Math.max(INITIAL_CLEAR_TIMESTAMP_MS, getClearBefore());
+      if (timeMs && timeMs <= clearBefore) return true;
       const ids = getDeletedIds();
-      const sigs = getDeletedSigs();
       if (id && ids.includes(id)) return true;
-      if (sig && sigs.includes(sig)) return true;
       return false;
     }
 
@@ -658,8 +655,8 @@
       const filtered = [];
 
       allFetchedMessages.forEach(item => {
-        const sig = (item.time.getTime() || '') + '_' + item.message.substring(0, 30);
-        if (isItemDeleted(item.id, sig)) return;
+        const timeMs = item.time ? item.time.getTime() : 0;
+        if (isItemDeleted(item.id, timeMs)) return;
 
         const parsed = parseMessageContent(item.message, item.title, item.time, item.topic);
         const appKey = parsed.appKey || 'haushaltsbuch';
@@ -745,14 +742,25 @@
           ${detailsHtml}
 
           <div class="action-bar">
-            <button type="button" class="btn btn-secondary" onclick="copyMessageText('${escapeAttr(parsed.bodyText || item.message)}')">
+            <button type="button" class="btn btn-secondary btn-copy-action">
               📋 <strong>Text kopieren</strong>
             </button>
-            <button type="button" class="btn btn-danger" onclick="deleteMessage('${item.id}', '${sig}')">
+            <button type="button" class="btn btn-danger btn-delete-action">
               🗑️ <strong>Erledigt / Löschen</strong>
             </button>
           </div>
         `;
+
+        const btnCopy = card.querySelector('.btn-copy-action');
+        if (btnCopy) {
+          const textToCopy = parsed.bodyText || item.message;
+          btnCopy.addEventListener('click', () => copyMessageText(textToCopy));
+        }
+
+        const btnDel = card.querySelector('.btn-delete-action');
+        if (btnDel) {
+          btnDel.addEventListener('click', () => deleteMessage(item.id));
+        }
 
         listEl.appendChild(card);
       });
@@ -760,17 +768,19 @@
       listEl.setAttribute('aria-busy', 'false');
     }
 
-    function deleteMessage(id, sig) {
-      saveDeleted(id, sig);
-      announceNVDA('Nachricht wurde gelöscht.');
+    function deleteMessage(id) {
+      saveDeleted(id);
+      announceNVDA('Nachricht gelöscht.');
       applyFilters();
     }
 
     function clearAllMessages() {
-      if (!confirm('Möchtest du wirklich alle aktuell angezeigten Nachrichten aus der Ansicht löschen?')) return;
+      const now = Date.now();
+      try {
+        localStorage.setItem(STORAGE_CLEAR_BEFORE_KEY, now.toString());
+      } catch(e) {}
       allFetchedMessages.forEach(m => {
-        const sig = (m.time.getTime() || '') + '_' + m.message.substring(0, 30);
-        saveDeleted(m.id, sig);
+        if (m.id) saveDeleted(m.id);
       });
       announceNVDA('Alle Nachrichten gelöscht.');
       applyFilters();
