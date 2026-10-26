@@ -5814,16 +5814,54 @@ function updateTodayDisplay() {
 // ----------------------------------------------------------------------------
 // 3. BARRIEREFREIE NVDA SCREENREADER ANKÜNDIGUNGEN
 // ----------------------------------------------------------------------------
-function announceNVDA(message, assertive = false) {
-  message = cleanSymbols(message);
-  const regionId = assertive ? 'sr-live-assertive' : 'sr-live';
-  const region = document.getElementById(regionId);
-  if (!region) return;
+class AriaLiveQueue {
+  constructor(politeId = 'sr-live', assertiveId = 'sr-live-assertive') {
+    this.queue = [];
+    this.isSpeaking = false;
+    this.politeId = politeId;
+    this.assertiveId = assertiveId;
+  }
+  announce(text, assertive = false) {
+    if (!text) return;
+    text = (typeof cleanSymbols === 'function') ? cleanSymbols(text) : text;
+    if (assertive) {
+      const assertRegion = document.getElementById(this.assertiveId);
+      if (assertRegion) {
+        assertRegion.textContent = '';
+        setTimeout(() => { assertRegion.textContent = text; }, 50);
+      }
+      return;
+    }
+    this.queue.push(text);
+    if (!this.isSpeaking) {
+      this.processNext();
+    }
+  }
+  processNext() {
+    if (this.queue.length === 0) {
+      this.isSpeaking = false;
+      return;
+    }
+    this.isSpeaking = true;
+    const text = this.queue.shift();
+    const region = document.getElementById(this.politeId);
+    if (region) {
+      region.textContent = '';
+      setTimeout(() => {
+        region.textContent = text;
+        const waitTime = Math.max(1200, Math.min(5000, text.length * 65));
+        setTimeout(() => this.processNext(), waitTime);
+      }, 50);
+    } else {
+      this.isSpeaking = false;
+    }
+  }
+}
 
-  region.textContent = '';
-  setTimeout(() => {
-    region.textContent = message;
-  }, 60);
+const ariaAnnouncerQueue = new AriaLiveQueue();
+
+function announceNVDA(message, assertive = false) {
+  ariaAnnouncerQueue.announce(message, assertive);
 }
 
 // ----------------------------------------------------------------------------
