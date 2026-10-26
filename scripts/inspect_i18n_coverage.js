@@ -2,7 +2,6 @@ const fs = require('fs');
 const html = fs.readFileSync('index.html', 'utf8');
 const app = fs.readFileSync('app.js', 'utf8');
 
-// Parse I18N_APP_LABELS and I18N_APP_ELEMENTS keys
 function extractKeys(varName) {
   const match = app.match(new RegExp(varName + '\\s*=\\s*\\{([\\s\\S]*?)\\};'));
   if (!match) return [];
@@ -23,16 +22,20 @@ console.log('labelKeys count:', labelKeys.length);
 console.log('elementKeys count:', elementKeys.length);
 console.log('placeholderKeys count:', placeholderKeys.length);
 
-// Now inspect modals
-const modalRegex = /<div[^>]*id="([^"]*modal[^"]*)"[^>]*>([\s\S]*?)<\/div>\s*(?=<!--|<div class="modal|$)/gi;
-// We can also find all buttons, h2, h3, labels inside any modal
+// Handled dynamically or via inner child IDs
+const dynamicallyHandledBtns = [
+  'btn-filter-all', 'btn-filter-expenses', 'btn-filter-income',
+  'btn-toggle-keyfile', 'btn-unlock', 'btn-header-privacy-toggle',
+  'shopping-filter-all', 'shopping-filter-open', 'shopping-filter-done'
+];
+
 const btnRegex = /<button[^>]*id="([^"]+)"[^>]*>([\s\S]*?)<\/button>/gi;
 let m;
 const missingBtns = [];
 while ((m = btnRegex.exec(html)) !== null) {
   const id = m[1];
   const text = m[2].replace(/<[^>]+>/g, '').trim();
-  if (!elementKeys.includes(id) && !['btn-filter-all', 'btn-filter-expenses', 'btn-filter-income'].includes(id)) {
+  if (!elementKeys.includes(id) && !dynamicallyHandledBtns.includes(id)) {
     missingBtns.push({ id, text });
   }
 }
@@ -54,7 +57,7 @@ console.log('Labels not in I18N_APP_LABELS:', missingLabels.length);
 missingLabels.forEach(l => console.log('  LABEL:', l.forAttr, '->', l.text));
 
 // Check placeholders
-const phRegex = /<input[^>]*id="([^"]+)"[^>]*placeholder="([^"]+)"/gi;
+const phRegex = /<(?:input|textarea)[^>]*id="([^"]+)"[^>]*placeholder="([^"]+)"/gi;
 const missingPlaceholders = [];
 while ((m = phRegex.exec(html)) !== null) {
   const id = m[1];

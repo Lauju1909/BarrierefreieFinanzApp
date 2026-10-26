@@ -1065,7 +1065,7 @@ body.theme-dark .shopping-badge-price {
 <div style="display: flex; align-items: center; gap: 12px; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
 <span style="font-size: 32px;" aria-hidden="true">📜</span>
 <div>
-<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.40)</h2>
+<h2 id="changelog-modal-heading" tabindex="-1" style="margin: 0; font-size: 24px;">Was ist neu in diesem Update? (v6.9.39)</h2>
 <span style="font-size: 15px; color: var(--sub-text);">Offizielles Änderungsprotokoll & Verbesserungen</span>
 </div>
 </div>
@@ -4800,7 +4800,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <p class="field-hint">Deine App aktualisiert sich beim Starten automatisch. Deine verschlüsselten Finanzdaten bleiben dabei zu 100% sicher und unverändert erhalten:</p>
  
 <div id="update-status-msg" style="font-weight: bold; color: var(--text-primary); margin: 6px 0;">
- Installierte Version: <strong>v6.9.40</strong> (Open Source auf GitHub)
+ Installierte Version: <strong>v6.9.39</strong> (Open Source auf GitHub)
 </div>
 
 <div class="form-actions" style="margin-top: 10px;">
@@ -5741,7 +5741,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 
 <!-- Fußzeile -->
 <footer class="app-footer" role="contentinfo">
-<p id="footer-main-text"><strong>Barrierefreie Finanzen v6.9.40</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
+<p id="footer-main-text"><strong>Barrierefreie Finanzen v6.9.39</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.</p>
 <p id="footer-shortcuts-text">Tastaturkürzel: <strong>1</strong>= Übersicht |<strong>2</strong>= Ausgabe |<strong>3</strong>= Einnahme |<strong>4</strong>= Umbuchen |<strong>5</strong>= Einstellungen |<strong>6</strong>= Konto-Optionen |<strong>7</strong>= Wunschliste |<strong>T</strong>= Zu Heute |<strong>L</strong>= Sofortsperre</p>
 </footer>
 
@@ -7568,7 +7568,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.9.40';
+const CURRENT_APP_VERSION = 'v6.9.39';
 
 const _nativeParseFloat = globalThis.parseFloat;
 function parseEuroInput(val) {
@@ -7940,8 +7940,6 @@ const I18N_APP_LABELS = {
 
 const I18N_APP_ELEMENTS = {
   'btn-close-changelog': { de: "<span><strong>Schließen &amp; Weiter zur PIN-Eingabe (Enter)</strong></span>", en: "<span><strong>Close &amp; Proceed to PIN Entry (Enter)</strong></span>" },
-  'btn-toggle-keyfile': { de: "<span id=\"btn-toggle-keyfile-text\">🔑 <strong>Mit Schlüsseldatei (Key-File) entsperren</strong></span>", en: "<span id=\"btn-toggle-keyfile-text\">🔑 <strong>Unlock with Key File</strong></span>" },
-  'btn-unlock': { de: "<span id=\"btn-unlock-text\">🔓 <strong>Entschlüsseln &amp; Öffnen</strong> (Enter)</span>", en: "<span id=\"btn-unlock-text\">🔓 <strong>Decrypt &amp; Open</strong> (Enter)</span>" },
   'btn-biometric-unlock': { de: "<span>👆 <strong>Mit Fingerabdruck / Biometrie entsperren</strong></span>", en: "<span>👆 <strong>Unlock with Fingerprint / Biometrics</strong></span>" },
   'edit-tx-split-add-btn': { de: "➕ Weiteren Teilbetrag hinzufügen", en: "➕ Add another split amount" },
   'btn-end-rec-option': { de: "📅 <strong>Dauerauftrag ab jetzt beenden (Vergangenheit behalten)</strong>", en: "📅 <strong>End standing order from now on (keep history)</strong>" },
@@ -7954,7 +7952,6 @@ const I18N_APP_ELEMENTS = {
   'btn-report-mode-tax': { de: "🏛️ Behörden- &amp; Steuer-Format", en: "🏛️ Tax &amp; Official Authorities Format" },
   'btn-save-peer-loan': { de: "💾 Speichern", en: "💾 Save" },
   'peer-loan-repay-submit-btn': { de: "✅ Rückzahlung buchen", en: "✅ Book Repayment" },
-  'btn-header-privacy-toggle': { de: "<span aria-hidden=\"true\" id=\"header-privacy-icon\">👁️</span> <span id=\"header-privacy-text\">Diskretion (Strg+H)</span>", en: "<span aria-hidden=\"true\" id=\"header-privacy-icon\">👁️</span> <span id=\"header-privacy-text\">Privacy (Ctrl+H)</span>" },
   'tab-overview': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">1</span> <span>📊<strong>Übersicht &amp; Zeiträume</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">1</span> <span>📊<strong>Overview &amp; Periods</strong></span>" },
   'tab-expense': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">2</span> <span>🔴<strong>Ausgabe eintragen / planen</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">2</span> <span>🔴<strong>Add / Plan Expense</strong></span>" },
   'tab-income': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">3</span> <span>🟢<strong>Einnahme eintragen / planen</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">3</span> <span>🟢<strong>Add / Plan Income</strong></span>" },
@@ -7975,9 +7972,6 @@ const I18N_APP_ELEMENTS = {
   'btn-send-feedback': { de: "<span><strong>Vorschlag / Feedback absenden</strong></span>", en: "<span><strong>Send Suggestion / Feedback</strong></span>" },
   'btn-test-biometric': { de: "<span>👆 <strong>Fingerabdruck jetzt testen</strong></span>", en: "<span>👆 <strong>Test fingerprint now</strong></span>" },
   'btn-toggle-require-keyfile': { de: "<span>🔒 <strong>Schlüsseldatei-Zwang aktivieren</strong></span>", en: "<span>🔒 <strong>Enable key file requirement</strong></span>" },
-  'shopping-filter-all': { de: "Alle (<span id=\"shopping-count-all\">0</span>)", en: "All (<span id=\"shopping-count-all\">0</span>)" },
-  'shopping-filter-open': { de: "⏳ Noch offen (<span id=\"shopping-count-open\">0</span>)", en: "⏳ Still open (<span id=\"shopping-count-open\">0</span>)" },
-  'shopping-filter-done': { de: "✅ Erledigt (<span id=\"shopping-count-done\">0</span>)", en: "✅ Completed (<span id=\"shopping-count-done\">0</span>)" },
   'btn-open-shopping-book': { de: "<span>💳 <strong>Einkauf als Ausgabe buchen</strong></span>", en: "<span>💳 <strong>Book purchase as expense</strong></span>" },
   'btn-sync-tab-paired': { de: "🟢 1. Gekoppelte Geräte", en: "🟢 1. Paired Devices" },
   'btn-sync-mode-desktop': { de: "🔗 2. Gerät koppeln", en: "🔗 2. Pair Device" },
@@ -7987,13 +7981,13 @@ const I18N_APP_ELEMENTS = {
   'btn-manual-mailbox-push-master': { de: "📤 <strong>Aktuellen Stand als Master ins Postfach legen (alle Geräte übernehmen 1:1)</strong>", en: "📤 <strong>Push current state as Master to mailbox (all devices adopt 1:1)</strong>" },
   'btn-trigger-sync': { de: "<span>⚡ <strong>Jetzt Gerät koppeln &amp; sicher synchronisieren (Enter)</strong></span>", en: "<span>⚡ <strong>Pair device now &amp; sync securely (Enter)</strong></span>" },
   'btn-trigger-overwrite': { de: "<span>📲 <strong>Zielgerät komplett überschreiben (1:1 Stand senden)</strong></span>", en: "<span>📲 <strong>Overwrite target device completely (send 1:1 state)</strong></span>" },
-  'expense-ranking-heading': { de: "Größte Geldfresser des Monats (Ausgaben-Rangliste)", en: "Top Spending of the Month (Expense Ranking)" },
-  'details-income-summary-text': { de: "Alle Einnahmen anzeigen (mit Datum, Bearbeiten &amp; Löschen)", en: "Show all income (with date, edit &amp; delete)" },
-  'details-expense-summary-text': { de: "Alle Ausgaben anzeigen (mit Datum, Bearbeiten &amp; Löschen)", en: "Show all expenses (with date, edit &amp; delete)" },
+  'expense-ranking-heading': { de: "🏆 Größte Geldfresser des Monats (Ausgaben-Rangliste)", en: "🏆 Top Expenses of the Month (Expense Ranking)" },
+  'details-income-summary-text': { de: "Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)", en: "Show all income (with date, edit & delete)" },
+  'details-expense-summary-text': { de: "Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)", en: "Show all expenses (with date, edit & delete)" },
   'details-credit-summary-text': { de: "Laufende Kredite &amp; Ratenpläne anzeigen", en: "Show ongoing loans &amp; installment plans" },
-  'details-transfer-summary-text': { de: "Alle Umbuchungen &amp; Sparpläne anzeigen (mit Von/Nach-Konto, Bearbeiten &amp; Löschen)", en: "Show all transfers &amp; savings plans (with from/to account, edit &amp; delete)" },
-  'details-peer-loans-summary-text': { de: "Offene Schulden &amp; Forderungen anzeigen", en: "Show open debts &amp; receivables" },
-  'heading-currency-converter': { de: "Währungsrechner &amp; Umrechnung (Euro, Dollar, DM, Schilling...)", en: "Currency Converter &amp; Exchange (Euro, Dollar, DM, Schilling...)" },
+  'details-transfer-summary-text': { de: "Alle Umbuchungen & Sparpläne anzeigen", en: "Show all transfers & savings plans" },
+  'details-peer-loans-summary-text': { de: "Offene Schulden & Forderungen anzeigen", en: "Show open debts & receivables" },
+  'heading-currency-converter': { de: "💱 Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)", en: "💱 Currency Converter & Exchange (Euro, Dollar, DM, Schilling...)" },
   'btn-clear-tx-filter': { de: "<span>✖️ <strong>Filter aufheben</strong></span>", en: "<span>✖️ <strong>Clear filter</strong></span>" },
   'btn-open-peer-loan-modal': { de: "Neues geliehenes oder verliehenes Geld eintragen", en: "Add new borrowed or lent money" },
   'settings-heading': { de: "Einstellungen, Design &amp; Datensicherung", en: "Settings, Theme &amp; Data Backup" },
@@ -8008,14 +8002,14 @@ const I18N_APP_ELEMENTS = {
   'appearance-settings-sub': { de: "Passe hier das Design und die Schriftgröße für deine Augen an:", en: "Adjust the design and font size here for your eyes:" },
   'label-settings-show-symbols': { de: "Symbole &amp; Emojis in der App anzeigen", en: "Show symbols &amp; emojis in the app" },
   'settings-symbols-hint': { de: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.", en: "When turned off, the entire app is displayed without symbols in pure, clean text." },
-  'footer-text': { de: "Barrierefreie Finanzen v6.9.40 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-text': { de: "Barrierefreie Finanzen v6.9.38 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
   'footer-shortcuts': { de: "Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre", en: "Shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= Today | L= Lock" },
   'today-label': { de: "Heute:", en: "Today:" },
-  'changelog-modal-heading': { de: "📜 Was ist neu in Version v6.9.38?", en: "📜 What is new in Version v6.9.38?" },
+  'changelog-modal-heading': { de: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)", en: "📜 What is new in this update? (Changelog)" },
   'edit-modal-heading': { de: "Buchung bearbeiten", en: "Edit Transaction" },
   'account-modal-heading': { de: "Konto verwalten", en: "Manage Account" },
-  'csv-modal-heading': { de: "Bank-Kontoauszug Vorschau &amp; Import", en: "Bank Statement Preview &amp; Import" },
-  'receipt-text-modal-heading': { de: "📋 Text aus Beleg / Rechnung einfügen", en: "📋 Paste Text from Receipt / Invoice" },
+  'csv-modal-heading': { de: "Bank-Kontoauszug Vorschau & Import", en: "Bank Statement Preview & Import" },
+  'receipt-text-modal-heading': { de: "📋 Text aus Beleg / Rechnung einfügen", en: "📋 Paste Receipt / Invoice Text" },
   'print-report-modal-heading': { de: "Finanzbericht drucken / exportieren", en: "Print / Export Financial Report" },
   'cash-counter-modal-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen &amp; Scheine)", en: "🪙 Cash Counter Helper (Coins &amp; Notes)" },
   'quick-cat-modal-heading': { de: "Neue Kategorie oder Geschäft anlegen", en: "Create New Category or Store" },
@@ -8034,190 +8028,124 @@ const I18N_APP_ELEMENTS = {
   'set-cat-btn-budgets': { de: "<span>🎯 <strong>Monats-Budgets</strong></span>", en: "<span>🎯 <strong>Monthly Budgets</strong></span>" },
   'set-cat-btn-categories': { de: "<span>🏷️ <strong>Eigene Kategorien</strong></span>", en: "<span>🏷️ <strong>Custom Categories</strong></span>" },
   'set-cat-btn-system': { de: "<span>📜 <strong>Info &amp; System</strong></span>", en: "<span>📜 <strong>Info &amp; System</strong></span>" },
-  'btn-clear-search-filter': { de: "<span>✖️ <strong>Filter aufheben</strong></span>", en: "<span>✖️ <strong>Clear filter</strong></span>" },
-  'print-report-heading': { de: "Finanzbericht &amp; Nachweis", en: "Financial Report &amp; Verification" },
+  'btn-clear-search-filter': { de: "✖️ Filter aufheben", en: "✖️ Clear filter" },
+  'print-report-heading': { de: "Finanzbericht & Nachweis", en: "Financial Report & Statement" },
   'quick-add-cat-heading': { de: "➕ Kategorie oder Laden hinzufügen", en: "➕ Add Category or Store" },
   'peer-loan-heading': { de: "🤝 Geliehenes / Verliehenes Geld erfassen", en: "🤝 Record Borrowed / Lent Money" },
-  'peer-loan-repay-heading': { de: "💵 Rückzahlung verbuchen", en: "💵 Book Repayment" },
-  'delete-peer-repay-heading': { de: "🗑️ Teilrückzahlung löschen", en: "🗑️ Delete Partial Repayment" },
+  'peer-loan-repay-heading': { de: "💵 Rückzahlung verbuchen", en: "💵 Record Repayment" },
+  'delete-peer-repay-heading': { de: "🗑️ Teilrückzahlung löschen", en: "🗑️ Delete Repayment" },
   'settle-peer-loan-heading': { de: "✅ Leihgabe als beglichen markieren", en: "✅ Mark Loan as Settled" },
   'end-or-delete-rec-heading': { de: "Dauerauftrag beenden oder löschen", en: "End or Delete Standing Order" },
   'shopping-paste-heading': { de: "📋 Liste einkopieren (WhatsApp / Notizen)", en: "📋 Paste List (WhatsApp / Notes)" },
-  'shopping-book-heading': { de: "💳 Einkauf als Ausgabe buchen", en: "💳 Book Purchase as Expense" },
-  'delete-peer-loan-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Personal Loan" },
-  'cash-counter-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen &amp; Scheine)", en: "🪙 Cash Counter Helper (Coins &amp; Notes)" },
+  'shopping-book-heading': { de: "💳 Einkauf als Ausgabe buchen", en: "💳 Book Shopping as Expense" },
+  'delete-peer-loan-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Loan" },
+  'cash-counter-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen & Scheine)", en: "🪙 Cash Counter (Coins & Bills)" },
   'lbl-today-prefix': { de: "Heute:", en: "Today:" },
-  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.40</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.38</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.39</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.39</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
   'footer-shortcuts-text': { de: "Tastaturkürzel: <strong>1</strong>= Übersicht | <strong>2</strong>= Ausgabe | <strong>3</strong>= Einnahme | <strong>4</strong>= Umbuchen | <strong>5</strong>= Einstellungen | <strong>6</strong>= Konto-Optionen | <strong>7</strong>= Wunschliste | <strong>T</strong>= Zu Heute | <strong>L</strong>= Sofortsperre", en: "Shortcuts: <strong>1</strong>= Overview | <strong>2</strong>= Expense | <strong>3</strong>= Income | <strong>4</strong>= Transfer | <strong>5</strong>= Settings | <strong>6</strong>= Accounts | <strong>7</strong>= Wishlist | <strong>T</strong>= Today | <strong>L</strong>= Instant Lock" },
-
-  // Brand & Header
-  'brand-app-title': { de: 'Meine Finanzen & Haushaltsbuch', en: 'My Finances & Budget Book' },
-  'brand-app-tagline': { de: '🔒 AES-256 Verschlüsselt & DSGVO-Konform', en: '🔒 AES-256 Encrypted & GDPR-Compliant' },
-  'header-privacy-text': { de: 'Beträge verbergen oder anzeigen, Tastenkürzel Strg + H', en: 'Hide or show amounts, shortcut Ctrl + H' },
-  'btn-lock-text': { de: 'Sperren (L)', en: 'Lock (L)' },
-  'lbl-today-prefix': { de: 'Heute:', en: 'Today:' },
-
-  // Skip Links
-  'skip-link-nav': { de: 'Zur Menüauswahl springen', en: 'Skip to menu selection' },
-  'skip-link-time': { de: 'Zur Zeitraumauswahl springen', en: 'Skip to period selection' },
-  'skip-link-content': { de: 'Direkt zum Hauptinhalt springen', en: 'Skip to main content' },
-
-  // Lock Screen
-  'lock-heading': { de: 'Sicherer AES-256 Zugang', en: 'Secure AES-256 Access' },
-  'lock-instructions': { de: 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:', en: 'Your financial data is protected on this computer. Please enter your PIN or password:' },
-  'btn-unlock-text': { de: '🔓 Entschlüsseln & Öffnen (Enter)', en: '🔓 Decrypt & Open (Enter)' },
-  'btn-bio-unlock-text': { de: '👆 Mit Fingerabdruck / Biometrie entsperren', en: '👆 Unlock with fingerprint / biometrics' },
-  'lock-sync-heading': { de: '📱 Daten vom Computer übertragen (Smartphone-Sync)', en: '📱 Transfer data from computer (Smartphone Sync)' },
-  'lock-sync-sub': { de: 'Kopple dein Smartphone mit dem PC, um deine Finanzen mobil zu synchronisieren.', en: 'Pair your smartphone with your PC to sync your finances on the go.' },
-  'lock-what-is-new': { de: '📜 Was ist neu in diesem Update? (Änderungsprotokoll)', en: '📜 What is new in this update? (Changelog)' },
-  'lock-privacy-guarantee': { de: '🔒 100% DSGVO & EU-Datenschutz: Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.', en: '🔒 100% GDPR & EU Privacy: All data stays exclusively on your computer and is never sent to servers or third parties.' },
-  'lock-first-time-hint': { de: '💡 Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).', en: '💡 First launch: Set your desired PIN now (e.g. 1234 or your secure password).' },
-
-  // Tabs
-  'tab-overview-text': { de: '📊 Übersicht & Zeiträume', en: '📊 Overview & Periods' },
-  'tab-expense-text': { de: '🔴 Ausgabe eintragen / planen', en: '🔴 Add / Plan Expense' },
-  'tab-income-text': { de: '🟢 Einnahme eintragen / planen', en: '🟢 Add / Plan Income' },
-  'tab-transfer-text': { de: '🔄 Umbuchen & Sparen', en: '🔄 Transfer & Savings' },
-  'tab-settings-text': { de: '⚙️ Einstellungen & Backup', en: '⚙️ Settings & Backup' },
-  'tab-accounts-text': { de: '💳 Konto-Optionen & Konten', en: '💳 Accounts & Options' },
-  'tab-wishlist-text': { de: '🎁 Wunschliste & Sparziele', en: '🎁 Wishlist & Savings Goals' },
-  'tab-shopping-text': { de: '🛒 Einkaufsliste & Checkliste', en: '🛒 Shopping List & Checklist' },
-  'tab-sync-text': { de: '📱 Smartphone-Sync (E2E)', en: '📱 Smartphone Sync (E2E)' },
-
-  // Overview View
-  'section-accounts-heading': { de: '1. 💳 Deine Kontostände im Detail', en: '1. 💳 Your Account Balances' },
-  'period-breakdown-heading': { de: '📊 Monatsübersicht im gewählten Zeitraum', en: '📊 Monthly Overview for Selected Period' },
-  'expense-ranking-heading': { de: '🏆 Größte Geldfresser des Monats (Ausgaben-Rangliste)', en: '🏆 Top Expenses of the Month (Expense Ranking)' },
-  'lbl-tx-search-query': { de: '🔍 Intelligente Suche (Text, Betrag, Tippfehler, Datum):', en: '🔍 Smart Search (Text, amount, typos, date):' },
-  'btn-clear-tx-search': { de: '✖️ Suche leeren', en: '✖️ Clear search' },
-  'btn-clear-search-filter': { de: '✖️ Filter aufheben', en: '✖️ Clear filter' },
-  'lbl-tx-filter-status': { de: '🎯 Status:', en: '🎯 Status:' },
-  'lbl-tx-filter-account': { de: '💳 Konto:', en: '💳 Account:' },
-  'lbl-tx-sort-order': { de: '↕️ Sortierung:', en: '↕️ Sorting:' },
-  'section-income-heading': { de: '2. 📥 Einnahmen', en: '2. 📥 Income' },
-  'details-income-summary-text': { de: 'Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)', en: 'Show all income (with date, edit & delete)' },
-  'section-expense-heading': { de: '3. 📤 Ausgaben', en: '3. 📤 Expenses' },
-  'details-expense-summary-text': { de: 'Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)', en: 'Show all expenses (with date, edit & delete)' },
-  'section-transfer-heading': { de: '🔄 Umbuchungen, Sparpläne & Daueraufträge', en: '🔄 Transfers, Savings Plans & Standing Orders' },
-  'details-transfer-summary-text': { de: 'Alle Umbuchungen & Sparpläne anzeigen', en: 'Show all transfers & savings plans' },
-  'section-peer-loans-heading': { de: '🤝 Geliehenes & Verliehenes Geld (Privatkredite)', en: '🤝 Borrowed & Lent Money (Personal Loans)' },
-  'details-peer-loans-summary-text': { de: 'Offene Schulden & Forderungen anzeigen', en: 'Show open debts & receivables' },
-  'peer-loan-new-entry-btn': { de: '➕ Neuer Eintrag', en: '➕ New Entry' },
-  'heading-curr-breakdown': { de: '💱 Beträge nach Währungen aufgeteilt & Gesamtergebnis:', en: '💱 Breakdown by Currencies & Total Result:' },
-  'section-total-heading': { de: '4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS', en: '4. 💰 TOTAL BALANCE & RESULT' },
-  'total-balance-sub': { de: 'Verfügbares Gesamtguthaben über alle Konten', en: 'Available total balance across all accounts' },
-  'leftover-main-label': { de: 'Ergebnis im Zeitraum:', en: 'Period Result:' },
-  'month-leftover-sub': { de: 'Einnahmen minus Ausgaben', en: 'Income minus expenses' },
-
-  // Table Headers
-  'annual-table-th-month': { de: 'Monat', en: 'Month' },
-  'annual-table-th-inc': { de: 'Einnahmen', en: 'Income' },
-  'annual-table-th-exp': { de: 'Ausgaben', en: 'Expenses' },
-  'annual-table-th-result': { de: 'Ergebnis (Plus / Minus)', en: 'Result (Plus / Minus)' },
-  'annual-table-th-status': { de: 'Status', en: 'Status' },
-
-  // Currency Converter Widget
-  'heading-currency-converter': { de: '💱 Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)', en: '💱 Currency Converter & Exchange (Euro, Dollar, DM, Schilling...)' },
-  'hint-currency-converter': { de: 'Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:', en: 'Convert any amount instantly between modern and historical currencies (e.g. Deutsche Mark, Schilling, Franc):' },
-  'lbl-calc-curr-amount': { de: 'Betrag:', en: 'Amount:' },
-  'lbl-calc-curr-from': { de: 'Von Währung (Quelle):', en: 'From currency (Source):' },
-  'lbl-calc-curr-to': { de: 'In Währung (Ziel):', en: 'To currency (Target):' },
-
-  // View 2: Expense View
-  'heading-expense-view': { de: '🔴 Ausgabe eintragen oder für die Zukunft planen', en: '🔴 Add / Plan Expense' },
-  'sub-expense-view': { de: 'Trage hier getätigte Ausgaben oder geplante Anschaffungen für die Zukunft ein.', en: 'Record expenses or planned purchases for the future here.' },
-  'btn-exp-coin-counter': { de: '🪙 Münz- & Scheinezähler', en: '🪙 Coin & Bill Counter' },
-  'btn-exp-date-today': { de: 'Heute', en: 'Today' },
-  'btn-exp-date-yesterday': { de: 'Gestern', en: 'Yesterday' },
-  'btn-submit-expense': { de: '🔴 Ausgabe / Geplanten Kauf speichern (Enter)', en: '🔴 Save Expense / Planned Purchase (Enter)' },
-  'btn-back-expense': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
-
-  // View 3: Income View
-  'heading-income-view': { de: '🟢 Einnahme eintragen oder für die Zukunft planen', en: '🟢 Add / Plan Income' },
-  'sub-income-view': { de: 'Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).', en: 'Record money received or expected in a future month here.' },
-  'btn-inc-coin-counter': { de: '🪙 Münz- & Scheinezähler', en: '🪙 Coin & Bill Counter' },
-  'btn-inc-date-today': { de: 'Heute', en: 'Today' },
-  'btn-inc-date-yesterday': { de: 'Gestern', en: 'Yesterday' },
-  'btn-submit-income': { de: '🟢 Einnahme speichern (Enter)', en: '🟢 Save Income (Enter)' },
-  'btn-back-income': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
-
-  // View 4: Transfer View
-  'heading-transfer-view': { de: '🔄 Geld umbuchen & auf anderes Konto sparen', en: '🔄 Transfer & Savings' },
-  'sub-transfer-view': { de: 'Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.', en: 'Transfer money between accounts – either immediately or as a monthly savings plan.' },
-  'btn-submit-transfer': { de: '🔄 Umbuchung / Sparplan speichern (Enter)', en: '🔄 Save Transfer / Savings Plan (Enter)' },
-  'btn-back-transfer': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
-
-  // View 5: Settings View
-  'heading-settings-view': { de: 'Einstellungen, Design & Datensicherung', en: 'Settings, Theme & Data Backup' },
-  'set-cat-btn-all': { de: '📂 Alle anzeigen', en: '📂 Show All' },
-  'set-cat-btn-security': { de: '🛡️ Sicherheit & Tresor', en: '🛡️ Security & Vault' },
-  'set-cat-btn-design': { de: '🎨 Darstellung & Design', en: '🎨 Appearance & Theme' },
-  'set-cat-btn-backup': { de: '💾 Datensicherung & Import', en: '💾 Backup & Import' },
-  'set-cat-btn-budgets': { de: '🎯 Monats-Budgets', en: '🎯 Monthly Budgets' },
-  'set-cat-btn-categories': { de: '🏷️ Eigene Kategorien', en: '🏷️ Custom Categories' },
-  'set-cat-btn-system': { de: '📜 Info & System', en: '📜 Info & System' },
-  'theme-settings-heading': { de: 'Darstellung, Design & Schriftgröße', en: 'Appearance, Theme & Font Size' },
-  'theme-settings-hint': { de: 'Passe hier das Design und die Schriftgröße für deine Augen an:', en: 'Customize the theme and font size for your eyes:' },
-  'lbl-settings-symbols': { de: 'Symbole & Emojis in der App anzeigen', en: 'Show symbols & emojis in app' },
-  'hint-settings-symbols': { de: 'Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.', en: 'When disabled, the app is displayed in clean, pure text without symbols.' },
-
-  // View 6: Accounts View
-  'heading-accounts-view': { de: '💳 Konto-Optionen & Konten verwalten', en: '💳 Accounts & Options' },
-  'sub-accounts-view': { de: 'Hier kannst du beliebig viele Konten verwalten, Namen ändern, Startguthaben festlegen oder Konten löschen.', en: 'Manage accounts, edit names, set starting balances, or delete accounts here.' },
-  'heading-add-account': { de: 'Neues Konto hinzufügen', en: 'Add New Account' },
-  'btn-save-new-account': { de: '➕ Neues Konto speichern (Enter)', en: '➕ Save New Account (Enter)' },
-  'heading-existing-accounts': { de: 'Deine vorhandenen Konten (Namen ändern & löschen)', en: 'Your Existing Accounts (Edit name & delete)' },
-  'heading-savings-pots': { de: '🎯 Spartöpfe & Sparziele deiner Konten', en: '🎯 Savings Pots & Goals' },
-  'heading-new-pot': { de: '➕ Neuen Spartopf anlegen', en: '➕ Create New Savings Pot' },
-  'btn-save-pot': { de: '🎯 Spartopf erstellen', en: '🎯 Create Savings Pot' },
-
-  // View 7: Wishlist View
-  'heading-wishlist-view': { de: '🎁 Wunschliste, Sparziele & Anschaffungen', en: '🎁 Wishlist, Savings Goals & Purchases' },
-  'sub-wishlist-view': { de: 'Plane Anschaffungen, behalte den Überblick über deine Ersparnisse und erfülle Wünsche direkt als Ausgabe.', en: 'Plan purchases, track savings, and fulfill wishes directly into budget.' },
-  'heading-add-wish': { de: 'Neuen Wunsch eintragen', en: 'Add New Wish' },
-  'btn-add-wish': { de: '🎁 Wunsch zur Liste hinzufügen', en: '🎁 Add Wish to List' },
-  'heading-existing-wishes': { de: 'Deine Wünsche & Sparziele', en: 'Your Wishes & Savings Goals' },
-
-  // View 8: Shopping View
-  'heading-shopping-view': { de: '🛒 Einkaufsliste & Checkliste', en: '🛒 Shopping List & Checklist' },
-  'sub-shopping-view': { de: 'Artikel beim Einkaufen blitzschnell abhaken, neue Sachen draufsetzen oder WhatsApp-Texte einfügen.', en: 'Check off shopping items quickly, add new items, or paste WhatsApp texts.' },
-  'heading-my-shopping-items': { de: 'Meine Einkaufsartikel', en: 'My Shopping Items' },
-  'btn-paste-shopping-text': { de: '📋 Liste einkopieren (WhatsApp/Text)', en: '📋 Paste List (WhatsApp/Text)' },
-  'btn-upload-shopping-doc': { de: '📷📄 Dokument / Foto hochladen', en: '📷📄 Upload Document / Photo' },
-  'btn-add-shopping-item': { de: '➕ Draufsetzen', en: '➕ Add to List' },
-  'btn-copy-shopping-wa': { de: '📲 Als WhatsApp-Text kopieren', en: '📲 Copy as WhatsApp Text' },
-  'btn-clean-shopping-done': { de: '🧹 Erledigte aufräumen', en: '🧹 Clean up done items' },
-  'btn-clear-shopping-all': { de: '🗑️ Ganze Liste leeren', en: '🗑️ Clear entire list' },
-
-  // View 9: Smartphone Sync View
-  'heading-sync-view': { de: '📱 Smartphone-Sync (E2E)', en: '📱 Smartphone Sync (E2E)' },
-  'tab-sync-devices-title': { de: '🟢 1. Gekoppelte Geräte', en: '🟢 1. Connected Devices' },
-  'tab-sync-pair-title': { de: '🔗 2. Gerät koppeln', en: '🔗 2. Pair New Device' },
-  'tab-sync-creds-title': { de: '🆔 3. Kopplungsdaten', en: '🆔 3. Device Credentials' },
-  'btn-trigger-sync-text': { de: '⚡ Jetzt Gerät koppeln & sicher synchronisieren (Enter)', en: '⚡ Pair Device & Securely Sync Now (Enter)' },
-
-  // Modals Headings & Buttons
-  'edit-modal-heading': { de: 'Buchung bearbeiten', en: 'Edit Transaction' },
-  'edit-rec-heading': { de: 'Dauerauftrag / Sparplan bearbeiten', en: 'Edit Standing Order / Savings Plan' },
-  'end-or-delete-rec-heading': { de: 'Dauerauftrag beenden oder löschen', en: 'End or Delete Standing Order' },
-  'account-modal-heading': { de: 'Konto verwalten', en: 'Manage Account' },
-  'cash-counter-heading': { de: '🪙 Bargeld-Zählhelfer (Münzen & Scheine)', en: '🪙 Cash Counter (Coins & Bills)' },
-  'csv-modal-heading': { de: 'Bank-Kontoauszug Vorschau & Import', en: 'Bank Statement Preview & Import' },
-  'receipt-text-modal-heading': { de: '📋 Text aus Beleg / Rechnung einfügen', en: '📋 Paste Receipt / Invoice Text' },
-  'shopping-paste-heading': { de: '📋 Liste einkopieren (WhatsApp / Notizen)', en: '📋 Paste List (WhatsApp / Notes)' },
-  'shopping-book-heading': { de: '💳 Einkauf als Ausgabe buchen', en: '💳 Book Shopping as Expense' },
-  'print-report-heading': { de: 'Finanzbericht & Nachweis', en: 'Financial Report & Statement' },
-  'peer-loan-heading': { de: '🤝 Geliehenes / Verliehenes Geld erfassen', en: '🤝 Record Borrowed / Lent Money' },
-  'peer-loan-repay-heading': { de: '💵 Rückzahlung verbuchen', en: '💵 Record Repayment' },
-  'delete-peer-loan-heading': { de: '🗑️ Leihgabe löschen', en: '🗑️ Delete Loan' },
-  'delete-peer-repay-heading': { de: '🗑️ Teilrückzahlung löschen', en: '🗑️ Delete Repayment' },
-  'settle-peer-loan-heading': { de: '✅ Leihgabe als beglichen markieren', en: '✅ Mark Loan as Settled' },
-  'quick-add-cat-heading': { de: '➕ Kategorie oder Laden hinzufügen', en: '➕ Add Category or Store' },
-  'changelog-modal-heading': { de: '📜 Was ist neu in diesem Update? (Änderungsprotokoll)', en: '📜 What is new in this update? (Changelog)' },
-
-  // Footer
-  'footer-version-text': { de: 'Barrierefreie Finanzen ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Verschlüsselung & Einkaufsliste. Optimiert für NVDA.', en: 'Accessible Finances ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Encryption & Shopping List. Optimized for NVDA.' },
-  'footer-shortcuts-text': { de: 'Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre', en: 'Keyboard shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= To Today | L= Quick Lock' }
+  'brand-app-title': { de: "Meine Finanzen & Haushaltsbuch", en: "My Finances & Budget Book" },
+  'brand-app-tagline': { de: "🔒 AES-256 Verschlüsselt & DSGVO-Konform", en: "🔒 AES-256 Encrypted & GDPR-Compliant" },
+  'header-privacy-text': { de: "Diskretion (Strg+H)", en: "Privacy (Ctrl+H)" },
+  'btn-lock-text': { de: "Sperren (L)", en: "Lock (L)" },
+  'skip-link-nav': { de: "Zur Menüauswahl springen", en: "Skip to menu selection" },
+  'skip-link-time': { de: "Zur Zeitraumauswahl springen", en: "Skip to period selection" },
+  'skip-link-content': { de: "Direkt zum Hauptinhalt springen", en: "Skip to main content" },
+  'lock-heading': { de: "Sicherer AES-256 Zugang", en: "Secure AES-256 Access" },
+  'lock-instructions': { de: "Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:", en: "Your financial data is protected on this computer. Please enter your PIN or password:" },
+  'btn-unlock-text': { de: "🔓 <strong>Entschlüsseln &amp; Öffnen</strong> (Enter)", en: "🔓 <strong>Decrypt &amp; Open</strong> (Enter)" },
+  'btn-bio-unlock-text': { de: "👆 Mit Fingerabdruck / Biometrie entsperren", en: "👆 Unlock with fingerprint / biometrics" },
+  'lock-sync-heading': { de: "📱 Daten vom Computer übertragen (Smartphone-Sync)", en: "📱 Transfer data from computer (Smartphone Sync)" },
+  'lock-sync-sub': { de: "Kopple dein Smartphone mit dem PC, um deine Finanzen mobil zu synchronisieren.", en: "Pair your smartphone with your PC to sync your finances on the go." },
+  'lock-what-is-new': { de: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)", en: "📜 What is new in this update? (Changelog)" },
+  'lock-privacy-guarantee': { de: "🔒 100% DSGVO & EU-Datenschutz: Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.", en: "🔒 100% GDPR & EU Privacy: All data stays exclusively on your computer and is never sent to servers or third parties." },
+  'lock-first-time-hint': { de: "💡 Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).", en: "💡 First launch: Set your desired PIN now (e.g. 1234 or your secure password)." },
+  'tab-overview-text': { de: "📊 Übersicht & Zeiträume", en: "📊 Overview & Periods" },
+  'tab-expense-text': { de: "🔴 Ausgabe eintragen / planen", en: "🔴 Add / Plan Expense" },
+  'tab-income-text': { de: "🟢 Einnahme eintragen / planen", en: "🟢 Add / Plan Income" },
+  'tab-transfer-text': { de: "🔄 Umbuchen & Sparen", en: "🔄 Transfer & Savings" },
+  'tab-settings-text': { de: "⚙️ Einstellungen & Backup", en: "⚙️ Settings & Backup" },
+  'tab-accounts-text': { de: "💳 Konto-Optionen & Konten", en: "💳 Accounts & Options" },
+  'tab-wishlist-text': { de: "🎁 Wunschliste & Sparziele", en: "🎁 Wishlist & Savings Goals" },
+  'tab-shopping-text': { de: "🛒 Einkaufsliste & Checkliste", en: "🛒 Shopping List & Checklist" },
+  'tab-sync-text': { de: "📱 Smartphone-Sync (E2E)", en: "📱 Smartphone Sync (E2E)" },
+  'section-accounts-heading': { de: "1. 💳 Deine Kontostände im Detail", en: "1. 💳 Your Account Balances" },
+  'period-breakdown-heading': { de: "📊 Monatsübersicht im gewählten Zeitraum", en: "📊 Monthly Overview for Selected Period" },
+  'lbl-tx-search-query': { de: "🔍 Intelligente Suche (Text, Betrag, Tippfehler, Datum):", en: "🔍 Smart Search (Text, amount, typos, date):" },
+  'btn-clear-tx-search': { de: "✖️ Suche leeren", en: "✖️ Clear search" },
+  'lbl-tx-filter-status': { de: "🎯 Status:", en: "🎯 Status:" },
+  'lbl-tx-filter-account': { de: "💳 Konto:", en: "💳 Account:" },
+  'lbl-tx-sort-order': { de: "↕️ Sortierung:", en: "↕️ Sorting:" },
+  'section-income-heading': { de: "2. 📥 Einnahmen", en: "2. 📥 Income" },
+  'section-expense-heading': { de: "3. 📤 Ausgaben", en: "3. 📤 Expenses" },
+  'section-transfer-heading': { de: "🔄 Umbuchungen, Sparpläne & Daueraufträge", en: "🔄 Transfers, Savings Plans & Standing Orders" },
+  'section-peer-loans-heading': { de: "🤝 Geliehenes & Verliehenes Geld (Privatkredite)", en: "🤝 Borrowed & Lent Money (Personal Loans)" },
+  'peer-loan-new-entry-btn': { de: "➕ Neuer Eintrag", en: "➕ New Entry" },
+  'heading-curr-breakdown': { de: "💱 Beträge nach Währungen aufgeteilt & Gesamtergebnis:", en: "💱 Breakdown by Currencies & Total Result:" },
+  'section-total-heading': { de: "4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS", en: "4. 💰 TOTAL BALANCE & RESULT" },
+  'total-balance-sub': { de: "Verfügbares Gesamtguthaben über alle Konten", en: "Available total balance across all accounts" },
+  'leftover-main-label': { de: "Ergebnis im Zeitraum:", en: "Period Result:" },
+  'month-leftover-sub': { de: "Einnahmen minus Ausgaben", en: "Income minus expenses" },
+  'annual-table-th-month': { de: "Monat", en: "Month" },
+  'annual-table-th-inc': { de: "Einnahmen", en: "Income" },
+  'annual-table-th-exp': { de: "Ausgaben", en: "Expenses" },
+  'annual-table-th-result': { de: "Ergebnis (Plus / Minus)", en: "Result (Plus / Minus)" },
+  'annual-table-th-status': { de: "Status", en: "Status" },
+  'hint-currency-converter': { de: "Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:", en: "Convert any amount instantly between modern and historical currencies (e.g. Deutsche Mark, Schilling, Franc):" },
+  'lbl-calc-curr-amount': { de: "Betrag:", en: "Amount:" },
+  'lbl-calc-curr-from': { de: "Von Währung (Quelle):", en: "From currency (Source):" },
+  'lbl-calc-curr-to': { de: "In Währung (Ziel):", en: "To currency (Target):" },
+  'heading-expense-view': { de: "🔴 Ausgabe eintragen oder für die Zukunft planen", en: "🔴 Add / Plan Expense" },
+  'sub-expense-view': { de: "Trage hier getätigte Ausgaben oder geplante Anschaffungen für die Zukunft ein.", en: "Record expenses or planned purchases for the future here." },
+  'btn-exp-coin-counter': { de: "🪙 Münz- & Scheinezähler", en: "🪙 Coin & Bill Counter" },
+  'btn-exp-date-today': { de: "Heute", en: "Today" },
+  'btn-exp-date-yesterday': { de: "Gestern", en: "Yesterday" },
+  'btn-submit-expense': { de: "🔴 Ausgabe / Geplanten Kauf speichern (Enter)", en: "🔴 Save Expense / Planned Purchase (Enter)" },
+  'btn-back-expense': { de: "Zurück zur Übersicht", en: "Back to Overview" },
+  'heading-income-view': { de: "🟢 Einnahme eintragen oder für die Zukunft planen", en: "🟢 Add / Plan Income" },
+  'sub-income-view': { de: "Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).", en: "Record money received or expected in a future month here." },
+  'btn-inc-coin-counter': { de: "🪙 Münz- & Scheinezähler", en: "🪙 Coin & Bill Counter" },
+  'btn-inc-date-today': { de: "Heute", en: "Today" },
+  'btn-inc-date-yesterday': { de: "Gestern", en: "Yesterday" },
+  'btn-submit-income': { de: "🟢 Einnahme speichern (Enter)", en: "🟢 Save Income (Enter)" },
+  'btn-back-income': { de: "Zurück zur Übersicht", en: "Back to Overview" },
+  'heading-transfer-view': { de: "🔄 Geld umbuchen & auf anderes Konto sparen", en: "🔄 Transfer & Savings" },
+  'sub-transfer-view': { de: "Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.", en: "Transfer money between accounts – either immediately or as a monthly savings plan." },
+  'btn-submit-transfer': { de: "🔄 Umbuchung / Sparplan speichern (Enter)", en: "🔄 Save Transfer / Savings Plan (Enter)" },
+  'btn-back-transfer': { de: "Zurück zur Übersicht", en: "Back to Overview" },
+  'heading-settings-view': { de: "Einstellungen, Design & Datensicherung", en: "Settings, Theme & Data Backup" },
+  'theme-settings-heading': { de: "Darstellung, Design & Schriftgröße", en: "Appearance, Theme & Font Size" },
+  'theme-settings-hint': { de: "Passe hier das Design und die Schriftgröße für deine Augen an:", en: "Customize the theme and font size for your eyes:" },
+  'lbl-settings-symbols': { de: "Symbole & Emojis in der App anzeigen", en: "Show symbols & emojis in app" },
+  'hint-settings-symbols': { de: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.", en: "When disabled, the app is displayed in clean, pure text without symbols." },
+  'heading-accounts-view': { de: "💳 Konto-Optionen & Konten verwalten", en: "💳 Accounts & Options" },
+  'sub-accounts-view': { de: "Hier kannst du beliebig viele Konten verwalten, Namen ändern, Startguthaben festlegen oder Konten löschen.", en: "Manage accounts, edit names, set starting balances, or delete accounts here." },
+  'heading-add-account': { de: "Neues Konto hinzufügen", en: "Add New Account" },
+  'btn-save-new-account': { de: "➕ Neues Konto speichern (Enter)", en: "➕ Save New Account (Enter)" },
+  'heading-existing-accounts': { de: "Deine vorhandenen Konten (Namen ändern & löschen)", en: "Your Existing Accounts (Edit name & delete)" },
+  'heading-savings-pots': { de: "🎯 Spartöpfe & Sparziele deiner Konten", en: "🎯 Savings Pots & Goals" },
+  'heading-new-pot': { de: "➕ Neuen Spartopf anlegen", en: "➕ Create New Savings Pot" },
+  'btn-save-pot': { de: "🎯 Spartopf erstellen", en: "🎯 Create Savings Pot" },
+  'heading-wishlist-view': { de: "🎁 Wunschliste, Sparziele & Anschaffungen", en: "🎁 Wishlist, Savings Goals & Purchases" },
+  'sub-wishlist-view': { de: "Plane Anschaffungen, behalte den Überblick über deine Ersparnisse und erfülle Wünsche direkt als Ausgabe.", en: "Plan purchases, track savings, and fulfill wishes directly into budget." },
+  'heading-add-wish': { de: "Neuen Wunsch eintragen", en: "Add New Wish" },
+  'btn-add-wish': { de: "🎁 Wunsch zur Liste hinzufügen", en: "🎁 Add Wish to List" },
+  'heading-existing-wishes': { de: "Deine Wünsche & Sparziele", en: "Your Wishes & Savings Goals" },
+  'heading-shopping-view': { de: "🛒 Einkaufsliste & Checkliste", en: "🛒 Shopping List & Checklist" },
+  'sub-shopping-view': { de: "Artikel beim Einkaufen blitzschnell abhaken, neue Sachen draufsetzen oder WhatsApp-Texte einfügen.", en: "Check off shopping items quickly, add new items, or paste WhatsApp texts." },
+  'heading-my-shopping-items': { de: "Meine Einkaufsartikel", en: "My Shopping Items" },
+  'btn-paste-shopping-text': { de: "📋 Liste einkopieren (WhatsApp/Text)", en: "📋 Paste List (WhatsApp/Text)" },
+  'btn-upload-shopping-doc': { de: "📷📄 Dokument / Foto hochladen", en: "📷📄 Upload Document / Photo" },
+  'btn-add-shopping-item': { de: "➕ Draufsetzen", en: "➕ Add to List" },
+  'btn-copy-shopping-wa': { de: "📲 Als WhatsApp-Text kopieren", en: "📲 Copy as WhatsApp Text" },
+  'btn-clean-shopping-done': { de: "🧹 Erledigte aufräumen", en: "🧹 Clean up done items" },
+  'btn-clear-shopping-all': { de: "🗑️ Ganze Liste leeren", en: "🗑️ Clear entire list" },
+  'heading-sync-view': { de: "📱 Smartphone-Sync (E2E)", en: "📱 Smartphone Sync (E2E)" },
+  'tab-sync-devices-title': { de: "🟢 1. Gekoppelte Geräte", en: "🟢 1. Connected Devices" },
+  'tab-sync-pair-title': { de: "🔗 2. Gerät koppeln", en: "🔗 2. Pair New Device" },
+  'tab-sync-creds-title': { de: "🆔 3. Kopplungsdaten", en: "🆔 3. Device Credentials" },
+  'btn-trigger-sync-text': { de: "⚡ Jetzt Gerät koppeln & sicher synchronisieren (Enter)", en: "⚡ Pair Device & Securely Sync Now (Enter)" },
+  'edit-rec-heading': { de: "Dauerauftrag / Sparplan bearbeiten", en: "Edit Standing Order / Savings Plan" },
+  'btn-toggle-keyfile-text': { de: "🔑 <strong>Mit Schlüsseldatei (Key-File) entsperren</strong>", en: "🔑 <strong>Unlock with Key File</strong>" },
 };
 
 const I18N_APP_PLACEHOLDERS = {
@@ -11513,12 +11441,12 @@ function renderAccountsViewList() {
     if (acc.hasBackupAccount && acc.backupAccountId) {
       const backupAcc = appState.accounts.find(a => a.id === acc.backupAccountId);
       const backupName = backupAcc ? backupAcc.name : acc.backupAccountId;
-      backupBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0, 112, 186, 0.1); color: #0070BA; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">🛡️ Auto-Deckung: ${escapeHTML(backupName)}</span>`;
+      backupBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0, 112, 186, 0.1); color: #0070BA; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">${isEn ? '🛡️ Auto-Backup: ' : '🛡️ Auto-Deckung: '}${escapeHTML(backupName)}</span>`;
     }
 
     let dispoBadge = '';
     if (acc.dispoLimit && Number(acc.dispoLimit) > 0) {
-      dispoBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(156, 39, 176, 0.1); color: #9C27B0; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">💳 Dispo: ${formatCurrency(acc.dispoLimit)}</span>`;
+      dispoBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(156, 39, 176, 0.1); color: #9C27B0; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px;">${isEn ? '💳 Overdraft: ' : '💳 Dispo: '}${formatCurrency(acc.dispoLimit)}</span>`;
     }
 
     const hasBankDetails = !!(acc.bankName || acc.owner || acc.iban || acc.bic || acc.accountNumber || acc.notes);
@@ -11643,6 +11571,22 @@ const ACCOUNT_TYPE_ICONS = {
   loan: '🏛️',
   other: '📦'
 };
+
+
+function updateAccountTypeNames() {
+  const isEn = (typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de') === 'en';
+  if (typeof ACCOUNT_TYPE_NAMES !== 'undefined') {
+    ACCOUNT_TYPE_NAMES.bank = isEn ? 'Checking / Bank Account' : 'Bankkonto / Girokonto';
+    ACCOUNT_TYPE_NAMES.credit = isEn ? 'Credit Card / Debit Card' : 'Kreditkarte / Debitkarte';
+    ACCOUNT_TYPE_NAMES.paypal = isEn ? 'PayPal & Online Payment' : 'PayPal & Online-Zahlungsdienst';
+    ACCOUNT_TYPE_NAMES.savings = isEn ? 'Savings Account / Daily Allowance' : 'Tagesgeld, Festgeld & Sparkonto';
+    ACCOUNT_TYPE_NAMES.cash = isEn ? 'Cash & Wallet' : 'Bargeld & Portemonnaie';
+    ACCOUNT_TYPE_NAMES.depot = isEn ? 'Securities & ETFs' : 'Depot, Wertpapiere & ETFs';
+    ACCOUNT_TYPE_NAMES.crypto = isEn ? 'Crypto & Web3 Wallet' : 'Krypto & Web3 Wallet';
+    ACCOUNT_TYPE_NAMES.loan = isEn ? 'Loan, Credit & Borrowing' : 'Bausparvertrag, Kredit & Darlehen';
+    ACCOUNT_TYPE_NAMES.other = isEn ? 'Other Account / Gift Card' : 'Sonstiges Konto / Guthabenkarte';
+  }
+}
 
 const ACCOUNT_TYPE_NAMES = {
   bank: 'Bankkonto / Girokonto',
@@ -13966,9 +13910,9 @@ function calculateMonthStats(year, month) {
 // ----------------------------------------------------------------------------
 // 9. HAUPTÜBERSICHT RENDERN MIT BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG
 // ----------------------------------------------------------------------------
-function updateOverview() {
+function updateOverview(force = false) {
   if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
-  if (currentActiveView !== 'overview') return;
+  if (!force && currentActiveView !== 'overview') return;
 
   const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
   const baseCurrency = typeof getEffectiveCurrency === 'function' ? getEffectiveCurrency() : 'EUR';
