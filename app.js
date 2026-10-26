@@ -100,6 +100,325 @@ function getEffectiveLanguage() {
 const MONTH_NAMES_DE = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
 const MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
+const I18N_APP_ARIA = {
+  "Alle Einnahmen ausklappen oder einklappen": {
+    "de": "Alle Einnahmen ausklappen oder einklappen",
+    "en": "Expand or collapse all income"
+  },
+  "Alle Ausgaben ausklappen oder einklappen": {
+    "de": "Alle Ausgaben ausklappen oder einklappen",
+    "en": "Expand or collapse all expenses"
+  },
+  "Alle Kredite und Ratenkäufe ausklappen oder einklappen": {
+    "de": "Alle Kredite und Ratenkäufe ausklappen oder einklappen",
+    "en": "Expand or collapse all credits and installments"
+  },
+  "Alle Umbuchungen und Sparpläne ausklappen oder einklappen": {
+    "de": "Alle Umbuchungen und Sparpläne ausklappen oder einklappen",
+    "en": "Expand or collapse all transfers and savings plans"
+  },
+  "Alle geliehenen und verliehenen Beträge ausklappen oder einklappen": {
+    "de": "Alle geliehenen und verliehenen Beträge ausklappen oder einklappen",
+    "en": "Expand or collapse all personal loans"
+  },
+  "Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen": {
+    "de": "Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen",
+    "en": "Expand or collapse expense ranking of top spending"
+  },
+  "Neues geliehenes oder verliehenes Geld eintragen": {
+    "de": "Neues geliehenes oder verliehenes Geld eintragen",
+    "en": "Add new borrowed or lent money"
+  },
+  "Beträge verbergen oder anzeigen, Tastenkürzel Strg + H": {
+    "de": "Beträge verbergen oder anzeigen, Tastenkürzel Strg + H",
+    "en": "Hide or show amounts, shortcut Ctrl + H"
+  },
+  "Heutiges Datum": {
+    "de": "Heutiges Datum",
+    "en": "Today's Date"
+  },
+  "Sicherheitsstatus: AES-256 Verschlüsselt": {
+    "de": "Sicherheitsstatus: AES-256 Verschlüsselt",
+    "en": "Security Status: AES-256 Encrypted"
+  },
+  "Hauptmenü": {
+    "de": "Hauptmenü",
+    "en": "Main Menu"
+  },
+  "Zeitraum und Navigation": {
+    "de": "Zeitraum und Navigation",
+    "en": "Period and Navigation"
+  },
+  "Buchungen durchsuchen und filtern": {
+    "de": "Buchungen durchsuchen und filtern",
+    "en": "Search and filter transactions"
+  },
+  "Währung der Ausgabe": {
+    "de": "Währung der Ausgabe",
+    "en": "Expense Currency"
+  },
+  "Neue Kategorie oder neues Geschäft schnell anlegen": {
+    "de": "Neue Kategorie oder neues Geschäft schnell anlegen",
+    "en": "Quickly create new category or store"
+  },
+  "Ausgabedatum auf Heute setzen": {
+    "de": "Ausgabedatum auf Heute setzen",
+    "en": "Set expense date to Today"
+  },
+  "Ausgabedatum auf Gestern setzen": {
+    "de": "Ausgabedatum auf Gestern setzen",
+    "en": "Set expense date to Yesterday"
+  },
+  "Datum der Ausgabe": {
+    "de": "Datum der Ausgabe",
+    "en": "Date of Expense"
+  },
+  "Fälligkeitstag im Monat als Zahl von 1 bis 31": {
+    "de": "Fälligkeitstag im Monat als Zahl von 1 bis 31",
+    "en": "Due day in month as number from 1 to 31"
+  },
+  "Startmonat auf aktuellen Monat setzen": {
+    "de": "Startmonat auf aktuellen Monat setzen",
+    "en": "Set start month to current month"
+  },
+  "Startmonat auf nächsten Monat setzen": {
+    "de": "Startmonat auf nächsten Monat setzen",
+    "en": "Set start month to next month"
+  },
+  "Startmonat des Dauerauftrags (Jahr und Monat)": {
+    "de": "Startmonat des Dauerauftrags (Jahr und Monat)",
+    "en": "Start month of standing order (year and month)"
+  },
+  "Startmonat des Dauerauftrags": {
+    "de": "Startmonat des Dauerauftrags",
+    "en": "Start month of standing order"
+  },
+  "Währung der Einnahme": {
+    "de": "Währung der Einnahme",
+    "en": "Income Currency"
+  },
+  "Neue Einnahme-Kategorie schnell anlegen": {
+    "de": "Neue Einnahme-Kategorie schnell anlegen",
+    "en": "Quickly create new income category"
+  },
+  "Einnahmedatum auf Heute setzen": {
+    "de": "Einnahmedatum auf Heute setzen",
+    "en": "Set income date to Today"
+  },
+  "Einnahmedatum auf Gestern setzen": {
+    "de": "Einnahmedatum auf Gestern setzen",
+    "en": "Set income date to Yesterday"
+  },
+  "Datum der Einnahme": {
+    "de": "Datum der Einnahme",
+    "en": "Date of Income"
+  },
+  "Tag des Geldeingangs im Monat als Zahl von 1 bis 31": {
+    "de": "Tag des Geldeingangs im Monat als Zahl von 1 bis 31",
+    "en": "Day of income deposit in month (1 to 31)"
+  },
+  "Startmonat der dauerhaften Einnahme": {
+    "de": "Startmonat der dauerhaften Einnahme",
+    "en": "Start month of recurring income"
+  },
+  "Umbuchungsdatum auf Heute setzen": {
+    "de": "Umbuchungsdatum auf Heute setzen",
+    "en": "Set transfer date to Today"
+  },
+  "Umbuchungsdatum auf Gestern setzen": {
+    "de": "Umbuchungsdatum auf Gestern setzen",
+    "en": "Set transfer date to Yesterday"
+  },
+  "Datum der Umbuchung": {
+    "de": "Datum der Umbuchung",
+    "en": "Date of Transfer"
+  },
+  "Ausführungstag im Monat als Zahl von 1 bis 31": {
+    "de": "Ausführungstag im Monat als Zahl von 1 bis 31",
+    "en": "Execution day in month (1 to 31)"
+  },
+  "Startmonat des Sparplans": {
+    "de": "Startmonat des Sparplans",
+    "en": "Start month of savings plan"
+  },
+  "Einstellungen Kategorien": {
+    "de": "Einstellungen Kategorien",
+    "en": "Settings Categories"
+  },
+  "Vorhandenen Spartopf oder Konto für Wunsch auswählen": {
+    "de": "Vorhandenen Spartopf oder Konto für Wunsch auswählen",
+    "en": "Select existing savings pot or account for wish"
+  },
+  "Einkaufsliste filtern": {
+    "de": "Einkaufsliste filtern",
+    "en": "Filter shopping list"
+  },
+  "Einkaufsartikel": {
+    "de": "Einkaufsartikel",
+    "en": "Shopping items"
+  },
+  "Bereiche der Geräte-Synchronisation": {
+    "de": "Bereiche der Geräte-Synchronisation",
+    "en": "Device synchronization sections"
+  },
+  "Liste der gekoppelten Geräte": {
+    "de": "Liste der gekoppelten Geräte",
+    "en": "List of paired devices"
+  },
+  "Schließen": {
+    "de": "Schließen",
+    "en": "Close"
+  },
+  "Schnellnavigation": {
+    "de": "Schnellnavigation",
+    "en": "Quick Navigation"
+  },
+  "PIN im Klartext anzeigen oder verbergen": {
+    "de": "PIN im Klartext anzeigen oder verbergen",
+    "en": "Show or hide PIN in plain text"
+  },
+  "Zufälliges Ziffernfeld (Anti-Keylogger)": {
+    "de": "Zufälliges Ziffernfeld (Anti-Keylogger)",
+    "en": "Random numeric keypad (Anti-Keylogger)"
+  },
+  "Schlüsseldatei vom Computer oder USB-Stick auswählen": {
+    "de": "Schlüsseldatei vom Computer oder USB-Stick auswählen",
+    "en": "Select key file from computer or USB drive"
+  },
+  "Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken.": {
+    "de": "Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken.",
+    "en": "Device name. Swipe through character by character to spell with TalkBack or press the spell button."
+  },
+  "Gerätename Buchstabe für Buchstabe vorlesen": {
+    "de": "Gerätename Buchstabe für Buchstabe vorlesen",
+    "en": "Read device name letter by letter"
+  },
+  "Gerätename kopieren": {
+    "de": "Gerätename kopieren",
+    "en": "Copy device name"
+  },
+  "Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken.": {
+    "de": "Kopplungscode. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken.",
+    "en": "Pairing code. Swipe through character by character to spell with TalkBack or press the spell button."
+  },
+  "Kopplungscode Ziffer für Ziffer vorlesen": {
+    "de": "Kopplungscode Ziffer für Ziffer vorlesen",
+    "en": "Read pairing code digit by digit"
+  },
+  "Kopplungscode kopieren": {
+    "de": "Kopplungscode kopieren",
+    "en": "Copy pairing code"
+  },
+  "Neue Kategorie oder neues Geschäft direkt hier anlegen": {
+    "de": "Neue Kategorie oder neues Geschäft direkt hier anlegen",
+    "en": "Create new category or store directly here"
+  },
+  "Neue Kategorie oder neues Geschäft für Dauerauftrag anlegen": {
+    "de": "Neue Kategorie oder neues Geschäft für Dauerauftrag anlegen",
+    "en": "Create new category or store for standing order"
+  },
+  "Beleg-Betrachter schließen": {
+    "de": "Beleg-Betrachter schließen",
+    "en": "Close receipt viewer"
+  },
+  "Beleg vergrößern": {
+    "de": "Beleg vergrößern",
+    "en": "Zoom in receipt"
+  },
+  "Beleg verkleinern": {
+    "de": "Beleg verkleinern",
+    "en": "Zoom out receipt"
+  },
+  "Originalgröße wiederherstellen": {
+    "de": "Originalgröße wiederherstellen",
+    "en": "Reset to original size"
+  },
+  "Beleg um 90 Grad drehen": {
+    "de": "Beleg um 90 Grad drehen",
+    "en": "Rotate receipt by 90 degrees"
+  },
+  "Beleg herunterladen": {
+    "de": "Beleg herunterladen",
+    "en": "Download receipt"
+  },
+  "Beleg löschen": {
+    "de": "Beleg löschen",
+    "en": "Delete receipt"
+  },
+  "Beleganzeigebereich. Mit Pfeiltasten scrollen.": {
+    "de": "Beleganzeigebereich. Mit Pfeiltasten scrollen.",
+    "en": "Receipt display area. Scroll with arrow keys."
+  },
+  "Eigener Gerätename. Mit Screenreader Zeichen für Zeichen lesbar oder den Buchstabier-Button drücken.": {
+    "de": "Eigener Gerätename. Mit Screenreader Zeichen für Zeichen lesbar oder den Buchstabier-Button drücken.",
+    "en": "Own device name. Readable character by character with screen reader or press the spell button."
+  },
+  "Eigener Kopplungscode. Mit Screenreader Zeichen für Zeichen lesbar oder den Buchstabier-Button drücken.": {
+    "de": "Eigener Kopplungscode. Mit Screenreader Zeichen für Zeichen lesbar oder den Buchstabier-Button drücken.",
+    "en": "Own pairing code. Readable character by character with screen reader or press the spell button."
+  },
+  "PIN im Klartext anzeigen / verbergen": {
+    "de": "PIN im Klartext anzeigen / verbergen",
+    "en": "Show / hide PIN in plain text"
+  },
+  "Beleg-Text einfügen und analysieren": {
+    "de": "Beleg-Text einfügen und analysieren",
+    "en": "Paste and analyze receipt text"
+  },
+  "Setzt das Startguthaben so, dass der aktuelle Saldo exakt diesem Wert entspricht": {
+    "de": "Setzt das Startguthaben so, dass der aktuelle Saldo exakt diesem Wert entspricht",
+    "en": "Sets initial balance so current balance matches this value"
+  },
+  "Münz- und Scheinezähler öffnen": {
+    "de": "Münz- und Scheinezähler öffnen",
+    "en": "Open coin and note counter"
+  },
+  "Beleg PDF Dokument": {
+    "de": "Beleg PDF Dokument",
+    "en": "Receipt PDF document"
+  },
+  "Beträge im Diskretionsmodus unkenntlich machen (Strg + H)": {
+    "de": "Beträge im Diskretionsmodus unkenntlich machen (Strg + H)",
+    "en": "Mask amounts in privacy mode (Ctrl + H)"
+  },
+  "App sofort sperren (Taste L oder Strg + L)": {
+    "de": "App sofort sperren (Taste L oder Strg + L)",
+    "en": "Lock app immediately (Key L or Ctrl + L)"
+  },
+  "WhatsApp-Text oder Notizen hier als Einkaufsliste einfügen": {
+    "de": "WhatsApp-Text oder Notizen hier als Einkaufsliste einfügen",
+    "en": "Paste WhatsApp text or notes here as shopping list"
+  },
+  "Dokument hochladen (TXT, CSV, PDF, Foto, Kamera)": {
+    "de": "Dokument hochladen (TXT, CSV, PDF, Foto, Kamera)",
+    "en": "Upload document (TXT, CSV, PDF, Photo, Camera)"
+  },
+  "Einkaufsliste in die Zwischenablage kopieren (z. B. zum Senden per WhatsApp)": {
+    "de": "Einkaufsliste in die Zwischenablage kopieren (z. B. zum Senden per WhatsApp)",
+    "en": "Copy shopping list to clipboard (e.g. to send via WhatsApp)"
+  },
+  "Alle abgehakten Artikel von der Liste löschen": {
+    "de": "Alle abgehakten Artikel von der Liste löschen",
+    "en": "Delete all checked items from list"
+  },
+  "Ganze Liste leeren": {
+    "de": "Ganze Liste leeren",
+    "en": "Clear entire list"
+  },
+  "Ersetzt alle Daten auf den gekoppelten Geräten zu 100% durch den aktuellen Stand dieses Geräts.": {
+    "de": "Ersetzt alle Daten auf den gekoppelten Geräten zu 100% durch den aktuellen Stand dieses Geräts.",
+    "en": "Replaces all data on paired devices 100% with current state of this device."
+  },
+  "Legt den exakten Stand dieses Geräts als Master ins Postfach. Alle anderen gekoppelten Geräte übernehmen ihn beim Start 1:1.": {
+    "de": "Legt den exakten Stand dieses Geräts als Master ins Postfach. Alle anderen gekoppelten Geräte übernehmen ihn beim Start 1:1.",
+    "en": "Pushes exact state of this device as master into mailbox. All other paired devices adopt it 1:1."
+  },
+  "Ersetzt alle Daten auf dem Zielgerät zu 100% durch den aktuellen Stand dieses Geräts.": {
+    "de": "Ersetzt alle Daten auf dem Zielgerät zu 100% durch den aktuellen Stand dieses Geräts.",
+    "en": "Replaces all data on target device 100% with current state of this device."
+  }
+};
+
 // COMPREHENSIVE I18N & SYMBOLS ENGINE (DEUTSCH / ENGLISCH / CLEAN TEXT)
 // =============================================================================
 
@@ -887,6 +1206,30 @@ function applyAppLanguage() {
     const curVal = expFreqSel.value;
     expFreqSel.innerHTML = freqOptions.map(o => `<option value="${o.val}">${cleanSymbols(o.text)}</option>`).join('');
     expFreqSel.value = curVal;
+  }
+
+  
+  // Update all aria-labels and titles
+  if (typeof I18N_APP_ARIA !== 'undefined') {
+    const ariaTargets = document.querySelectorAll('[aria-label]');
+    ariaTargets.forEach(el => {
+      if (!el.dataset.origAria) el.dataset.origAria = el.getAttribute('aria-label');
+      const orig = el.dataset.origAria;
+      if (I18N_APP_ARIA[orig]) {
+        const text = isEn ? I18N_APP_ARIA[orig].en : I18N_APP_ARIA[orig].de;
+        el.setAttribute('aria-label', cleanSymbols(text));
+      }
+    });
+
+    const titleTargets = document.querySelectorAll('[title]');
+    titleTargets.forEach(el => {
+      if (!el.dataset.origTitle) el.dataset.origTitle = el.getAttribute('title');
+      const orig = el.dataset.origTitle;
+      if (I18N_APP_ARIA[orig]) {
+        const text = isEn ? I18N_APP_ARIA[orig].en : I18N_APP_ARIA[orig].de;
+        el.setAttribute('title', cleanSymbols(text));
+      }
+    });
   }
 
   // 10. Update Language Select

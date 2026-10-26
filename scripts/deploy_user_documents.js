@@ -19,8 +19,16 @@ const filesToCopy = [
 filesToCopy.forEach(file => {
   if (fs.existsSync(file)) {
     const dest = path.join(targetDir, file);
-    fs.copyFileSync(file, dest);
-    console.log(`Copied ${file} -> ${dest} (${fs.statSync(dest).size} bytes)`);
+    try {
+      fs.copyFileSync(file, dest);
+      console.log(`Copied ${file} -> ${dest} (${fs.statSync(dest).size} bytes)`);
+    } catch (e) {
+      if (e.code === 'EBUSY') {
+        console.warn(`File is currently open/locked by user: ${file} (Skipping binary overwrite while app is running)`);
+      } else {
+        throw e;
+      }
+    }
   } else {
     console.warn(`File not found to copy: ${file}`);
   }
