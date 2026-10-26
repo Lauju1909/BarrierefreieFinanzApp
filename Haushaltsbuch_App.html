@@ -8830,9 +8830,32 @@ function applyAppLanguage() {
   }
 }
 
+
+async function saveUserSettings(key, val) {
+  try {
+    if (key === 'language') localStorage.setItem(STORAGE_LANGUAGE_KEY, val);
+    if (key === 'currency') localStorage.setItem(STORAGE_CURRENCY_KEY, val);
+    if (key === 'theme') localStorage.setItem(STORAGE_THEME_KEY, val);
+    if (key === 'fontSize') localStorage.setItem(STORAGE_FONTSIZE_KEY, val);
+    if (key === 'showSymbols') localStorage.setItem(STORAGE_SHOW_SYMBOLS_KEY, val ? 'true' : 'false');
+    if (key === 'autoChangelog') localStorage.setItem(STORAGE_CHANGELOG_ENABLED_KEY, val ? 'true' : 'false');
+  } catch(e) {}
+
+  if (typeof appState !== 'undefined' && appState) {
+    if (!appState.userSettings) appState.userSettings = {};
+    appState.userSettings[key] = val;
+    try {
+      await saveStateToEncryptedStorage();
+    } catch(err) {
+      console.error('Fehler beim sofortigen Speichern der Einstellungen:', err);
+    }
+  }
+}
+
 function changeLanguage(langVal) {
   const valid = ['auto', 'de', 'en'].includes(langVal) ? langVal : 'auto';
   localStorage.setItem(STORAGE_LANGUAGE_KEY, valid);
+  saveUserSettings('language', valid);
 
   applyAppLanguage();
 
@@ -8852,6 +8875,7 @@ function initLanguage() {
 
 function applySymbolsDisplay(show) {
   try { localStorage.setItem(STORAGE_SHOW_SYMBOLS_KEY, show ? 'true' : 'false'); } catch(e) {}
+  saveUserSettings('showSymbols', show);
 
   document.body.classList.toggle('hide-symbols', !show);
   document.body.classList.toggle('show-symbols', show);
@@ -19411,6 +19435,7 @@ function changeTheme(themeClass) {
   const currentFont = localStorage.getItem(STORAGE_FONTSIZE_KEY) || 'font-normal';
   document.body.className = `${themeClass} ${currentFont}`;
   localStorage.setItem(STORAGE_THEME_KEY, themeClass);
+  saveUserSettings('theme', themeClass);
   
   const sel = document.getElementById('settings-theme-select');
   if (sel) sel.value = themeClass;
@@ -19427,6 +19452,7 @@ function changeFontSize(fontClass) {
   const currentTheme = localStorage.getItem(STORAGE_THEME_KEY) || 'theme-light';
   document.body.className = `${currentTheme} ${fontClass}`;
   localStorage.setItem(STORAGE_FONTSIZE_KEY, fontClass);
+  saveUserSettings('fontSize', fontClass);
 
   const sel = document.getElementById('settings-fontsize-select');
   if (sel) sel.value = fontClass;
@@ -20211,6 +20237,35 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
     if (!appState.recurring) appState.recurring = [];
     ensureDeletedEntitiesInitialized();
 
+    // Benutzereinstellungen aus dem verschluesselten Tresor wiederherstellen
+    if (appState && appState.userSettings) {
+      try {
+        const us = appState.userSettings;
+        if (us.language) {
+          localStorage.setItem(STORAGE_LANGUAGE_KEY, us.language);
+          applyAppLanguage();
+        }
+        if (us.currency) {
+          localStorage.setItem(STORAGE_CURRENCY_KEY, us.currency);
+          applyAppCurrency();
+        }
+        if (us.theme) {
+          changeTheme(us.theme);
+        }
+        if (us.fontSize) {
+          changeFontSize(us.fontSize);
+        }
+        if (typeof us.showSymbols === 'boolean') {
+          applySymbolsDisplay(us.showSymbols);
+        }
+        if (typeof us.autoChangelog === 'boolean') {
+          try { localStorage.setItem(STORAGE_CHANGELOG_ENABLED_KEY, us.autoChangelog ? 'true' : 'false'); } catch(e) {}
+        }
+      } catch (setErr) {
+        console.error('Fehler beim Wiederherstellen der Benutzereinstellungen aus dem Tresor:', setErr);
+      }
+    }
+
     setFailedAttempts(0);
     setLockoutEndTime(0);
     window.__ACTIVE_PIN__ = enteredPin;
@@ -20770,6 +20825,7 @@ function checkChangelogOnStartup() {
   const isEnabled = isChangelogEnabled();
   const lastSeen = getLastSeenChangelogVersion();
 
+  saveUserSettings('autoChangelog', isEnabled);
   const settingChk = document.getElementById('setting-auto-changelog');
   if (settingChk) settingChk.checked = isEnabled;
 
