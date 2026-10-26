@@ -47,168 +47,32 @@ function getVaultApiHeaders(customHeaders = {}) {
 }
 
 // =============================================================================
-// I18N SPRACH-ENGINE (DEUTSCH / ENGLISCH / AUTOMATISCHE SYSTEMSPRACHE)
+
 // =============================================================================
-const I18N_TRANSLATIONS = {
-  de: {
-    appName: "Meine Finanzen & Haushaltsbuch",
-    appTagline: "🔒 AES-256 Verschlüsselt & DSGVO-Konform",
-    lockHeading: "Sicherer AES-256 Zugang",
-    lockInstructions: "Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:",
-    pinLabel: "PIN oder Passwort:",
-    btnUnlock: "🔓 Entschlüsseln & Öffnen (Enter)",
-    btnBioUnlock: "👆 Mit Fingerabdruck / Biometrie entsperren",
-    lockSyncHeading: "📱 Daten vom Computer übertragen (Smartphone-Sync)",
-    lockSyncSub: "Kopple dein Smartphone mit dem PC, um deine Finanzen mobil zu synchronisieren.",
-    lockOldBackup: "📥 Alte Sicherung oder Daten-Datei importieren (.json / .vault)",
-    lockForgotPin: "🔄 PIN vergessen / Neuen leeren Tresor einrichten",
-    lockWhatIsNew: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)",
-    lockPrivacyGuarantee: "🔒 100% DSGVO & EU-Datenschutz: Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.",
-    lockFirstTimeHint: "💡 Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).",
-    btnLock: "Sperren (L)",
-    btnPrivacy: "Diskretion (Strg+H)",
-    today: "Heute",
-    
-    // Tabs
-    tabOverview: "📊 Übersicht & Zeiträume",
-    tabExpense: "🔴 Ausgabe eintragen / planen",
-    tabIncome: "🟢 Einnahme eintragen / planen",
-    tabTransfer: "🔄 Umbuchen & Sparen",
-    tabSettings: "⚙️ Einstellungen & Backup",
-    tabAccounts: "💳 Konto-Optionen & Konten",
-    tabWishlist: "🎁 Wunschliste & Sparziele",
-    tabShopping: "🛒 Einkaufsliste & Checkliste",
-    tabSync: "📱 Smartphone-Sync (E2E)",
 
-    // Time picker
-    periodLabel: "Zeitraum:",
-    periodDay: "📍 Tag (Tagesgenau)",
-    periodWeek: "📆 Woche (Kalenderwoche: Mo - So)",
-    periodMonth: "📅 Monat (Gesamter Monat)",
-    periodQuarter: "📊 3 Monate (Quartal)",
-    periodHalfyear: "📈 6 Monate (Halbjahr)",
-    periodYear: "🗓 Ganzes Jahr",
-    prevMonth: "◀ Vormonat",
-    nextMonth: "Nächster Monat ▶",
-    currentMonth: "📍 Aktueller Monat",
-    prevWeek: "◀ Vorherige Woche",
-    nextWeek: "Nächste Woche ▶",
-    currentWeek: "📆 Diese Woche",
-    yesterday: "◀ Gestern",
-    tomorrow: "Morgen ▶",
-    todayBtn: "📍 Heute (T)",
+// =============================================================================
 
-    // Overview headings
-    accHeading: "1. 💳 Deine Kontostände im Detail",
-    incHeading: "2. 📥 Einnahmen",
-    expHeading: "3. 📤 Ausgaben",
-    totalHeading: "4. 💰 GESAMTER KONTOSTAND & ERGEBNIS",
-    leftoverLabel: "Ergebnis:",
+// =============================================================================
+// I18N SPRACH-ENGINE & SYMBOLS/EMOJI CONTROLLER (DEUTSCH / ENGLISCH / CLEAN TEXT)
+// =============================================================================
 
-    // Settings
-    settingsHeading: "Einstellungen, Design & Datensicherung",
-    settingsThemeLabel: "Farbkontrast / Design:",
-    settingsFontLabel: "Schriftgröße / Textgröße:",
-    settingsLangLabel: "🌐 Sprache / Language:",
-    settingsSymbolsLabel: "Symbole & Emojis in der App anzeigen",
-    settingsSymbolsHint: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.",
-    settingsCurrencyLabel: "💱 Standard-Währung / Currency:",
-    lblExpAmount: "Betrag in",
-    lblCalcCurrAmount: "Betrag:",
-    lblCalcCurrFrom: "Von Währung (Quelle):",
-    lblCalcCurrTo: "In Währung (Ziel):",
-    btnCalcCurrConvert: "💱 Jetzt umrechnen",
-    btnCalcCurrSwap: "🔄 Währungen tauschen",
-    headingCurrencyConverter: "Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)",
-    hintCurrencyConverter: "Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:",
-    currRateInfoPrefix: "Offizieller Wechselkurs:",
-
-    // Announce
-    langChanged: "Sprache auf Deutsch gesetzt.",
-    overviewOpened: "Übersicht geöffnet."
-  },
-  en: {
-    appName: "My Finances & Budget Book",
-    appTagline: "🔒 AES-256 Encrypted & GDPR-Compliant",
-    lockHeading: "Secure AES-256 Access",
-    lockInstructions: "Your financial data is protected on this computer. Please enter your PIN or password:",
-    pinLabel: "PIN or password:",
-    btnUnlock: "🔓 Decrypt & Open (Enter)",
-    btnBioUnlock: "👆 Unlock with fingerprint / biometrics",
-    lockSyncHeading: "📱 Transfer data from computer (Smartphone Sync)",
-    lockSyncSub: "Pair your smartphone with your PC to sync your finances on the go.",
-    lockOldBackup: "📥 Import old backup or vault file (.json / .vault)",
-    lockForgotPin: "🔄 Forgot PIN / Set up new empty vault",
-    lockWhatIsNew: "📜 What's new in this update? (Changelog)",
-    lockPrivacyGuarantee: "🔒 100% GDPR & EU Privacy: All data stays exclusively on your computer and is never sent to servers or third parties.",
-    lockFirstTimeHint: "💡 First launch: Set your desired PIN now (e.g. 1234 or your secure password).",
-    btnLock: "Lock (L)",
-    btnPrivacy: "Privacy (Ctrl+H)",
-    today: "Today",
-
-    // Tabs
-    tabOverview: "📊 Overview & Periods",
-    tabExpense: "🔴 Add / Plan Expense",
-    tabIncome: "🟢 Add / Plan Income",
-    tabTransfer: "🔄 Transfer & Savings",
-    tabSettings: "⚙️ Settings & Backup",
-    tabAccounts: "💳 Accounts & Options",
-    tabWishlist: "🎁 Wishlist & Savings Goals",
-    tabShopping: "🛒 Shopping List & Checklist",
-    tabSync: "📱 Smartphone Sync (E2E)",
-
-    // Time picker
-    periodLabel: "Period:",
-    periodDay: "📍 Day (Exact Day)",
-    periodWeek: "📆 Week (Mon - Sun)",
-    periodMonth: "📅 Month (Full Month)",
-    periodQuarter: "📊 3 Months (Quarter)",
-    periodHalfyear: "📈 6 Months (Half-Year)",
-    periodYear: "🗓 Full Year",
-    prevMonth: "◀ Previous Month",
-    nextMonth: "Next Month ▶",
-    currentMonth: "📍 Current Month",
-    prevWeek: "◀ Previous Week",
-    nextWeek: "Next Week ▶",
-    currentWeek: "📆 This Week",
-    yesterday: "◀ Yesterday",
-    tomorrow: "Tomorrow ▶",
-    todayBtn: "📍 Today (T)",
-
-    // Overview headings
-    accHeading: "1. 💳 Your Account Balances",
-    incHeading: "2. 📥 Incomes",
-    expHeading: "3. 📤 Expenses",
-    totalHeading: "4. 💰 TOTAL BALANCE & RESULT",
-    leftoverLabel: "Net result:",
-
-    // Settings
-    settingsHeading: "Settings, Theme & Data Backup",
-    settingsThemeLabel: "Color Theme / Contrast:",
-    settingsFontLabel: "Font Size / Text Size:",
-    settingsLangLabel: "🌐 Language / Sprache:",
-    settingsSymbolsLabel: "Show symbols & emojis in app",
-    settingsSymbolsHint: "When disabled, the app is displayed in clean, pure text without symbols.",
-
-    // Announce
-    langChanged: "Language set to English.",
-    overviewOpened: "Overview opened."
+function isSymbolsEnabled() {
+  try {
+    const val = localStorage.getItem(STORAGE_SHOW_SYMBOLS_KEY);
+    return val !== 'false';
+  } catch (e) {
+    return true;
   }
-};
+}
 
-const MONTH_NAMES_DE = [
-  'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni',
-  'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'
-];
-
-const MONTH_NAMES_EN = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December'
-];
+function sym(emoji) {
+  if (!isSymbolsEnabled()) return '';
+  return '<span class="emoji-icon" aria-hidden="true">' + emoji + ' </span>';
+}
 
 function getSystemLanguage() {
   try {
-    const navLang = (navigator.languages && navigator.languages[0]) || navigator.language || navigator.userLanguage || '';
+    const navLang = (typeof navigator !== 'undefined' && ((navigator.languages && navigator.languages[0]) || navigator.language || navigator.userLanguage)) || '';
     if (navLang.toLowerCase().startsWith('de')) return 'de';
     return 'en';
   } catch (e) {
@@ -217,8 +81,11 @@ function getSystemLanguage() {
 }
 
 function getCurrentLanguagePreference() {
-  if (typeof localStorage !== 'undefined') return localStorage.getItem(STORAGE_LANGUAGE_KEY) || 'auto';
-  return 'auto';
+  try {
+    return localStorage.getItem(STORAGE_LANGUAGE_KEY) || 'auto';
+  } catch (e) {
+    return 'auto';
+  }
 }
 
 function getEffectiveLanguage() {
@@ -227,390 +94,897 @@ function getEffectiveLanguage() {
   return getSystemLanguage();
 }
 
-function t(key) {
-  const lang = getEffectiveLanguage();
-  if (I18N_TRANSLATIONS[lang] && I18N_TRANSLATIONS[lang][key] !== undefined) {
-    return I18N_TRANSLATIONS[lang][key];
-  }
-  if (I18N_TRANSLATIONS.de && I18N_TRANSLATIONS.de[key] !== undefined) {
-    return I18N_TRANSLATIONS.de[key];
-  }
-  return key;
+
+// =============================================================================
+// COMPREHENSIVE I18N & SYMBOLS ENGINE (DEUTSCH / ENGLISCH / CLEAN TEXT)
+// =============================================================================
+
+const GLOBAL_EMOJI_REGEX = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{25A0}-\u{25FF}\u{203C}\u{2049}\u{2139}\u{2194}-\u{21AA}\u{2934}\u{2935}\u{3030}\u{303D}\u{3297}\u{3299}\u{FE0F}\u{FE0E}\u{200D}\u{20E3}◀▶▼▲✖➕⚡✨🪙🔒🔓]/gu;
+
+function cleanSymbols(str) {
+  if (typeof str !== 'string' || !str) return str;
+  if (typeof isSymbolsEnabled === 'function' && isSymbolsEnabled()) return str;
+  return str.replace(GLOBAL_EMOJI_REGEX, '').replace(/\s{2,}/g, ' ').trim();
 }
 
-function getLocalizedMonthNames() {
-  return getEffectiveLanguage() === 'en' ? MONTH_NAMES_EN : MONTH_NAMES_DE;
+function sanitizeDomTextNodesForSymbols(root) {
+  if (typeof isSymbolsEnabled === 'function' && isSymbolsEnabled()) return;
+  if (!root || typeof document === 'undefined') return;
+  try {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+    let node;
+    while ((node = walker.nextNode())) {
+      if (node.parentElement && (node.parentElement.tagName === 'SCRIPT' || node.parentElement.tagName === 'STYLE')) continue;
+      if (GLOBAL_EMOJI_REGEX.test(node.nodeValue)) {
+        node.nodeValue = node.nodeValue.replace(GLOBAL_EMOJI_REGEX, '').replace(/\s{2,}/g, ' ');
+      }
+    }
+  } catch (e) {}
+}
+
+const I18N_APP_LABELS = {
+  'edit-tx-split-toggle': { de: "🔀 Betrag aufsplitten (Mehrere Konten, Leihgabe an/von Person oder geteilte Kosten ohne Rückzahlung)", en: "🔀 Split amount (Multiple accounts, personal loan or shared costs without repayment)" },
+  'edit-tx-loan-toggle': { de: "🤝 Als Leihgabe erfassen (Geliehenes oder verliehenes Geld)", en: "🤝 Record as personal loan (Borrowed or lent money)" },
+  'edit-tx-loan-person': { de: "<strong id=\"edit-tx-loan-person-label\">Person / Name:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>", en: "<strong id=\"edit-tx-loan-person-label\">Person / Name:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>" },
+  'edit-tx-loan-due-date': { de: "<strong>Rückzahlung fällig bis (optional):</strong>", en: "<strong>Repayment due by (optional):</strong>" },
+  'edit-tx-loan-note': { de: "<strong>Notiz zur Leihgabe (optional):</strong>", en: "<strong>Note for loan (optional):</strong>" },
+  'edit-rec-future-price-toggle': { de: "📈 Zukünftige Preisänderung / Preiserhöhung vormerken (z. B. ab Zukunftsmonat)", en: "📈 Schedule future price change / price increase (e.g. starting future month)" },
+  'edit-rec-future-amount': { de: "<strong>Neuer Betrag in Euro (€):</strong>", en: "<strong>New amount in Euro (€):</strong>" },
+  'edit-rec-future-month': { de: "<strong>Gültig ab Monat:</strong>", en: "<strong>Valid from month:</strong>" },
+  'edit-rec-pause-toggle': { de: "⏸️ Dauerauftrag vorübergehend pausieren (Sommerpause / Aussetzen)", en: "⏸️ Temporarily pause standing order (summer break / hiatus)" },
+  'edit-rec-pause-start-month': { de: "<strong>Pause ab Monat:</strong>", en: "<strong>Pause from month:</strong>" },
+  'edit-rec-pause-end-month': { de: "<strong>Pause bis einschließlich:</strong>", en: "<strong>Pause until and including:</strong>" },
+  'edit-rec-trial-toggle': { de: "🎁 Kostenloser Testzeitraum (Probe-Abo / Gratis-Phase)", en: "🎁 Free trial period (trial subscription / free phase)" },
+  'edit-rec-trial-unit': { de: "<strong>Zeiteinheit:</strong>", en: "<strong>Time unit:</strong>" },
+  'edit-rec-trial-duration': { de: "<strong>Dauer:</strong>", en: "<strong>Duration:</strong>" },
+  'edit-rec-trial-end': { de: "<strong>Kostenlos bis einschließlich (Datum):</strong>", en: "<strong>Free until and including (date):</strong>" },
+  'edit-rec-discount-toggle': { de: "🏷️ Rabatt-Vertrag mit späterem Normalpreis", en: "🏷️ Discount contract with later standard price" },
+  'edit-rec-discount-amount': { de: "<strong>Vergünstigter Preis (€):</strong>", en: "<strong>Discounted price (€):</strong>" },
+  'edit-rec-discount-end-month': { de: "<strong>Rabatt gültig bis Monat:</strong>", en: "<strong>Discount valid until month:</strong>" },
+  'edit-rec-discount-regular': { de: "<strong>Regulärer Preis danach (€):</strong>", en: "<strong>Regular price afterwards (€):</strong>" },
+  'edit-rec-contract-toggle': { de: "📝 Vertrags- und Kündigungsdetails (Kundennummer, Fristen, Hotline)", en: "📝 Contract and cancellation details (customer number, notice periods, hotline)" },
+  'edit-rec-contract-number': { de: "<strong>Kundennummer / Vertragsnummer:</strong>", en: "<strong>Customer ID / Contract number:</strong>" },
+  'edit-rec-min-term': { de: "<strong>Mindestlaufzeit bis:</strong>", en: "<strong>Minimum term until:</strong>" },
+  'edit-rec-notice-period': { de: "<strong>Kündigungsfrist:</strong>", en: "<strong>Notice period:</strong>" },
+  'edit-rec-hotline': { de: "<strong>Hotline / Telefonnummer:</strong>", en: "<strong>Hotline / Phone number:</strong>" },
+  'edit-rec-notes': { de: "<strong>Notizen / Kundenkennwort:</strong>", en: "<strong>Notes / Customer password:</strong>" },
+  'edit-rec-end-toggle': { de: "🔴 Dauerauftrag beenden / auslaufen lassen (Historie alter Monate behalten)", en: "🔴 End standing order / allow to expire (keep history of past months)" },
+  'edit-rec-end-month': { de: "<strong>Letzter aktiver Monat (Beendet zum):</strong>", en: "<strong>Last active month (terminated at):</strong>" },
+  'account-modal-backup-toggle': { de: "🛡️ Automatisches Deckungskonto aktivieren (wie bei PayPal)", en: "🛡️ Enable automatic backup / funding account (like PayPal)" },
+  'account-modal-backup-account': { de: "<strong>Geld einziehen von welchem Konto (Deckungskonto):</strong>", en: "<strong>Pull funds from which account (backup account):</strong>" },
+  'account-modal-details-toggle': { de: "ℹ️ Bankdaten &amp; erweiterte Kontoinformationen erfassen (optional)", en: "ℹ️ Enter banking &amp; advanced account details (optional)" },
+  'account-modal-bank': { de: "<strong>Bankname / Kreditinstitut:</strong>", en: "<strong>Bank name / Financial institution:</strong>" },
+  'account-modal-owner': { de: "<strong>Kontoinhaber:</strong>", en: "<strong>Account holder:</strong>" },
+  'account-modal-iban': { de: "<strong>IBAN:</strong>", en: "<strong>IBAN:</strong>" },
+  'account-modal-bic': { de: "<strong>BIC / SWIFT:</strong>", en: "<strong>BIC / SWIFT:</strong>" },
+  'account-modal-number': { de: "<strong>Kundennummer / Login-Mail:</strong>", en: "<strong>Customer number / Login email:</strong>" },
+  'account-modal-dispo': { de: "<strong>Dispolimit / Kreditrahmen in Euro (€):</strong>", en: "<strong>Overdraft limit / Credit line in Euro (€):</strong>" },
+  'account-modal-notes': { de: "<strong>Notizen &amp; Konditionen:</strong>", en: "<strong>Notes &amp; conditions:</strong>" },
+  'receipt-text-input': { de: "<strong>Belegtext / Rechnungsdaten:</strong>", en: "<strong>Receipt text / Invoice data:</strong>" },
+  'shopping-paste-input': { de: "<strong>Nachricht / Text hier einfügen:</strong>", en: "<strong>Paste message / text here:</strong>" },
+  'shopping-paste-store': { de: "Standard-Laden für diese Liste (optional):", en: "Default store for this list (optional):" },
+  'shopping-book-amount': { de: "<strong>Tatsächlicher Gesamtbetrag laut Bon (€):</strong>", en: "<strong>Actual total amount on receipt (€):</strong>" },
+  'shopping-book-account': { de: "<strong>Bezahlt mit (Konto):</strong>", en: "<strong>Paid with (Account):</strong>" },
+  'shopping-book-date': { de: "<strong>Datum des Einkaufs:</strong>", en: "<strong>Purchase date:</strong>" },
+  'shopping-book-category': { de: "<strong>Hauptkategorie:</strong>", en: "<strong>Main category:</strong>" },
+  'shopping-book-subcategory': { de: "<strong>Unterkategorie / Laden:</strong>", en: "<strong>Subcategory / Store:</strong>" },
+  'shopping-book-note': { de: "Notiz / Aufzählung der Artikel:", en: "Note / list of items:" },
+  'peer-loan-note': { de: "<strong>Notiz / Verwendungszweck (optional):</strong>", en: "<strong>Note / Purpose (optional):</strong>" },
+  'peer-loan-repay-amount': { de: "<strong>Rückzahlungsbetrag (€):</strong>", en: "<strong>Repayment amount (€):</strong>" },
+  'peer-loan-repay-date': { de: "<strong>Datum der Rückzahlung:</strong>", en: "<strong>Repayment date:</strong>" },
+  'peer-loan-repay-account': { de: "<strong>Konto für Gutschrift/Zahlung:</strong>", en: "<strong>Account for payout/deposit:</strong>" },
+  'peer-loan-repay-note': { de: "<strong>Notiz (optional):</strong>", en: "<strong>Note (optional):</strong>" },
+  'quick-cat-type': { de: "<strong>Buchungsart:</strong>", en: "<strong>Transaction type:</strong>" },
+  'quick-cat-mode': { de: "<strong>Was möchtest du anlegen?</strong>", en: "<strong>What would you like to create?</strong>" },
+  'quick-cat-parent-select': { de: "<strong>Bestehende Hauptkategorie auswählen:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>", en: "<strong>Select existing main category:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>" },
+  'quick-cat-sub-name': { de: "<strong>Name des Geschäfts / der Unterkategorie:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>", en: "<strong>Name of store / subcategory:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>" },
+  'quick-cat-main-icon': { de: "<strong>Symbol:</strong>", en: "<strong>Symbol / Icon:</strong>" },
+  'quick-cat-main-name': { de: "<strong>Name der neuen Hauptkategorie:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>", en: "<strong>Name of new main category:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>" },
+  'quick-cat-first-sub': { de: "<strong>Erste Unterkategorie dazu (optional):</strong>", en: "<strong>First subcategory for it (optional):</strong>" },
+  'overview-period-select': { de: "📊<strong>Zeitraum:</strong>", en: "📊<strong>Period:</strong>" },
+  'tx-search-query': { de: "🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong>", en: "🔍 <strong>Smart Search (text, amount, typos, date):</strong>" },
+  'tx-filter-status': { de: "🎯 <strong>Status:</strong>", en: "🎯 <strong>Status:</strong>" },
+  'tx-filter-account': { de: "💳 <strong>Konto:</strong>", en: "💳 <strong>Account:</strong>" },
+  'tx-sort-order': { de: "↕️ <strong>Sortierung:</strong>", en: "↕️ <strong>Sorting:</strong>" },
+  'calc-curr-amount': { de: "<strong>Betrag:</strong>", en: "<strong>Amount:</strong>" },
+  'calc-curr-from': { de: "<strong>Von Währung (Quelle):</strong>", en: "<strong>From currency (Source):</strong>" },
+  'calc-curr-to': { de: "<strong>In Währung (Ziel):</strong>", en: "<strong>To currency (Target):</strong>" },
+  'exp-installment-type': { de: "<strong>Art der Finanzierung:</strong>", en: "<strong>Financing type:</strong>" },
+  'exp-installment-rate': { de: "<strong>Berechnete monatliche Rate (€):</strong>", en: "<strong>Calculated monthly rate (€):</strong>" },
+  'exp-installment-provider': { de: "<strong>Anbieter / Zahlungsdienst:</strong>", en: "<strong>Provider / Payment service:</strong>" },
+  'exp-installment-downpayment': { de: "<strong>Anzahlung zu Beginn (€):</strong>", en: "<strong>Down payment at start (€):</strong>" },
+  'exp-installment-interest': { de: "<strong>Zinsen / Gebühren (optional):</strong>", en: "<strong>Interest / Fees (optional):</strong>" },
+  'exp-installment-balloon': { de: "<strong>Schlussrate / Restwert (€):</strong>", en: "<strong>Final installment / Residual value (€):</strong>" },
+  'exp-installment-first-due': { de: "<strong>Erste Rate fällig:</strong>", en: "<strong>First installment due:</strong>" },
+  'exp-cat-search': { de: "<span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>", en: "<span>🔍<strong>Quick search category or store (e.g. Aldi, Lidl, Walmart, Rent, Netflix):</strong></span>" },
+  'exp-category': { de: "<strong>1. Hauptkategorie:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>", en: "<strong>1. Main category:</strong><span class=\"required-star\" aria-hidden=\"true\">*</span>" },
+  'exp-rec-trial-toggle': { de: "🎁 Kostenloser Testzeitraum (Probe-Abo / Gratis-Phase)", en: "🎁 Free trial period (trial subscription / free phase)" },
+  'exp-rec-trial-unit': { de: "<strong>Zeiteinheit:</strong>", en: "<strong>Time unit:</strong>" },
+  'exp-rec-trial-duration': { de: "<strong>Dauer:</strong>", en: "<strong>Duration:</strong>" },
+  'exp-rec-discount-toggle': { de: "🏷️ Rabatt-Vertrag mit späterem Normalpreis (z. B. 12 Monate günstiger)", en: "🏷️ Discount contract with later standard price (e.g. 12 months cheaper)" },
+  'exp-rec-discount-amount': { de: "<strong>Vergünstigter Preis (€):</strong>", en: "<strong>Discounted price (€):</strong>" },
+  'exp-rec-discount-months': { de: "<strong>Rabatt-Dauer (Monate):</strong>", en: "<strong>Discount duration (months):</strong>" },
+  'exp-rec-discount-regular': { de: "<strong>Regulärer Preis danach (€):</strong>", en: "<strong>Regular price afterwards (€):</strong>" },
+  'exp-rec-contract-toggle': { de: "📝 Vertrags- und Kündigungsdetails hinterlegen (Kundennr., Fristen, Hotline)", en: "📝 Store contract and cancellation details (customer ID, notice periods, hotline)" },
+  'exp-rec-contract-number': { de: "<strong>Kundennummer / Vertragsnummer:</strong>", en: "<strong>Customer ID / Contract number:</strong>" },
+  'exp-rec-min-term': { de: "<strong>Mindestlaufzeit bis:</strong>", en: "<strong>Minimum term until:</strong>" },
+  'exp-rec-notice-period': { de: "<strong>Kündigungsfrist:</strong>", en: "<strong>Notice period:</strong>" },
+  'exp-rec-hotline': { de: "<strong>Hotline / Telefonnummer:</strong>", en: "<strong>Hotline / Phone number:</strong>" },
+  'exp-rec-notes': { de: "<strong>Notizen / Kundenkennwort:</strong>", en: "<strong>Notes / Customer password:</strong>" },
+  'inc-loan-due-date': { de: "<strong>Rückzahlung fällig bis (optional):</strong>", en: "<strong>Repayment due by (optional):</strong>" },
+  'inc-cat-search': { de: "<span>🔍<strong>Einnahme-Art schnell suchen (z. B. Gehalt, Blindengeld, Rente, Vinted):</strong></span>", en: "<span>🔍<strong>Quick search income type (e.g. Salary, Disability pension, Pension, Vinted):</strong></span>" },
+  'wish-filter-status': { de: "Filter:", en: "Filter:" },
+  'wish-filter-type': { de: "Art:", en: "Type:" },
+
+  // Lock
+  'pin-input': { de: 'PIN oder Passwort:', en: 'PIN or password:' },
+  'keyfile-input': { de: '🔑 Schlüsseldatei (.key) auswählen:', en: '🔑 Select key file (.key):' },
+  'lock-sync-device-name': { de: '1. GERÄTENAME (am PC eingeben):', en: '1. DEVICE NAME (enter on PC):' },
+  'lock-sync-code': { de: '2. KOPPLUNGSCODE (am PC eingeben):', en: '2. PAIRING CODE (enter on PC):' },
+  
+  // Expense Form
+  'exp-amount': { de: 'Betrag in Euro (€)*', en: 'Amount in Euro (€)*' },
+  'exp-frequency': { de: 'Art & Häufigkeit der Ausgabe', en: 'Expense type & frequency' },
+  'exp-account': { de: 'Von welchem Konto bezahlen?*', en: 'Pay from which account?*' },
+  'exp-category-search': { de: '🔍 Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):', en: '🔍 Quick search category or store (e.g. Aldi, Walmart, Rent, Netflix):' },
+  'exp-main-category': { de: '1. Hauptkategorie:*', en: '1. Main category:*' },
+  'exp-subcategory': { de: '2. Unterkategorie / Geschäft:', en: '2. Subcategory / Store:' },
+  'exp-date': { de: '📅 Datum der Ausgabe (Kaufdatum):', en: '📅 Expense date (Purchase date):' },
+  'exp-rec-day': { de: '📅 Fälligkeitstag im Monat (1 bis 31):', en: '📅 Due day in month (1 to 31):' },
+  'exp-start-month': { de: '📅 Start ab welchem Monat? (Beginn):', en: '📅 Start from which month? (Begin):' },
+  'exp-rec-weekday': { de: 'An welchem Wochentag jede Woche?', en: 'On which weekday each week?' },
+  'exp-yearly-month': { de: 'In welchem Monat fällig?', en: 'Due in which month?' },
+  'exp-desc': { de: 'Beschreibung / Wofür genau?', en: 'Description / What exactly for?' },
+  'exp-split-toggle': { de: '🔀 Betrag aufsplitten (Mehrere Konten, Leihgabe an Person oder geteilte Kosten ohne Rückzahlung)', en: '🔀 Split amount (Multiple accounts, personal loan or shared costs without repayment)' },
+  'exp-loan-toggle': { de: '🤝 Geld an jemanden verliehen (als Leihgabe / Forderung erfassen)', en: '🤝 Lent money to someone (record as personal loan / claim)' },
+  'exp-loan-person': { de: 'An wen verliehen? (Name der Person):*', en: 'Lent to whom? (Person name):*' },
+  'exp-loan-due-date': { de: 'Rückzahlung fällig bis (optional):', en: 'Repayment due by (optional):' },
+  'exp-loan-note': { de: 'Notiz zur Leihgabe (optional):', en: 'Note for loan (optional):' },
+  'exp-trial-toggle': { de: '🎁 Kostenloser Testzeitraum (Probe-Abo / Gratis-Phase)', en: '🎁 Free trial period (Trial subscription / Free phase)' },
+  'exp-trial-unit': { de: 'Zeiteinheit:', en: 'Time unit:' },
+  'exp-trial-duration': { de: 'Dauer:', en: 'Duration:' },
+  'exp-discount-toggle': { de: '🏷️ Rabatt-Vertrag mit späterem Normalpreis (z. B. 12 Monate günstiger)', en: '🏷️ Discount contract with later standard price (e.g. 12 months discounted)' },
+  'exp-discount-amount': { de: 'Vergünstigter Preis (€):', en: 'Discounted price (€):' },
+  'exp-discount-duration': { de: 'Rabatt-Dauer (Monate):', en: 'Discount duration (months):' },
+  'exp-discount-regular': { de: 'Regulärer Preis danach (€):', en: 'Regular price afterwards (€):' },
+  'exp-contract-toggle': { de: '📝 Vertrags- und Kündigungsdetails hinterlegen (Kundennr., Fristen, Hotline)', en: '📝 Store contract and cancellation details (Customer ID, deadlines, hotline)' },
+  'exp-contract-number': { de: 'Kundennummer / Vertragsnummer:', en: 'Customer ID / Contract number:' },
+  'exp-contract-min-term': { de: 'Mindestlaufzeit bis:', en: 'Minimum term until:' },
+  'exp-contract-notice-period': { de: 'Kündigungsfrist:', en: 'Notice period:' },
+  'exp-contract-hotline': { de: 'Hotline / Telefonnummer:', en: 'Hotline / Phone number:' },
+  'exp-contract-notes': { de: 'Notizen / Kundenkennwort:', en: 'Notes / Customer password:' },
+
+  // Income Form
+  'inc-amount': { de: 'Betrag in Euro (€)*', en: 'Amount in Euro (€)*' },
+  'inc-frequency': { de: 'Art & Häufigkeit der Einnahme', en: 'Income type & frequency' },
+  'inc-account': { de: 'Auf welches Konto gutschreiben?*', en: 'Deposit to which account?*' },
+  'inc-category': { de: '1. Hauptkategorie (Einnahmequelle):*', en: '1. Main category (Income source):*' },
+  'inc-subcategory': { de: '2. Unterkategorie / Detail:', en: '2. Subcategory / Detail:' },
+  'inc-date': { de: '📅 Datum der Einnahme (Gutschrift-Datum):', en: '📅 Income date (Deposit date):' },
+  'inc-rec-day': { de: '📅 Ausführungstag im Monat (1 bis 31):', en: '📅 Execution day in month (1 to 31):' },
+  'inc-start-month': { de: '📅 Start ab welchem Monat? (Beginn):', en: '📅 Start from which month? (Begin):' },
+  'inc-rec-weekday': { de: 'An welchem Wochentag jede Woche?', en: 'On which weekday each week?' },
+  'inc-desc': { de: 'Beschreibung / Von wem & wofür?', en: 'Description / From whom & for what?' },
+  'inc-split-toggle': { de: '🔀 Betrag aufsplitten (Mehrere Konten, Geliehen von Person oder geteilter Betrag ohne Rückzahlung)', en: '🔀 Split amount (Multiple accounts, borrowed from person or shared income without repayment)' },
+  'inc-loan-toggle': { de: '🤝 Geliehenes Geld zurückerhalten / Schulden aufgenommen', en: '🤝 Borrowed money repaid / Loan received' },
+  'inc-loan-person': { de: 'Von wem erhalten? (Name der Person):*', en: 'Received from whom? (Person name):*' },
+  'inc-loan-note': { de: 'Notiz (optional):', en: 'Note (optional):' },
+
+  // Transfer Form
+  'trf-amount': { de: 'Betrag zum Umbuchen in Euro (€)*', en: 'Amount to transfer in Euro (€)*' },
+  'trf-frequency': { de: 'Häufigkeit der Umbuchung', en: 'Transfer frequency' },
+  'trf-from': { de: 'Von welchem Konto abbuchen (Quelle)?*', en: 'Debit from account (Source)?*' },
+  'trf-to': { de: 'Auf welches Konto einzahlen (Ziel / Sparen)?*', en: 'Deposit to account (Target / Savings)?*' },
+  'trf-from-pot': { de: 'Aus Spartopf entnehmen (optional):', en: 'Take from savings pot (optional):' },
+  'trf-to-pot': { de: '🎯 In Spartopf einzahlen (optional):', en: '🎯 Deposit to savings pot (optional):' },
+  'trf-date': { de: '📅 Datum der Umbuchung:', en: '📅 Transfer date:' },
+  'trf-rec-day': { de: '📅 Sparplan-Ausführungstag im Monat (1 bis 31):', en: '📅 Execution day in month (1 to 31):' },
+  'trf-start-month': { de: '📅 Start ab welchem Monat? (Beginn):', en: '📅 Start from which month? (Begin):' },
+  'trf-rec-weekday': { de: 'An welchem Wochentag jede Woche sparen?', en: 'On which weekday to save each week?' },
+  'trf-desc': { de: 'Zweck / Notiz', en: 'Purpose / Note' },
+
+  // Settings View
+  'settings-theme-select': { de: 'Farbkontrast / Design:', en: 'Color Theme / Contrast:' },
+  'settings-fontsize-select': { de: 'Schriftgröße / Textgröße:', en: 'Font Size / Text Size:' },
+  'settings-language-select': { de: '🌐 Sprache / Language:', en: '🌐 Language / Sprache:' },
+  'settings-currency-select': { de: '💱 Standard-Währung / Currency:', en: '💱 Standard Currency / Currency:' },
+  'settings-show-symbols': { de: 'Symbole & Emojis in der App anzeigen', en: 'Show symbols & emojis in app' },
+  'budget-category-select': { de: 'Ausgaben-Kategorie:*', en: 'Expense category:*' },
+  'budget-amount-input': { de: 'Monats-Limit in Euro (€):*', en: 'Monthly limit in Euro (€):*' },
+  'custom-cat-type': { de: '1. Bereich / Art:*', en: '1. Area / Type:*' },
+  'custom-cat-main-mode': { de: '2. Hauptkategorie-Auswahl:', en: '2. Main category selection:' },
+  'custom-cat-main-select': { de: 'Hauptkategorie (Übergeordnet):', en: 'Main category (Parent):' },
+  'custom-cat-main-new-input': { de: 'Name der neuen Hauptkategorie:*', en: 'Name of new main category:*' },
+  'custom-cat-sub-input': { de: 'Unterkategorie / Geschäft / Laden:*', en: 'Subcategory / Store / Shop:*' },
+  'feedback-name': { de: 'Dein Name / Absender (optional):', en: 'Your name / Sender (optional):' },
+  'feedback-text': { de: 'Deine Idee, dein Wunsch oder Feedback:', en: 'Your idea, request or feedback:' },
+  'change-old-pin': { de: 'Aktuelle PIN:', en: 'Current PIN:' },
+  'change-new-pin': { de: 'Neue PIN oder Passwort:', en: 'New PIN or password:' },
+
+  // Accounts View
+  'new-acc-name': { de: 'Name des neuen Kontos:*', en: 'Name of new account:*' },
+  'new-acc-type': { de: 'Art des Kontos:*', en: 'Account type:*' },
+  'new-acc-balance': { de: 'Startguthaben in Euro (€):', en: 'Initial balance in Euro (€):' },
+  'new-acc-hint': { de: 'Hinweis / Verwendung (optional):', en: 'Note / Usage (optional):' },
+  'pot-name': { de: 'Name des Spartopfs / Sparziel:*', en: 'Savings pot name / Goal:*' },
+  'pot-parent-account': { de: 'Zugeordnetes Hauptkonto:*', en: 'Linked main account:*' },
+  'pot-current-amount': { de: 'Bereits angesparter Startbetrag (€):', en: 'Current saved balance (€):' },
+  'pot-target-amount': { de: 'Sparziel / Zielsumme in Euro (€):*', en: 'Savings target / Target sum (€):*' },
+  'pot-note': { de: 'Notiz / Zweck (optional):', en: 'Note / Purpose (optional):' },
+
+  // Wishlist View
+  'wish-type': { de: 'Art des Wunsches / Kostenstruktur:', en: 'Wish type / Cost structure:' },
+  'wish-title': { de: 'Wunsch / Dienst / Anschaffung:*', en: 'Wish / Service / Purchase:*' },
+  'wish-amount': { de: 'Geschätzte Kosten in Euro (€):*', en: 'Estimated cost in Euro (€):*' },
+  'wish-priority': { de: 'Priorität:', en: 'Priority:' },
+  'wish-category': { de: 'Kategorie / Bereich:', en: 'Category / Area:' },
+  'wish-target-account': { de: 'Vorhandenen Spartopf oder Konto auswählen:', en: 'Select existing savings pot or account:' },
+  'wish-target-date': { de: 'Ziel-Datum (optional):', en: 'Target date (optional):' },
+  'wish-note': { de: 'Notiz oder Link zum Angebot (optional):', en: 'Note or offer link (optional):' },
+
+  // Shopping View
+  'shopping-new-name': { de: 'Artikelname für Einkaufsliste', en: 'Item name for shopping list' },
+  'shopping-new-price': { de: 'Preis in Euro (optional)', en: 'Price in Euro (optional)' },
+  'shopping-new-store': { de: 'Supermarkt oder Geschäft (optional)', en: 'Supermarket or store (optional)' },
+
+  // Smartphone Sync View
+  'input-target-device': { de: '1. Gerätename des Partnergeräts (z. B. Handy, Laptop):*', en: '1. Device name of partner device (e.g. Phone, Laptop):*' },
+  'input-target-code': { de: '2. Kopplungscode vom Partnergerät:*', en: '2. Pairing code from partner device:*' },
+  'sync-my-device-name': { de: '1. Eigener Gerätename dieses Geräts:', en: '1. Device name of this device:' },
+  'sync-my-code': { de: '2. Eigener Kopplungscode dieses Geräts:', en: '2. Pairing code of this device:' },
+
+  // Modals
+  'edit-tx-type': { de: 'Art der Buchung:', en: 'Transaction type:' },
+  'edit-tx-amount': { de: 'Betrag in Euro (€):*', en: 'Amount in Euro (€):*' },
+  'edit-tx-date': { de: 'Datum:*', en: 'Date:*' },
+  'edit-tx-planned': { de: 'Status:', en: 'Status:' },
+  'edit-tx-account': { de: 'Konto:', en: 'Account:' },
+  'edit-tx-from': { de: 'Von Konto:', en: 'From account:' },
+  'edit-tx-to': { de: 'Auf Konto:', en: 'To account:' },
+  'edit-tx-cat-search': { de: 'Kategorie-Schnellsuche:', en: 'Quick category search:' },
+  'edit-tx-category': { de: 'Hauptkategorie:', en: 'Main category:' },
+  'edit-tx-subcategory': { de: 'Unterkategorie / Laden:', en: 'Subcategory / Store:' },
+  'edit-tx-desc': { de: 'Beschreibung / Notiz:', en: 'Description / Note:' },
+  'edit-rec-type': { de: 'Art des Dauerauftrags:', en: 'Standing order type:' },
+  'edit-rec-amount': { de: 'Betrag in Euro (€):*', en: 'Amount in Euro (€):*' },
+  'edit-rec-name': { de: 'Name / Bezeichnung:*', en: 'Name / Title:*' },
+  'edit-rec-interval': { de: 'Intervall / Häufigkeit:', en: 'Interval / Frequency:' },
+  'edit-rec-active': { de: 'Status:', en: 'Status:' },
+  'edit-rec-day': { de: 'Tag im Monat (1 - 31):', en: 'Day of month (1 - 31):' },
+  'edit-rec-start-month': { de: 'Start ab welchem Monat? (Beginn):', en: 'Start month? (Begin):' },
+  'edit-rec-weekday': { de: 'Wochentag:', en: 'Weekday:' },
+  'edit-rec-yearly-month': { de: 'In welchem Monat jedes Jahr?', en: 'In which month each year?' },
+  'edit-rec-account': { de: 'Konto:', en: 'Account:' },
+  'edit-rec-from': { de: 'Von Konto:', en: 'From account:' },
+  'edit-rec-to': { de: 'Auf Konto:', en: 'To account:' },
+  'edit-rec-category': { de: 'Hauptkategorie:', en: 'Main category:' },
+  'edit-rec-subcategory': { de: 'Unterkategorie / Laden:', en: 'Subcategory / Store:' },
+  'account-modal-name': { de: 'Name des Kontos:*', en: 'Account name:*' },
+  'account-modal-type': { de: 'Art des Kontos:*', en: 'Account type:*' },
+  'account-modal-balance': { de: 'Startguthaben in Euro (€):', en: 'Initial balance in Euro (€):' },
+  'account-modal-hint': { de: 'Hinweis / Verwendung (optional):', en: 'Note / Usage (optional):' },
+  'peer-loan-person': { de: 'Person / Name:*', en: 'Person / Name:*' },
+  'peer-loan-amount': { de: 'Betrag in Euro (€):*', en: 'Amount in Euro (€):*' },
+  'peer-loan-date': { de: 'Datum der Leihgabe:*', en: 'Date of loan:*' },
+  'peer-loan-due-date': { de: 'Fällig bis (optional):', en: 'Due by (optional):' },
+  'peer-loan-account': { de: 'Über welches Konto bezahlt / erhalten?*', en: 'Paid / received via which account?*' },
+  'peer-loan-notes': { de: 'Notiz / Zweck (optional):', en: 'Note / Purpose (optional):' }
+};
+
+const I18N_APP_ELEMENTS = {
+  'btn-close-changelog': { de: "<span><strong>Schließen &amp; Weiter zur PIN-Eingabe (Enter)</strong></span>", en: "<span><strong>Close &amp; Proceed to PIN Entry (Enter)</strong></span>" },
+  'btn-toggle-keyfile': { de: "<span id=\"btn-toggle-keyfile-text\">🔑 <strong>Mit Schlüsseldatei (Key-File) entsperren</strong></span>", en: "<span id=\"btn-toggle-keyfile-text\">🔑 <strong>Unlock with Key File</strong></span>" },
+  'btn-unlock': { de: "<span id=\"btn-unlock-text\">🔓 <strong>Entschlüsseln &amp; Öffnen</strong> (Enter)</span>", en: "<span id=\"btn-unlock-text\">🔓 <strong>Decrypt &amp; Open</strong> (Enter)</span>" },
+  'btn-biometric-unlock': { de: "<span>👆 <strong>Mit Fingerabdruck / Biometrie entsperren</strong></span>", en: "<span>👆 <strong>Unlock with Fingerprint / Biometrics</strong></span>" },
+  'edit-tx-split-add-btn': { de: "➕ Weiteren Teilbetrag hinzufügen", en: "➕ Add another split amount" },
+  'btn-end-rec-option': { de: "📅 <strong>Dauerauftrag ab jetzt beenden (Vergangenheit behalten)</strong>", en: "📅 <strong>End standing order from now on (keep history)</strong>" },
+  'btn-delete-rec-option': { de: "🗑️ <strong>Komplett überall löschen (auch in der Vergangenheit)</strong>", en: "🗑️ <strong>Delete completely everywhere (including past)</strong>" },
+  'btn-cancel-end-or-delete-rec': { de: "Abbrechen", en: "Cancel" },
+  'btn-open-cash-counter-from-modal': { de: "🪙 Zähler", en: "🪙 Counter" },
+  'btn-save-account': { de: "<span><strong>Konto speichern</strong> (Enter)</span>", en: "<span><strong>Save Account</strong> (Enter)</span>" },
+  'receipt-viewer-delete-btn': { de: "<span>🗑️ Beleg löschen</span>", en: "<span>🗑️ Delete receipt</span>" },
+  'btn-report-mode-standard': { de: "📊 Standard Finanzbericht", en: "📊 Standard Financial Report" },
+  'btn-report-mode-tax': { de: "🏛️ Behörden- &amp; Steuer-Format", en: "🏛️ Tax &amp; Official Authorities Format" },
+  'btn-save-peer-loan': { de: "💾 Speichern", en: "💾 Save" },
+  'peer-loan-repay-submit-btn': { de: "✅ Rückzahlung buchen", en: "✅ Book Repayment" },
+  'btn-header-privacy-toggle': { de: "<span aria-hidden=\"true\" id=\"header-privacy-icon\">👁️</span> <span id=\"header-privacy-text\">Diskretion (Strg+H)</span>", en: "<span aria-hidden=\"true\" id=\"header-privacy-icon\">👁️</span> <span id=\"header-privacy-text\">Privacy (Ctrl+H)</span>" },
+  'tab-overview': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">1</span> <span>📊<strong>Übersicht &amp; Zeiträume</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">1</span> <span>📊<strong>Overview &amp; Periods</strong></span>" },
+  'tab-expense': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">2</span> <span>🔴<strong>Ausgabe eintragen / planen</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">2</span> <span>🔴<strong>Add / Plan Expense</strong></span>" },
+  'tab-income': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">3</span> <span>🟢<strong>Einnahme eintragen / planen</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">3</span> <span>🟢<strong>Add / Plan Income</strong></span>" },
+  'tab-transfer': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">4</span> <span>🔄<strong>Umbuchen &amp; Sparen</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">4</span> <span>🔄<strong>Transfer &amp; Savings</strong></span>" },
+  'tab-settings': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">5</span> <span>⚙️<strong>Einstellungen &amp; Backup</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">5</span> <span>⚙️<strong>Settings &amp; Backup</strong></span>" },
+  'tab-accounts': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">6</span> <span>💳<strong>Konto-Optionen &amp; Konten</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">6</span> <span>💳<strong>Accounts &amp; Options</strong></span>" },
+  'tab-wishlist': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">7</span> <span>🎁<strong>Wunschliste &amp; Sparziele</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">7</span> <span>🎁<strong>Wishlist &amp; Savings Goals</strong></span>" },
+  'tab-shopping': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">8</span> <span>🛒<strong>Einkaufsliste &amp; Checkliste</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">8</span> <span>🛒<strong>Shopping List &amp; Checklist</strong></span>" },
+  'tab-sync': { de: "<span class=\"tab-key-hint\" aria-hidden=\"true\">9</span> <span>📱<strong>Smartphone-Sync (E2E)</strong></span>", en: "<span class=\"tab-key-hint\" aria-hidden=\"true\">9</span> <span>📱<strong>Smartphone Sync (E2E)</strong></span>" },
+  'btn-calc-curr-convert': { de: "💱 Jetzt umrechnen", en: "💱 Convert Now" },
+  'btn-calc-curr-swap': { de: "🔄 Währungen tauschen", en: "🔄 Swap Currencies" },
+  'btn-open-cash-counter-from-expense': { de: "🪙 Münz- &amp; Scheinezähler", en: "🪙 Coin &amp; Note Counter" },
+  'exp-split-add-btn': { de: "➕ <strong>Weiteren Teilbetrag hinzufügen</strong>", en: "➕ <strong>Add another split amount</strong>" },
+  'btn-open-cash-counter-from-income': { de: "🪙 Münz- &amp; Scheinezähler", en: "🪙 Coin &amp; Note Counter" },
+  'inc-split-add-btn': { de: "➕ <strong>Weiteren Teilbetrag hinzufügen</strong>", en: "➕ <strong>Add another split amount</strong>" },
+  'btn-save-custom-cat': { de: "<span><strong>Kategorie speichern &amp; an Entwickler übermitteln</strong></span>", en: "<span><strong>Save category &amp; send to developer</strong></span>" },
+  'btn-sync-cloud-cats': { de: "<span>🔄 <strong>Kategorien-Katalog von GitHub aktualisieren</strong></span>", en: "<span>🔄 <strong>Update category catalogue from GitHub</strong></span>" },
+  'btn-send-feedback': { de: "<span><strong>Vorschlag / Feedback absenden</strong></span>", en: "<span><strong>Send Suggestion / Feedback</strong></span>" },
+  'btn-test-biometric': { de: "<span>👆 <strong>Fingerabdruck jetzt testen</strong></span>", en: "<span>👆 <strong>Test fingerprint now</strong></span>" },
+  'btn-toggle-require-keyfile': { de: "<span>🔒 <strong>Schlüsseldatei-Zwang aktivieren</strong></span>", en: "<span>🔒 <strong>Enable key file requirement</strong></span>" },
+  'shopping-filter-all': { de: "Alle (<span id=\"shopping-count-all\">0</span>)", en: "All (<span id=\"shopping-count-all\">0</span>)" },
+  'shopping-filter-open': { de: "⏳ Noch offen (<span id=\"shopping-count-open\">0</span>)", en: "⏳ Still open (<span id=\"shopping-count-open\">0</span>)" },
+  'shopping-filter-done': { de: "✅ Erledigt (<span id=\"shopping-count-done\">0</span>)", en: "✅ Completed (<span id=\"shopping-count-done\">0</span>)" },
+  'btn-open-shopping-book': { de: "<span>💳 <strong>Einkauf als Ausgabe buchen</strong></span>", en: "<span>💳 <strong>Book purchase as expense</strong></span>" },
+  'btn-sync-tab-paired': { de: "🟢 1. Gekoppelte Geräte", en: "🟢 1. Paired Devices" },
+  'btn-sync-mode-desktop': { de: "🔗 2. Gerät koppeln", en: "🔗 2. Pair Device" },
+  'btn-sync-mode-mobile': { de: "🆔 3. Kopplungsdaten", en: "🆔 3. Pairing Data" },
+  'btn-force-overwrite-paired': { de: "<span>📲 <strong>Gekoppeltes Gerät komplett überschreiben (1:1 Stand erzwingen)</strong></span>", en: "<span>📲 <strong>Overwrite paired device completely (force 1:1 copy)</strong></span>" },
+  'btn-manual-mailbox-sync': { de: "📬 <strong>Jetzt Postfach prüfen &amp; mit allen Geräten abgleichen</strong>", en: "📬 <strong>Check mailbox now &amp; sync with all devices</strong>" },
+  'btn-manual-mailbox-push-master': { de: "📤 <strong>Aktuellen Stand als Master ins Postfach legen (alle Geräte übernehmen 1:1)</strong>", en: "📤 <strong>Push current state as Master to mailbox (all devices adopt 1:1)</strong>" },
+  'btn-trigger-sync': { de: "<span>⚡ <strong>Jetzt Gerät koppeln &amp; sicher synchronisieren (Enter)</strong></span>", en: "<span>⚡ <strong>Pair device now &amp; sync securely (Enter)</strong></span>" },
+  'btn-trigger-overwrite': { de: "<span>📲 <strong>Zielgerät komplett überschreiben (1:1 Stand senden)</strong></span>", en: "<span>📲 <strong>Overwrite target device completely (send 1:1 state)</strong></span>" },
+  'expense-ranking-heading': { de: "Größte Geldfresser des Monats (Ausgaben-Rangliste)", en: "Top Spending of the Month (Expense Ranking)" },
+  'details-income-summary-text': { de: "Alle Einnahmen anzeigen (mit Datum, Bearbeiten &amp; Löschen)", en: "Show all income (with date, edit &amp; delete)" },
+  'details-expense-summary-text': { de: "Alle Ausgaben anzeigen (mit Datum, Bearbeiten &amp; Löschen)", en: "Show all expenses (with date, edit &amp; delete)" },
+  'details-credit-summary-text': { de: "Laufende Kredite &amp; Ratenpläne anzeigen", en: "Show ongoing loans &amp; installment plans" },
+  'details-transfer-summary-text': { de: "Alle Umbuchungen &amp; Sparpläne anzeigen (mit Von/Nach-Konto, Bearbeiten &amp; Löschen)", en: "Show all transfers &amp; savings plans (with from/to account, edit &amp; delete)" },
+  'details-peer-loans-summary-text': { de: "Offene Schulden &amp; Forderungen anzeigen", en: "Show open debts &amp; receivables" },
+  'heading-currency-converter': { de: "Währungsrechner &amp; Umrechnung (Euro, Dollar, DM, Schilling...)", en: "Currency Converter &amp; Exchange (Euro, Dollar, DM, Schilling...)" },
+  'btn-clear-tx-filter': { de: "<span>✖️ <strong>Filter aufheben</strong></span>", en: "<span>✖️ <strong>Clear filter</strong></span>" },
+  'btn-open-peer-loan-modal': { de: "Neues geliehenes oder verliehenes Geld eintragen", en: "Add new borrowed or lent money" },
+  'settings-heading': { de: "Einstellungen, Design &amp; Datensicherung", en: "Settings, Theme &amp; Data Backup" },
+  'btn-settings-tab-all': { de: "📂 Alle anzeigen", en: "📂 Show All" },
+  'btn-settings-tab-security': { de: "🛡️ Sicherheit &amp; Tresor", en: "🛡️ Security &amp; Vault" },
+  'btn-settings-tab-appearance': { de: "🎨 Darstellung &amp; Design", en: "🎨 Appearance &amp; Design" },
+  'btn-settings-tab-backup': { de: "💾 Datensicherung &amp; Import", en: "💾 Backup &amp; Import" },
+  'btn-settings-tab-budgets': { de: "🎯 Monats-Budgets", en: "🎯 Monthly Budgets" },
+  'btn-settings-tab-categories': { de: "🏷️ Eigene Kategorien", en: "🏷️ Custom Categories" },
+  'btn-settings-tab-system': { de: "📜 Info &amp; System", en: "📜 Info &amp; System" },
+  'appearance-settings-heading': { de: "Darstellung, Design &amp; Schriftgröße", en: "Appearance, Design &amp; Font Size" },
+  'appearance-settings-sub': { de: "Passe hier das Design und die Schriftgröße für deine Augen an:", en: "Adjust the design and font size here for your eyes:" },
+  'label-settings-show-symbols': { de: "Symbole &amp; Emojis in der App anzeigen", en: "Show symbols &amp; emojis in the app" },
+  'settings-symbols-hint': { de: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.", en: "When turned off, the entire app is displayed without symbols in pure, clean text." },
+  'footer-text': { de: "Barrierefreie Finanzen v6.9.38 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-shortcuts': { de: "Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre", en: "Shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= Today | L= Lock" },
+  'today-label': { de: "Heute:", en: "Today:" },
+  'changelog-modal-heading': { de: "📜 Was ist neu in Version v6.9.38?", en: "📜 What is new in Version v6.9.38?" },
+  'edit-modal-heading': { de: "Buchung bearbeiten", en: "Edit Transaction" },
+  'account-modal-heading': { de: "Konto verwalten", en: "Manage Account" },
+  'csv-modal-heading': { de: "Bank-Kontoauszug Vorschau &amp; Import", en: "Bank Statement Preview &amp; Import" },
+  'receipt-text-modal-heading': { de: "📋 Text aus Beleg / Rechnung einfügen", en: "📋 Paste Text from Receipt / Invoice" },
+  'print-report-modal-heading': { de: "Finanzbericht drucken / exportieren", en: "Print / Export Financial Report" },
+  'cash-counter-modal-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen &amp; Scheine)", en: "🪙 Cash Counter Helper (Coins &amp; Notes)" },
+  'quick-cat-modal-heading': { de: "Neue Kategorie oder Geschäft anlegen", en: "Create New Category or Store" },
+  'peer-loan-modal-heading': { de: "🤝 Geliehenes oder verliehenes Geld eintragen", en: "🤝 Record Lent or Borrowed Money" },
+  'peer-loan-repay-modal-heading': { de: "✅ Teilrückzahlung erfassen", en: "✅ Record Partial Repayment" },
+  'delete-peer-loan-modal-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Personal Loan" },
+  'delete-peer-repay-modal-heading': { de: "🗑️ Teilrückzahlung löschen", en: "🗑️ Delete Partial Repayment" },
+  'settle-peer-loan-modal-heading': { de: "🤝 Leihgabe als beglichen markieren", en: "🤝 Mark Personal Loan as Settled" },
+  'end-or-delete-rec-modal-heading': { de: "Dauerauftrag beenden oder löschen", en: "End or Delete Standing Order" },
+  'shopping-paste-modal-heading': { de: "📋 Liste einkopieren (WhatsApp / Notizen)", en: "📋 Paste List (WhatsApp / Notes)" },
+  'shopping-book-modal-heading': { de: "💳 Einkauf als Ausgabe buchen", en: "💳 Book Purchase as Expense" },
+  'set-cat-btn-all': { de: "<span>📂 <strong>Alle anzeigen</strong></span>", en: "<span>📂 <strong>Show All</strong></span>" },
+  'set-cat-btn-security': { de: "<span>🛡️ <strong>Sicherheit &amp; Tresor</strong></span>", en: "<span>🛡️ <strong>Security &amp; Vault</strong></span>" },
+  'set-cat-btn-design': { de: "<span>🎨 <strong>Darstellung &amp; Design</strong></span>", en: "<span>🎨 <strong>Appearance &amp; Design</strong></span>" },
+  'set-cat-btn-backup': { de: "<span>💾 <strong>Datensicherung &amp; Import</strong></span>", en: "<span>💾 <strong>Backup &amp; Import</strong></span>" },
+  'set-cat-btn-budgets': { de: "<span>🎯 <strong>Monats-Budgets</strong></span>", en: "<span>🎯 <strong>Monthly Budgets</strong></span>" },
+  'set-cat-btn-categories': { de: "<span>🏷️ <strong>Eigene Kategorien</strong></span>", en: "<span>🏷️ <strong>Custom Categories</strong></span>" },
+  'set-cat-btn-system': { de: "<span>📜 <strong>Info &amp; System</strong></span>", en: "<span>📜 <strong>Info &amp; System</strong></span>" },
+  'btn-clear-search-filter': { de: "<span>✖️ <strong>Filter aufheben</strong></span>", en: "<span>✖️ <strong>Clear filter</strong></span>" },
+  'print-report-heading': { de: "Finanzbericht &amp; Nachweis", en: "Financial Report &amp; Verification" },
+  'quick-add-cat-heading': { de: "➕ Kategorie oder Laden hinzufügen", en: "➕ Add Category or Store" },
+  'peer-loan-heading': { de: "🤝 Geliehenes / Verliehenes Geld erfassen", en: "🤝 Record Borrowed / Lent Money" },
+  'peer-loan-repay-heading': { de: "💵 Rückzahlung verbuchen", en: "💵 Book Repayment" },
+  'delete-peer-repay-heading': { de: "🗑️ Teilrückzahlung löschen", en: "🗑️ Delete Partial Repayment" },
+  'settle-peer-loan-heading': { de: "✅ Leihgabe als beglichen markieren", en: "✅ Mark Loan as Settled" },
+  'end-or-delete-rec-heading': { de: "Dauerauftrag beenden oder löschen", en: "End or Delete Standing Order" },
+  'shopping-paste-heading': { de: "📋 Liste einkopieren (WhatsApp / Notizen)", en: "📋 Paste List (WhatsApp / Notes)" },
+  'shopping-book-heading': { de: "💳 Einkauf als Ausgabe buchen", en: "💳 Book Purchase as Expense" },
+  'delete-peer-loan-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Personal Loan" },
+  'cash-counter-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen &amp; Scheine)", en: "🪙 Cash Counter Helper (Coins &amp; Notes)" },
+  'lbl-today-prefix': { de: "Heute:", en: "Today:" },
+  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.38</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.38</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-shortcuts-text': { de: "Tastaturkürzel: <strong>1</strong>= Übersicht | <strong>2</strong>= Ausgabe | <strong>3</strong>= Einnahme | <strong>4</strong>= Umbuchen | <strong>5</strong>= Einstellungen | <strong>6</strong>= Konto-Optionen | <strong>7</strong>= Wunschliste | <strong>T</strong>= Zu Heute | <strong>L</strong>= Sofortsperre", en: "Shortcuts: <strong>1</strong>= Overview | <strong>2</strong>= Expense | <strong>3</strong>= Income | <strong>4</strong>= Transfer | <strong>5</strong>= Settings | <strong>6</strong>= Accounts | <strong>7</strong>= Wishlist | <strong>T</strong>= Today | <strong>L</strong>= Instant Lock" },
+
+  // Brand & Header
+  'brand-app-title': { de: 'Meine Finanzen & Haushaltsbuch', en: 'My Finances & Budget Book' },
+  'brand-app-tagline': { de: '🔒 AES-256 Verschlüsselt & DSGVO-Konform', en: '🔒 AES-256 Encrypted & GDPR-Compliant' },
+  'header-privacy-text': { de: 'Beträge verbergen oder anzeigen, Tastenkürzel Strg + H', en: 'Hide or show amounts, shortcut Ctrl + H' },
+  'btn-lock-text': { de: 'Sperren (L)', en: 'Lock (L)' },
+  'lbl-today-prefix': { de: 'Heute:', en: 'Today:' },
+
+  // Skip Links
+  'skip-link-nav': { de: 'Zur Menüauswahl springen', en: 'Skip to menu selection' },
+  'skip-link-time': { de: 'Zur Zeitraumauswahl springen', en: 'Skip to period selection' },
+  'skip-link-content': { de: 'Direkt zum Hauptinhalt springen', en: 'Skip to main content' },
+
+  // Lock Screen
+  'lock-heading': { de: 'Sicherer AES-256 Zugang', en: 'Secure AES-256 Access' },
+  'lock-instructions': { de: 'Deine Finanzdaten sind auf diesem Computer geschützt. Bitte gib deine PIN oder dein Passwort ein:', en: 'Your financial data is protected on this computer. Please enter your PIN or password:' },
+  'btn-unlock-text': { de: '🔓 Entschlüsseln & Öffnen (Enter)', en: '🔓 Decrypt & Open (Enter)' },
+  'btn-bio-unlock-text': { de: '👆 Mit Fingerabdruck / Biometrie entsperren', en: '👆 Unlock with fingerprint / biometrics' },
+  'lock-sync-heading': { de: '📱 Daten vom Computer übertragen (Smartphone-Sync)', en: '📱 Transfer data from computer (Smartphone Sync)' },
+  'lock-sync-sub': { de: 'Kopple dein Smartphone mit dem PC, um deine Finanzen mobil zu synchronisieren.', en: 'Pair your smartphone with your PC to sync your finances on the go.' },
+  'lock-what-is-new': { de: '📜 Was ist neu in diesem Update? (Änderungsprotokoll)', en: '📜 What is new in this update? (Changelog)' },
+  'lock-privacy-guarantee': { de: '🔒 100% DSGVO & EU-Datenschutz: Alle Daten bleiben ausschließlich auf deinem Computer und werden niemals an Server oder Fremde übertragen.', en: '🔒 100% GDPR & EU Privacy: All data stays exclusively on your computer and is never sent to servers or third parties.' },
+  'lock-first-time-hint': { de: '💡 Erster Start: Lege jetzt deine Wunsch-PIN fest (z. B. 1234 oder dein sicheres Passwort).', en: '💡 First launch: Set your desired PIN now (e.g. 1234 or your secure password).' },
+
+  // Tabs
+  'tab-overview-text': { de: '📊 Übersicht & Zeiträume', en: '📊 Overview & Periods' },
+  'tab-expense-text': { de: '🔴 Ausgabe eintragen / planen', en: '🔴 Add / Plan Expense' },
+  'tab-income-text': { de: '🟢 Einnahme eintragen / planen', en: '🟢 Add / Plan Income' },
+  'tab-transfer-text': { de: '🔄 Umbuchen & Sparen', en: '🔄 Transfer & Savings' },
+  'tab-settings-text': { de: '⚙️ Einstellungen & Backup', en: '⚙️ Settings & Backup' },
+  'tab-accounts-text': { de: '💳 Konto-Optionen & Konten', en: '💳 Accounts & Options' },
+  'tab-wishlist-text': { de: '🎁 Wunschliste & Sparziele', en: '🎁 Wishlist & Savings Goals' },
+  'tab-shopping-text': { de: '🛒 Einkaufsliste & Checkliste', en: '🛒 Shopping List & Checklist' },
+  'tab-sync-text': { de: '📱 Smartphone-Sync (E2E)', en: '📱 Smartphone Sync (E2E)' },
+
+  // Overview View
+  'section-accounts-heading': { de: '1. 💳 Deine Kontostände im Detail', en: '1. 💳 Your Account Balances' },
+  'period-breakdown-heading': { de: '📊 Monatsübersicht im gewählten Zeitraum', en: '📊 Monthly Overview for Selected Period' },
+  'expense-ranking-heading': { de: '🏆 Größte Geldfresser des Monats (Ausgaben-Rangliste)', en: '🏆 Top Expenses of the Month (Expense Ranking)' },
+  'lbl-tx-search-query': { de: '🔍 Intelligente Suche (Text, Betrag, Tippfehler, Datum):', en: '🔍 Smart Search (Text, amount, typos, date):' },
+  'btn-clear-tx-search': { de: '✖️ Suche leeren', en: '✖️ Clear search' },
+  'btn-clear-search-filter': { de: '✖️ Filter aufheben', en: '✖️ Clear filter' },
+  'lbl-tx-filter-status': { de: '🎯 Status:', en: '🎯 Status:' },
+  'lbl-tx-filter-account': { de: '💳 Konto:', en: '💳 Account:' },
+  'lbl-tx-sort-order': { de: '↕️ Sortierung:', en: '↕️ Sorting:' },
+  'section-income-heading': { de: '2. 📥 Einnahmen', en: '2. 📥 Income' },
+  'details-income-summary-text': { de: 'Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)', en: 'Show all income (with date, edit & delete)' },
+  'section-expense-heading': { de: '3. 📤 Ausgaben', en: '3. 📤 Expenses' },
+  'details-expense-summary-text': { de: 'Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)', en: 'Show all expenses (with date, edit & delete)' },
+  'section-transfer-heading': { de: '🔄 Umbuchungen, Sparpläne & Daueraufträge', en: '🔄 Transfers, Savings Plans & Standing Orders' },
+  'details-transfer-summary-text': { de: 'Alle Umbuchungen & Sparpläne anzeigen', en: 'Show all transfers & savings plans' },
+  'section-peer-loans-heading': { de: '🤝 Geliehenes & Verliehenes Geld (Privatkredite)', en: '🤝 Borrowed & Lent Money (Personal Loans)' },
+  'details-peer-loans-summary-text': { de: 'Offene Schulden & Forderungen anzeigen', en: 'Show open debts & receivables' },
+  'peer-loan-new-entry-btn': { de: '➕ Neuer Eintrag', en: '➕ New Entry' },
+  'heading-curr-breakdown': { de: '💱 Beträge nach Währungen aufgeteilt & Gesamtergebnis:', en: '💱 Breakdown by Currencies & Total Result:' },
+  'section-total-heading': { de: '4. 💰 GESAMT ÜBER ALLE KONTEN & ERGEBNIS', en: '4. 💰 TOTAL BALANCE & RESULT' },
+  'total-balance-sub': { de: 'Verfügbares Gesamtguthaben über alle Konten', en: 'Available total balance across all accounts' },
+  'leftover-main-label': { de: 'Ergebnis im Zeitraum:', en: 'Period Result:' },
+  'month-leftover-sub': { de: 'Einnahmen minus Ausgaben', en: 'Income minus expenses' },
+
+  // Table Headers
+  'annual-table-th-month': { de: 'Monat', en: 'Month' },
+  'annual-table-th-inc': { de: 'Einnahmen', en: 'Income' },
+  'annual-table-th-exp': { de: 'Ausgaben', en: 'Expenses' },
+  'annual-table-th-result': { de: 'Ergebnis (Plus / Minus)', en: 'Result (Plus / Minus)' },
+  'annual-table-th-status': { de: 'Status', en: 'Status' },
+
+  // Currency Converter Widget
+  'heading-currency-converter': { de: '💱 Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)', en: '💱 Currency Converter & Exchange (Euro, Dollar, DM, Schilling...)' },
+  'hint-currency-converter': { de: 'Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:', en: 'Convert any amount instantly between modern and historical currencies (e.g. Deutsche Mark, Schilling, Franc):' },
+  'lbl-calc-curr-amount': { de: 'Betrag:', en: 'Amount:' },
+  'lbl-calc-curr-from': { de: 'Von Währung (Quelle):', en: 'From currency (Source):' },
+  'lbl-calc-curr-to': { de: 'In Währung (Ziel):', en: 'To currency (Target):' },
+
+  // View 2: Expense View
+  'heading-expense-view': { de: '🔴 Ausgabe eintragen oder für die Zukunft planen', en: '🔴 Add / Plan Expense' },
+  'sub-expense-view': { de: 'Trage hier getätigte Ausgaben oder geplante Anschaffungen für die Zukunft ein.', en: 'Record expenses or planned purchases for the future here.' },
+  'btn-exp-coin-counter': { de: '🪙 Münz- & Scheinezähler', en: '🪙 Coin & Bill Counter' },
+  'btn-exp-date-today': { de: 'Heute', en: 'Today' },
+  'btn-exp-date-yesterday': { de: 'Gestern', en: 'Yesterday' },
+  'btn-submit-expense': { de: '🔴 Ausgabe / Geplanten Kauf speichern (Enter)', en: '🔴 Save Expense / Planned Purchase (Enter)' },
+  'btn-back-expense': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
+
+  // View 3: Income View
+  'heading-income-view': { de: '🟢 Einnahme eintragen oder für die Zukunft planen', en: '🟢 Add / Plan Income' },
+  'sub-income-view': { de: 'Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).', en: 'Record money received or expected in a future month here.' },
+  'btn-inc-coin-counter': { de: '🪙 Münz- & Scheinezähler', en: '🪙 Coin & Bill Counter' },
+  'btn-inc-date-today': { de: 'Heute', en: 'Today' },
+  'btn-inc-date-yesterday': { de: 'Gestern', en: 'Yesterday' },
+  'btn-submit-income': { de: '🟢 Einnahme speichern (Enter)', en: '🟢 Save Income (Enter)' },
+  'btn-back-income': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
+
+  // View 4: Transfer View
+  'heading-transfer-view': { de: '🔄 Geld umbuchen & auf anderes Konto sparen', en: '🔄 Transfer & Savings' },
+  'sub-transfer-view': { de: 'Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.', en: 'Transfer money between accounts – either immediately or as a monthly savings plan.' },
+  'btn-submit-transfer': { de: '🔄 Umbuchung / Sparplan speichern (Enter)', en: '🔄 Save Transfer / Savings Plan (Enter)' },
+  'btn-back-transfer': { de: 'Zurück zur Übersicht', en: 'Back to Overview' },
+
+  // View 5: Settings View
+  'heading-settings-view': { de: 'Einstellungen, Design & Datensicherung', en: 'Settings, Theme & Data Backup' },
+  'set-cat-btn-all': { de: '📂 Alle anzeigen', en: '📂 Show All' },
+  'set-cat-btn-security': { de: '🛡️ Sicherheit & Tresor', en: '🛡️ Security & Vault' },
+  'set-cat-btn-design': { de: '🎨 Darstellung & Design', en: '🎨 Appearance & Theme' },
+  'set-cat-btn-backup': { de: '💾 Datensicherung & Import', en: '💾 Backup & Import' },
+  'set-cat-btn-budgets': { de: '🎯 Monats-Budgets', en: '🎯 Monthly Budgets' },
+  'set-cat-btn-categories': { de: '🏷️ Eigene Kategorien', en: '🏷️ Custom Categories' },
+  'set-cat-btn-system': { de: '📜 Info & System', en: '📜 Info & System' },
+  'theme-settings-heading': { de: 'Darstellung, Design & Schriftgröße', en: 'Appearance, Theme & Font Size' },
+  'theme-settings-hint': { de: 'Passe hier das Design und die Schriftgröße für deine Augen an:', en: 'Customize the theme and font size for your eyes:' },
+  'lbl-settings-symbols': { de: 'Symbole & Emojis in der App anzeigen', en: 'Show symbols & emojis in app' },
+  'hint-settings-symbols': { de: 'Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.', en: 'When disabled, the app is displayed in clean, pure text without symbols.' },
+
+  // View 6: Accounts View
+  'heading-accounts-view': { de: '💳 Konto-Optionen & Konten verwalten', en: '💳 Accounts & Options' },
+  'sub-accounts-view': { de: 'Hier kannst du beliebig viele Konten verwalten, Namen ändern, Startguthaben festlegen oder Konten löschen.', en: 'Manage accounts, edit names, set starting balances, or delete accounts here.' },
+  'heading-add-account': { de: 'Neues Konto hinzufügen', en: 'Add New Account' },
+  'btn-save-new-account': { de: '➕ Neues Konto speichern (Enter)', en: '➕ Save New Account (Enter)' },
+  'heading-existing-accounts': { de: 'Deine vorhandenen Konten (Namen ändern & löschen)', en: 'Your Existing Accounts (Edit name & delete)' },
+  'heading-savings-pots': { de: '🎯 Spartöpfe & Sparziele deiner Konten', en: '🎯 Savings Pots & Goals' },
+  'heading-new-pot': { de: '➕ Neuen Spartopf anlegen', en: '➕ Create New Savings Pot' },
+  'btn-save-pot': { de: '🎯 Spartopf erstellen', en: '🎯 Create Savings Pot' },
+
+  // View 7: Wishlist View
+  'heading-wishlist-view': { de: '🎁 Wunschliste, Sparziele & Anschaffungen', en: '🎁 Wishlist, Savings Goals & Purchases' },
+  'sub-wishlist-view': { de: 'Plane Anschaffungen, behalte den Überblick über deine Ersparnisse und erfülle Wünsche direkt als Ausgabe.', en: 'Plan purchases, track savings, and fulfill wishes directly into budget.' },
+  'heading-add-wish': { de: 'Neuen Wunsch eintragen', en: 'Add New Wish' },
+  'btn-add-wish': { de: '🎁 Wunsch zur Liste hinzufügen', en: '🎁 Add Wish to List' },
+  'heading-existing-wishes': { de: 'Deine Wünsche & Sparziele', en: 'Your Wishes & Savings Goals' },
+
+  // View 8: Shopping View
+  'heading-shopping-view': { de: '🛒 Einkaufsliste & Checkliste', en: '🛒 Shopping List & Checklist' },
+  'sub-shopping-view': { de: 'Artikel beim Einkaufen blitzschnell abhaken, neue Sachen draufsetzen oder WhatsApp-Texte einfügen.', en: 'Check off shopping items quickly, add new items, or paste WhatsApp texts.' },
+  'heading-my-shopping-items': { de: 'Meine Einkaufsartikel', en: 'My Shopping Items' },
+  'btn-paste-shopping-text': { de: '📋 Liste einkopieren (WhatsApp/Text)', en: '📋 Paste List (WhatsApp/Text)' },
+  'btn-upload-shopping-doc': { de: '📷📄 Dokument / Foto hochladen', en: '📷📄 Upload Document / Photo' },
+  'btn-add-shopping-item': { de: '➕ Draufsetzen', en: '➕ Add to List' },
+  'btn-copy-shopping-wa': { de: '📲 Als WhatsApp-Text kopieren', en: '📲 Copy as WhatsApp Text' },
+  'btn-clean-shopping-done': { de: '🧹 Erledigte aufräumen', en: '🧹 Clean up done items' },
+  'btn-clear-shopping-all': { de: '🗑️ Ganze Liste leeren', en: '🗑️ Clear entire list' },
+
+  // View 9: Smartphone Sync View
+  'heading-sync-view': { de: '📱 Smartphone-Sync (E2E)', en: '📱 Smartphone Sync (E2E)' },
+  'tab-sync-devices-title': { de: '🟢 1. Gekoppelte Geräte', en: '🟢 1. Connected Devices' },
+  'tab-sync-pair-title': { de: '🔗 2. Gerät koppeln', en: '🔗 2. Pair New Device' },
+  'tab-sync-creds-title': { de: '🆔 3. Kopplungsdaten', en: '🆔 3. Device Credentials' },
+  'btn-trigger-sync-text': { de: '⚡ Jetzt Gerät koppeln & sicher synchronisieren (Enter)', en: '⚡ Pair Device & Securely Sync Now (Enter)' },
+
+  // Modals Headings & Buttons
+  'edit-modal-heading': { de: 'Buchung bearbeiten', en: 'Edit Transaction' },
+  'edit-rec-heading': { de: 'Dauerauftrag / Sparplan bearbeiten', en: 'Edit Standing Order / Savings Plan' },
+  'end-or-delete-rec-heading': { de: 'Dauerauftrag beenden oder löschen', en: 'End or Delete Standing Order' },
+  'account-modal-heading': { de: 'Konto verwalten', en: 'Manage Account' },
+  'cash-counter-heading': { de: '🪙 Bargeld-Zählhelfer (Münzen & Scheine)', en: '🪙 Cash Counter (Coins & Bills)' },
+  'csv-modal-heading': { de: 'Bank-Kontoauszug Vorschau & Import', en: 'Bank Statement Preview & Import' },
+  'receipt-text-modal-heading': { de: '📋 Text aus Beleg / Rechnung einfügen', en: '📋 Paste Receipt / Invoice Text' },
+  'shopping-paste-heading': { de: '📋 Liste einkopieren (WhatsApp / Notizen)', en: '📋 Paste List (WhatsApp / Notes)' },
+  'shopping-book-heading': { de: '💳 Einkauf als Ausgabe buchen', en: '💳 Book Shopping as Expense' },
+  'print-report-heading': { de: 'Finanzbericht & Nachweis', en: 'Financial Report & Statement' },
+  'peer-loan-heading': { de: '🤝 Geliehenes / Verliehenes Geld erfassen', en: '🤝 Record Borrowed / Lent Money' },
+  'peer-loan-repay-heading': { de: '💵 Rückzahlung verbuchen', en: '💵 Record Repayment' },
+  'delete-peer-loan-heading': { de: '🗑️ Leihgabe löschen', en: '🗑️ Delete Loan' },
+  'delete-peer-repay-heading': { de: '🗑️ Teilrückzahlung löschen', en: '🗑️ Delete Repayment' },
+  'settle-peer-loan-heading': { de: '✅ Leihgabe als beglichen markieren', en: '✅ Mark Loan as Settled' },
+  'quick-add-cat-heading': { de: '➕ Kategorie oder Laden hinzufügen', en: '➕ Add Category or Store' },
+  'changelog-modal-heading': { de: '📜 Was ist neu in diesem Update? (Änderungsprotokoll)', en: '📜 What is new in this update? (Changelog)' },
+
+  // Footer
+  'footer-version-text': { de: 'Barrierefreie Finanzen ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Verschlüsselung & Einkaufsliste. Optimiert für NVDA.', en: 'Accessible Finances ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Encryption & Shopping List. Optimized for NVDA.' },
+  'footer-shortcuts-text': { de: 'Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre', en: 'Keyboard shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= To Today | L= Quick Lock' }
+};
+
+const I18N_APP_PLACEHOLDERS = {
+  'pin-input': { de: "z. B. 1234", en: "e.g. 1234" },
+  'edit-tx-loan-person': { de: "z. B. Peter, Markus, Mama", en: "e.g. Peter, Mark, Mom" },
+  'edit-tx-loan-note': { de: "z. B. Kinokarten ausgelegt...", en: "e.g. Covered cinema tickets..." },
+  'edit-tx-cat-search': { de: "Tippe z. B. Rewe, Miete, Gehalt...", en: "Type e.g. Walmart, Rent, Salary..." },
+  'edit-tx-desc': { de: "z. B. Wocheneinkauf, Geschenk...", en: "e.g. Weekly grocery, gift..." },
+  'edit-rec-name': { de: "z. B. Miete, Netflix, Notgroschen Sparplan...", en: "e.g. Rent, Netflix, Rainy Day Savings..." },
+  'edit-rec-future-amount': { de: "z. B. 17.99", en: "e.g. 17.99" },
+  'edit-rec-discount-amount': { de: "z. B. 19.99", en: "e.g. 19.99" },
+  'edit-rec-discount-regular': { de: "z. B. 39.99", en: "e.g. 39.99" },
+  'edit-rec-contract-number': { de: "z. B. KD-881234", en: "e.g. KD-881234" },
+  'edit-rec-notice-period': { de: "z. B. 1 Monat zum Monatsende", en: "e.g. 1 month to month end" },
+  'edit-rec-hotline': { de: "z. B. 0800-111222", en: "e.g. 0800-111222" },
+  'edit-rec-notes': { de: "z. B. Kennwort: MeinWort, Login: email@test.de", en: "e.g. Password: mySecret, Login: email@test.com" },
+  'account-modal-bank': { de: "z. B. ING, Sparkasse, DKB, PayPal", en: "e.g. Chase, Bank of America, PayPal" },
+  'account-modal-owner': { de: "z. B. Max Mustermann", en: "e.g. John Doe" },
+  'account-modal-iban': { de: "DE12 3456 7890 1234 5678 90", en: "DE12 3456 7890 1234 5678 90" },
+  'account-modal-bic': { de: "z. B. INGDDEFFXXX", en: "e.g. CHASUS33XXX" },
+  'account-modal-number': { de: "z. B. PayPal-Email oder Kundennummer", en: "e.g. PayPal email or customer ID" },
+  'account-modal-dispo': { de: "0,00", en: "0.00" },
+  'account-modal-notes': { de: "z. B. Kostenlos ab 700€ Eingang, Kartensperre: 116 116", en: "e.g. Free with $700+ deposit, emergency: 1-800..." },
+  'receipt-text-input': { de: "Beispiel:\nREWE Markt GmbH\nDatum: 01.10.2026\nSUMME EUR 14,85", en: "Example:\nSupermarket LLC\nDate: 01.10.2026\nTOTAL USD 14.85" },
+  'shopping-paste-input': { de: "Beispiel:\nMilch 1.5%\n- Vollkornbrot 2,49 €\n• 3 Bananen\nButter (Rewe)\nKaffee 5.99", en: "Example:\nMilk 1.5%\n- Whole wheat bread $2.49\n• 3 Bananas\nButter (Store)\nCoffee 5.99" },
+  'shopping-paste-store': { de: "z. B. Rewe, Aldi, dm...", en: "e.g. Walmart, Aldi, Target..." },
+  'peer-loan-person': { de: "z. B. Peter, Mama, Markus", en: "e.g. Peter, Mom, Mark" },
+  'peer-loan-amount': { de: "0,00 €", en: "0.00 $" },
+  'peer-loan-note': { de: "z. B. Kinokarten ausgelegt, Werkstattrechnung...", en: "e.g. Cinema tickets, garage repair..." },
+  'peer-loan-repay-note': { de: "z. B. Erste Rate, Rest kommt nächsten Monat...", en: "e.g. First installment, remainder next month..." },
+  'quick-cat-sub-name': { de: "z. B. Späti am Eck, Tante Emma, Kiosk 24h, Pfandflaschen...", en: "e.g. Corner Store, Convenience Shop, Kiosk 24h..." },
+  'quick-cat-main-icon': { de: "🏪", en: "🏪" },
+  'quick-cat-main-name': { de: "z. B. Hobbys & Sammlerstücke", en: "e.g. Hobbies & Collectibles" },
+  'quick-cat-first-sub': { de: "z. B. Allgemein oder spezieller Laden", en: "e.g. General or specific store" },
+  'calc-curr-amount': { de: "z. B. 100,00", en: "e.g. 100.00" },
+  'exp-installment-rate': { de: "0,00 €", en: "0.00 $" },
+  'exp-installment-downpayment': { de: "0,00", en: "0.00" },
+  'exp-installment-interest': { de: "0", en: "0" },
+  'exp-installment-balloon': { de: "0,00", en: "0.00" },
+  'exp-loan-person': { de: "z. B. Peter, Kollege, Bruder", en: "e.g. Peter, Colleague, Brother" },
+  'exp-loan-note': { de: "z. B. Essen ausgelegt, Konzertkarten...", en: "e.g. Covered dinner, concert tickets..." },
+  'exp-cat-search': { de: "Tippe z. B. 'Rewe', 'Lidl', 'Aldi', 'Netflix', 'Tanken', 'Miete'...", en: "Type e.g. 'Walmart', 'Aldi', 'Netflix', 'Gas', 'Rent'..." },
+  'exp-rec-discount-amount': { de: "z. B. 19.99", en: "e.g. 19.99" },
+  'exp-rec-discount-regular': { de: "z. B. 39.99", en: "e.g. 39.99" },
+  'exp-rec-contract-number': { de: "z. B. KD-881234", en: "e.g. KD-881234" },
+  'exp-rec-notice-period': { de: "z. B. 1 Monat zum Monatsende", en: "e.g. 1 month to month end" },
+  'exp-rec-hotline': { de: "z. B. 0800-111222", en: "e.g. 0800-111222" },
+  'exp-rec-notes': { de: "z. B. Kennwort: MeinWort, Login: email@test.de", en: "e.g. Password: mySecret, Login: email@test.com" },
+  'inc-loan-person': { de: "z. B. Markus, Mama, Anna", en: "e.g. Mark, Mom, Anna" },
+  'inc-loan-note': { de: "z. B. Urlaubsvorschuss, Überbrückung...", en: "e.g. Holiday advance, bridging loan..." },
+  'inc-cat-search': { de: "Tippe z. B. 'Gehalt', 'Blindengeld', 'Pflege', 'Rente', 'Vinted'...", en: "Type e.g. 'Salary', 'Disability pension', 'Pension', 'Vinted'..." },
+  'budget-amount-input': { de: "z. B. 350", en: "e.g. 350" },
+  'custom-cat-main-new-input': { de: "z. B. Krypto & Web3 oder Gartenbau", en: "e.g. Crypto & Web3 or Gardening" },
+  'custom-cat-sub-input': { de: "z. B. Mein Dorfladen, Tante Emma Laden, Krypto-Staking...", en: "e.g. Corner Shop, Village Store, Staking..." },
+  'feedback-name': { de: "Name oder Pseudonym (optional)", en: "Name or alias (optional)" },
+  'feedback-text': { de: "z. B. Ich wünsche mir eine neue Funktion für...", en: "e.g. I would like a new feature for..." },
+  'new-acc-name': { de: "z. B. ING Girokonto, Trade Republic Depot, Urlaubskonto...", en: "e.g. Checking Account, Investment Broker, Vacation Fund..." },
+  'new-acc-balance': { de: "0,00", en: "0.00" },
+  'new-acc-hint': { de: "z. B. Miete & Gehalt, Notgroschen, Taschengeld...", en: "e.g. Rent & Salary, Rainy Day Fund, Pocket Money..." },
+  'pot-current-amount': { de: "0,00", en: "0.00" },
+  'pot-note': { de: "z. B. Bis Sommer 2027 monatlich 50 € sparen", en: "e.g. Save $50 monthly until Summer 2027" },
+  'wish-note': { de: "z. B. Modell XYZ, Rabattaktion im Oktober...", en: "e.g. Model XYZ, discount promotion in October..." },
+  'input-target-device': { de: "z. B. Handy-7X49 oder PC-B2K9", en: "e.g. Phone-7X49 or PC-B2K9" },
+  'input-target-code': { de: "z. B. ABCD-1234-EFGH", en: "e.g. ABCD-1234-EFGH" },
+
+  'tx-search-query': { de: 'z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal...', en: 'e.g. Groceries, 45$, >50, 20-100, October, today, -PayPal...' },
+  'exp-amount': { de: 'z. B. 4,50 oder 12.99', en: 'e.g. 4.50 or 12.99' },
+  'inc-amount': { de: 'z. B. 50 oder 150', en: 'e.g. 50 or 150' },
+  'trf-amount': { de: 'z. B. 50 oder 150.00', en: 'e.g. 50 or 150.00' },
+  'exp-category-search': { de: 'Tippe zum Suchen...', en: 'Type to search...' },
+  'exp-desc': { de: 'z. B. Wocheneinkauf, Mittagessen, Bahnticket...', en: 'e.g. Groceries, Lunch, Train ticket...' },
+  'inc-desc': { de: 'z. B. Gehalt Firma XYZ, Rückzahlung von Tom...', en: 'e.g. Salary Acme Corp, Repayment from Tom...' },
+  'trf-desc': { de: 'z. B. Notgroschen auffüllen, Urlaub sparen...', en: 'e.g. Emergency fund, Vacation savings...' },
+  'account-modal-name': { de: 'z. B. ING Girokonto, PayPal, Bargeld...', en: 'e.g. Checking account, PayPal, Cash...' },
+  'account-modal-balance': { de: '0,00', en: '0.00' },
+  'account-modal-hint': { de: 'z. B. Miete & Gehalt, Notgroschen...', en: 'e.g. Rent & Salary, Rainy day fund...' },
+  'pot-name': { de: 'z. B. Notgroschen, Sommerurlaub, Neues Auto...', en: 'e.g. Emergency fund, Summer vacation, New car...' },
+  'pot-target-amount': { de: 'z. B. 1000,00', en: 'e.g. 1000.00' },
+  'wish-title': { de: 'z. B. Neues Fahrrad, Kopfhörer, Urlaub in Schweden...', en: 'e.g. New bike, Headphones, Vacation...' },
+  'wish-amount': { de: 'z. B. 450,00', en: 'e.g. 450.00' },
+  'shopping-new-name': { de: 'z. B. 2x Hafermilch Rewe, Äpfel 1,99, Kaffee...', en: 'e.g. 2x Oat milk, Apples 1.99, Coffee...' },
+  'shopping-new-price': { de: 'z. B. 2,49', en: 'e.g. 2.49' },
+  'shopping-new-store': { de: 'z. B. Rewe, Aldi, dm, Apotheke...', en: 'e.g. Supermarket, Pharmacy, Store...' }
+};
+
+const I18N_APP_MESSAGES = {
+  shoppingNoDone: { de: 'Es gibt keine abgehakten Artikel zum Aufräumen.', en: 'There are no completed items to clean up.' },
+  shoppingAlreadyEmpty: { de: 'Die Einkaufsliste ist bereits leer.', en: 'The shopping list is already empty.' },
+  shoppingNothingToCopy: { de: 'Die Einkaufsliste ist leer. Es gibt nichts zu kopieren.', en: 'The shopping list is empty. Nothing to copy.' },
+  shoppingCopied: { de: '✅ Einkaufsliste wurde in die Zwischenablage kopiert! Du kannst sie jetzt z. B. in WhatsApp mit Strg+V einfügen.', en: '✅ Shopping list copied to clipboard! You can paste it into WhatsApp or notes with Ctrl+V.' },
+  shoppingAddedCount: { de: (n) => `✅ ${n} Artikel wurden erfolgreich auf deine Einkaufsliste gesetzt!`, en: (n) => `✅ ${n} item(s) successfully added to your shopping list!` },
+  shoppingNoItemsFound: { de: 'Es konnten keine Artikel im eingegebenen Text erkannt werden. Bitte überprüfe den Text.', en: 'No items could be recognized in the entered text. Please verify the text.' },
+  shoppingClearConfirm: { de: 'Möchtest du wirklich alle Artikel von der Einkaufsliste löschen?', en: 'Do you really want to delete all items from the shopping list?' },
+  shoppingEmptyBeforeBooking: { de: 'Deine Einkaufsliste ist leer. Füge zuerst Artikel hinzu.', en: 'Your shopping list is empty. Please add items first.' },
+  shoppingInvalidAmount: { de: 'Bitte gib einen gültigen Kassenbetrag größer als 0 € ein.', en: 'Please enter a valid amount greater than 0.' },
+  shoppingBookedSuccess: { de: (amt, cat) => `✅ Der Einkauf über ${amt} (${cat}) wurde erfolgreich im Haushaltsbuch abgebucht!`, en: (amt, cat) => `✅ The shopping purchase of ${amt} (${cat}) was successfully booked into your budget!` },
+  wishDeleteConfirm: { de: (title) => `Möchtest du den Wunsch "${title}" wirklich löschen?`, en: (title) => `Do you really want to delete the wish "${title}"?` },
+  potDeleteConfirm: { de: 'Möchtest du diesen Spartopf wirklich löschen?', en: 'Do you really want to delete this savings pot?' },
+  keyfileEnforceEnable: { de: '🔒 Möchtest du den Schlüsseldatei-Zwang aktivieren?\n\nDein Tresor lässt sich künftig NUR NOCH öffnen, wenn PIN UND die Schlüsseldatei gleichzeitig vorhanden sind!\n\nFortfahren?', en: '🔒 Enable keyfile enforcement?\n\nYour vault can in future ONLY be opened when BOTH PIN AND the keyfile are provided!\n\nProceed?' },
+  keyfileEnforceDisable: { de: '🔓 Möchtest du den Schlüsseldatei-Zwang wirklich deaktivieren?\n\nDer Tresor wird künftig wieder allein durch deine PIN geschützt.\n\nFortfahren?', en: '🔓 Disable keyfile enforcement?\n\nYour vault will once again be protected solely by your PIN.\n\nProceed?' },
+  biometricsConfirm: { de: '👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?', en: '👆 Do you want to enable fingerprint unlock for your smartphone to unlock in future without typing your PIN?' },
+  gdprDeleteConfirm: { de: 'WARNUNG: Möchtest du wirklich ALLE deine Finanzdaten und die PIN unwiderruflich löschen?', en: 'WARNING: Do you really want to permanently and irrevocably erase ALL financial data and your PIN?' },
+  csvNoLines: { de: 'Die CSV-Datei enthält keine Buchungszeilen.', en: 'The CSV file does not contain any transaction lines.' },
+  csvNoValidLines: { de: 'Es konnten keine gültigen Buchungszeilen in der CSV-Datei erkannt werden.', en: 'No valid transaction lines could be recognized in the CSV file.' },
+  csvSelectAtLeastOne: { de: 'Bitte wähle mindestens eine Buchung zum Importieren aus.', en: 'Please select at least one transaction to import.' },
+  csvImportSuccess: { de: (n) => `✅ Erfolgreich ${n} Buchungen aus dem Bank-Kontoauszug importiert!`, en: (n) => `✅ Successfully imported ${n} transactions from bank statement!` },
+  peerLoanDeleteConfirm: { de: 'Möchtest du diese Leihgabe wirklich löschen?', en: 'Do you really want to delete this loan entry?' },
+  peerRepayDeleteConfirm: { de: 'Möchtest du diese Rückzahlung wirklich löschen?', en: 'Do you really want to delete this repayment?' },
+  peerLoanSettleConfirm: { de: 'Möchtest du diese Leihgabe wirklich als vollständig beglichen markieren?', en: 'Do you really want to mark this loan as fully settled?' },
+  deviceRemoveConfirm: { de: (name) => `Möchtest du das Gerät "${name}" wirklich aus der Kopplungsliste entfernen?`, en: (name) => `Do you really want to remove the device "${name}" from paired devices?` },
+  symbolsEnabledMsg: { de: 'Symbole und Emojis werden angezeigt.', en: 'Symbols and emojis are now enabled.' },
+  symbolsDisabledMsg: { de: 'Symbole und Emojis wurden ausgeschaltet. Reiner Textmodus aktiv.', en: 'Symbols and emojis have been turned off. Pure text mode is now active.' }
+};
+
+function tMsg(key, ...args) {
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const entry = I18N_APP_MESSAGES[key];
+  if (!entry) return key;
+  const val = entry[lang] || entry.de;
+  if (typeof val === 'function') {
+    return cleanSymbols(val(...args));
+  }
+  return cleanSymbols(val);
+}
+
+
+function applySymbolsToOptions(selectEl) {
+  if (!selectEl) return;
+  const show = isSymbolsEnabled();
+  const options = selectEl.querySelectorAll('option');
+  options.forEach(opt => {
+    if (!opt.dataset.origText) {
+      opt.dataset.origText = opt.textContent;
+    }
+    if (show) {
+      opt.textContent = opt.dataset.origText;
+    } else {
+      opt.textContent = opt.dataset.origText.replace(GLOBAL_EMOJI_REGEX, '').replace(/\s{2,}/g, ' ').trim();
+    }
+  });
 }
 
 function applyAppLanguage() {
   const lang = getEffectiveLanguage();
   const isEn = lang === 'en';
-  const dict = I18N_TRANSLATIONS[lang] || I18N_TRANSLATIONS.de;
+  const dict = (typeof I18N_TRANSLATIONS !== 'undefined' && I18N_TRANSLATIONS[lang]) ? I18N_TRANSLATIONS[lang] : {
+    periodDay: isEn ? '📍 Day (Exact Day)' : '📍 Tag (Tagesgenau)',
+    periodWeek: isEn ? '📆 Week (Mon - Sun)' : '📆 Woche (Kalenderwoche: Mo - So)',
+    periodMonth: isEn ? '📅 Month (Full Month)' : '📅 Monat (Gesamter Monat)',
+    periodQuarter: isEn ? '📊 3 Months (Quarter)' : '📊 3 Monate (Quartal)',
+    periodHalfyear: isEn ? '📈 6 Months (Half-Year)' : '📈 6 Monate (Halbjahr)',
+    periodYear: isEn ? '🗓 Full Year' : '🗓 Ganzes Jahr'
+  };
 
-  // Reassign or update MONTH_NAMES array
+  // Month names
   const targetMonths = isEn ? MONTH_NAMES_EN : MONTH_NAMES_DE;
-  for (let i = 0; i < 12; i++) {
-    MONTH_NAMES[i] = targetMonths[i];
+  if (typeof MONTH_NAMES !== 'undefined') {
+    for (let i = 0; i < 12; i++) {
+      MONTH_NAMES[i] = targetMonths[i];
+    }
   }
 
   if (document.documentElement) {
     document.documentElement.lang = lang;
   }
 
-  const brandTitle = document.querySelector('.brand h1');
-  if (brandTitle) brandTitle.textContent = dict.appName;
-  const brandTag = document.querySelector('.brand .security-badge');
-  if (brandTag) brandTag.textContent = dict.appTagline;
-  const headerPrivText = document.getElementById('header-privacy-text');
-  if (headerPrivText) headerPrivText.textContent = isEn ? 'Hide or show amounts (Ctrl+H)' : 'Beträge verbergen oder anzeigen, Tastenkürzel Strg + H';
-  const lockBtnSpan = document.querySelector('.btn-lock span:last-child');
-  if (lockBtnSpan) lockBtnSpan.textContent = dict.btnLock;
-
-  // Header Today Display
-  const lblTodayPrefix = document.getElementById('lbl-today-prefix');
-  if (lblTodayPrefix) lblTodayPrefix.textContent = isEn ? 'Today:' : 'Heute:';
-  if (typeof updateTodayDisplay === 'function') {
-    updateTodayDisplay();
+  // 1. Translate elements by ID
+  for (const [id, texts] of Object.entries(I18N_APP_ELEMENTS)) {
+    const el = document.getElementById(id);
+    if (el) {
+      const text = isEn ? texts.en : texts.de;
+      el.innerHTML = cleanSymbols(text);
+    }
   }
 
-  // Skip Navigation
-  const skipNav = document.getElementById('skip-nav-bar');
-  if (skipNav) skipNav.setAttribute('aria-label', isEn ? 'Keyboard quick navigation' : 'Tastatur-Schnellnavigation');
-  const slNav = document.getElementById('skip-link-nav');
-  if (slNav) slNav.textContent = isEn ? 'Skip to menu selection' : 'Zur Menüauswahl springen';
-  const slTime = document.getElementById('skip-link-time');
-  if (slTime) slTime.textContent = isEn ? 'Skip to period selection' : 'Zur Zeitraumauswahl springen';
-  const slContent = document.getElementById('skip-link-content');
-  if (slContent) slContent.textContent = isEn ? 'Skip to main content' : 'Direkt zum Hauptinhalt springen';
+  // 2. Translate labels by label[for="..."]
+  for (const [forAttr, texts] of Object.entries(I18N_APP_LABELS)) {
+    const lbl = document.querySelector(`label[for="${forAttr}"]`);
+    if (lbl) {
+      const text = isEn ? texts.en : texts.de;
+      lbl.innerHTML = cleanSymbols(text);
+    }
+  }
 
-  // Lock View (PIN dialog)
-  const lockHeading = document.getElementById('lock-heading');
-  if (lockHeading) lockHeading.textContent = dict.lockHeading;
-  const lockInstructions = document.getElementById('lock-instructions');
-  if (lockInstructions) lockInstructions.textContent = dict.lockInstructions;
-  const pinInputLabel = document.getElementById('pin-input-label');
-  if (pinInputLabel) pinInputLabel.textContent = dict.pinLabel;
-  const btnUnlockText = document.getElementById('btn-unlock-text');
-  if (btnUnlockText) btnUnlockText.textContent = dict.btnUnlock;
+  // 3. Translate placeholders
+  for (const [id, texts] of Object.entries(I18N_APP_PLACEHOLDERS)) {
+    const el = document.getElementById(id);
+    if (el) {
+      const text = isEn ? texts.en : texts.de;
+      el.placeholder = cleanSymbols(text);
+    }
+  }
 
-  // Tabs
+  // 4. Update Main Navigation Tabs
   const tabMap = {
-    'tab-overview': dict.tabOverview,
-    'tab-expense': dict.tabExpense,
-    'tab-income': dict.tabIncome,
-    'tab-transfer': dict.tabTransfer,
-    'tab-settings': dict.tabSettings,
-    'tab-accounts': dict.tabAccounts,
-    'tab-wishlist': dict.tabWishlist,
-    'tab-shopping': dict.tabShopping,
-    'tab-sync': dict.tabSync
+    'tab-overview': { de: '📊 Übersicht & Zeiträume', en: '📊 Overview & Periods' },
+    'tab-expense': { de: '🔴 Ausgabe eintragen / planen', en: '🔴 Add / Plan Expense' },
+    'tab-income': { de: '🟢 Einnahme eintragen / planen', en: '🟢 Add / Plan Income' },
+    'tab-transfer': { de: '🔄 Umbuchen & Sparen', en: '🔄 Transfer & Savings' },
+    'tab-settings': { de: '⚙️ Einstellungen & Backup', en: '⚙️ Settings & Backup' },
+    'tab-accounts': { de: '💳 Konto-Optionen & Konten', en: '💳 Accounts & Options' },
+    'tab-wishlist': { de: '🎁 Wunschliste & Sparziele', en: '🎁 Wishlist & Savings Goals' },
+    'tab-shopping': { de: '🛒 Einkaufsliste & Checkliste', en: '🛒 Shopping List & Checklist' },
+    'tab-sync': { de: '📱 Smartphone-Sync (E2E)', en: '📱 Smartphone Sync (E2E)' }
   };
   Object.keys(tabMap).forEach(tabId => {
     const tabEl = document.getElementById(tabId);
     if (tabEl) {
       const span = tabEl.querySelector('span:last-child');
-      if (span) span.innerHTML = '<strong>' + tabMap[tabId] + '</strong>';
+      if (span) {
+        const text = isEn ? tabMap[tabId].en : tabMap[tabId].de;
+        span.innerHTML = '<strong>' + cleanSymbols(text) + '</strong>';
+      }
     }
   });
 
-  // Time Period Dropdown
+  // 5. Update Period Selector Dropdown
   const periodSel = document.getElementById('overview-period-select');
   if (periodSel) {
     const val = periodSel.value;
     periodSel.innerHTML = `
-      <option value="day">${dict.periodDay}</option>
-      <option value="week">${dict.periodWeek}</option>
-      <option value="month">${dict.periodMonth}</option>
-      <option value="quarter">${dict.periodQuarter}</option>
-      <option value="halfyear">${dict.periodHalfyear}</option>
-      <option value="year">${dict.periodYear}</option>
+      <option value="day">${cleanSymbols(dict.periodDay)}</option>
+      <option value="week">${cleanSymbols(dict.periodWeek)}</option>
+      <option value="month">${cleanSymbols(dict.periodMonth)}</option>
+      <option value="quarter">${cleanSymbols(dict.periodQuarter)}</option>
+      <option value="halfyear">${cleanSymbols(dict.periodHalfyear)}</option>
+      <option value="year">${cleanSymbols(dict.periodYear)}</option>
     `;
     periodSel.value = val;
   }
 
-  // Overview Search Bar & Filters
-  const lblSearch = document.getElementById('lbl-tx-search-query');
-  if (lblSearch) lblSearch.innerHTML = isEn ? '🔍 <strong>Smart Search (Text, amount, typos, date):</strong>' : '🔍 <strong>Intelligente Suche (Text, Betrag, Tippfehler, Datum):</strong>';
-  const searchInput = document.getElementById('tx-search-query');
-  if (searchInput) searchInput.placeholder = isEn ? 'e.g. Groceries, 45$, >50, 20-100, October, today, -PayPal...' : 'z. B. Rewe, 45€, >50, 20-100, September, heute, -PayPal...';
-  const btnClearSearch = document.getElementById('btn-clear-tx-search');
-  if (btnClearSearch) btnClearSearch.textContent = isEn ? '✖️ Clear search' : '✖️ Suche leeren';
-  const btnClearFilter = document.getElementById('btn-clear-search-filter');
-  if (btnClearFilter) btnClearFilter.textContent = isEn ? '✖️ Clear filter' : '✖️ Filter aufheben';
-
-  const filterBar = document.querySelector('.tx-filter-bar');
-  if (filterBar) filterBar.setAttribute('aria-label', isEn ? 'Search and filter transactions' : 'Buchungen durchsuchen und filtern');
-
-  const lblStatus = document.getElementById('lbl-tx-filter-status');
-  if (lblStatus) lblStatus.innerHTML = isEn ? '🎯 <strong>Status:</strong>' : '🎯 <strong>Status:</strong>';
+  // 6. Update Status Filter Dropdown
   const statusSel = document.getElementById('tx-filter-status');
   if (statusSel) {
     const curVal = statusSel.value;
     statusSel.innerHTML = isEn ? `
-      <option value="all">All Transactions</option>
-      <option value="booked">✅ Booked / Completed only</option>
-      <option value="planned">🎯 Planned for Future only</option>
-      <option value="recurring">🔁 Standing Orders only</option>
+      <option value="all">${cleanSymbols('All Transactions')}</option>
+      <option value="booked">${cleanSymbols('✅ Booked / Completed only')}</option>
+      <option value="planned">${cleanSymbols('🎯 Planned for Future only')}</option>
+      <option value="recurring">${cleanSymbols('🔁 Standing Orders only')}</option>
     ` : `
-      <option value="all">Alle Buchungen</option>
-      <option value="booked">✅ Nur Gebucht / Erledigt</option>
-      <option value="planned">🎯 Nur Geplant für die Zukunft</option>
-      <option value="recurring">🔁 Nur Daueraufträge</option>
+      <option value="all">${cleanSymbols('Alle Buchungen')}</option>
+      <option value="booked">${cleanSymbols('✅ Nur Gebucht / Erledigt')}</option>
+      <option value="planned">${cleanSymbols('🎯 Nur Geplant für die Zukunft')}</option>
+      <option value="recurring">${cleanSymbols('🔁 Nur Daueraufträge')}</option>
     `;
     statusSel.value = curVal;
   }
 
-  const lblAccFilter = document.getElementById('lbl-tx-filter-account');
-  if (lblAccFilter) lblAccFilter.innerHTML = isEn ? '💳 <strong>Account:</strong>' : '💳 <strong>Konto:</strong>';
-  const accSel = document.getElementById('tx-filter-account');
-  if (accSel && accSel.options && accSel.options[0]) {
-    accSel.options[0].textContent = isEn ? 'All Accounts' : 'Alle Konten';
-  }
-
-  const lblSort = document.getElementById('lbl-tx-sort-order');
-  if (lblSort) lblSort.innerHTML = isEn ? '↕️ <strong>Sorting:</strong>' : '↕️ <strong>Sortierung:</strong>';
+  // 7. Update Sort Order Dropdown
   const sortSel = document.getElementById('tx-sort-order');
   if (sortSel) {
     const curSort = sortSel.value;
     sortSel.innerHTML = isEn ? `
-      <option value="date-desc">📅 Date: Newest first (New to Old)</option>
-      <option value="date-asc">📅 Date: Oldest first (Old to New)</option>
-      <option value="alpha-asc">🔤 Name: Alphabetical (A to Z)</option>
-      <option value="alpha-desc">🔤 Name: Alphabetical (Z to A)</option>
-      <option value="amount-desc">💶 Amount: Highest first (High to Low)</option>
-      <option value="amount-asc">💶 Amount: Lowest first (Low to High)</option>
-      <option value="category-asc">🏷️ Category: Alphabetical (A to Z)</option>
+      <option value="date-desc">${cleanSymbols('📅 Date: Newest first (New to Old)')}</option>
+      <option value="date-asc">${cleanSymbols('📅 Date: Oldest first (Old to New)')}</option>
+      <option value="alpha-asc">${cleanSymbols('🔤 Name: Alphabetical (A to Z)')}</option>
+      <option value="alpha-desc">${cleanSymbols('🔤 Name: Alphabetical (Z to A)')}</option>
+      <option value="amount-desc">${cleanSymbols('💶 Amount: Highest first (High to Low)')}</option>
+      <option value="amount-asc">${cleanSymbols('💶 Amount: Lowest first (Low to High)')}</option>
+      <option value="category-asc">${cleanSymbols('🏷️ Category: Alphabetical (A to Z)')}</option>
     ` : `
-      <option value="date-desc">📅 Datum: Neueste zuerst (Neu bis Alt)</option>
-      <option value="date-asc">📅 Datum: Älteste zuerst (Alt bis Neu)</option>
-      <option value="alpha-asc">🔤 Name: Alphabetisch (A bis Z)</option>
-      <option value="alpha-desc">🔤 Name: Alphabetisch (Z bis A)</option>
-      <option value="amount-desc">💶 Betrag: Höchste zuerst (Groß bis Klein)</option>
-      <option value="amount-asc">💶 Betrag: Niedrigste zuerst (Klein bis Groß)</option>
-      <option value="category-asc">🏷️ Kategorie: Alphabetisch (A bis Z)</option>
+      <option value="date-desc">${cleanSymbols('📅 Datum: Neueste zuerst (Neu bis Alt)')}</option>
+      <option value="date-asc">${cleanSymbols('📅 Datum: Älteste zuerst (Alt bis Neu)')}</option>
+      <option value="alpha-asc">${cleanSymbols('🔤 Name: Alphabetisch (A bis Z)')}</option>
+      <option value="alpha-desc">${cleanSymbols('🔤 Name: Alphabetisch (Z bis A)')}</option>
+      <option value="amount-desc">${cleanSymbols('💶 Betrag: Höchste zuerst (Groß bis Klein)')}</option>
+      <option value="amount-asc">${cleanSymbols('💶 Betrag: Niedrigste zuerst (Klein bis Groß)')}</option>
+      <option value="category-asc">${cleanSymbols('🏷️ Kategorie: Alphabetisch (A bis Z)')}</option>
     `;
     sortSel.value = curSort;
   }
 
-  // Overview Accordions & Rankings
-  const expRankDetails = document.getElementById('details-expense-rankings');
-  if (expRankDetails) {
-    const summ = expRankDetails.querySelector('summary');
-    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse top expense ranking' : 'Ausgaben-Rangliste Größte Geldfresser des Monats ausklappen oder einklappen');
-  }
-  const expRankHead = document.getElementById('expense-ranking-heading');
-  if (expRankHead) expRankHead.textContent = isEn ? 'Top Expenses of the Month (Expense Ranking)' : 'Größte Geldfresser des Monats (Ausgaben-Rangliste)';
-
-  const sumIncDetails = document.getElementById('details-income-list');
-  if (sumIncDetails) {
-    const summ = sumIncDetails.querySelector('summary');
-    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all income' : 'Alle Einnahmen ausklappen oder einklappen');
-  }
-  const sumInc = document.getElementById('details-income-summary-text');
-  if (sumInc) sumInc.textContent = isEn ? 'Show all income (with date, edit & delete)' : 'Alle Einnahmen anzeigen (mit Datum, Bearbeiten & Löschen)';
-
-  const sumExpDetails = document.getElementById('details-expense-list');
-  if (sumExpDetails) {
-    const summ = sumExpDetails.querySelector('summary');
-    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all expenses' : 'Alle Ausgaben ausklappen oder einklappen');
-  }
-  const sumExp = document.getElementById('details-expense-summary-text');
-  if (sumExp) sumExp.textContent = isEn ? 'Show all expenses (with date, edit & delete)' : 'Alle Ausgaben anzeigen (mit Datum, Bearbeiten & Löschen)';
-
-  const sumTrfDetails = document.getElementById('details-transfer-list');
-  if (sumTrfDetails) {
-    const summ = sumTrfDetails.querySelector('summary');
-    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all transfers and savings plans' : 'Alle Umbuchungen und Sparpläne ausklappen oder einklappen');
-  }
-  const sumTrf = document.getElementById('details-transfer-summary-text');
-  if (sumTrf) sumTrf.textContent = isEn ? 'Show all transfers & savings plans' : 'Alle Umbuchungen & Sparpläne anzeigen';
-
-  const peerHead = document.getElementById('section-peer-loans-heading');
-  if (peerHead) peerHead.textContent = isEn ? '🤝 Borrowed & Lent Money (Personal Loans)' : '🤝 Geliehenes & Verliehenes Geld (Privatkredite)';
-  const peerDetails = document.getElementById('details-peer-loans-list');
-  if (peerDetails) {
-    const summ = peerDetails.querySelector('summary');
-    if (summ) summ.setAttribute('aria-label', isEn ? 'Expand or collapse all borrowed and lent amounts' : 'Alle geliehenen und verliehenen Beträge ausklappen oder einklappen');
-  }
-  const peerSummText = document.getElementById('details-peer-loans-summary-text');
-  if (peerSummText) peerSummText.textContent = isEn ? 'Show open debts & receivables' : 'Offene Schulden & Forderungen anzeigen';
-  const peerBtn = document.getElementById('peer-loan-new-entry-btn');
-  if (peerBtn) {
-    peerBtn.textContent = isEn ? '➕ New Entry' : '➕ Neuer Eintrag';
-    peerBtn.setAttribute('aria-label', isEn ? 'Add new borrowed or lent money' : 'Neues geliehenes oder verliehenes Geld eintragen');
+  // 8. Update Account Filter Option 0
+  const accSel = document.getElementById('tx-filter-account');
+  if (accSel && accSel.options && accSel.options[0]) {
+    accSel.options[0].textContent = cleanSymbols(isEn ? 'All Accounts' : 'Alle Konten');
   }
 
-  // Currency breakdown card title
-  const currBreakHead = document.getElementById('heading-curr-breakdown');
-  if (currBreakHead) currBreakHead.textContent = isEn ? '💱 Amounts broken down by currency:' : '💱 Beträge nach Währungen aufgeteilt:';
-
-  // Multi-month table headers
-  const thMonth = document.getElementById('annual-table-th-month');
-  if (thMonth) thMonth.textContent = isEn ? 'Month' : 'Monat';
-  const thInc = document.getElementById('annual-table-th-inc');
-  if (thInc) thInc.textContent = isEn ? 'Income' : 'Einnahmen';
-  const thExp = document.getElementById('annual-table-th-exp');
-  if (thExp) thExp.textContent = isEn ? 'Expenses' : 'Ausgaben';
-  const thResult = document.getElementById('annual-table-th-result');
-  if (thResult) thResult.textContent = isEn ? 'Result (Plus / Minus)' : 'Ergebnis (Plus / Minus)';
-  const thStatus = document.getElementById('annual-table-th-status');
-  if (thStatus) thStatus.textContent = isEn ? 'Status' : 'Status';
-
-  // View 2: Expense
-  const expHeading = document.getElementById('heading-expense-view');
-  if (expHeading) expHeading.textContent = isEn ? '🔴 Add / Plan Expense' : '🔴 Ausgabe eintragen oder für die Zukunft planen';
-  const expSub = document.getElementById('sub-expense-view');
-  if (expSub) expSub.innerHTML = isEn ? 'Record expenses or <strong>planned purchases for the future</strong> here.' : 'Trage hier getätigte Ausgaben oder <strong>geplante Anschaffungen für die Zukunft</strong> ein.';
-  const btnSaveExp = document.getElementById('btn-submit-expense');
-  if (btnSaveExp) {
-    const sp = btnSaveExp.querySelector('span');
-    if (sp) sp.innerHTML = isEn ? '🔴 <strong>Save Expense / Planned Purchase</strong> (Enter)' : '🔴<strong>Ausgabe / Geplanten Kauf speichern</strong>(Enter)';
-  }
-  const btnBackExp = document.getElementById('btn-back-expense');
-  if (btnBackExp) {
-    const sp = btnBackExp.querySelector('span');
-    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
-  }
-  const btnExpToday = document.getElementById('btn-exp-date-today');
-  if (btnExpToday) {
-    btnExpToday.textContent = isEn ? 'Today' : 'Heute';
-    btnExpToday.setAttribute('aria-label', isEn ? 'Set expense date to Today' : 'Ausgabedatum auf Heute setzen');
-  }
-  const btnExpYest = document.getElementById('btn-exp-date-yesterday');
-  if (btnExpYest) {
-    btnExpYest.textContent = isEn ? 'Yesterday' : 'Gestern';
-    btnExpYest.setAttribute('aria-label', isEn ? 'Set expense date to Yesterday' : 'Ausgabedatum auf Gestern setzen');
+  // 9. Update Frequency Dropdowns
+  const freqOptions = isEn ? [
+    { val: 'once', text: 'One-time (paid immediately)' },
+    { val: 'once_planned', text: '🎯 Planned one-time future expense' },
+    { val: 'weekly', text: '📅 Weekly (Every week)' },
+    { val: 'monthly', text: '📅 Monthly (Every month)' },
+    { val: 'quarterly', text: '🔄 Every 3 months (Quarterly)' },
+    { val: 'halfyearly', text: '📈 Every 6 months (Half-yearly)' },
+    { val: 'yearly', text: '🗓 Yearly (Once a year)' },
+    { val: 'installment', text: '💳 Installment / Financing / Loan' }
+  ] : [
+    { val: 'once', text: 'Einmalig (sofort bezahlt)' },
+    { val: 'once_planned', text: '🎯 Geplante einmalige Zukunftsausgabe' },
+    { val: 'weekly', text: '📅 Wöchentlich (Jede Woche)' },
+    { val: 'monthly', text: '📅 Monatlich (Jeden Monat)' },
+    { val: 'quarterly', text: '🔄 Alle 3 Monate (Quartalsweise)' },
+    { val: 'halfyearly', text: '📈 Alle 6 Monate (Halbjährlich)' },
+    { val: 'yearly', text: '🗓 Jährlich (1x im Jahr)' },
+    { val: 'installment', text: '💳 Ratenkauf / Finanzierung / Kredit' }
+  ];
+  const expFreqSel = document.getElementById('exp-frequency');
+  if (expFreqSel) {
+    const curVal = expFreqSel.value;
+    expFreqSel.innerHTML = freqOptions.map(o => `<option value="${o.val}">${cleanSymbols(o.text)}</option>`).join('');
+    expFreqSel.value = curVal;
   }
 
-  // View 3: Income
-  const incHeading = document.getElementById('heading-income-view');
-  if (incHeading) incHeading.textContent = isEn ? '🟢 Add / Plan Income' : '🟢 Einnahme eintragen oder für die Zukunft planen';
-  const incSub = document.getElementById('sub-income-view');
-  if (incSub) incSub.innerHTML = isEn ? 'Record money received or expected in a future month.' : 'Trage hier Geld ein, das du bekommen hast (oder das du in einem Zukunfts-Monat erwartest).';
-  const btnSaveInc = document.getElementById('btn-submit-income');
-  if (btnSaveInc) {
-    const sp = btnSaveInc.querySelector('span');
-    if (sp) sp.innerHTML = isEn ? '🟢 <strong>Save Income</strong> (Enter)' : '🟢<strong>Einnahme speichern</strong>(Enter)';
-  }
-  const btnBackInc = document.getElementById('btn-back-income');
-  if (btnBackInc) {
-    const sp = btnBackInc.querySelector('span');
-    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
-  }
-  const btnIncToday = document.getElementById('btn-inc-date-today');
-  if (btnIncToday) {
-    btnIncToday.textContent = isEn ? 'Today' : 'Heute';
-    btnIncToday.setAttribute('aria-label', isEn ? 'Set income date to Today' : 'Einnahmedatum auf Heute setzen');
-  }
-  const btnIncYest = document.getElementById('btn-inc-date-yesterday');
-  if (btnIncYest) {
-    btnIncYest.textContent = isEn ? 'Yesterday' : 'Gestern';
-    btnIncYest.setAttribute('aria-label', isEn ? 'Set income date to Yesterday' : 'Einnahmedatum auf Gestern setzen');
-  }
-
-  // View 4: Transfer
-  const trfHeading = document.getElementById('heading-transfer-view');
-  if (trfHeading) trfHeading.textContent = isEn ? '🔄 Transfer & Savings' : '🔄 Geld umbuchen & auf anderes Konto sparen';
-  const trfSub = document.getElementById('sub-transfer-view');
-  if (trfSub) trfSub.textContent = isEn ? 'Transfer money between accounts – either immediately or as a monthly savings plan.' : 'Verschiebe Geld zwischen deinen Konten – entweder sofort oder als geplanter monatlicher Sparplan.';
-  const btnSaveTrf = document.getElementById('btn-submit-transfer');
-  if (btnSaveTrf) {
-    const sp = btnSaveTrf.querySelector('span');
-    if (sp) sp.innerHTML = isEn ? '🔄 <strong>Save Transfer / Savings Plan</strong> (Enter)' : '🔄<strong>Umbuchung / Sparplan speichern</strong>(Enter)';
-  }
-  const btnBackTrf = document.getElementById('btn-back-transfer');
-  if (btnBackTrf) {
-    const sp = btnBackTrf.querySelector('span');
-    if (sp) sp.textContent = isEn ? 'Back to Overview' : 'Zurück zur Übersicht';
-  }
-
-  // View 5: Settings
-  const headingSettings = document.getElementById('heading-settings-view');
-  if (headingSettings) headingSettings.textContent = dict.settingsHeading;
-  const themeHead = document.getElementById('theme-settings-heading');
-  if (themeHead) themeHead.textContent = isEn ? 'Appearance, Theme & Font Size' : 'Darstellung, Design & Schriftgröße';
-  const themeHint = document.getElementById('theme-settings-hint');
-  if (themeHint) themeHint.textContent = isEn ? 'Customize the theme and font size for your eyes:' : 'Passe hier das Design und die Schriftgröße für deine Augen an:';
-  const lblSettingsLang = document.getElementById('lbl-settings-language');
-  if (lblSettingsLang) lblSettingsLang.innerHTML = '<strong>' + dict.settingsLangLabel + '</strong>';
-  const lblSettingsTheme = document.getElementById('lbl-settings-theme');
-  if (lblSettingsTheme) lblSettingsTheme.innerHTML = '<strong>' + dict.settingsThemeLabel + '</strong>';
-  const lblSettingsFont = document.getElementById('lbl-settings-fontsize');
-  if (lblSettingsFont) lblSettingsFont.innerHTML = '<strong>' + dict.settingsFontLabel + '</strong>';
-  const lblSettingsSym = document.getElementById('lbl-settings-symbols');
-  if (lblSettingsSym) lblSettingsSym.innerHTML = '<strong>' + dict.settingsSymbolsLabel + '</strong>';
-  const hintSettingsSym = document.getElementById('hint-settings-symbols');
-  if (hintSettingsSym) hintSettingsSym.textContent = dict.settingsSymbolsHint;
-  const lblSettingsCurr = document.getElementById('lbl-settings-currency');
-  if (lblSettingsCurr) lblSettingsCurr.innerHTML = isEn ? '<strong>💱 Standard Currency / Currency:</strong>' : '<strong>💱 Standard-Währung / Currency:</strong>';
-
+  // 10. Update Language Select
   const langSel = document.getElementById('settings-language-select');
   if (langSel) {
     langSel.value = getCurrentLanguagePreference();
   }
 
-  // Settings category tabs
-  const catBtnAll = document.getElementById('set-cat-btn-all');
-  if (catBtnAll) catBtnAll.innerHTML = isEn ? '<span>📂 <strong>Show All</strong></span>' : '<span>📂 <strong>Alle anzeigen</strong></span>';
-  const catBtnSec = document.getElementById('set-cat-btn-security');
-  if (catBtnSec) catBtnSec.innerHTML = isEn ? '<span>🛡️ <strong>Security &amp; Vault</strong></span>' : '<span>🛡️ <strong>Sicherheit &amp; Tresor</strong></span>';
-  const catBtnDes = document.getElementById('set-cat-btn-design');
-  if (catBtnDes) catBtnDes.innerHTML = isEn ? '<span>🎨 <strong>Appearance &amp; Theme</strong></span>' : '<span>🎨 <strong>Darstellung &amp; Design</strong></span>';
-  const catBtnBac = document.getElementById('set-cat-btn-backup');
-  if (catBtnBac) catBtnBac.innerHTML = isEn ? '<span>💾 <strong>Backup &amp; Import</strong></span>' : '<span>💾 <strong>Datensicherung &amp; Import</strong></span>';
-  const catBtnBud = document.getElementById('set-cat-btn-budgets');
-  if (catBtnBud) catBtnBud.innerHTML = isEn ? '<span>🎯 <strong>Monthly Budgets</strong></span>' : '<span>🎯 <strong>Monats-Budgets</strong></span>';
-  const catBtnCat = document.getElementById('set-cat-btn-categories');
-  if (catBtnCat) catBtnCat.innerHTML = isEn ? '<span>🏷️ <strong>Custom Categories</strong></span>' : '<span>🏷️ <strong>Eigene Kategorien</strong></span>';
-  const catBtnSys = document.getElementById('set-cat-btn-system');
-  if (catBtnSys) catBtnSys.innerHTML = isEn ? '<span>📜 <strong>Info &amp; System</strong></span>' : '<span>📜 <strong>Info &amp; System</strong></span>';
+  // 11. Update Today Date display
+  if (typeof updateTodayDisplay === 'function') {
+    updateTodayDisplay();
+  }
 
-  // View 6: Accounts
-  const accViewHeading = document.getElementById('heading-accounts-view');
-  if (accViewHeading) accViewHeading.innerHTML = isEn ? '💳 Accounts &amp; Options' : '💳 Konto-Optionen &amp; Konten verwalten';
-
-  // View 7: Wishlist
-  const wishViewHeading = document.getElementById('heading-wishlist-view');
-  if (wishViewHeading) wishViewHeading.innerHTML = isEn ? '🎁 Wishlist &amp; Savings Goals' : '🎁 Wunschliste, Sparziele &amp; Anschaffungen';
-
-  // View 8: Shopping
-  const shopViewHeading = document.getElementById('heading-shopping-view');
-  if (shopViewHeading) shopViewHeading.innerHTML = isEn ? '🛒 Shopping List &amp; Checklist' : '🛒 Einkaufsliste &amp; Checkliste';
-
-  // View 9: Sync
-  const syncViewHeading = document.getElementById('heading-sync-view');
-  if (syncViewHeading) syncViewHeading.innerHTML = isEn ? '📱 Smartphone Sync (E2E)' : '📱 Smartphone-Sync (E2E)';
-
-  // Currency Converter Section
-  const convHead = document.getElementById('heading-currency-converter');
-  if (convHead) convHead.textContent = isEn ? 'Currency Converter & Exchange (Euro, Dollar, DM, Schilling...)' : 'Währungsrechner & Umrechnung (Euro, Dollar, DM, Schilling...)';
-  const convHint = document.getElementById('hint-currency-converter');
-  if (convHint) convHint.textContent = isEn ? 'Convert any amount instantly between modern and historical currencies (e.g. Deutsche Mark, Schilling, Franc):' : 'Rechne hier beliebige Beträge blitzschnell zwischen modernen Hauptwährungen und historischen Währungen (z. B. Deutsche Mark, Schilling, Franc) um:';
-  const lblConvAmt = document.getElementById('lbl-calc-curr-amount');
-  if (lblConvAmt) lblConvAmt.innerHTML = isEn ? '<strong>Amount:</strong>' : '<strong>Betrag:</strong>';
-  const lblConvFrom = document.getElementById('lbl-calc-curr-from');
-  if (lblConvFrom) lblConvFrom.innerHTML = isEn ? '<strong>From Currency (Source):</strong>' : '<strong>Von Währung (Quelle):</strong>';
-  const lblConvTo = document.getElementById('lbl-calc-curr-to');
-  if (lblConvTo) lblConvTo.innerHTML = isEn ? '<strong>To Currency (Target):</strong>' : '<strong>In Währung (Ziel):</strong>';
-
-  // Footer
-  const footerVer = document.getElementById('footer-version-text');
-  if (footerVer) footerVer.textContent = isEn ? 'Accessible Finances ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Encryption & Shopping List. Optimized for NVDA.' : 'Barrierefreie Finanzen ' + CURRENT_APP_VERSION + ' – 100% Offline, AES-256 Verschlüsselung & Einkaufsliste. Optimiert für NVDA.';
-  const footerShort = document.getElementById('footer-shortcuts-text');
-  if (footerShort) footerShort.textContent = isEn ? 'Keyboard shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= To Today | L= Quick Lock' : 'Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre';
-
-  // Refresh currency hints for current view
+  // 12. Refresh Currency Hints
   if (typeof updateExpenseCurrencyHint === 'function') updateExpenseCurrencyHint();
   if (typeof updateIncomeCurrencyHint === 'function') updateIncomeCurrencyHint();
 
-  // Sub Time Navigation
+  // 13. Sub Time Navigation
   if (typeof renderSubTimeNavigation === 'function') {
     renderSubTimeNavigation();
   }
 
-  // Update Overview
+  // 14. Update Overview
   if (currentActiveView === 'overview' && typeof updateOverview === 'function') {
     updateOverview();
+  }
+
+  // 15. Sanitize text nodes if symbols are off
+  if (!isSymbolsEnabled()) {
+    sanitizeDomTextNodesForSymbols(document.body);
   }
 }
 
@@ -633,6 +1007,66 @@ function changeLanguage(langVal) {
 function initLanguage() {
   applyAppLanguage();
 }
+
+function applySymbolsDisplay(show) {
+  try { localStorage.setItem(STORAGE_SHOW_SYMBOLS_KEY, show ? 'true' : 'false'); } catch(e) {}
+
+  document.body.classList.toggle('hide-symbols', !show);
+  document.body.classList.toggle('show-symbols', show);
+
+  const chk = document.getElementById('settings-show-symbols');
+  if (chk) chk.checked = show;
+
+  // 1. Manage data-emoji elements
+  const emojiTargets = document.querySelectorAll('[data-emoji]');
+  emojiTargets.forEach(el => {
+    const icon = el.getAttribute('data-emoji');
+    if (!icon) return;
+    el.querySelectorAll('.emoji-icon').forEach(s => s.remove());
+    if (show) {
+      const span = document.createElement('span');
+      span.className = 'emoji-icon';
+      span.setAttribute('aria-hidden', 'true');
+      span.textContent = icon + ' ';
+      el.insertBefore(span, el.firstChild);
+    }
+  });
+
+  // 2. Remove icons if hiding
+  if (!show) {
+    document.querySelectorAll('.emoji-icon, .tx-icon, .lock-icon, .stat-icon, .symbol-tag, .symbol-icon').forEach(el => {
+      el.remove();
+    });
+  }
+
+  // 3. Re-run language translation with cleanSymbols
+  applyAppLanguage();
+
+  // 4. Sanitize text nodes across the entire document
+  if (!show) {
+    sanitizeDomTextNodesForSymbols(document.body);
+  }
+
+  // 5. Update options
+  const selects = document.querySelectorAll('select');
+  selects.forEach(sel => {
+    if (typeof applySymbolsToOptions === 'function') applySymbolsToOptions(sel);
+  });
+
+  // 6. Re-render dynamic views
+  if (typeof updateOverview === 'function') updateOverview();
+  if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
+  if (typeof renderWishlist === 'function') renderWishlist();
+  if (typeof renderShoppingList === 'function') renderShoppingList();
+  if (typeof renderOverviewPeerLoans === 'function') renderOverviewPeerLoans();
+  if (typeof renderSubTimeNavigation === 'function') renderSubTimeNavigation();
+}
+
+function toggleSymbolsDisplay(show) {
+  applySymbolsDisplay(show);
+  announceNVDA(show ? tMsg('symbolsEnabledMsg') : tMsg('symbolsDisabledMsg'), true);
+}
+
 
 // =============================================================================
 // CURRENCY ENGINE & WECHSELKURSE (MODERN & HISTORISCH)
@@ -2403,7 +2837,7 @@ async function clearDoneShoppingItems() {
   ensureShoppingListInitialized();
   const doneItems = appState.shoppingList.filter(i => i.checked);
   if (doneItems.length === 0) {
-    alert('Es gibt keine abgehakten Artikel zum Aufräumen.');
+    alert(tMsg('shoppingNoDone'));
     return;
   }
 
@@ -2418,11 +2852,11 @@ async function clearDoneShoppingItems() {
 async function clearEntireShoppingList() {
   ensureShoppingListInitialized();
   if (appState.shoppingList.length === 0) {
-    alert('Die Einkaufsliste ist bereits leer.');
+    alert(tMsg('shoppingAlreadyEmpty'));
     return;
   }
 
-  if (!confirm('Möchtest du wirklich alle Artikel von der Einkaufsliste löschen?')) {
+  if (!confirm(tMsg('shoppingClearConfirm'))) {
     return;
   }
 
@@ -2436,7 +2870,7 @@ async function clearEntireShoppingList() {
 function copyShoppingListAsText() {
   ensureShoppingListInitialized();
   if (appState.shoppingList.length === 0) {
-    alert('Die Einkaufsliste ist leer. Es gibt nichts zu kopieren.');
+    alert(tMsg('shoppingNothingToCopy'));
     return;
   }
 
@@ -2464,7 +2898,7 @@ function copyShoppingListAsText() {
 
   const fullText = lines.join('\n');
   navigator.clipboard.writeText(fullText).then(() => {
-    alert('✅ Einkaufsliste wurde in die Zwischenablage kopiert! Du kannst sie jetzt z. B. in WhatsApp mit Strg+V einfügen.');
+    alert(tMsg('shoppingCopied'));
     announceNVDA('Einkaufsliste in Zwischenablage kopiert.');
   }).catch(err => {
     console.warn('Clipboard write failed:', err);
@@ -2509,9 +2943,9 @@ async function handleShoppingPasteSubmit(e) {
   closeShoppingPasteModal();
 
   if (addedCount > 0) {
-    alert(`✅ ${addedCount} Artikel wurden erfolgreich auf deine Einkaufsliste gesetzt!`);
+    alert(tMsg('shoppingAddedCount', addedCount));
   } else {
-    alert('Es konnten keine Artikel im eingegebenen Text erkannt werden. Bitte überprüfe den Text.');
+    alert(tMsg('shoppingNoItemsFound'));
   }
 }
 
@@ -2706,7 +3140,7 @@ function openShoppingBookModal() {
   ensureShoppingListInitialized();
   const allItems = appState.shoppingList;
   if (allItems.length === 0) {
-    alert('Deine Einkaufsliste ist leer. Füge zuerst Artikel hinzu.');
+    alert(tMsg('shoppingEmptyBeforeBooking'));
     return;
   }
 
@@ -2761,7 +3195,7 @@ async function handleConfirmShoppingBooking(e) {
 
   const amount = parseFloat(amtInput.value);
   if (isNaN(amount) || amount <= 0) {
-    alert('Bitte gib einen gültigen Kassenbetrag größer als 0 € ein.');
+    alert(tMsg('shoppingInvalidAmount'));
     return;
   }
 
@@ -2805,7 +3239,7 @@ async function handleConfirmShoppingBooking(e) {
 
   const accName = formatAccountName(accountId);
   announceNVDA(`Einkauf über ${formatCurrency(amount)} auf Konto ${accName} erfolgreich abgebucht!`);
-  alert(`✅ Der Einkauf über ${formatCurrency(amount)} (${subcategory}) wurde erfolgreich im Haushaltsbuch abgebucht!`);
+  alert(tMsg('shoppingBookedSuccess', formatCurrency(amount), subcategory));
 }
 
 // Backwards compatibility aliases
@@ -3129,7 +3563,7 @@ async function handleDeleteWish(wishId) {
   ensureWishlistInitialized();
   const wish = appState.wishlist.find(w => w.id === wishId);
   if (!wish) return;
-  if (!confirm(`Möchtest du den Wunsch "${wish.title}" wirklich löschen?`)) return;
+  if (!confirm(tMsg('wishDeleteConfirm', wish.title))) return;
 
   appState.wishlist = appState.wishlist.filter(w => w.id !== wishId);
   trackDeletedEntity('wishlist', wishId);
@@ -3171,7 +3605,7 @@ function parseAndPreviewBankCsv(csvText) {
   parsedCsvTransactions = [];
   const lines = csvText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
   if (lines.length < 2) {
-    alert('Die CSV-Datei enthält keine Buchungszeilen.');
+    alert(tMsg('csvNoLines'));
     return;
   }
 
@@ -3239,7 +3673,7 @@ function parseAndPreviewBankCsv(csvText) {
   }
 
   if (parsedCsvTransactions.length === 0) {
-    alert('Es konnten keine gültigen Buchungszeilen in der CSV-Datei erkannt werden.');
+    alert(tMsg('csvNoValidLines'));
     return;
   }
 
@@ -3333,7 +3767,7 @@ function closeCsvPreviewModal() {
 async function confirmCsvImport() {
   const toImport = parsedCsvTransactions.filter(t => t.selected);
   if (toImport.length === 0) {
-    alert('Bitte wähle mindestens eine Buchung zum Importieren aus.');
+    alert(tMsg('csvSelectAtLeastOne'));
     return;
   }
 
@@ -3357,7 +3791,7 @@ async function confirmCsvImport() {
   closeCsvPreviewModal();
   updateOverview();
   announceNVDA(`${toImport.length} Buchungen erfolgreich importiert!`);
-  alert(`✅ Erfolgreich ${toImport.length} Buchungen aus dem Bank-Kontoauszug importiert!`);
+  alert(tMsg('csvImportSuccess', toImport.length));
 }
 
 // ----------------------------------------------------------------------------
@@ -4324,15 +4758,7 @@ function onEditTxDateChange() {
 
 /* CATEGORY_ICONS moved to top */
 
-function isSymbolsEnabled() {
-  const val = localStorage.getItem(STORAGE_SHOW_SYMBOLS_KEY);
-  return val !== 'false';
-}
-
-function sym(emoji) {
-  if (!isSymbolsEnabled()) return '';
-  return '<span class="emoji-icon" aria-hidden="true">' + emoji + ' </span>';
-}
+// (isSymbolsEnabled moved to top engine)
 
 function applySymbolsToOptions(selectEl) {
   if (!selectEl) return;
@@ -4351,55 +4777,7 @@ function applySymbolsToOptions(selectEl) {
   });
 }
 
-function applySymbolsDisplay(show) {
-  try { localStorage.setItem(STORAGE_SHOW_SYMBOLS_KEY, show ? 'true' : 'false'); } catch(e) {}
-
-  document.body.classList.toggle('hide-symbols', !show);
-  document.body.classList.toggle('show-symbols', show);
-
-  const chk = document.getElementById('settings-show-symbols');
-  if (chk) chk.checked = show;
-
-  // 1. Elemente mit data-emoji verwalten
-  const emojiTargets = document.querySelectorAll('[data-emoji]');
-  emojiTargets.forEach(el => {
-    const icon = el.getAttribute('data-emoji');
-    if (!icon) return;
-    
-    el.querySelectorAll('.emoji-icon').forEach(s => s.remove());
-    
-    if (show) {
-      const span = document.createElement('span');
-      span.className = 'emoji-icon';
-      span.setAttribute('aria-hidden', 'true');
-      span.textContent = icon + ' ';
-      el.insertBefore(span, el.firstChild);
-    }
-  });
-
-  // 2. Alle .emoji-icon, .tx-icon, .lock-icon, .stat-icon, .symbol-tag Elemente im DOM
-  if (!show) {
-    document.querySelectorAll('.emoji-icon, .tx-icon, .lock-icon, .stat-icon, .symbol-tag').forEach(el => {
-      el.remove();
-    });
-  }
-
-  renderAccountsViewList();
-  // 3. Dropdowns aktualisieren
-  const selects = document.querySelectorAll('select');
-  selects.forEach(sel => applySymbolsToOptions(sel));
-}
-
-function toggleSymbolsDisplay(show) {
-  applySymbolsDisplay(show);
-  announceNVDA(show ? 'Symbole und Emojis werden angezeigt.' : 'Symbole und Emojis wurden ausgeschaltet. Reiner Textmodus aktiv.');
-}
-
-// ============================================================================
-// 1c. ZWEISTUFIGE KATEGORIE-DATENBANK (REINE TEXT-SCHLÜSSEL)
-// ============================================================================
-
-/* CATEGORIES_DB moved to top */
+// (applySymbolsDisplay moved to top engine)
 
 function mergeCustomCategoriesIntoDB() {
   if (!appState || !appState.customCategories) {
@@ -5109,16 +5487,19 @@ function startHeartbeat() {
 
 function updateTodayDisplay() {
   const now = new Date();
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const locale = lang === 'en' ? 'en-US' : 'de-DE';
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const formatted = now.toLocaleDateString('de-DE', options);
+  const formatted = now.toLocaleDateString(locale, options);
   const badge = document.getElementById('today-date-text');
-  if (badge) badge.textContent = formatted;
+  if (badge) badge.textContent = cleanSymbols(formatted);
 }
 
 // ----------------------------------------------------------------------------
 // 3. BARRIEREFREIE NVDA SCREENREADER ANKÜNDIGUNGEN
 // ----------------------------------------------------------------------------
 function announceNVDA(message, assertive = false) {
+  message = cleanSymbols(message);
   const regionId = assertive ? 'sr-live-assertive' : 'sr-live';
   const region = document.getElementById(regionId);
   if (!region) return;
@@ -11234,9 +11615,11 @@ function switchView(viewName, announce = true) {
   const timeBar = document.getElementById('time-picker-bar');
   if (timeBar) timeBar.style.display = viewName === 'overview' ? 'block' : 'none';
 
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  const isEn = lang === 'en';
   if (viewName === 'overview') {
     updateOverview();
-    if (announce) announceNVDA('Übersicht geöffnet.');
+    if (announce) announceNVDA(isEn ? 'Overview opened.' : 'Übersicht geöffnet.');
   } else if (viewName === 'expense') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
@@ -11248,7 +11631,7 @@ function switchView(viewName, announce = true) {
     const expDate = document.getElementById('exp-date');
     if (expDate && !expDate.value) expDate.value = new Date().toISOString().split('T')[0];
     if (expAmount) expAmount.focus();
-    announceNVDA('Ausgabe eintragen geöffnet.');
+    announceNVDA(isEn ? 'Add expense opened.' : 'Ausgabe eintragen geöffnet.');
   } else if (viewName === 'income') {
     populateCategoriesDropdowns();
     populateAllAccountDropdowns();
@@ -11260,7 +11643,7 @@ function switchView(viewName, announce = true) {
     const incDate = document.getElementById('inc-date');
     if (incDate && !incDate.value) incDate.value = new Date().toISOString().split('T')[0];
     if (incAmount) incAmount.focus();
-    announceNVDA('Einnahme eintragen geöffnet.');
+    announceNVDA(isEn ? 'Add income opened.' : 'Einnahme eintragen geöffnet.');
   } else if (viewName === 'transfer') {
     populateAllAccountDropdowns();
     const trfDate = document.getElementById('trf-date');
@@ -11274,7 +11657,7 @@ function switchView(viewName, announce = true) {
     renderBudgetsList();
     renderSettingsInstallmentsList();
     updateKeyFileUI();
-    announceNVDA('Einstellungen geöffnet.');
+    announceNVDA(isEn ? 'Settings opened.' : 'Einstellungen geöffnet.');
   } else if (viewName === 'accounts') {
     renderAccountsViewList();
     populateSavingPotParentDropdown();
@@ -11388,7 +11771,7 @@ async function toggleRequireKeyFile() {
       if (fileInput) fileInput.focus();
       return;
     }
-    if (!confirm('🔒 Möchtest du den Schlüsseldatei-Zwang aktivieren?\n\nDein Tresor lässt sich künftig NUR NOCH öffnen, wenn PIN UND die Schlüsseldatei gleichzeitig vorhanden sind!\n\nFortfahren?')) {
+    if (!confirm(tMsg('keyfileEnforceEnable'))) {
       return;
     }
     localStorage.setItem('haushaltsbuch_requires_keyfile', 'true');
@@ -11396,7 +11779,7 @@ async function toggleRequireKeyFile() {
     updateKeyFileUI();
     if (typeof announceNVDA === 'function') announceNVDA('Schlüsseldatei-Zwang erfolgreich aktiviert.');
   } else {
-    if (!confirm('🔓 Möchtest du den Schlüsseldatei-Zwang wirklich deaktivieren?\n\nDer Tresor wird künftig wieder allein durch deine PIN geschützt.\n\nFortfahren?')) {
+    if (!confirm(tMsg('keyfileEnforceDisable'))) {
       return;
     }
     localStorage.removeItem('haushaltsbuch_requires_keyfile');
@@ -11997,7 +12380,7 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
 
     if (typeof BiometricAuth !== 'undefined' && BiometricAuth.isSupported && !localStorage.getItem('haushaltsbuch_bio_token') && !isFromBio) {
       setTimeout(() => {
-        if (confirm('👆 Möchtest du die Fingerabdruck-Entsperrung für dein Smartphone aktivieren, um künftig ohne PIN-Eingabe zu öffnen?')) {
+        if (confirm(tMsg('biometricsConfirm'))) {
           BiometricAuth.enable(enteredPin);
         }
       }, 1200);
@@ -12222,7 +12605,7 @@ async function handleChangePin(e) {
 }
 
 function resetAllAppData() {
-  if (confirm('WARNUNG: Möchtest du wirklich ALLE deine Finanzdaten und die PIN unwiderruflich löschen?')) {
+  if (confirm(tMsg('gdprDeleteConfirm'))) {
     localStorage.removeItem(STORAGE_DATA_KEY);
     localStorage.removeItem(STORAGE_SALT_KEY);
     localStorage.removeItem(STORAGE_ATTEMPTS_KEY);
@@ -12464,8 +12847,12 @@ function formatDateGerman(dateStr) {
   if (!dateStr) return '';
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDate();
-  const m = MONTH_NAMES[d.getMonth()];
+  const m = (typeof MONTH_NAMES !== 'undefined' && MONTH_NAMES[d.getMonth()]) ? MONTH_NAMES[d.getMonth()] : (d.getMonth() + 1);
   const y = d.getFullYear();
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
+  if (lang === 'en') {
+    return `${m} ${day}, ${y}`;
+  }
   return `${day}. ${m} ${y}`;
 }
 
@@ -13015,7 +13402,7 @@ function switchViewToTransferForPot(potId) {
 }
 
 async function handleDeleteSavingPot(potId) {
-  if (!confirm('Möchtest du diesen Spartopf wirklich löschen?')) return;
+  if (!confirm(tMsg('potDeleteConfirm'))) return;
   appState.savingPots = (appState.savingPots || []).filter(p => p.id !== potId);
   trackDeletedEntity('savingPots', potId);
   await saveStateToEncryptedStorage();
@@ -14733,7 +15120,7 @@ function getConnectedTime() {
 
 function removeSinglePairedDevice(deviceName) {
   if (!deviceName) return;
-  if (!confirm(`Möchtest du das Gerät "${deviceName}" wirklich aus der Kopplungsliste entfernen?`)) {
+  if (!confirm(tMsg('deviceRemoveConfirm', deviceName))) {
     return;
   }
   if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.removePairedDevice === 'function') {
