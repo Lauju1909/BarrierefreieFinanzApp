@@ -11421,6 +11421,7 @@ function renderAccountsViewList() {
   const container = document.getElementById('tab-accounts-list');
   if (!container) return;
 
+  const isEn = (typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de') === 'en';
   const show = isSymbolsEnabled();
   const todayStr = new Date().toISOString().split('T')[0];
   const currentBalances = calculateBalancesUpToDate(todayStr);
@@ -19960,17 +19961,23 @@ async function saveStateToEncryptedStorage() {
 
 
 function unlockApp() {
-  mergeCustomCategoriesIntoDB();
-  populateCategoriesDropdowns();
-  populateAllAccountDropdowns();
-  populateBudgetCategoryDropdown();
-  populateShoppingDropdowns();
-  renderShoppingCart();
-  renderAccountsViewList();
+  // 1. Zuerst Sperrbildschirm sofort ausblenden und Hauptbereich anzeigen
   const lockScreen = document.getElementById('lock-screen');
   const appWrapper = document.getElementById('app-wrapper');
   if (lockScreen) lockScreen.style.display = 'none';
   if (appWrapper) appWrapper.style.display = 'block';
+
+  try {
+    mergeCustomCategoriesIntoDB();
+    populateCategoriesDropdowns();
+    populateAllAccountDropdowns();
+    populateBudgetCategoryDropdown();
+    populateShoppingDropdowns();
+    renderShoppingCart();
+    renderAccountsViewList();
+  } catch (renderErr) {
+    console.error('Fehler beim Laden der Ansichten nach dem Entsperren:', renderErr);
+  }
 
   switchView('overview');
   resetInactivityTimer();
