@@ -1,7 +1,7 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
-const CURRENT_APP_VERSION = 'v6.9.39';
+const CURRENT_APP_VERSION = 'v6.9.41';
 
 const _nativeParseFloat = globalThis.parseFloat;
 function parseEuroInput(val) {
