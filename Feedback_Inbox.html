@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📬 Feedback &amp; Kategorie-Zentrale</title>
+  <title>📬 Gesamt-Feedback &amp; Ideen-Zentrale – Lauju Apps</title>
   <style>
     :root {
       --bg: #F4F7FB;
@@ -19,6 +19,8 @@
       --badge-feedback-text: #5E35B1;
       --badge-cat: #FFF3E0;
       --badge-cat-text: #E65100;
+      --badge-app-bg: #E3F2FD;
+      --badge-app-text: #0D47A1;
     }
     body.theme-dark {
       --bg: #121212;
@@ -34,6 +36,8 @@
       --badge-feedback-text: #D1C4E9;
       --badge-cat: #E65100;
       --badge-cat-text: #FFE0B2;
+      --badge-app-bg: #0D47A1;
+      --badge-app-text: #E3F2FD;
     }
     body {
       font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -45,7 +49,7 @@
       line-height: 1.5;
     }
     .container {
-      max-width: 920px;
+      max-width: 960px;
       margin: 0 auto;
     }
     header {
@@ -57,7 +61,7 @@
       border-radius: 12px;
       border: 2px solid var(--border);
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       flex-wrap: wrap;
       gap: 12px;
     }
@@ -122,6 +126,70 @@
       box-shadow: 0 4px 12px rgba(0,0,0,0.06);
       margin-bottom: 20px;
     }
+    /* App Filter Bar */
+    .filter-panel {
+      background: var(--card);
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      padding: 16px 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+    }
+    .filter-label {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--sub);
+      margin-bottom: 10px;
+      display: block;
+    }
+    .app-filter-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      font-size: 15px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      border: 2px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .filter-btn:focus-visible {
+      outline: 4px solid #FF9800;
+      outline-offset: 2px;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: #FFF;
+      border-color: var(--primary-hover);
+      box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+    }
+    .search-box {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .search-input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 16px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .search-input:focus-visible {
+      outline: 3px solid var(--primary);
+      outline-offset: 1px;
+    }
     .message-card {
       background: var(--bg);
       border: 2px solid var(--border);
@@ -133,11 +201,23 @@
       flex-direction: column;
       gap: 12px;
     }
-    .message-card.type-feedback {
-      border-left: 10px solid var(--primary);
+    .message-card.app-haushaltsbuch {
+      border-left: 10px solid #2E7D32;
     }
-    .message-card.type-category {
-      border-left: 10px solid #FF9800;
+    .message-card.app-stundenplan {
+      border-left: 10px solid #1565C0;
+    }
+    .message-card.app-store {
+      border-left: 10px solid #00897B;
+    }
+    .message-card.app-dokumente {
+      border-left: 10px solid #E65100;
+    }
+    .message-card.app-minigames {
+      border-left: 10px solid #9C27B0;
+    }
+    .message-card.app-tycoon {
+      border-left: 10px solid #D81B60;
     }
     .field-row {
       display: flex;
@@ -149,7 +229,7 @@
     .field-label {
       font-weight: bold;
       color: var(--sub);
-      min-width: 200px;
+      min-width: 180px;
       font-size: 16px;
     }
     .field-value {
@@ -162,7 +242,12 @@
       padding: 4px 12px;
       border-radius: 20px;
       font-weight: bold;
-      font-size: 15px;
+      font-size: 14px;
+    }
+    .badge-app {
+      background: var(--badge-app-bg);
+      color: var(--badge-app-text);
+      border: 1px solid currentColor;
     }
     .badge-feedback {
       background: var(--badge-feedback);
@@ -254,12 +339,12 @@
 
   <div class="container">
     <header>
-      <h1>📬 <span>Feedback &amp; Kategorie-Zentrale</span></h1>
+      <h1>📬 <span>Gesamt-Feedback-Zentrale</span></h1>
       <div class="header-actions">
         <button type="button" class="btn btn-primary" onclick="loadMessages()" title="Nachrichten jetzt abrufen (Taste R)">
           <span>🔄 <strong>Aktualisieren (R)</strong></span>
         </button>
-        <button type="button" class="btn btn-danger" onclick="clearAllMessages()" title="Alle Nachrichten löschen">
+        <button type="button" class="btn btn-danger" onclick="clearAllMessages()" title="Alle sichtbaren Nachrichten löschen">
           <span>🗑️ <strong>Alle löschen</strong></span>
         </button>
         <button type="button" class="btn btn-secondary" onclick="toggleTheme()" title="Design wechseln (Hell / Dunkel)">
@@ -268,9 +353,42 @@
       </div>
     </header>
 
+    <!-- App Filter Leiste -->
+    <section class="filter-panel" aria-labelledby="filter-heading">
+      <span id="filter-heading" class="filter-label">🎯 App auswählen (Filter):</span>
+      <div class="app-filter-buttons" role="group" aria-label="Apps filtern">
+        <button type="button" class="filter-btn active" data-app="all" onclick="selectAppFilter('all')">
+          🌟 Alle Apps (<span id="count-all">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="haushaltsbuch" onclick="selectAppFilter('haushaltsbuch')">
+          💰 FinanzApp (<span id="count-haushaltsbuch">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="stundenplan" onclick="selectAppFilter('stundenplan')">
+          📅 Stundenplan (<span id="count-stundenplan">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="store" onclick="selectAppFilter('store')">
+          🏪 Lauju Store (<span id="count-store">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="dokumente" onclick="selectAppFilter('dokumente')">
+          📄 Dokumente (<span id="count-dokumente">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="minigames" onclick="selectAppFilter('minigames')">
+          🎮 75 Minispiele (<span id="count-minigames">0</span>)
+        </button>
+        <button type="button" class="filter-btn" data-app="tycoon" onclick="selectAppFilter('tycoon')">
+          🎧 Audio Studio Tycoon (<span id="count-tycoon">0</span>)
+        </button>
+      </div>
+
+      <div class="search-box">
+        <label for="search-input" class="sr-only">In Nachrichten suchen:</label>
+        <input type="text" id="search-input" class="search-input" placeholder="🔍 Suchbegriff eingeben (z. B. Fehler, Wunsch, Name)..." oninput="applyFilters()">
+      </div>
+    </section>
+
     <main class="card" role="main">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 8px;">
-        <h2 style="margin: 0; font-size: 22px;">📥 Empfangene Nachrichten &amp; Vorschläge</h2>
+        <h2 id="view-title" style="margin: 0; font-size: 22px;">📥 Empfangene Nachrichten &amp; Vorschläge</h2>
         <span id="msg-counter" style="font-weight: bold; color: var(--primary);">Lade Nachrichten...</span>
       </div>
 
@@ -280,15 +398,27 @@
 
       <div class="status-bar">
         <span id="last-updated">Noch nicht aktualisiert</span>
-        <span>Automatische Live-Prüfung alle 15 Sekunden</span>
+        <span>Automatische Live-Prüfung alle 15 Sekunden · Tasten 1-7 für App-Filter</span>
       </div>
     </main>
   </div>
 
   <script>
     let isDark = false;
-    const STORAGE_DELETED_KEY = 'deleted_feedback_ids_v3';
-    const STORAGE_DELETED_SIGS_KEY = 'deleted_feedback_sigs_v3';
+    let currentAppFilter = 'all';
+    let allFetchedMessages = [];
+
+    const STORAGE_DELETED_KEY = 'deleted_feedback_ids_v4';
+    const STORAGE_DELETED_SIGS_KEY = 'deleted_feedback_sigs_v4';
+
+    const APP_DEFS = {
+      haushaltsbuch: { name: 'Barrierefreie FinanzApp / Haushaltsbuch', badge: '💰 FinanzApp', class: 'app-haushaltsbuch' },
+      stundenplan: { name: 'Barrierefreier Stundenplan & WebUntis', badge: '📅 Stundenplan', class: 'app-stundenplan' },
+      store: { name: 'Lauju Store', badge: '🏪 Lauju Store', class: 'app-store' },
+      dokumente: { name: 'Barrierefreier Dokumenten-Betrachter', badge: '📄 Dokumenten-Betrachter', class: 'app-dokumente' },
+      minigames: { name: '75 Barrierefreie Audio-Minispiele', badge: '🎮 75 Minispiele', class: 'app-minigames' },
+      tycoon: { name: 'Audio Studio Tycoon', badge: '🎧 Audio Studio Tycoon', class: 'app-tycoon' }
+    };
 
     function getDeletedIds() {
       try {
@@ -344,10 +474,48 @@
       announceNVDA(isDark ? 'Dunkles Design aktiviert.' : 'Helles Design aktiviert.');
     }
 
-    function parseMessageContent(rawText, title, timeDate) {
+    function selectAppFilter(appKey) {
+      currentAppFilter = appKey;
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-app') === appKey);
+      });
+      applyFilters();
+      const name = appKey === 'all' ? 'Alle Apps' : (APP_DEFS[appKey] ? APP_DEFS[appKey].name : appKey);
+      announceNVDA('Filter geändert auf: ' + name);
+    }
+
+    function detectAppFromMessage(text, title, sourceTopic) {
+      const lowerText = (text || '').toLowerCase();
+      const lowerTitle = (title || '').toLowerCase();
+
+      // Explizite App-Angabe im Text
+      if (lowerText.includes('app: stundenplan') || lowerTitle.includes('stundenplan') || lowerTitle.includes('webuntis')) {
+        return 'stundenplan';
+      }
+      if (lowerText.includes('app: store') || lowerTitle.includes('store') || lowerText.includes('lauju store')) {
+        return 'store';
+      }
+      if (lowerText.includes('app: dokumente') || lowerTitle.includes('dokument') || lowerText.includes('dokumenten-betrachter')) {
+        return 'dokumente';
+      }
+      if (lowerText.includes('app: minigames') || lowerTitle.includes('minispiel') || lowerTitle.includes('minigame')) {
+        return 'minigames';
+      }
+      if (lowerText.includes('app: tycoon') || lowerTitle.includes('tycoon') || lowerText.includes('audio studio')) {
+        return 'tycoon';
+      }
+      if (lowerText.includes('app: haushaltsbuch') || lowerText.includes('finanzapp') || lowerTitle.includes('haushaltsbuch') || sourceTopic.includes('haushaltsbuch')) {
+        return 'haushaltsbuch';
+      }
+      return 'haushaltsbuch'; // Default / Legacy Fallback
+    }
+
+    function parseMessageContent(rawText, title, timeDate, sourceTopic) {
       const text = (rawText || '').trim();
+      const detectedApp = detectAppFromMessage(text, title, sourceTopic);
 
       let parsed = {
+        appKey: detectedApp,
         dateStr: timeDate.toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' Uhr',
         sender: 'App-Nutzer',
         typeKind: '💡 Neues Feedback / Idee',
@@ -355,6 +523,7 @@
         scope: '',
         mainCat: '',
         subCat: '',
+        appVersion: '',
         bodyText: ''
       };
 
@@ -363,8 +532,10 @@
         try {
           const cleanJson = text.replace(/'/g, '"');
           const data = JSON.parse(cleanJson);
+          if (data.App || data.app) parsed.appKey = (data.App || data.app).toLowerCase();
           if (data.Absender) parsed.sender = data.Absender;
           if (data.Datum) parsed.dateStr = data.Datum;
+          if (data.AppVersion) parsed.appVersion = data.AppVersion;
           if (data.Bereich || data.Hauptkategorie || data.Unterkategorie_Geschaeft || data.Unterkategorie) {
             parsed.isCategory = true;
             parsed.typeKind = '➕ Neuer Kategorie-Vorschlag';
@@ -388,7 +559,11 @@
       let remainingLines = [];
 
       lines.forEach(line => {
-        if (line.startsWith('Absender:')) {
+        if (line.startsWith('App:')) {
+          parsed.appKey = detectAppFromMessage(line, '', '');
+        } else if (line.startsWith('Version:') || line.startsWith('AppVersion:')) {
+          parsed.appVersion = line.substring(line.indexOf(':') + 1).trim();
+        } else if (line.startsWith('Absender:')) {
           parsed.sender = line.replace('Absender:', '').trim() || parsed.sender;
         } else if (line.startsWith('Datum:')) {
           parsed.dateStr = line.replace('Datum:', '').trim();
@@ -415,223 +590,238 @@
       return parsed;
     }
 
+    async function fetchTopicMessages(topic) {
+      try {
+        const res = await fetch('https://ntfy.sh/' + topic + '/json?poll=1&since=all');
+        if (!res.ok) return [];
+        const text = await res.text();
+        const lines = text.trim().split('\n');
+        const msgs = [];
+        lines.forEach(l => {
+          try {
+            const data = JSON.parse(l);
+            if (data.event === 'message' && data.message) {
+              msgs.push({
+                id: data.id || ('msg_' + data.time),
+                time: data.time ? new Date(data.time * 1000) : new Date(),
+                title: data.title || 'Vorschlag / Feedback',
+                message: data.message,
+                topic: topic
+              });
+            }
+          } catch(e) {}
+        });
+        return msgs;
+      } catch(e) {
+        return [];
+      }
+    }
+
     async function loadMessages() {
-      const listEl = document.getElementById('messages-list');
       const countEl = document.getElementById('msg-counter');
       const timeEl = document.getElementById('last-updated');
-      const deletedIds = getDeletedIds();
+      if (countEl) countEl.textContent = 'Lade Nachrichten...';
 
-      let messages = [];
+      // Lade universelles Topic und legacy Haushaltsbuch Topic
+      const [universalMsgs, legacyMsgs] = await Promise.all([
+        fetchTopicMessages('lauju_app_feedback'),
+        fetchTopicMessages('lauju_haushaltsbuch_feedback')
+      ]);
 
-      try {
-        const res = await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback/json?poll=1&since=all');
-        if (res.ok) {
-          const text = await res.text();
-          const lines = text.trim().split('\n');
-          lines.forEach(l => {
-            try {
-              const data = JSON.parse(l);
-              if (data.event === 'message' && data.message) {
-                const msgId = data.id || ('msg_' + data.time);
-                if (!deletedIds.includes(msgId)) {
-                  messages.push({
-                    id: msgId,
-                    time: data.time ? new Date(data.time * 1000) : new Date(),
-                    title: data.title || 'Vorschlag / Feedback',
-                    message: data.message
-                  });
-                }
-              }
-            } catch(e) {}
-          });
-        }
-      } catch(err) {
-        console.error('Fehler beim Abrufen:', err);
-      }
+      const seenIds = new Set();
+      const combined = [];
 
-      // Neueste zuerst
-      messages.reverse();
-
-      // Deduplizieren & Gelöschte Einträge filtern
-      const uniqueMessages = [];
-      const seenSignatures = new Set();
-
-      messages.forEach(m => {
-        const info = parseMessageContent(m.message, m.title, m.time);
-        const sig = info.sender + '|' + (info.isCategory ? (info.mainCat + '|' + info.subCat) : info.bodyText) + '|' + info.dateStr.substring(0, 16);
-        if (!isItemDeleted(m.id, sig)) {
-          if (!seenSignatures.has(sig)) {
-            seenSignatures.add(sig);
-            uniqueMessages.push({ ...m, parsedInfo: info, sig: sig });
-          }
+      [...universalMsgs, ...legacyMsgs].forEach(m => {
+        if (!seenIds.has(m.id)) {
+          seenIds.add(m.id);
+          combined.push(m);
         }
       });
+
+      // Sortiere neueste zuerst
+      combined.sort((a, b) => b.time - a.time);
+      allFetchedMessages = combined;
+
+      applyFilters();
 
       if (timeEl) {
         timeEl.textContent = 'Zuletzt aktualisiert: ' + new Date().toLocaleTimeString('de-DE');
       }
+    }
 
-      if (uniqueMessages.length === 0) {
-        listEl.innerHTML = '<p class="empty-state">📭 Keine Nachrichten vorhanden.<br><span style="font-size: 16px; margin-top: 8px; display: inline-block;">Sobald jemand im Haushaltsbuch Feedback sendet oder eine neue Kategorie hinzufügt, erscheint es hier sofort live!</span></p>';
-        if (countEl) countEl.textContent = '0 Nachrichten';
+    function applyFilters() {
+      const listEl = document.getElementById('messages-list');
+      const countEl = document.getElementById('msg-counter');
+      const searchVal = (document.getElementById('search-input') ? document.getElementById('search-input').value : '').toLowerCase().trim();
+
+      const counts = { all: 0, haushaltsbuch: 0, stundenplan: 0, store: 0, dokumente: 0, minigames: 0, tycoon: 0 };
+      const filtered = [];
+
+      allFetchedMessages.forEach(item => {
+        const sig = (item.time.getTime() || '') + '_' + item.message.substring(0, 30);
+        if (isItemDeleted(item.id, sig)) return;
+
+        const parsed = parseMessageContent(item.message, item.title, item.time, item.topic);
+        const appKey = parsed.appKey || 'haushaltsbuch';
+
+        // Zähler erhöhen
+        counts.all++;
+        if (counts[appKey] !== undefined) counts[appKey]++;
+
+        // Filter anwenden
+        const matchesApp = (currentAppFilter === 'all') || (appKey === currentAppFilter);
+        const matchesSearch = !searchVal || 
+          parsed.bodyText.toLowerCase().includes(searchVal) ||
+          parsed.sender.toLowerCase().includes(searchVal) ||
+          (APP_DEFS[appKey] && APP_DEFS[appKey].name.toLowerCase().includes(searchVal)) ||
+          parsed.mainCat.toLowerCase().includes(searchVal) ||
+          parsed.subCat.toLowerCase().includes(searchVal);
+
+        if (matchesApp && matchesSearch) {
+          filtered.push({ item, parsed, sig, appKey });
+        }
+      });
+
+      // Zähler-Anzeige in den Filterbuttons aktualisieren
+      for (const k in counts) {
+        const el = document.getElementById('count-' + k);
+        if (el) el.textContent = counts[k];
+      }
+
+      const activeName = currentAppFilter === 'all' ? 'Alle Apps' : (APP_DEFS[currentAppFilter] ? APP_DEFS[currentAppFilter].name : currentAppFilter);
+      if (countEl) {
+        countEl.textContent = filtered.length + ' Nachricht' + (filtered.length === 1 ? '' : 'en') + ' (' + activeName + ')';
+      }
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '<div class="empty-state">📭 Keine Nachrichten für diesen Filter vorhanden.</div>';
+        listEl.setAttribute('aria-busy', 'false');
         return;
       }
 
-      if (countEl) countEl.textContent = uniqueMessages.length + ' Nachricht' + (uniqueMessages.length === 1 ? '' : 'en');
+      listEl.innerHTML = '';
+      filtered.forEach(({ item, parsed, sig, appKey }, idx) => {
+        const appInfo = APP_DEFS[appKey] || { name: 'Lauju App', badge: '📱 ' + appKey, class: 'app-haushaltsbuch' };
 
-      let html = '';
-      uniqueMessages.forEach((m, idx) => {
-        const info = m.parsedInfo;
-        const cardClass = info.isCategory ? 'type-category' : 'type-feedback';
-        const badgeClass = info.isCategory ? 'badge-category' : 'badge-feedback';
+        const card = document.createElement('article');
+        card.className = 'message-card ' + appInfo.class + (parsed.isCategory ? ' type-category' : ' type-feedback');
+        card.setAttribute('role', 'article');
+        card.setAttribute('tabindex', '0');
+        card.setAttribute('aria-label', 'Nachricht ' + (idx + 1) + ' von ' + filtered.length + ': ' + appInfo.name + ' von ' + parsed.sender);
 
-        let fullCopyText = '--- HAUSHALTSBUCH NACHRICHT ---\n' +
-                           '1. Datum & Uhrzeit: ' + info.dateStr + '\n' +
-                           '2. Name / Absender: ' + info.sender + '\n' +
-                           '3. Um was geht es: ' + info.typeKind + '\n';
-
-        if (info.isCategory) {
-          fullCopyText += '4. Details:\n' +
-                          '   - Bereich: ' + (info.scope || 'Ausgabe') + '\n' +
-                          '   - Hauptkategorie: ' + (info.mainCat || 'Nicht angegeben') + '\n' +
-                          '   - Unterkategorie / Geschäft: ' + (info.subCat || info.bodyText || 'Nicht angegeben') + '\n';
+        let detailsHtml = '';
+        if (parsed.isCategory) {
+          detailsHtml = `
+            <table class="detail-table">
+              <tr><td>Bereich:</td><td>${parsed.scope || 'Ausgabe'}</td></tr>
+              <tr><td>Hauptkategorie:</td><td><strong>${parsed.mainCat}</strong></td></tr>
+              <tr><td>Unterkategorie:</td><td><strong>${parsed.subCat}</strong></td></tr>
+            </table>
+          `;
         } else {
-          fullCopyText += '4. Nachricht / Was geschrieben wurde:\n' + (info.bodyText || m.message) + '\n';
+          detailsHtml = `
+            <div class="content-box">
+              <div class="content-box-title">💬 Vorschlag / Rückmeldung:</div>
+              <div class="content-box-body">${escapeHtml(parsed.bodyText || item.message)}</div>
+            </div>
+          `;
         }
 
-        html += `
-          <article class="message-card ${cardClass}" id="msg-card-${escapeForAttr(m.id)}" tabindex="0" aria-label="Eintrag ${idx+1} von ${uniqueMessages.length}: ${escapeHTML(info.typeKind)} von ${escapeHTML(info.sender)} am ${escapeHTML(info.dateStr)}">
-            
-            <!-- 1. DATUM & UHRZEIT -->
-            <div class="field-row">
-              <span class="field-label">📅 1. Datum &amp; Uhrzeit:</span>
-              <span class="field-value">${escapeHTML(info.dateStr)}</span>
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+              <span class="badge badge-app">${appInfo.badge}</span>
+              <span class="badge ${parsed.isCategory ? 'badge-category' : 'badge-feedback'}">${parsed.typeKind}</span>
+              ${parsed.appVersion ? '<span class="badge" style="background:var(--border);">' + escapeHtml(parsed.appVersion) + '</span>' : ''}
             </div>
+            <span style="font-size: 14px; color: var(--sub);">${parsed.dateStr}</span>
+          </div>
 
-            <!-- 2. NAME / ABSENDER -->
-            <div class="field-row">
-              <span class="field-label">👤 2. Name / Absender:</span>
-              <span class="field-value">${escapeHTML(info.sender)}</span>
-            </div>
+          <div class="field-row">
+            <span class="field-label">Absender:</span>
+            <span class="field-value">${escapeHtml(parsed.sender)}</span>
+          </div>
 
-            <!-- 3. UM WAS GEHT ES -->
-            <div class="field-row">
-              <span class="field-label">📌 3. Um was geht es:</span>
-              <span class="badge ${badgeClass}">${escapeHTML(info.typeKind)}</span>
-            </div>
+          ${detailsHtml}
 
-            <!-- 4. WAS ER GESCHRIEBEN HAT / WAS WO HINZUGEFÜGT WURDE -->
-            <div class="content-box">
-              <div class="content-box-title">
-                ${info.isCategory ? '🏢 4. Was wo hinzugefügt wurde (Kategorie-Details):' : '📝 4. Was geschrieben wurde (Feedback-Text):'}
-              </div>
-              <div class="content-box-body">
-                ${info.isCategory ? `
-                  <table class="detail-table">
-                    <tr>
-                      <td>Bereich / Art:</td>
-                      <td>${escapeHTML(info.scope || 'Ausgabe')}</td>
-                    </tr>
-                    <tr>
-                      <td>Hauptkategorie:</td>
-                      <td>${escapeHTML(info.mainCat || 'Allgemein')}</td>
-                    </tr>
-                    <tr>
-                      <td>Unterkategorie / Laden:</td>
-                      <td style="color: #E65100;">${escapeHTML(info.subCat || info.bodyText)}</td>
-                    </tr>
-                  </table>
-                ` : escapeHTML(info.bodyText || m.message)}
-              </div>
-            </div>
-
-            <!-- 5. LÖSCHEN & KOPIEREN -->
-            <div class="action-bar">
-              <button type="button" class="btn btn-secondary" onclick="copyFormattedMsg('${escapeForAttr(fullCopyText)}')" style="font-size: 15px; padding: 8px 16px;">
-                📋 <strong>Nachricht kopieren</strong>
-              </button>
-              <button type="button" class="btn btn-danger" onclick="deleteSingleMsg('${escapeForAttr(m.id)}', '${escapeForAttr(info.sender + '|' + (info.isCategory ? (info.mainCat + '|' + info.subCat) : info.bodyText) + '|' + info.dateStr.substring(0, 16))}')" style="font-size: 15px; padding: 8px 16px;">
-                🗑️ <strong>Nachricht löschen</strong>
-              </button>
-            </div>
-          </article>
+          <div class="action-bar">
+            <button type="button" class="btn btn-secondary" onclick="copyMessageText('${escapeAttr(parsed.bodyText || item.message)}')">
+              📋 <strong>Text kopieren</strong>
+            </button>
+            <button type="button" class="btn btn-danger" onclick="deleteMessage('${item.id}', '${sig}')">
+              🗑️ <strong>Erledigt / Löschen</strong>
+            </button>
+          </div>
         `;
+
+        listEl.appendChild(card);
       });
 
-      listEl.innerHTML = html;
+      listEl.setAttribute('aria-busy', 'false');
     }
 
-        function deleteSingleMsg(id, sig) {
+    function deleteMessage(id, sig) {
       saveDeleted(id, sig);
-      const card = document.getElementById('msg-card-' + id);
-      if (card) {
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-          loadMessages();
-          announceNVDA('Eintrag wurde gelöscht.');
-        }, 150);
-      } else {
-        loadMessages();
-        announceNVDA('Eintrag wurde gelöscht.');
-      }
+      announceNVDA('Nachricht wurde gelöscht.');
+      applyFilters();
     }
 
     function clearAllMessages() {
-      const listEl = document.getElementById('messages-list');
-      const items = listEl.querySelectorAll('.message-card');
-      if (items.length === 0) {
-        alert('Der Posteingang ist bereits leer.');
-        return;
-      }
-
-      items.forEach(card => {
-        const id = card.id.replace('msg-card-', '');
-        if (id) saveDeleted(id, '');
+      if (!confirm('Möchtest du wirklich alle aktuell angezeigten Nachrichten aus der Ansicht löschen?')) return;
+      allFetchedMessages.forEach(m => {
+        const sig = (m.time.getTime() || '') + '_' + m.message.substring(0, 30);
+        saveDeleted(m.id, sig);
       });
-
-      // Clear all
-      try {
-        const allLoadedCards = Array.from(document.querySelectorAll('.message-card'));
-        allLoadedCards.forEach(c => {
-          const id = c.id.replace('msg-card-', '');
-          if (id) saveDeleted(id, '');
-        });
-      } catch(e) {}
-
-      loadMessages();
-      announceNVDA('Alle Einträge wurden gelöscht.');
+      announceNVDA('Alle Nachrichten gelöscht.');
+      applyFilters();
     }
 
-    function copyFormattedMsg(formattedText) {
-      navigator.clipboard.writeText(formattedText).then(() => {
-        announceNVDA('Nachricht sauber formatiert in die Zwischenablage kopiert!');
-        alert('✅ Der vollständige Eintrag wurde sauber formatiert in deine Zwischenablage kopiert!');
+    function copyMessageText(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        announceNVDA('Nachrichtentext in Zwischenablage kopiert.');
       }).catch(() => {
-        announceNVDA('Text konnte nicht automatisch kopiert werden.');
+        announceNVDA('Kopieren fehlgeschlagen.');
       });
     }
 
-    function escapeHTML(str) {
-      return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
-    function escapeForAttr(str) {
-      return String(str || '').replace(/'/g, "\'").replace(/\n/g, '\\n');
+    function escapeAttr(str) {
+      if (!str) return '';
+      return str.replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/\n/g, ' ');
     }
 
+    // Keyboard Shortcuts (1-7 für App-Filter, R für Refresh, D für Dark Mode)
     document.addEventListener('keydown', (e) => {
-      if ((e.key === 'r' || e.key === 'R') && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if (e.key === 'r' || e.key === 'R') {
         e.preventDefault();
         loadMessages();
+        announceNVDA('Aktualisiere Nachrichten...');
+      } else if (e.key === '1') {
+        selectAppFilter('all');
+      } else if (e.key === '2') {
+        selectAppFilter('haushaltsbuch');
+      } else if (e.key === '3') {
+        selectAppFilter('stundenplan');
+      } else if (e.key === '4') {
+        selectAppFilter('store');
+      } else if (e.key === '5') {
+        selectAppFilter('dokumente');
+      } else if (e.key === '6') {
+        selectAppFilter('minigames');
+      } else if (e.key === '7') {
+        selectAppFilter('tycoon');
+      } else if (e.key === 'd' || e.key === 'D') {
+        toggleTheme();
       }
     });
 
+    // Initialisierung & Auto-Refresh
     document.addEventListener('DOMContentLoaded', () => {
       loadMessages();
       setInterval(loadMessages, 15000);

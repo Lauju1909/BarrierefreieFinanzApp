@@ -13401,7 +13401,14 @@ async function submitFeatureFeedback(e) {
   } catch(e) {}
 
   const nl = String.fromCharCode(10);
-  const ntfyBody = 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + now + nl + 'Nachricht: ' + message;
+  const ntfyBody = 'App: haushaltsbuch' + nl + 'Version: ' + CURRENT_APP_VERSION + nl + 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + now + nl + 'Nachricht: ' + message;
+  try {
+    await fetch('https://ntfy.sh/lauju_app_feedback', {
+      method: 'POST',
+      headers: { 'Title': '[FinanzApp] Feedback von ' + author, 'Priority': 'default', 'Tags': 'bulb,speech_balloon,haushaltsbuch' },
+      body: ntfyBody
+    });
+  } catch(e) {}
   try {
     await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
       method: 'POST',
