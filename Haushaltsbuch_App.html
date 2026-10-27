@@ -5854,6 +5854,7 @@ class MiniMqttClient {
 
           // 3 = PUBLISH
           if (packetType === 3) {
+            const qos = (data[0] >> 1) & 0x03;
             let offset = 1;
             let multiplier = 1;
             let remainingLen = 0;
@@ -5868,7 +5869,18 @@ class MiniMqttClient {
             offset += 2;
             const topic = new TextDecoder().decode(data.slice(offset, offset + topicLen));
             offset += topicLen;
+            if (qos > 0) {
+              offset += 2; // MQTT 3.1.1: 2-byte Packet Identifier überspringen
+            }
             const payload = new TextDecoder().decode(data.slice(offset));
+
+            if (qos === 1 && offset >= 2) {
+              try {
+                const pidMsb = data[offset - 2];
+                const pidLsb = data[offset - 1];
+                this.ws.send(new Uint8Array([0x40, 0x02, pidMsb, pidLsb]));
+              } catch(e) {}
+            }
 
             for (const [subPattern, callback] of this.subscriptions.entries()) {
               if (this._matchesTopic(subPattern, topic)) {
@@ -6032,6 +6044,7 @@ const SyncEngine = {
   // Ausfallsichere Broker-Liste über WebSockets (Standard-WSS Ports)
   BROKERS: [
     'wss://broker.emqx.io:8084/mqtt',
+    'wss://broker.hivemq.com:8884/mqtt',
     'wss://test.mosquitto.org:8081'
   ],
 
@@ -6465,7 +6478,7 @@ const SyncEngine = {
       await this.mqttClient.connect('dev_' + myDevice.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6));
 
       // 1. Live-Sync Kanal (akzeptiert eigenen Code sowie alle gekoppelten Gruppen-Codes)
-      this.mqttClient.subscribe(topicReq, async (topic, msgStr) => {
+      const onIncomingLiveSync = async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
@@ -6486,8 +6499,16 @@ const SyncEngine = {
         } catch (e) {
           // Falscher Code oder nicht für dieses Gerät bestimmtes Paket
         }
-      });
+      };
 
+      this.mqttClient.subscribe(topicReq, onIncomingLiveSync);
+      const allActiveSyncCodes = this.getAllActivePairingCodes();
+      for (const scode of allActiveSyncCodes) {
+        const scodeBox = await this.getMailboxTopic(scode);
+        if (scodeBox) {
+          this.mqttClient.subscribe(scodeBox + '/live_req', onIncomingLiveSync);
+        }
+      }
       // 2. Asynchrones E2E-Postfach für ALLE aktiven Codes abonnieren (empfängt auch Retained Messages von PC, Laptop & Handy!)
       await this._subscribeAllActiveMailboxes(this.mqttClient, onStatusUpdate);
 
@@ -6554,7 +6575,12 @@ const SyncEngine = {
         };
         const encrypted = await this.encrypt(responsePayload, myCode);
         if (this.mqttClient && this.mqttClient.connected) {
-          this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
+          const respStr = JSON.stringify(encrypted);
+          this.mqttClient.publish(topicResp, respStr);
+          const myBox = await this.getMailboxTopic(myCode);
+          if (myBox) {
+            this.mqttClient.publish(myBox + '/live_resp', respStr);
+          }
         }
 
         this.lastSyncTime = new Date();
@@ -6590,9 +6616,14 @@ const SyncEngine = {
       };
       const encrypted = await this.encrypt(responsePayload, myCode);
 
-      // 3. Antwort an Response-Topic senden (in Echtzeit via WebSocket)
+      // 3. Antwort an Response-Topic senden (in Echtzeit via WebSocket über beide Kanäle)
       if (this.mqttClient && this.mqttClient.connected) {
-        this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
+        const respStr = JSON.stringify(encrypted);
+        this.mqttClient.publish(topicResp, respStr);
+        const myBox = await this.getMailboxTopic(myCode);
+        if (myBox) {
+          this.mqttClient.publish(myBox + '/live_resp', respStr);
+        }
       }
 
       this.lastSyncTime = new Date();
@@ -6644,6 +6675,11 @@ const SyncEngine = {
     const client = new MiniMqttClient(this.BROKERS);
     await client.connect('pc_init_' + Math.random().toString(36).substring(2, 7));
 
+    // Direkten Code-Kanal zusätzlich vorbereiten
+    const targetBoxTopic = await this.getMailboxTopic(cleanPairCode);
+    const liveCodeReq = targetBoxTopic ? (targetBoxTopic + '/live_req') : null;
+    const liveCodeResp = targetBoxTopic ? (targetBoxTopic + '/live_resp') : null;
+
     // 2. Auf Antwort vorbereiten
     let responseReceived = false;
 
@@ -6678,7 +6714,7 @@ const SyncEngine = {
         }
       }, 10000);
 
-      client.subscribe(topicResp, async (topic, msgStr) => {
+      const onRespMsg = async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
@@ -6692,7 +6728,12 @@ const SyncEngine = {
         } catch (e) {
           // Falsches Paket oder Entschlüsselungsfehler
         }
-      });
+      };
+
+      client.subscribe(topicResp, onRespMsg);
+      if (liveCodeResp) {
+        client.subscribe(liveCodeResp, onRespMsg);
+      }
     });
 
     // Kurz warten, bis Subscription beim Broker registriert ist (~200ms)
@@ -6717,7 +6758,11 @@ const SyncEngine = {
     };
 
     const encryptedReq = await this.encrypt(requestPayload, cleanPairCode);
-    client.publish(topicReq, JSON.stringify(encryptedReq));
+    const reqStr = JSON.stringify(encryptedReq);
+    client.publish(topicReq, reqStr);
+    if (liveCodeReq) {
+      client.publish(liveCodeReq, reqStr);
+    }
 
     if (onStatusUpdate) onStatusUpdate('waiting_reply', `⚡ Signal übertragen. Warte auf Bestätigung von ${cleanTargetName}...`);
 
@@ -7568,6 +7613,26 @@ if (typeof module !== 'undefined' && module.exports) {
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
+// Sichere HTML-Escaping-Funktionen global definieren
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+var escapeHtml = escapeHTML;
+if (typeof window !== 'undefined') {
+  window.escapeHTML = escapeHTML;
+  window.escapeHtml = escapeHTML;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.escapeHTML = escapeHTML;
+  globalThis.escapeHtml = escapeHTML;
+}
+
 const CURRENT_APP_VERSION = 'v6.9.46';
 
 const _nativeParseFloat = globalThis.parseFloat;
@@ -8325,7 +8390,7 @@ const I18N_APP_ELEMENTS = {
   'appearance-settings-sub': { de: "Passe hier das Design und die Schriftgröße für deine Augen an:", en: "Adjust the design and font size here for your eyes:" },
   'label-settings-show-symbols': { de: "Symbole &amp; Emojis in der App anzeigen", en: "Show symbols &amp; emojis in the app" },
   'settings-symbols-hint': { de: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.", en: "When turned off, the entire app is displayed without symbols in pure, clean text." },
-  'footer-text': { de: "Barrierefreie Finanzen v6.9.46 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-text': { de: "Barrierefreie Finanzen v6.9.38 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
   'footer-shortcuts': { de: "Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre", en: "Shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= Today | L= Lock" },
   'today-label': { de: "Heute:", en: "Today:" },
   'changelog-modal-heading': { de: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)", en: "📜 What is new in this update? (Changelog)" },
@@ -8364,7 +8429,7 @@ const I18N_APP_ELEMENTS = {
   'delete-peer-loan-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Loan" },
   'cash-counter-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen & Scheine)", en: "🪙 Cash Counter (Coins & Bills)" },
   'lbl-today-prefix': { de: "Heute:", en: "Today:" },
-  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.46</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.39</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.39</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.39</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
   'footer-shortcuts-text': { de: "Tastaturkürzel: <strong>1</strong>= Übersicht | <strong>2</strong>= Ausgabe | <strong>3</strong>= Einnahme | <strong>4</strong>= Umbuchen | <strong>5</strong>= Einstellungen | <strong>6</strong>= Konto-Optionen | <strong>7</strong>= Wunschliste | <strong>T</strong>= Zu Heute | <strong>L</strong>= Sofortsperre", en: "Shortcuts: <strong>1</strong>= Overview | <strong>2</strong>= Expense | <strong>3</strong>= Income | <strong>4</strong>= Transfer | <strong>5</strong>= Settings | <strong>6</strong>= Accounts | <strong>7</strong>= Wishlist | <strong>T</strong>= Today | <strong>L</strong>= Instant Lock" },
   'brand-app-title': { de: "Meine Finanzen & Haushaltsbuch", en: "My Finances & Budget Book" },
   'brand-app-tagline': { de: "🔒 AES-256 Verschlüsselt & DSGVO-Konform", en: "🔒 AES-256 Encrypted & GDPR-Compliant" },
@@ -20053,6 +20118,16 @@ function updateLockScreenUI(isFirstTime) {
     updateKeyFileLockScreen();
     renderScrambledPinPad();
   }, 100);
+
+  if (typeof BiometricAuth !== "undefined" && BiometricAuth.isMobile()) {
+    setTimeout(() => {
+      BiometricAuth.checkSupport().then(() => {
+        if (!isFirstTime && typeof cryptoKey === 'undefined' || !cryptoKey) {
+          BiometricAuth.checkAutoUnlock();
+        }
+      });
+    }, 450);
+  }
   const firstTimeHint = document.getElementById('first-time-hint');
   const lockHeading = document.getElementById('lock-heading');
   const lockInstructions = document.getElementById('lock-instructions');
@@ -20968,7 +21043,14 @@ async function submitFeatureFeedback(e) {
   } catch(e) {}
 
   const nl = String.fromCharCode(10);
-  const ntfyBody = 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + now + nl + 'Nachricht: ' + message;
+  const ntfyBody = 'App: haushaltsbuch' + nl + 'Version: ' + CURRENT_APP_VERSION + nl + 'Absender: ' + author + nl + 'Art: 💡 Neues Feedback / Idee' + nl + 'Datum: ' + now + nl + 'Nachricht: ' + message;
+  try {
+    await fetch('https://ntfy.sh/lauju_app_feedback', {
+      method: 'POST',
+      headers: { 'Title': '[FinanzApp] Feedback von ' + author, 'Priority': 'default', 'Tags': 'bulb,speech_balloon,haushaltsbuch' },
+      body: ntfyBody
+    });
+  } catch(e) {}
   try {
     await fetch('https://ntfy.sh/lauju_haushaltsbuch_feedback', {
       method: 'POST',
@@ -23225,11 +23307,11 @@ function updateSyncConnectedUI() {
       mobilePairedListEl.innerHTML = pairedList.map(d => {
         const isPhone = /handy|phone|mobil|android/i.test(d.name);
         const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHtml(d.name);
-        const safeTime = escapeHtml(d.time || 'Heute');
+        const safeName = escapeHTML(d.name);
+        const safeTime = escapeHTML(d.time || 'Heute');
         return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
           <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
-          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHtml(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
+          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHTML(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
         </div>`;
       }).join('');
     } else {
@@ -23270,9 +23352,9 @@ function updateSyncConnectedUI() {
       pairedListContainer.innerHTML = pairedList.map(d => {
         const isPhone = /handy|phone|mobil|android/i.test(d.name);
         const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHtml(d.name);
-        const safeCode = escapeHtml(d.code || pairedCode);
-        const safeTime = escapeHtml(d.time || 'Heute');
+        const safeName = escapeHTML(d.name);
+        const safeCode = escapeHTML(d.code || pairedCode);
+        const safeTime = escapeHTML(d.time || 'Heute');
         const jsName = safeName.replace(/'/g, "\\'");
         const jsCode = safeCode.replace(/'/g, "\\'");
         return `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 14px; background:#ffffff; border:1px solid #86efac; border-radius:8px;">
@@ -23758,17 +23840,17 @@ const BiometricAuth = {
     try {
       // 1. NATIVES ANDROID SYSTEM (BiometricPrompt via AndroidBiometrics)
       if (window.AndroidBiometrics && typeof window.AndroidBiometrics.isAvailable === 'function') {
-        this.isSupported = window.AndroidBiometrics.isAvailable();
+        this.isSupported = Boolean(window.AndroidBiometrics.isAvailable());
       }
       // 2. WEBAUTHN (Nur auf Mobilgeräten)
       else if (this.isMobile() && window.PublicKeyCredential && 
           typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function') {
         this.isSupported = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
       } else {
-        this.isSupported = false;
+        this.isSupported = this.isMobile();
       }
     } catch(e) {
-      this.isSupported = false;
+      this.isSupported = this.isMobile();
     }
     this.updateUI();
     return this.isSupported;
@@ -23817,7 +23899,11 @@ const BiometricAuth = {
     }
 
     // 3. Nur wenn ein Datenspeicherstand existiert und Fingerabdruck aktiv ist
-    const hasVault = !!(localStorage.getItem(STORAGE_DATA_KEY) || (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault));
+    const hasVault = !!(
+      localStorage.getItem(STORAGE_DATA_KEY) || 
+      localStorage.getItem('haushaltsbuch_vault_data') || 
+      (window.__DISK_VAULT__ && window.__DISK_VAULT__.vault)
+    );
     const isBioEnabled = localStorage.getItem('haushaltsbuch_bio_enabled') === 'true';
     const hasPinStored = !!localStorage.getItem('haushaltsbuch_bio_token');
     const isUnlocked = typeof cryptoKey !== 'undefined' && cryptoKey !== null;
@@ -23985,6 +24071,11 @@ const BiometricAuth = {
   async authenticateAndUnlock(isAuto = false) {
     if (this.isPrompting) return;
 
+    if (!isAuto) {
+      this.isCancelledForSession = false;
+      try { sessionStorage.removeItem('haushaltsbuch_bio_dismissed'); } catch(e) {}
+    }
+
     // Wenn abgebrochen und automatischer Aufruf -> abbrechen!
     if (isAuto && (this.isCancelledForSession || sessionStorage.getItem('haushaltsbuch_bio_dismissed') === 'true')) {
       return;
@@ -24009,9 +24100,13 @@ const BiometricAuth = {
         this.isPrompting = false;
         console.log('[AndroidBiometrics] Error/Cancel code:', code, msg);
         // Code 10 = ERROR_USER_CANCELED, Code 13 = ERROR_NEGATIVE_BUTTON ("Abbrechen")
-        this.isCancelledForSession = true;
-        sessionStorage.setItem('haushaltsbuch_bio_dismissed', 'true');
-        if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen. Bitte PIN manuell eingeben.');
+        if (code === 10 || code === 13) {
+          this.isCancelledForSession = true;
+          try { sessionStorage.setItem('haushaltsbuch_bio_dismissed', 'true'); } catch(e) {}
+          if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck abgebrochen. Bitte PIN manuell eingeben.');
+        } else {
+          if (typeof announceNVDA === 'function') announceNVDA('Fingerabdruck nicht erkannt: ' + (msg || 'Bitte erneut versuchen oder PIN eingeben.'));
+        }
         const pinInput = document.getElementById('pin-input');
         if (pinInput) pinInput.focus();
       };
