@@ -22,3 +22,7 @@ Profile_Feedback/
 Profile_Kategorien/
 Feedback_Archiv.txt
 tmp_*
+
+__pycache__/
+*.pyc
+
