@@ -94,6 +94,7 @@ class MiniMqttClient {
 
           // 3 = PUBLISH
           if (packetType === 3) {
+            const qos = (data[0] >> 1) & 0x03;
             let offset = 1;
             let multiplier = 1;
             let remainingLen = 0;
@@ -108,7 +109,18 @@ class MiniMqttClient {
             offset += 2;
             const topic = new TextDecoder().decode(data.slice(offset, offset + topicLen));
             offset += topicLen;
+            if (qos > 0) {
+              offset += 2; // MQTT 3.1.1: 2-byte Packet Identifier überspringen
+            }
             const payload = new TextDecoder().decode(data.slice(offset));
+
+            if (qos === 1 && offset >= 2) {
+              try {
+                const pidMsb = data[offset - 2];
+                const pidLsb = data[offset - 1];
+                this.ws.send(new Uint8Array([0x40, 0x02, pidMsb, pidLsb]));
+              } catch(e) {}
+            }
 
             for (const [subPattern, callback] of this.subscriptions.entries()) {
               if (this._matchesTopic(subPattern, topic)) {
@@ -272,6 +284,7 @@ const SyncEngine = {
   // Ausfallsichere Broker-Liste über WebSockets (Standard-WSS Ports)
   BROKERS: [
     'wss://broker.emqx.io:8084/mqtt',
+    'wss://broker.hivemq.com:8884/mqtt',
     'wss://test.mosquitto.org:8081'
   ],
 
@@ -705,7 +718,7 @@ const SyncEngine = {
       await this.mqttClient.connect('dev_' + myDevice.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.random().toString(36).substring(2, 6));
 
       // 1. Live-Sync Kanal (akzeptiert eigenen Code sowie alle gekoppelten Gruppen-Codes)
-      this.mqttClient.subscribe(topicReq, async (topic, msgStr) => {
+      const onIncomingLiveSync = async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
@@ -726,8 +739,16 @@ const SyncEngine = {
         } catch (e) {
           // Falscher Code oder nicht für dieses Gerät bestimmtes Paket
         }
-      });
+      };
 
+      this.mqttClient.subscribe(topicReq, onIncomingLiveSync);
+      const allActiveSyncCodes = this.getAllActivePairingCodes();
+      for (const scode of allActiveSyncCodes) {
+        const scodeBox = await this.getMailboxTopic(scode);
+        if (scodeBox) {
+          this.mqttClient.subscribe(scodeBox + '/live_req', onIncomingLiveSync);
+        }
+      }
       // 2. Asynchrones E2E-Postfach für ALLE aktiven Codes abonnieren (empfängt auch Retained Messages von PC, Laptop & Handy!)
       await this._subscribeAllActiveMailboxes(this.mqttClient, onStatusUpdate);
 
@@ -794,7 +815,12 @@ const SyncEngine = {
         };
         const encrypted = await this.encrypt(responsePayload, myCode);
         if (this.mqttClient && this.mqttClient.connected) {
-          this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
+          const respStr = JSON.stringify(encrypted);
+          this.mqttClient.publish(topicResp, respStr);
+          const myBox = await this.getMailboxTopic(myCode);
+          if (myBox) {
+            this.mqttClient.publish(myBox + '/live_resp', respStr);
+          }
         }
 
         this.lastSyncTime = new Date();
@@ -830,9 +856,14 @@ const SyncEngine = {
       };
       const encrypted = await this.encrypt(responsePayload, myCode);
 
-      // 3. Antwort an Response-Topic senden (in Echtzeit via WebSocket)
+      // 3. Antwort an Response-Topic senden (in Echtzeit via WebSocket über beide Kanäle)
       if (this.mqttClient && this.mqttClient.connected) {
-        this.mqttClient.publish(topicResp, JSON.stringify(encrypted));
+        const respStr = JSON.stringify(encrypted);
+        this.mqttClient.publish(topicResp, respStr);
+        const myBox = await this.getMailboxTopic(myCode);
+        if (myBox) {
+          this.mqttClient.publish(myBox + '/live_resp', respStr);
+        }
       }
 
       this.lastSyncTime = new Date();
@@ -884,6 +915,11 @@ const SyncEngine = {
     const client = new MiniMqttClient(this.BROKERS);
     await client.connect('pc_init_' + Math.random().toString(36).substring(2, 7));
 
+    // Direkten Code-Kanal zusätzlich vorbereiten
+    const targetBoxTopic = await this.getMailboxTopic(cleanPairCode);
+    const liveCodeReq = targetBoxTopic ? (targetBoxTopic + '/live_req') : null;
+    const liveCodeResp = targetBoxTopic ? (targetBoxTopic + '/live_resp') : null;
+
     // 2. Auf Antwort vorbereiten
     let responseReceived = false;
 
@@ -918,7 +954,7 @@ const SyncEngine = {
         }
       }, 10000);
 
-      client.subscribe(topicResp, async (topic, msgStr) => {
+      const onRespMsg = async (topic, msgStr) => {
         try {
           const payload = JSON.parse(msgStr);
           if (payload && payload.ct && payload.iv && payload.salt) {
@@ -932,7 +968,12 @@ const SyncEngine = {
         } catch (e) {
           // Falsches Paket oder Entschlüsselungsfehler
         }
-      });
+      };
+
+      client.subscribe(topicResp, onRespMsg);
+      if (liveCodeResp) {
+        client.subscribe(liveCodeResp, onRespMsg);
+      }
     });
 
     // Kurz warten, bis Subscription beim Broker registriert ist (~200ms)
@@ -957,7 +998,11 @@ const SyncEngine = {
     };
 
     const encryptedReq = await this.encrypt(requestPayload, cleanPairCode);
-    client.publish(topicReq, JSON.stringify(encryptedReq));
+    const reqStr = JSON.stringify(encryptedReq);
+    client.publish(topicReq, reqStr);
+    if (liveCodeReq) {
+      client.publish(liveCodeReq, reqStr);
+    }
 
     if (onStatusUpdate) onStatusUpdate('waiting_reply', `⚡ Signal übertragen. Warte auf Bestätigung von ${cleanTargetName}...`);
 
