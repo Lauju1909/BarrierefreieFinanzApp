@@ -1,6 +1,26 @@
 // ============================================================================
 // 1. GLOBALE KONSTANTEN, KATEGORIE-DATENBANK & INITIALER STATE
 // ============================================================================
+// Sichere HTML-Escaping-Funktionen global definieren
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+var escapeHtml = escapeHTML;
+if (typeof window !== 'undefined') {
+  window.escapeHTML = escapeHTML;
+  window.escapeHtml = escapeHTML;
+}
+if (typeof globalThis !== 'undefined') {
+  globalThis.escapeHTML = escapeHTML;
+  globalThis.escapeHtml = escapeHTML;
+}
+
 const CURRENT_APP_VERSION = 'v6.9.45';
 
 const _nativeParseFloat = globalThis.parseFloat;
@@ -15675,11 +15695,11 @@ function updateSyncConnectedUI() {
       mobilePairedListEl.innerHTML = pairedList.map(d => {
         const isPhone = /handy|phone|mobil|android/i.test(d.name);
         const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHtml(d.name);
-        const safeTime = escapeHtml(d.time || 'Heute');
+        const safeName = escapeHTML(d.name);
+        const safeTime = escapeHTML(d.time || 'Heute');
         return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
           <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
-          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHtml(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
+          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHTML(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
         </div>`;
       }).join('');
     } else {
@@ -15720,9 +15740,9 @@ function updateSyncConnectedUI() {
       pairedListContainer.innerHTML = pairedList.map(d => {
         const isPhone = /handy|phone|mobil|android/i.test(d.name);
         const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHtml(d.name);
-        const safeCode = escapeHtml(d.code || pairedCode);
-        const safeTime = escapeHtml(d.time || 'Heute');
+        const safeName = escapeHTML(d.name);
+        const safeCode = escapeHTML(d.code || pairedCode);
+        const safeTime = escapeHTML(d.time || 'Heute');
         const jsName = safeName.replace(/'/g, "\\'");
         const jsCode = safeCode.replace(/'/g, "\\'");
         return `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 14px; background:#ffffff; border:1px solid #86efac; border-radius:8px;">
