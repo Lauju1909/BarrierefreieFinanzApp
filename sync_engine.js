@@ -9,6 +9,25 @@
 // =============================================================================
 // MINIMALER PURE-JS MQTT 3.1.1 ÜBER WEBSOCKETS (KEINE EXTERNEN ABHÄNGIGKEITEN)
 // =============================================================================
+// Globale sichere Escaping-Hilfsfunktionen bereitstellen
+if (typeof escapeHTML === "undefined") {
+  function escapeHTML(s) {
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+}
+if (typeof escapeHtml === "undefined") {
+  var escapeHtml = escapeHTML;
+}
+if (typeof window !== "undefined") {
+  window.escapeHTML = escapeHTML;
+  window.escapeHtml = escapeHTML;
+}
+if (typeof globalThis !== "undefined") {
+  globalThis.escapeHTML = escapeHTML;
+  globalThis.escapeHtml = escapeHTML;
+}
+
 class MiniMqttClient {
   constructor(brokerUrls) {
     this.brokerUrls = Array.isArray(brokerUrls) ? brokerUrls : [brokerUrls];
@@ -388,13 +407,16 @@ const SyncEngine = {
 
     try {
       const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           parsed.forEach(d => {
             if (d && d.name) addEntry(d.name, d.code, d.time);
           });
         }
+        // Wenn haushaltsbuch_sync_paired_devices existiert (auch wenn leer '[]'),
+        // KEINEN Fallback auf alte Legacy-Einträge oder window.__PAIRED_DEVICE__ durchführen!
+        return Array.from(map.values()).filter(d => !!d.code);
       }
     } catch (e) {}
 
@@ -457,9 +479,8 @@ const SyncEngine = {
       localStorage.setItem('haushaltsbuch_sync_connected_device', cleanName);
       localStorage.setItem('haushaltsbuch_sync_connected_code', cleanCode);
       localStorage.setItem('haushaltsbuch_sync_connected_time', nowStr);
-      // Gemeinsamen Gruppen-Kopplungscode auch als eigenen Sync-Code übernehmen,
-      // damit Laptop, PC und Smartphone automatisch denselben Gruppen-Schlüssel teilen!
-      localStorage.setItem('haushaltsbuch_sync_code', cleanCode);
+      // SICHERHEIT: Der eigene Kopplungscode (haushaltsbuch_sync_code) bleibt IMMER der private,
+      // einzigartige Schlüssel dieses Geräts und darf NIEMALS durch den Code eines Partnergeräts überschrieben werden!
     } catch (e) {}
 
     this._persistPairingToDisk(newList);
@@ -480,7 +501,7 @@ const SyncEngine = {
         localStorage.setItem('haushaltsbuch_sync_connected_time', remaining[0].time || 'Heute');
         this._persistPairingToDisk(remaining);
       } else {
-        localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+        localStorage.setItem('haushaltsbuch_sync_paired_devices', '[]');
         localStorage.removeItem('haushaltsbuch_sync_connected');
         localStorage.removeItem('haushaltsbuch_sync_connected_device');
         localStorage.removeItem('haushaltsbuch_sync_connected_code');
@@ -532,17 +553,33 @@ const SyncEngine = {
   },
 
   registerIncomingPeerAndGroup(senderName, usedCode, packetPeers = [], timeStr = null) {
-    const cleanCode = (usedCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
-    if (senderName && cleanCode) {
-      this.savePairedDevice(senderName, cleanCode, timeStr, false);
+    // SICHERHEIT & ISOLATION: Nur der direkte Absender, der den gültigen Code besitzt,
+    // wird registriert. Fremde Geräte aus packetPeers werden NICHT automatisch adoptiert!
+    if (!senderName) return;
+    const cleanSender = String(senderName).trim();
+    if (this.getRemovedDevices().includes(cleanSender.toLowerCase())) return;
+
+    const cleanCode = (usedCode || '').trim().toUpperCase();
+    if (cleanSender && cleanCode) {
+      this.savePairedDevice(cleanSender, cleanCode, timeStr, false);
     }
-    if (Array.isArray(packetPeers)) {
-      packetPeers.forEach(peer => {
-        if (peer && peer.name && (peer.code || cleanCode)) {
-          this.savePairedDevice(peer.name, peer.code || cleanCode, peer.time || timeStr, false);
-        }
-      });
-    }
+  },
+
+  // Sicherstellen, dass dieses Gerät einen eigenen, einzigartigen Code besitzt (nicht geclont vom Partner)
+  ensureUniqueDeviceCode() {
+    try {
+      let myCode = (localStorage.getItem('haushaltsbuch_sync_code') || '').trim().toUpperCase();
+      if (!myCode) {
+        this.generateNewPairingCode();
+        return;
+      }
+      const paired = this.getPairedDevices();
+      const isClonedFromPartner = paired.some(d => d.code && d.code.trim().toUpperCase() === myCode);
+      if (isClonedFromPartner) {
+        console.log('[SyncEngine] Eigener Kopplungscode war mit Partner identisch. Generiere neuen, sicheren Geräte-Code.');
+        this.generateNewPairingCode();
+      }
+    } catch(e) {}
   },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
@@ -699,6 +736,7 @@ const SyncEngine = {
 
   // 5. GERÄT / RECEIVER: AUF SYNCHRONISATION LAUSCHEN (HANDY, LAPTOP & PC)
   async startListening(onStatusUpdate) {
+    this.ensureUniqueDeviceCode();
     this.isListening = true;
     this.processedMessageIds.clear();
 
@@ -725,6 +763,10 @@ const SyncEngine = {
             const res = await this.decryptWithAnyKnownCode(payload, myCode);
             if (res && res.decrypted && res.decrypted.type === 'SYNC_REQUEST') {
               const decrypted = res.decrypted;
+              if (decrypted.sender && this.getRemovedDevices().includes(decrypted.sender.trim().toLowerCase())) {
+                console.warn('[SyncEngine] Signal von entferntem Gerät ignoriert:', decrypted.sender);
+                return;
+              }
               const usedCode = res.usedCode || myCode;
               const msgId = decrypted.timestamp + '_' + decrypted.sender;
               if (this.processedMessageIds.has(msgId)) return;
@@ -1221,6 +1263,10 @@ const SyncEngine = {
 
   async handleIncomingMailboxUpdate(update, onStatusUpdate, usedCode = null) {
     if (!update) return;
+    if (update.sender && this.getRemovedDevices().includes(update.sender.trim().toLowerCase())) {
+      console.warn('[SyncEngine] Postfach-Paket von entferntem Gerät ignoriert:', update.sender);
+      return;
+    }
     const myDevice = this.getDeviceName();
     const timeStr = new Date(update.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date(update.timestamp || Date.now()).toLocaleDateString('de-DE');

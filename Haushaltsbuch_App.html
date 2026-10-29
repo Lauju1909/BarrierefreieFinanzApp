@@ -5573,6 +5573,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
         <span id="sync-mobile-connected-time">Heute</span>
         <div id="sync-mobile-paired-list"></div>
         <div id="sync-mobile-status-connected" aria-live="polite"></div>
+        <button type="button" class="btn btn-danger" onclick="disconnectSyncPairing()" style="width:100%; margin-top:8px; font-size:14px; padding:10px 14px;">❌ Alle Kopplungen aufheben & neuen sicheren Code erzeugen</button>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 10px;">
@@ -5769,6 +5770,25 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 // =============================================================================
 // MINIMALER PURE-JS MQTT 3.1.1 ÜBER WEBSOCKETS (KEINE EXTERNEN ABHÄNGIGKEITEN)
 // =============================================================================
+// Globale sichere Escaping-Hilfsfunktionen bereitstellen
+if (typeof escapeHTML === "undefined") {
+  function escapeHTML(s) {
+    if (s === null || s === undefined) return "";
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+  }
+}
+if (typeof escapeHtml === "undefined") {
+  var escapeHtml = escapeHTML;
+}
+if (typeof window !== "undefined") {
+  window.escapeHTML = escapeHTML;
+  window.escapeHtml = escapeHTML;
+}
+if (typeof globalThis !== "undefined") {
+  globalThis.escapeHTML = escapeHTML;
+  globalThis.escapeHtml = escapeHTML;
+}
+
 class MiniMqttClient {
   constructor(brokerUrls) {
     this.brokerUrls = Array.isArray(brokerUrls) ? brokerUrls : [brokerUrls];
@@ -6148,13 +6168,16 @@ const SyncEngine = {
 
     try {
       const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
-      if (raw) {
+      if (raw !== null) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           parsed.forEach(d => {
             if (d && d.name) addEntry(d.name, d.code, d.time);
           });
         }
+        // Wenn haushaltsbuch_sync_paired_devices existiert (auch wenn leer '[]'),
+        // KEINEN Fallback auf alte Legacy-Einträge oder window.__PAIRED_DEVICE__ durchführen!
+        return Array.from(map.values()).filter(d => !!d.code);
       }
     } catch (e) {}
 
@@ -6217,9 +6240,8 @@ const SyncEngine = {
       localStorage.setItem('haushaltsbuch_sync_connected_device', cleanName);
       localStorage.setItem('haushaltsbuch_sync_connected_code', cleanCode);
       localStorage.setItem('haushaltsbuch_sync_connected_time', nowStr);
-      // Gemeinsamen Gruppen-Kopplungscode auch als eigenen Sync-Code übernehmen,
-      // damit Laptop, PC und Smartphone automatisch denselben Gruppen-Schlüssel teilen!
-      localStorage.setItem('haushaltsbuch_sync_code', cleanCode);
+      // SICHERHEIT: Der eigene Kopplungscode (haushaltsbuch_sync_code) bleibt IMMER der private,
+      // einzigartige Schlüssel dieses Geräts und darf NIEMALS durch den Code eines Partnergeräts überschrieben werden!
     } catch (e) {}
 
     this._persistPairingToDisk(newList);
@@ -6240,7 +6262,7 @@ const SyncEngine = {
         localStorage.setItem('haushaltsbuch_sync_connected_time', remaining[0].time || 'Heute');
         this._persistPairingToDisk(remaining);
       } else {
-        localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+        localStorage.setItem('haushaltsbuch_sync_paired_devices', '[]');
         localStorage.removeItem('haushaltsbuch_sync_connected');
         localStorage.removeItem('haushaltsbuch_sync_connected_device');
         localStorage.removeItem('haushaltsbuch_sync_connected_code');
@@ -6292,17 +6314,33 @@ const SyncEngine = {
   },
 
   registerIncomingPeerAndGroup(senderName, usedCode, packetPeers = [], timeStr = null) {
-    const cleanCode = (usedCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
-    if (senderName && cleanCode) {
-      this.savePairedDevice(senderName, cleanCode, timeStr, false);
+    // SICHERHEIT & ISOLATION: Nur der direkte Absender, der den gültigen Code besitzt,
+    // wird registriert. Fremde Geräte aus packetPeers werden NICHT automatisch adoptiert!
+    if (!senderName) return;
+    const cleanSender = String(senderName).trim();
+    if (this.getRemovedDevices().includes(cleanSender.toLowerCase())) return;
+
+    const cleanCode = (usedCode || '').trim().toUpperCase();
+    if (cleanSender && cleanCode) {
+      this.savePairedDevice(cleanSender, cleanCode, timeStr, false);
     }
-    if (Array.isArray(packetPeers)) {
-      packetPeers.forEach(peer => {
-        if (peer && peer.name && (peer.code || cleanCode)) {
-          this.savePairedDevice(peer.name, peer.code || cleanCode, peer.time || timeStr, false);
-        }
-      });
-    }
+  },
+
+  // Sicherstellen, dass dieses Gerät einen eigenen, einzigartigen Code besitzt (nicht geclont vom Partner)
+  ensureUniqueDeviceCode() {
+    try {
+      let myCode = (localStorage.getItem('haushaltsbuch_sync_code') || '').trim().toUpperCase();
+      if (!myCode) {
+        this.generateNewPairingCode();
+        return;
+      }
+      const paired = this.getPairedDevices();
+      const isClonedFromPartner = paired.some(d => d.code && d.code.trim().toUpperCase() === myCode);
+      if (isClonedFromPartner) {
+        console.log('[SyncEngine] Eigener Kopplungscode war mit Partner identisch. Generiere neuen, sicheren Geräte-Code.');
+        this.generateNewPairingCode();
+      }
+    } catch(e) {}
   },
 
   // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
@@ -6459,6 +6497,7 @@ const SyncEngine = {
 
   // 5. GERÄT / RECEIVER: AUF SYNCHRONISATION LAUSCHEN (HANDY, LAPTOP & PC)
   async startListening(onStatusUpdate) {
+    this.ensureUniqueDeviceCode();
     this.isListening = true;
     this.processedMessageIds.clear();
 
@@ -6485,6 +6524,10 @@ const SyncEngine = {
             const res = await this.decryptWithAnyKnownCode(payload, myCode);
             if (res && res.decrypted && res.decrypted.type === 'SYNC_REQUEST') {
               const decrypted = res.decrypted;
+              if (decrypted.sender && this.getRemovedDevices().includes(decrypted.sender.trim().toLowerCase())) {
+                console.warn('[SyncEngine] Signal von entferntem Gerät ignoriert:', decrypted.sender);
+                return;
+              }
               const usedCode = res.usedCode || myCode;
               const msgId = decrypted.timestamp + '_' + decrypted.sender;
               if (this.processedMessageIds.has(msgId)) return;
@@ -6981,6 +7024,10 @@ const SyncEngine = {
 
   async handleIncomingMailboxUpdate(update, onStatusUpdate, usedCode = null) {
     if (!update) return;
+    if (update.sender && this.getRemovedDevices().includes(update.sender.trim().toLowerCase())) {
+      console.warn('[SyncEngine] Postfach-Paket von entferntem Gerät ignoriert:', update.sender);
+      return;
+    }
     const myDevice = this.getDeviceName();
     const timeStr = new Date(update.timestamp || Date.now()).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date(update.timestamp || Date.now()).toLocaleDateString('de-DE');
@@ -23174,7 +23221,7 @@ function removeSinglePairedDevice(deviceName) {
 }
 
 function disconnectSyncPairing() {
-  localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+  localStorage.setItem('haushaltsbuch_sync_paired_devices', '[]');
   localStorage.removeItem('haushaltsbuch_sync_removed_devices');
   localStorage.removeItem('haushaltsbuch_sync_connected');
   localStorage.removeItem('haushaltsbuch_sync_connected_device');
@@ -23211,7 +23258,7 @@ function disconnectSyncPairing() {
     initLockScreenSync();
   }
   if (typeof announceNVDA === 'function') {
-    announceNVDA('Alle Geräte-Kopplungen wurden aufgehoben.');
+    announceNVDA('Alle Geräte-Kopplungen wurden aufgehoben und ein neuer sicherer Code generiert.', true);
   }
 }
 
@@ -23303,19 +23350,25 @@ function updateSyncConnectedUI() {
   if (mainTimeSpan) mainTimeSpan.textContent = syncTime;
 
   if (mobilePairedListEl) {
-    if (pairedList.length > 0) {
-      mobilePairedListEl.innerHTML = pairedList.map(d => {
-        const isPhone = /handy|phone|mobil|android/i.test(d.name);
-        const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHTML(d.name);
-        const safeTime = escapeHTML(d.time || 'Heute');
-        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
-          <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
-          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHTML(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
-        </div>`;
-      }).join('');
-    } else {
-      mobilePairedListEl.innerHTML = '';
+      if (pairedList.length > 0) {
+        mobilePairedListEl.innerHTML = pairedList.map(d => {
+          const isPhone = /handy|phone|mobil|android/i.test(d.name);
+          const icon = isPhone ? "📱" : "💻";
+          const safeName = escapeHTML(d.name);
+          const safeCode = escapeHTML(d.code || pairedCode);
+          const safeTime = escapeHTML(d.time || "Heute");
+          const jsName = safeName.replace(/'/g, "\\'");
+          const jsCode = safeCode.replace(/'/g, "\\'");
+          return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
+            <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${jsName}', '${jsCode}')" style="font-size:12px; padding:4px 8px;">⚡ Sync</button>
+              <button type="button" class="btn btn-danger" onclick="removeSinglePairedDevice('${jsName}')" aria-label="Kopplung mit ${safeName} entfernen" style="font-size:12px; padding:4px 8px;">🗑️ Trennen</button>
+            </div>
+          </div>`;
+        }).join("");
+      } else {
+        mobilePairedListEl.innerHTML = '<div style="font-size:14px; color:#64748b; padding:8px 0;">Keine Geräte gekoppelt.</div>';
     }
   }
 
@@ -23667,7 +23720,7 @@ function generateNewSyncCode(silent = false) {
   }
   restartSyncListener();
   if (!silent && typeof announceNVDA === 'function') {
-    announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
+    announceNVDA(`Neuer eigenständiger Kopplungscode generiert: ${newCode}. Andere Geräte können sich nun nur noch mit diesem neuen Code verbinden.`, true);
   }
 }
 

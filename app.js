@@ -15562,7 +15562,7 @@ function removeSinglePairedDevice(deviceName) {
 }
 
 function disconnectSyncPairing() {
-  localStorage.removeItem('haushaltsbuch_sync_paired_devices');
+  localStorage.setItem('haushaltsbuch_sync_paired_devices', '[]');
   localStorage.removeItem('haushaltsbuch_sync_removed_devices');
   localStorage.removeItem('haushaltsbuch_sync_connected');
   localStorage.removeItem('haushaltsbuch_sync_connected_device');
@@ -15599,7 +15599,7 @@ function disconnectSyncPairing() {
     initLockScreenSync();
   }
   if (typeof announceNVDA === 'function') {
-    announceNVDA('Alle Geräte-Kopplungen wurden aufgehoben.');
+    announceNVDA('Alle Geräte-Kopplungen wurden aufgehoben und ein neuer sicherer Code generiert.', true);
   }
 }
 
@@ -15691,19 +15691,25 @@ function updateSyncConnectedUI() {
   if (mainTimeSpan) mainTimeSpan.textContent = syncTime;
 
   if (mobilePairedListEl) {
-    if (pairedList.length > 0) {
-      mobilePairedListEl.innerHTML = pairedList.map(d => {
-        const isPhone = /handy|phone|mobil|android/i.test(d.name);
-        const icon = isPhone ? '📱' : '💻';
-        const safeName = escapeHTML(d.name);
-        const safeTime = escapeHTML(d.time || 'Heute');
-        return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
-          <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
-          <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${safeName.replace(/'/g, "\\'")}', '${escapeHTML(d.code).replace(/'/g, "\\'")}')" style="font-size:12px; padding:4px 10px;">⚡ Sync</button>
-        </div>`;
-      }).join('');
-    } else {
-      mobilePairedListEl.innerHTML = '';
+      if (pairedList.length > 0) {
+        mobilePairedListEl.innerHTML = pairedList.map(d => {
+          const isPhone = /handy|phone|mobil|android/i.test(d.name);
+          const icon = isPhone ? "📱" : "💻";
+          const safeName = escapeHTML(d.name);
+          const safeCode = escapeHTML(d.code || pairedCode);
+          const safeTime = escapeHTML(d.time || "Heute");
+          const jsName = safeName.replace(/'/g, "\\'");
+          const jsCode = safeCode.replace(/'/g, "\\'");
+          return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
+            <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${jsName}', '${jsCode}')" style="font-size:12px; padding:4px 8px;">⚡ Sync</button>
+              <button type="button" class="btn btn-danger" onclick="removeSinglePairedDevice('${jsName}')" aria-label="Kopplung mit ${safeName} entfernen" style="font-size:12px; padding:4px 8px;">🗑️ Trennen</button>
+            </div>
+          </div>`;
+        }).join("");
+      } else {
+        mobilePairedListEl.innerHTML = '<div style="font-size:14px; color:#64748b; padding:8px 0;">Keine Geräte gekoppelt.</div>';
     }
   }
 
@@ -16055,7 +16061,7 @@ function generateNewSyncCode(silent = false) {
   }
   restartSyncListener();
   if (!silent && typeof announceNVDA === 'function') {
-    announceNVDA(`Neuer Kopplungscode generiert: ${newCode}.`, true);
+    announceNVDA(`Neuer eigenständiger Kopplungscode generiert: ${newCode}. Andere Geräte können sich nun nur noch mit diesem neuen Code verbinden.`, true);
   }
 }
 
