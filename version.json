@@ -1,7 +1,7 @@
 {
-  "version": "6.9.48",
+  "version": "6.9.49",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-10-27",
+  "buildDate": "2026-10-29",
   "features": [
     "💱 Multi-Währungs-System & Standard-Währung: Wähle in den Einstellungen (Reiter 5) deine Hauptwährung (Automatisch nach Sprache mit EUR/USD, oder manuell aus modernen & historischen Währungen wie DM, Schilling, Franc)",
     "🔴 Währungsauswahl bei Ausgaben (Reiter 2): Flexibles Erfassen von Ausgaben in Fremdwährungen mit automatischer Cent-genauer Umrechnung in die Basiswährung",
