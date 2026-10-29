@@ -685,6 +685,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
                  aria-label="Gerätename. Mit TalkBack Zeichen für Zeichen durchwischen zum Buchstabieren oder den Buchstabier-Button drücken."
                  style="font-size: 20px; font-weight: bold; color: #0D47A1; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 140px; padding: 6px 10px; border: 1px solid #BBDEFB; border-radius: 4px; background: #E3F2FD; cursor: pointer;"
                  onclick="this.select()" />
+            <button type="button" class="btn btn-secondary" onclick="promptChangeDeviceName()"
+                    aria-label="Gerätename anpassen oder ändern" style="font-size: 14px; padding: 8px 14px;">
+              ✏️ <strong>Ändern</strong>
+            </button>
           <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('lock-sync-device-name').value, 'Gerätename')"
                   aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 13px; padding: 6px 10px; white-space: nowrap;">
             🔊 <strong>Buchstabieren</strong>

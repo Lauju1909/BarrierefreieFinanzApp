@@ -15603,6 +15603,23 @@ function disconnectSyncPairing() {
   }
 }
 
+
+function promptChangeDeviceName() {
+  const current = (typeof SyncEngine !== "undefined") ? SyncEngine.getDeviceName() : (localStorage.getItem("haushaltsbuch_sync_devicename") || "");
+  const newName = prompt("Gib den gewünschten Namen für dieses Gerät ein (z. B. Laptop, Mein-PC, Arbeitszimmer):", current);
+  if (newName && newName.trim()) {
+    if (typeof SyncEngine !== "undefined") {
+      SyncEngine.setDeviceName(newName.trim());
+    } else {
+      localStorage.setItem("haushaltsbuch_sync_devicename", newName.trim());
+    }
+    updateSyncConnectedUI();
+    if (typeof announceNVDA === "function") {
+      announceNVDA(`Gerätename wurde geändert auf: ${newName.trim()}`, true);
+    }
+  }
+}
+
 function updateSyncConnectedUI() {
   // Falls window.__PAIRED_DEVICE__ vom C# Server bereitsteht, in LocalStorage / SyncEngine übernehmen
   if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {

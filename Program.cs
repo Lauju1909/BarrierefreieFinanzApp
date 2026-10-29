@@ -371,7 +371,8 @@ namespace HaushaltsbuchApp
                         if (url.StartsWith("/api/heartbeat"))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"alive\"}");
+                            string mName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
+                            byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"alive\",\"machineName\":\"" + mName + "\"}");
                             SendHttpResponse(stream, 200, "application/json", data);
                             return;
                         }
@@ -598,7 +599,8 @@ namespace HaushaltsbuchApp
                 }
 
                 string html = File.ReadAllText(htmlPath, Encoding.UTF8);
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\";</script>";
+                string mName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"; window.__MACHINE_NAME__ = \"" + mName + "\";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {

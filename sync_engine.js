@@ -538,32 +538,48 @@ const SyncEngine = {
   },
 
   getExportablePeers(activeCode = null) {
-    const myName = this.getDeviceName();
-    const myCode = (activeCode || this.getActivePairingCode() || this.getPairingCode() || '').trim().toUpperCase();
-    const nowStr = new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-    const list = this.getPairedDevices().map(d => ({
-      name: d.name,
-      code: d.code || myCode,
-      time: d.time || nowStr
-    }));
-    if (myName && myCode) {
-      list.unshift({ name: myName, code: myCode, time: nowStr });
-    }
-    return list;
-  },
+      const myName = this.getDeviceName();
+      const myCode = (activeCode || this.getActivePairingCode() || this.getPairingCode() || "").trim().toUpperCase();
+      const nowStr = new Date().toLocaleDateString("de-DE") + " um " + new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      const removed = this.getRemovedDevices().map(r => r.toLowerCase());
+      const list = this.getPairedDevices()
+        .filter(d => d.name && !removed.includes(d.name.trim().toLowerCase()))
+        .map(d => ({
+          name: d.name,
+          code: d.code || myCode,
+          time: d.time || nowStr
+        }));
+      if (myName && myCode && !removed.includes(myName.trim().toLowerCase())) {
+        list.unshift({ name: myName, code: myCode, time: nowStr });
+      }
+      return list;
+    },
 
   registerIncomingPeerAndGroup(senderName, usedCode, packetPeers = [], timeStr = null) {
-    // SICHERHEIT & ISOLATION: Nur der direkte Absender, der den gültigen Code besitzt,
-    // wird registriert. Fremde Geräte aus packetPeers werden NICHT automatisch adoptiert!
-    if (!senderName) return;
-    const cleanSender = String(senderName).trim();
-    if (this.getRemovedDevices().includes(cleanSender.toLowerCase())) return;
-
-    const cleanCode = (usedCode || '').trim().toUpperCase();
-    if (cleanSender && cleanCode) {
-      this.savePairedDevice(cleanSender, cleanCode, timeStr, false);
-    }
-  },
+      const myName = (this.getDeviceName() || "").trim().toLowerCase();
+      const removed = this.getRemovedDevices().map(r => r.toLowerCase());
+  
+      // 1. Direkten Absender registrieren
+      if (senderName) {
+        const cleanSender = String(senderName).trim();
+        const cleanCode = (usedCode || "").trim().toUpperCase();
+        if (cleanSender && cleanSender.toLowerCase() !== myName && !removed.includes(cleanSender.toLowerCase()) && cleanCode) {
+          this.savePairedDevice(cleanSender, cleanCode, timeStr, false);
+        }
+      }
+  
+      // 2. Transitive Gruppen-Partner übernehmen (z. B. Laptop koppelt mit Handy -> Handy kennt bereits PC -> Laptop koppelt automatisch auch mit PC!)
+      if (Array.isArray(packetPeers) && packetPeers.length > 0) {
+        for (const p of packetPeers) {
+          if (!p || !p.name) continue;
+          const pName = String(p.name).trim();
+          const pCode = (p.code || usedCode || "").trim().toUpperCase();
+          if (pName && pName.toLowerCase() !== myName && !removed.includes(pName.toLowerCase()) && pCode) {
+            this.savePairedDevice(pName, pCode, p.time || timeStr, false);
+          }
+        }
+      }
+    },
 
   // Sicherstellen, dass dieses Gerät einen eigenen, einzigartigen Code besitzt (nicht geclont vom Partner)
   ensureUniqueDeviceCode() {
@@ -582,23 +598,74 @@ const SyncEngine = {
     } catch(e) {}
   },
 
-  // 1. ZUFALLS-GERÄTENAME GENERIEREN (z. B. Handy-7X49)
-  getDeviceName() {
-    let name = localStorage.getItem('haushaltsbuch_sync_devicename');
-    if (!name) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let suffix = '';
-      for (let i = 0; i < 4; i++) {
-        suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+  // Echten Gerätenamen der Hardware / des Betriebssystems ermitteln
+    detectRealDeviceName() {
+      try {
+        if (typeof window !== "undefined") {
+          // 1. Hostname vom Windows C# Server
+          if (window.__MACHINE_NAME__ && typeof window.__MACHINE_NAME__ === "string") {
+            const m = window.__MACHINE_NAME__.trim();
+            if (m && m !== "PC" && m !== "Computer") return m;
+          }
+          // 2. Android Java Bridge (Gerätename aus Systemeinstellungen oder Modell)
+          if (window.AndroidBiometrics && typeof window.AndroidBiometrics.getDeviceName === "function") {
+            try {
+              const aName = window.AndroidBiometrics.getDeviceName();
+              if (aName && typeof aName === "string" && aName.trim()) {
+                return aName.trim();
+              }
+            } catch (e) {}
+          }
+          // 3. UserAgent Modell-Parsing Fallback
+          if (typeof navigator !== "undefined" && navigator.userAgent) {
+            const ua = navigator.userAgent;
+            const androidMatch = ua.match(/;\s*([A-Za-z0-9_\-\s]+)\s+Build/i);
+            if (androidMatch && androidMatch[1]) {
+              const model = androidMatch[1].trim();
+              if (model && !/^(wv|K)$/i.test(model)) {
+                return model;
+              }
+            }
+          }
+        }
+      } catch(e) {}
+      return null;
+    },
+  
+    // Gerätename ermitteln (bevorzugt den echten Namen des Geräts)
+    getDeviceName() {
+      let name = localStorage.getItem("haushaltsbuch_sync_devicename");
+      const realName = this.detectRealDeviceName();
+  
+      if (realName) {
+        const isRandomOrGeneric = !name ||
+          /^PC-[A-Z0-9]{4}$/i.test(name) ||
+          /^Handy-[A-Z0-9]{4}$/i.test(name) ||
+          /^(PC|Computer|Handy|Smartphone|Laptop)$/i.test(name.trim());
+  
+        if (isRandomOrGeneric) {
+          name = realName;
+          localStorage.setItem("haushaltsbuch_sync_devicename", name);
+        }
+        return name;
       }
-      const isAndroid = !!window.__IS_ANDROID__ || 
-                        (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
-                        /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      name = (isAndroid ? 'Handy-' : 'PC-') + suffix;
-      localStorage.setItem('haushaltsbuch_sync_devicename', name);
-    }
-    return name;
-  },
+  
+      if (!name) {
+        const isAndroid = typeof window !== "undefined" && (
+          !!window.__IS_ANDROID__ ||
+          (typeof Capacitor !== "undefined" && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) ||
+          (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+        );
+        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let suffix = "";
+        for (let i = 0; i < 4; i++) {
+          suffix += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        name = (isAndroid ? "Handy-" : "PC-") + suffix;
+        localStorage.setItem("haushaltsbuch_sync_devicename", name);
+      }
+      return name;
+    },
 
   setDeviceName(newName) {
     if (newName && newName.trim()) {
