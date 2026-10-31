@@ -116,7 +116,6 @@ jobs:
           name: windows-executables
           path: |
             Haushaltsbuch.exe
-            Haushaltsbuch_App.html
             Feedback_Zentrale.exe
             Kategorie_Zentrale.exe
 
@@ -225,7 +224,6 @@ jobs:
           name: "Barrierefreie Finanz-App v${{ steps.target_ver.outputs.version }} (Windows & Linux)"
           files: |
             release-assets/Haushaltsbuch.exe
-            release-assets/Haushaltsbuch_App.html
             release-assets/Feedback_Zentrale.exe
             release-assets/Kategorie_Zentrale.exe
             release-assets/Haushaltsbuch-Linux

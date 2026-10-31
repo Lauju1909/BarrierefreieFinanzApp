@@ -16,7 +16,7 @@ namespace HaushaltsbuchApp
     {
         private const string GITHUB_RAW_BASE = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main";
         private const string VERSION_URL = GITHUB_RAW_BASE + "/version.json";
-        private const string APP_HTML_URL = GITHUB_RAW_BASE + "/Haushaltsbuch_App.html";
+        private const string EXE_DOWNLOAD_URL = "https://github.com/Lauju1909/BarrierefreieFinanzApp/releases/latest/download/Haushaltsbuch.exe";
         private const int BASE_PORT = 48123;
         private static readonly string _sessionToken = Guid.NewGuid().ToString("N");
 
@@ -46,6 +46,9 @@ namespace HaushaltsbuchApp
                 catch { }
 
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+
+                // 0. Aufräumen von alten Update-Artefakten (*.old, *.new, *.tmp)
+                CleanupUpdateArtifacts(baseDir);
 
                 // 1. SPEICHERORT: AUSSCHLIESSLICH IM ORDNER DER EXE
                 _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
@@ -84,6 +87,9 @@ namespace HaushaltsbuchApp
 
                 // 5. BROWSER STARTEN (vollständig aus dem RAM bedient)
                 Process browserProc = LaunchBestBrowser(launchUrl, _profileDir);
+
+                // 6. Asynchroner EXE-Update-Check (lädt ausschließlich Haushaltsbuch.exe bei neuer Version)
+                ThreadPool.QueueUserWorkItem((state) => CheckAndApplyUpdate(baseDir));
 
                 // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat)
                 _lastHeartbeat = DateTime.Now;
@@ -820,68 +826,26 @@ namespace HaushaltsbuchApp
             return null;
         }
 
-                private static void SyncEmbeddedApp(string targetHtml, string localVersionFile)
+                private static void CleanupUpdateArtifacts(string baseDir)
         {
             try
             {
-                Assembly asm = Assembly.GetExecutingAssembly();
-                string resourceName = null;
-                
-                foreach (string name in asm.GetManifestResourceNames())
+                if (string.IsNullOrEmpty(baseDir) || !Directory.Exists(baseDir)) return;
+                string[] files = Directory.GetFiles(baseDir, "Haushaltsbuch.exe.*");
+                foreach (string file in files)
                 {
-                    if (name.IndexOf("embedded_app.html", StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (file.EndsWith(".old", StringComparison.OrdinalIgnoreCase) ||
+                        file.EndsWith(".new", StringComparison.OrdinalIgnoreCase) ||
+                        file.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
                     {
-                        resourceName = name;
-                        break;
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(resourceName))
-                {
-                    using (Stream stream = asm.GetManifestResourceStream(resourceName))
-                    {
-                        if (stream != null)
-                        {
-                            string embeddedContent = null;
-                            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
-                            {
-                                embeddedContent = reader.ReadToEnd();
-                            }
-
-                            bool shouldWrite = false;
-                            if (!File.Exists(targetHtml))
-                            {
-                                shouldWrite = true;
-                            }
-                            else
-                            {
-                                string localContent = File.ReadAllText(targetHtml, Encoding.UTF8);
-                                string embeddedVer = GetVersionFromContent(embeddedContent);
-                                string localVer = GetVersionFromContent(localContent);
-
-                                if (IsNewerVersion(embeddedVer, localVer) || !string.Equals(embeddedVer, localVer, StringComparison.OrdinalIgnoreCase))
-                                {
-                                    shouldWrite = true;
-                                }
-                            }
-
-                            if (shouldWrite)
-                            {
-                                string dir = Path.GetDirectoryName(targetHtml);
-                                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                                File.WriteAllText(targetHtml, embeddedContent, Encoding.UTF8);
-                                
-                                string ver = GetVersionFromContent(embeddedContent);
-                                File.WriteAllText(localVersionFile, string.Format("{{\"version\": \"{0}\"}}", ver), Encoding.UTF8);
-                            }
-                        }
+                        try { File.Delete(file); } catch { }
                     }
                 }
             }
             catch { }
         }
 
-                private static string GetVersionFromContent(string content)
+        private static string GetVersionFromContent(string content)
         {
             if (string.IsNullOrEmpty(content)) return "1.0.0";
             Match m = Regex.Match(content, "CURRENT_APP_VERSION\\s*=\\s*['\"]v?([^'\"]+)['\"]");
@@ -893,46 +857,79 @@ namespace HaushaltsbuchApp
             return "1.0.0";
         }
 
-        private static void CheckAndApplyUpdate(string targetHtml, string localVersionFile)
+        private static void CheckAndApplyUpdate(string baseDir)
         {
             try
             {
-                string localVer = "1.0.0";
-                if (File.Exists(localVersionFile))
+                string currentExePath = null;
+                try
                 {
-                    string localContent = File.ReadAllText(localVersionFile);
-                    localVer = GetVersionFromContent(localContent);
+                    currentExePath = Assembly.GetExecutingAssembly().Location;
                 }
-                else if (File.Exists(targetHtml))
+                catch { }
+
+                if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath))
                 {
-                    string localHtml = File.ReadAllText(targetHtml);
-                    localVer = GetVersionFromContent(localHtml);
+                    try
+                    {
+                        currentExePath = Process.GetCurrentProcess().MainModule.FileName;
+                    }
+                    catch { }
                 }
+
+                if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath))
+                {
+                    currentExePath = Path.Combine(baseDir, "Haushaltsbuch.exe");
+                }
+
+                if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath)) return;
+
+                // Lokale Version direkt aus dem eingebetteten HTML im RAM auslesen
+                string localVer = GetVersionFromContent(GetEmbeddedAppHtml());
 
                 long ticks = DateTime.UtcNow.Ticks;
                 string verUrlWithBuster = VERSION_URL + "?t=" + ticks;
-                string appUrlWithBuster = APP_HTML_URL + "?t=" + ticks;
 
-                using (var client = new TimeoutWebClient(8000))
+                using (var client = new TimeoutWebClient(12000))
                 {
                     client.Headers.Add("User-Agent", "Haushaltsbuch-AutoUpdater");
                     client.Headers.Add("Cache-Control", "no-cache");
                     client.Headers.Add("Pragma", "no-cache");
                     string remoteVerJson = client.DownloadString(verUrlWithBuster);
                     string remoteVer = GetVersionFromContent(remoteVerJson);
-                    
+
                     if (!string.IsNullOrEmpty(remoteVer) && remoteVer != "1.0.0")
                     {
-                        if (IsNewerVersion(remoteVer, localVer) || !File.Exists(targetHtml))
+                        if (IsNewerVersion(remoteVer, localVer))
                         {
-                            string tmpHtml = targetHtml + ".tmp";
-                            client.DownloadFile(appUrlWithBuster, tmpHtml);
-                            if (File.Exists(tmpHtml) && new FileInfo(tmpHtml).Length > 1000)
+                            string tempNewExe = currentExePath + ".new";
+                            if (File.Exists(tempNewExe))
                             {
-                                CreateRollingBackup(_vaultPath);
-                                File.Copy(tmpHtml, targetHtml, true);
-                                File.Delete(tmpHtml);
-                                File.WriteAllText(localVersionFile, remoteVerJson, Encoding.UTF8);
+                                try { File.Delete(tempNewExe); } catch { }
+                            }
+
+                            // Lädt AUSSCHLIESSLICH die neue Haushaltsbuch.exe von den GitHub Releases herunter
+                            // Erstellt, lädt oder überschreibt NIEMALS eine HTML-Datei!
+                            client.DownloadFile(EXE_DOWNLOAD_URL, tempNewExe);
+
+                            if (File.Exists(tempNewExe) && new FileInfo(tempNewExe).Length > 500000)
+                            {
+                                string oldExe = currentExePath + ".old";
+                                if (File.Exists(oldExe))
+                                {
+                                    try { File.Delete(oldExe); } catch { }
+                                }
+
+                                // Windows Atomic Replace: Laufende Datei umbenennen und neue an den Zielplatz setzen
+                                File.Move(currentExePath, oldExe);
+                                File.Move(tempNewExe, currentExePath);
+                            }
+                            else
+                            {
+                                if (File.Exists(tempNewExe))
+                                {
+                                    try { File.Delete(tempNewExe); } catch { }
+                                }
                             }
                         }
                     }
@@ -941,7 +938,7 @@ namespace HaushaltsbuchApp
             catch { }
         }
 
-private static bool IsNewerVersion(string remote, string local)
+        private static bool IsNewerVersion(string remote, string local)
         {
             try
             {
