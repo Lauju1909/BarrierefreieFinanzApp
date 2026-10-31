@@ -346,14 +346,29 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        // Sicherheits-Token aus Header extrahieren
+                        // Sicherheits- und Origin-Prüfung: Schutz vor Cross-Origin-Angriffen fremder Webseiten
+                        string originHeader = null;
                         string tokenHeader = null;
                         foreach (string h in reqLines)
                         {
-                            if (h.StartsWith("X-Vault-Token:", StringComparison.OrdinalIgnoreCase))
+                            if (h.StartsWith("Origin:", StringComparison.OrdinalIgnoreCase))
+                            {
+                                originHeader = h.Substring(7).Trim();
+                            }
+                            else if (h.StartsWith("X-Vault-Token:", StringComparison.OrdinalIgnoreCase))
                             {
                                 tokenHeader = h.Substring(14).Trim();
-                                break;
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(originHeader) && !originHeader.Equals("null", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (!originHeader.StartsWith("http://127.0.0.1", StringComparison.OrdinalIgnoreCase) &&
+                                !originHeader.StartsWith("http://localhost", StringComparison.OrdinalIgnoreCase))
+                            {
+                                byte[] forbidden = Encoding.UTF8.GetBytes("{\"error\":\"Forbidden: Cross-Origin access from untrusted external domain denied\"}");
+                                SendHttpResponse(stream, 403, "application/json", forbidden);
+                                return;
                             }
                         }
 
@@ -541,7 +556,17 @@ namespace HaushaltsbuchApp
                         if (File.Exists(_htmlPath))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            byte[] htmlBytes = File.ReadAllBytes(_htmlPath);
+                            string htmlContent = File.ReadAllText(_htmlPath, Encoding.UTF8);
+                            // IN-MEMORY HARDENING: Session-Token ausschließlich im flüchtigen RAM über den HTTP-Stream ausliefern!
+                            if (htmlContent.Contains("window.__AUTH_TOKEN__ = \"\""))
+                            {
+                                htmlContent = htmlContent.Replace("window.__AUTH_TOKEN__ = \"\"", "window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"");
+                            }
+                            else if (htmlContent.Contains("id=\"disk-vault-data\""))
+                            {
+                                htmlContent = Regex.Replace(htmlContent, "window\\.__AUTH_TOKEN__\\s*=\\s*\"[^\"]*\"", "window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"");
+                            }
+                            byte[] htmlBytes = Encoding.UTF8.GetBytes(htmlContent);
                             SendHttpResponse(stream, 200, "text/html", htmlBytes);
                             return;
                         }
@@ -560,9 +585,10 @@ namespace HaushaltsbuchApp
                 string statusText = statusCode == 200 ? "OK" : (statusCode == 403 ? "Forbidden" : (statusCode == 404 ? "Not Found" : "Error"));
                 StringBuilder sb = new StringBuilder();
                 sb.Append(string.Format("HTTP/1.1 {0} {1}\r\n", statusCode, statusText));
-                sb.Append("Access-Control-Allow-Origin: *\r\n");
+                string allowOrigin = _activePort > 0 ? ("http://127.0.0.1:" + _activePort) : "http://127.0.0.1";
+                sb.Append(string.Format("Access-Control-Allow-Origin: {0}\r\n", allowOrigin));
                 sb.Append("Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n");
-                sb.Append("Access-Control-Allow-Headers: Content-Type, X-Vault-Token, *\r\n");
+                sb.Append("Access-Control-Allow-Headers: Content-Type, X-Vault-Token\r\n");
                 sb.Append(string.Format("Content-Type: {0}; charset=utf-8\r\n", contentType));
                 sb.Append(string.Format("Content-Length: {0}\r\n", payload.Length));
                 sb.Append("Connection: close\r\n\r\n");
@@ -605,7 +631,7 @@ namespace HaushaltsbuchApp
 
                 string html = File.ReadAllText(htmlPath, Encoding.UTF8);
                 string mName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
-                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"; window.__MACHINE_NAME__ = \"" + mName + "\";</script>";
+                string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"\"; window.__MACHINE_NAME__ = \"" + mName + "\";</script>";
 
                 if (html.Contains("id=\"disk-vault-data\""))
                 {

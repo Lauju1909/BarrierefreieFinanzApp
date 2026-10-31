@@ -20668,7 +20668,13 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
 
     if (isFromBio || localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
       try {
-        localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
+        if (typeof BiometricAuth !== 'undefined' && typeof BiometricAuth.encryptBioPin === 'function') {
+          BiometricAuth.encryptBioPin(enteredPin).then(t => {
+            try { localStorage.setItem('haushaltsbuch_bio_token', t); } catch(e) {}
+          });
+        } else {
+          localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(enteredPin)));
+        }
       } catch(e) {}
     }
 
@@ -20909,7 +20915,17 @@ async function handleChangePin(e) {
 
     cryptoKey = newKey;
     window.__ACTIVE_PIN__ = newPin;
-    if (localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') { try { localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(newPin))); } catch(e) {} }
+    if (localStorage.getItem('haushaltsbuch_bio_enabled') === 'true') {
+      try {
+        if (typeof BiometricAuth !== 'undefined' && typeof BiometricAuth.encryptBioPin === 'function') {
+          BiometricAuth.encryptBioPin(newPin).then(t => {
+            try { localStorage.setItem('haushaltsbuch_bio_token', t); } catch(e) {}
+          });
+        } else {
+          localStorage.setItem('haushaltsbuch_bio_token', btoa(encodeURIComponent(newPin)));
+        }
+      } catch(e) {}
+    }
     localStorage.setItem(STORAGE_SALT_KEY, newSaltBase64);
     await saveStateToEncryptedStorage();
 
@@ -24285,6 +24301,82 @@ const BiometricAuth = {
     }
   },
 
+  async encryptBioPin(pin) {
+    try {
+      if (typeof crypto === 'undefined' || !crypto.subtle) {
+        return btoa(encodeURIComponent(pin));
+      }
+      let salt = localStorage.getItem('haushaltsbuch_bio_salt');
+      if (!salt) {
+        const sBuf = new Uint8Array(16);
+        crypto.getRandomValues(sBuf);
+        salt = Array.from(sBuf).map(b => b.toString(16).padStart(2, '0')).join('');
+        localStorage.setItem('haushaltsbuch_bio_salt', salt);
+      }
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        enc.encode('bio_secure_v2_' + salt),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: enc.encode(salt), iterations: 10000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(pin));
+      const combined = new Uint8Array(iv.length + cipher.byteLength);
+      combined.set(iv, 0);
+      combined.set(new Uint8Array(cipher), iv.length);
+      let binary = '';
+      for (let i = 0; i < combined.length; i++) {
+        binary += String.fromCharCode(combined[i]);
+      }
+      return 'enc:' + btoa(binary);
+    } catch(e) {
+      return btoa(encodeURIComponent(pin));
+    }
+  },
+
+  async decryptBioPin(token) {
+    if (!token) return '';
+    if (!token.startsWith('enc:')) {
+      try { return decodeURIComponent(atob(token)); } catch(e) { return atob(token); }
+    }
+    try {
+      const raw = atob(token.substring(4));
+      const combined = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) combined[i] = raw.charCodeAt(i);
+      const iv = combined.slice(0, 12);
+      const cipher = combined.slice(12);
+      const salt = localStorage.getItem('haushaltsbuch_bio_salt') || '';
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw',
+        enc.encode('bio_secure_v2_' + salt),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      const key = await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: enc.encode(salt), iterations: 10000, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+      return new TextDecoder().decode(decrypted);
+    } catch(e) {
+      return '';
+    }
+  },
+
   async enable(pinToStore) {
     let pin = pinToStore;
     if (!pin && typeof window !== 'undefined' && window.__ACTIVE_PIN__) {
@@ -24323,7 +24415,7 @@ const BiometricAuth = {
         }).catch(() => true);
       }
 
-      const token = btoa(encodeURIComponent(pin.trim()));
+      const token = await this.encryptBioPin(pin.trim());
       localStorage.setItem('haushaltsbuch_bio_token', token);
       localStorage.setItem('haushaltsbuch_bio_enabled', 'true');
       this.isCancelledForSession = false;
@@ -24522,9 +24614,9 @@ const BiometricAuth = {
     }
   },
 
-  finishUnlockWithToken(token) {
+  async finishUnlockWithToken(token) {
     try {
-      const pin = decodeURIComponent(atob(token));
+      const pin = await this.decryptBioPin(token);
       const pinInput = document.getElementById('pin-input');
       if (pinInput) {
         pinInput.value = pin;
