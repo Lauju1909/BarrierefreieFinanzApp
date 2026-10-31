@@ -15,6 +15,24 @@ targetDirs.forEach(targetDir => {
     'version.json'
   ];
 
+  const dirsToRemove = [
+    'Profile',
+    'Profile_Feedback',
+    'Profile_Kategorien'
+  ];
+
+  dirsToRemove.forEach(dirName => {
+    const dPath = path.join(targetDir, dirName);
+    if (fs.existsSync(dPath)) {
+      try {
+        fs.rmSync(dPath, { recursive: true, force: true });
+        console.log(`Cleaned up profile directory from ${targetDir}: ${dirName}`);
+      } catch (e) {
+        console.warn(`Could not remove ${dPath}:`, e.message);
+      }
+    }
+  });
+
   filesToRemove.forEach(file => {
     const dest = path.join(targetDir, file);
     if (fs.existsSync(dest)) {

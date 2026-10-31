@@ -30,7 +30,12 @@ namespace FeedbackApp
             }
 
             string chromePath = FindBrowser();
-            string profileDir = Path.Combine(baseDir, "Profile_Feedback");
+            string localAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string profileDir = Path.Combine(localAppDataDir, "HaushaltsbuchBrowser", "Profile_Feedback");
+            try {
+                string oldProfile = Path.Combine(baseDir, "Profile_Feedback");
+                if (Directory.Exists(oldProfile)) Directory.Delete(oldProfile, true);
+            } catch { }
 
             string url = "file:///" + _htmlPath.Replace('\\', '/');
 

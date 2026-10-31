@@ -53,7 +53,8 @@ namespace HaushaltsbuchApp
                 // 1. SPEICHERORT: AUSSCHLIESSLICH IM ORDNER DER EXE
                 _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
                 _backupDir = Path.Combine(_activeStorageDir, "Tresor_Sicherheitskopien");
-                _profileDir = Path.Combine(_activeStorageDir, "Profile");
+                string localAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                _profileDir = Path.Combine(localAppDataDir, "HaushaltsbuchBrowser", "Profile");
                 _htmlPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_App.html");
                 _versionPath = Path.Combine(_activeStorageDir, "version.json");
                 _vaultPath = Path.Combine(_activeStorageDir, "Haushaltsbuch_Daten.vault");
@@ -76,6 +77,9 @@ namespace HaushaltsbuchApp
                 // 2. Aufgeräumter Ordner: Haushaltsbuch_App.html und version.json immer von der Festplatte entfernen
                 //    (Die App läuft ab sofort zu 100% autark und sauber direkt aus der Haushaltsbuch.exe im RAM!)
                 CleanLooseHtmlFiles(_htmlPath, _versionPath);
+
+                // Entferne störende Browser-Profil-Ordner aus dem Arbeitsordner
+                CleanLocalProfileDirs(_activeStorageDir);
 
                 // 3. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
                 PurgeAllExternalStorageLocations(_activeStorageDir);
@@ -718,6 +722,26 @@ namespace HaushaltsbuchApp
                                 CreateRollingBackup(vaultPath);
                             }
                         }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static void CleanLocalProfileDirs(string activeDir)
+        {
+            try
+            {
+                string[] profileDirs = new string[] {
+                    Path.Combine(activeDir, "Profile"),
+                    Path.Combine(activeDir, "Profile_Feedback"),
+                    Path.Combine(activeDir, "Profile_Kategorien")
+                };
+                foreach (string d in profileDirs)
+                {
+                    if (Directory.Exists(d))
+                    {
+                        try { Directory.Delete(d, true); } catch { }
                     }
                 }
             }

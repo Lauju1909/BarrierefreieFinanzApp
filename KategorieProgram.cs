@@ -42,7 +42,12 @@ namespace KategorieApp
             StartLocalServer();
 
             string chromePath = FindBrowser();
-            string profileDir = Path.Combine(_baseDir, "Profile_Kategorien");
+            string localAppDataDir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string profileDir = Path.Combine(localAppDataDir, "HaushaltsbuchBrowser", "Profile_Kategorien");
+            try {
+                string oldProfile = Path.Combine(_baseDir, "Profile_Kategorien");
+                if (Directory.Exists(oldProfile)) Directory.Delete(oldProfile, true);
+            } catch { }
 
             string url = "file:///" + _htmlPath.Replace('\\', '/') + "?port=" + _activePort;
 
