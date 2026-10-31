@@ -49,6 +49,10 @@ namespace HaushaltsbuchApp
 
                 // 0. Aufräumen von alten Update-Artefakten (*.old, *.new, *.tmp)
                 CleanupUpdateArtifacts(baseDir);
+                if (!string.IsNullOrEmpty(_activeStorageDir) && !string.Equals(baseDir, _activeStorageDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    CleanupUpdateArtifacts(_activeStorageDir);
+                }
 
                 // 1. SPEICHERORT: AUSSCHLIESSLICH IM ORDNER DER EXE
                 _activeStorageDir = GetPrimaryExeStorageDirectory(baseDir);
@@ -115,6 +119,13 @@ namespace HaushaltsbuchApp
                             }
                         }
                     }
+                }
+
+                // CleanupUpdateArtifacts on exit
+                CleanupUpdateArtifacts(baseDir);
+                if (!string.IsNullOrEmpty(_activeStorageDir) && !string.Equals(baseDir, _activeStorageDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    CleanupUpdateArtifacts(_activeStorageDir);
                 }
 
                 if (_tcpListener != null)
@@ -855,15 +866,28 @@ namespace HaushaltsbuchApp
             try
             {
                 if (string.IsNullOrEmpty(baseDir) || !Directory.Exists(baseDir)) return;
-                string[] files = Directory.GetFiles(baseDir, "Haushaltsbuch.exe.*");
-                foreach (string file in files)
+
+                string[] patterns = new string[] { "Haushaltsbuch.exe.*", ".*Haushaltsbuch*", "*.old", "*.tmp" };
+                foreach (string pattern in patterns)
                 {
-                    if (file.EndsWith(".old", StringComparison.OrdinalIgnoreCase) ||
-                        file.EndsWith(".new", StringComparison.OrdinalIgnoreCase) ||
-                        file.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        try { File.Delete(file); } catch { }
+                        string[] files = Directory.GetFiles(baseDir, pattern);
+                        foreach (string file in files)
+                        {
+                            string lower = file.ToLowerInvariant();
+                            if (lower.EndsWith(".vault") || lower.EndsWith(".json") || lower.EndsWith(".html") || lower.EndsWith(".css") || lower.EndsWith(".js") || lower.EndsWith(".bak") || lower.EndsWith(".txt")) continue;
+                            if (lower.EndsWith(".exe") && !lower.EndsWith(".exe.old") && !lower.EndsWith(".exe.new") && !lower.EndsWith(".exe.tmp")) continue;
+
+                            try
+                            {
+                                File.SetAttributes(file, FileAttributes.Normal);
+                                File.Delete(file);
+                            }
+                            catch { }
+                        }
                     }
+                    catch { }
                 }
             }
             catch { }
@@ -908,13 +932,15 @@ namespace HaushaltsbuchApp
 
                 if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath)) return;
 
+                string exeDir = Path.GetDirectoryName(currentExePath);
+
                 // Lokale Version direkt aus dem eingebetteten HTML im RAM auslesen
                 string localVer = GetVersionFromContent(GetEmbeddedAppHtml());
 
                 long ticks = DateTime.UtcNow.Ticks;
                 string verUrlWithBuster = VERSION_URL + "?t=" + ticks;
 
-                using (var client = new TimeoutWebClient(12000))
+                using (var client = new TimeoutWebClient(15000))
                 {
                     client.Headers.Add("User-Agent", "Haushaltsbuch-AutoUpdater");
                     client.Headers.Add("Cache-Control", "no-cache");
@@ -926,34 +952,55 @@ namespace HaushaltsbuchApp
                     {
                         if (IsNewerVersion(remoteVer, localVer))
                         {
-                            string tempNewExe = currentExePath + ".new";
-                            if (File.Exists(tempNewExe))
+                            // Download in das geschützte LocalAppData-Verzeichnis - NIEMALS sichtbare Zwischendateien im Benutzerordner!
+                            string updateCacheDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HaushaltsbuchBrowser", "Updates");
+                            try { if (!Directory.Exists(updateCacheDir)) Directory.CreateDirectory(updateCacheDir); } catch { }
+
+                            string tempDownloadedExe = Path.Combine(updateCacheDir, "Haushaltsbuch_v" + remoteVer.Replace(".", "_") + ".exe");
+                            if (File.Exists(tempDownloadedExe))
                             {
-                                try { File.Delete(tempNewExe); } catch { }
+                                try { File.Delete(tempDownloadedExe); } catch { }
                             }
 
-                            // Lädt AUSSCHLIESSLICH die neue Haushaltsbuch.exe von den GitHub Releases herunter
-                            // Erstellt, lädt oder überschreibt NIEMALS eine HTML-Datei!
-                            client.DownloadFile(EXE_DOWNLOAD_URL, tempNewExe);
+                            // Lädt AUSSCHLIESSLICH die neue Haushaltsbuch.exe herunter
+                            client.DownloadFile(EXE_DOWNLOAD_URL, tempDownloadedExe);
 
-                            if (File.Exists(tempNewExe) && new FileInfo(tempNewExe).Length > 500000)
+                            if (File.Exists(tempDownloadedExe) && new FileInfo(tempDownloadedExe).Length > 500000)
                             {
-                                string oldExe = currentExePath + ".old";
-                                if (File.Exists(oldExe))
+                                // Unsichtbare temporäre Datei für den atomaren Windows-Austausch im selben Ordner
+                                string hiddenOldExe = Path.Combine(exeDir, ".Haushaltsbuch.old.tmp");
+                                if (File.Exists(hiddenOldExe))
                                 {
-                                    try { File.Delete(oldExe); } catch { }
+                                    try {
+                                        File.SetAttributes(hiddenOldExe, FileAttributes.Normal);
+                                        File.Delete(hiddenOldExe);
+                                    } catch { }
                                 }
 
-                                // Windows Atomic Replace: Laufende Datei umbenennen und neue an den Zielplatz setzen
-                                File.Move(currentExePath, oldExe);
-                                File.Move(tempNewExe, currentExePath);
-                            }
-                            else
-                            {
-                                if (File.Exists(tempNewExe))
+                                // 1. Laufende EXE atomar umbenennen
+                                File.Move(currentExePath, hiddenOldExe);
+
+                                // Sofort als versteckte Systemdatei markieren (100% unsichtbar im Windows Explorer!)
+                                try {
+                                    File.SetAttributes(hiddenOldExe, FileAttributes.Hidden | FileAttributes.System);
+                                } catch { }
+
+                                // 2. Neue EXE sauber am Originalplatz platzieren
+                                File.Copy(tempDownloadedExe, currentExePath, true);
+                                try { File.Delete(tempDownloadedExe); } catch { }
+
+                                // 3. Automatische Hintergrundlöschung starten, sobald der aktuelle Prozess beendet wird
+                                try
                                 {
-                                    try { File.Delete(tempNewExe); } catch { }
+                                    Process.Start(new ProcessStartInfo
+                                    {
+                                        FileName = "cmd.exe",
+                                        Arguments = string.Format("/c timeout /t 2 /nobreak >nul & del /f /q /a:h /a:s \"{0}\" 2>nul", hiddenOldExe),
+                                        WindowStyle = ProcessWindowStyle.Hidden,
+                                        CreateNoWindow = true
+                                    });
                                 }
+                                catch { }
                             }
                         }
                     }
