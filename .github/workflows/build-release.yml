@@ -76,7 +76,7 @@ jobs:
           [ -f app.js ] && git add app.js
           [ -f main.py ] && git add main.py
           for html in *.html; do
-            [ -f "$html" ] && git add "$html"
+            [ -f "$html" ] && [ "$html" != "Haushaltsbuch_App.html" ] && git add "$html"
           done
           git commit -m "chore(release): auto-bump version to v$NEW_VER [skip ci]"
           git tag "v$NEW_VER"

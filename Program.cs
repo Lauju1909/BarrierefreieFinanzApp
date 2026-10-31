@@ -67,32 +67,23 @@ namespace HaushaltsbuchApp
                 // Automatische Sicherheitskopie vor jedem Start
                 CreateRollingBackup(_vaultPath);
 
-                // 2. ENTPACKEN ODER SYNCHRONISIEREN DER HTML-DATEI
-                SyncEmbeddedApp(_htmlPath, _versionPath);
+                // 1. Altdaten-Schutz: Falls eine alte Haushaltsbuch_App.html existiert und Daten enthält, migrieren!
+                EnsureLegacyVaultMigrated(_htmlPath, _vaultPath);
 
-                // 3. BACKGROUND UPDATE CHECK VON GITHUB
-                CheckAndApplyUpdate(_htmlPath, _versionPath);
+                // 2. Aufgeräumter Ordner: Haushaltsbuch_App.html und version.json immer von der Festplatte entfernen
+                //    (Die App läuft ab sofort zu 100% autark und sauber direkt aus der Haushaltsbuch.exe im RAM!)
+                CleanLooseHtmlFiles(_htmlPath, _versionPath);
 
-                if (!File.Exists(_htmlPath))
-                {
-                    SyncEmbeddedApp(_htmlPath, _versionPath);
-                }
-
-                // 4. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
+                // 3. BEREINIGUNG: LÖSCHE ALLE ALTEN SPEICHERORTE / DUPLIKATE AUSSERHALB DIESES ORDNERSS
                 PurgeAllExternalStorageLocations(_activeStorageDir);
 
-                // 5. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
+                // 4. ZERO-PERMISSION LOKALER TCP-SERVER STARTEN
                 bool serverStarted = StartLocalVaultServer();
 
-                // 6. INJEKTION DER DATEN UND DES AKTIVEN PORTS IN DIE HTML
-                InjectDiskVaultIntoHtml(_htmlPath, _vaultPath);
+                string launchUrl = string.Format("http://127.0.0.1:{0}/", _activePort);
 
-                string launchUrl = serverStarted 
-                    ? string.Format("http://127.0.0.1:{0}/", _activePort) 
-                    : ("file:///" + _htmlPath.Replace('\\', '/'));
-
-                // 7. BROWSER STARTEN
-                Process browserProc = LaunchBestBrowser(launchUrl, _htmlPath, _profileDir);
+                // 5. BROWSER STARTEN (vollständig aus dem RAM bedient)
+                Process browserProc = LaunchBestBrowser(launchUrl, _profileDir);
 
                 // 8. PROZESS AM LEBEN ERHALTEN (Heartbeat)
                 _lastHeartbeat = DateTime.Now;
@@ -553,19 +544,47 @@ namespace HaushaltsbuchApp
                             return;
                         }
 
-                        if (File.Exists(_htmlPath))
+                        string htmlContent = GetEmbeddedAppHtml();
+                        if (!string.IsNullOrEmpty(htmlContent))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            string htmlContent = File.ReadAllText(_htmlPath, Encoding.UTF8);
-                            // IN-MEMORY HARDENING: Session-Token ausschließlich im flüchtigen RAM über den HTTP-Stream ausliefern!
-                            if (htmlContent.Contains("window.__AUTH_TOKEN__ = \"\""))
+                            string vaultJson = "{}";
+                            if (File.Exists(_vaultPath))
                             {
-                                htmlContent = htmlContent.Replace("window.__AUTH_TOKEN__ = \"\"", "window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"");
+                                try {
+                                    string vj = File.ReadAllText(_vaultPath, Encoding.UTF8).Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                                    if (!string.IsNullOrEmpty(vj) && vj.Contains("salt")) vaultJson = vj;
+                                } catch { }
                             }
-                            else if (htmlContent.Contains("id=\"disk-vault-data\""))
+
+                            string pairingJson = "{}";
+                            string pairingFile = Path.Combine(_activeStorageDir, "Haushaltsbuch_Kopplung.json");
+                            if (File.Exists(pairingFile))
                             {
-                                htmlContent = Regex.Replace(htmlContent, "window\\.__AUTH_TOKEN__\\s*=\\s*\"[^\"]*\"", "window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"");
+                                try {
+                                    string pj = File.ReadAllText(pairingFile, Encoding.UTF8).Trim('\ufeff', '\u200b', '\r', '\n', ' ');
+                                    if (!string.IsNullOrEmpty(pj) && pj.StartsWith("{")) pairingJson = pj;
+                                } catch { }
                             }
+
+                            string rawName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
+                            string mName = rawName;
+                            if (rawName.Equals("LAURIN_PC", StringComparison.OrdinalIgnoreCase) || rawName.Equals("LAURIN-PC", StringComparison.OrdinalIgnoreCase) || rawName.IndexOf("laurin", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                mName = "PC von Laurin";
+                            }
+
+                            string scriptTag = "<script id=\"disk-vault-data\">window.__DISK_VAULT__ = " + vaultJson + "; window.__PAIRED_DEVICE__ = " + pairingJson + "; window.__LOCAL_PORT__ = " + _activePort + "; window.__AUTH_TOKEN__ = \"" + _sessionToken + "\"; window.__MACHINE_NAME__ = \"" + mName + "\";</script>";
+
+                            if (htmlContent.Contains("id=\"disk-vault-data\""))
+                            {
+                                htmlContent = Regex.Replace(htmlContent, "<script id=\"disk-vault-data\">[\\s\\S]*?</script>", scriptTag);
+                            }
+                            else
+                            {
+                                htmlContent = htmlContent.Replace("<body", scriptTag + "\n<body");
+                            }
+
                             byte[] htmlBytes = Encoding.UTF8.GetBytes(htmlContent);
                             SendHttpResponse(stream, 200, "text/html", htmlBytes);
                             return;
@@ -647,7 +666,69 @@ namespace HaushaltsbuchApp
             catch { }
         }
 
-        private static Process LaunchBestBrowser(string url, string fallbackHtmlPath, string profileDir)
+        private static string GetEmbeddedAppHtml()
+        {
+            try
+            {
+                Assembly asm = Assembly.GetExecutingAssembly();
+                foreach (string name in asm.GetManifestResourceNames())
+                {
+                    if (name.IndexOf("embedded_app.html", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        using (Stream s = asm.GetManifestResourceStream(name))
+                        {
+                            if (s != null)
+                            {
+                                using (StreamReader r = new StreamReader(s, Encoding.UTF8))
+                                {
+                                    return r.ReadToEnd();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        private static void EnsureLegacyVaultMigrated(string htmlPath, string vaultPath)
+        {
+            try
+            {
+                if (File.Exists(htmlPath))
+                {
+                    bool needsVault = !File.Exists(vaultPath) || new FileInfo(vaultPath).Length < 10;
+                    if (needsVault)
+                    {
+                        string html = File.ReadAllText(htmlPath, Encoding.UTF8);
+                        Match m = Regex.Match(html, "window\\.__DISK_VAULT__\\s*=\\s*({[\\s\\S]*?});");
+                        if (m.Success)
+                        {
+                            string legacyJson = m.Groups[1].Value.Trim();
+                            if (legacyJson.Contains("\"salt\"") && legacyJson.Contains("\"vault\""))
+                            {
+                                File.WriteAllText(vaultPath, legacyJson, Encoding.UTF8);
+                                CreateRollingBackup(vaultPath);
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private static void CleanLooseHtmlFiles(string htmlPath, string versionPath)
+        {
+            try
+            {
+                if (File.Exists(htmlPath)) File.Delete(htmlPath);
+                if (File.Exists(versionPath)) File.Delete(versionPath);
+            }
+            catch { }
+        }
+
+        private static Process LaunchBestBrowser(string url, string profileDir)
         {
             string chromePath = FindBrowserPath(new string[]
             {
