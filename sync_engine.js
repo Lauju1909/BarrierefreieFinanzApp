@@ -421,9 +421,47 @@ const SyncEngine = {
     }
   },
 
+  cleanObsoleteTestDevices() {
+    try {
+      const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed) || parsed.length === 0) return;
+
+      const myName = (this.getDeviceName() || '').trim().toLowerCase();
+      const knownObsolete = ['pc-zr4k', 'pc-vrfx', 'pc-ppnl', 'handy-amzz'];
+
+      const beforeLen = parsed.length;
+      const filtered = parsed.filter(d => {
+        if (!d || !d.name) return false;
+        const nLower = d.name.trim().toLowerCase();
+        if (nLower === myName) return false;
+        if (knownObsolete.includes(nLower)) return false;
+        if (d.code && d.code.trim().toUpperCase() === 'KH4P-XKMY-CXWY') return false;
+        return true;
+      });
+
+      if (filtered.length !== beforeLen) {
+        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(filtered));
+        if (filtered.length > 0) {
+          localStorage.setItem('haushaltsbuch_sync_connected_device', filtered[0].name);
+          localStorage.setItem('haushaltsbuch_sync_connected_code', filtered[0].code);
+          localStorage.setItem('haushaltsbuch_sync_connected_time', filtered[0].time || 'Heute');
+        } else {
+          localStorage.removeItem('haushaltsbuch_sync_connected_device');
+          localStorage.removeItem('haushaltsbuch_sync_connected_code');
+          localStorage.removeItem('haushaltsbuch_sync_connected_time');
+        }
+        this._persistPairingToDisk(filtered);
+      }
+    } catch (e) {}
+  },
+
   getPairedDevices() {
+    this.cleanObsoleteTestDevices();
     const myDev = (localStorage.getItem('haushaltsbuch_sync_devicename') || '').trim().toLowerCase();
     const removed = this.getRemovedDevices();
+    const knownObsolete = ['pc-zr4k', 'pc-vrfx', 'pc-ppnl', 'handy-amzz'];
     const isAndroid = typeof window !== 'undefined' && (
       !!window.__IS_ANDROID__ || 
       (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
@@ -437,6 +475,8 @@ const SyncEngine = {
       if (!cleanName) return;
       const lower = cleanName.toLowerCase();
       if (myDev && lower === myDev) return;
+      if (knownObsolete.includes(lower)) return;
+      if (code && code.trim().toUpperCase() === 'KH4P-XKMY-CXWY') return;
       if (!isAndroid && (lower === 'computer' || lower === 'pc')) return;
       if (removed.includes(lower)) return;
 
