@@ -5540,6 +5540,19 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
        BEREICH 1: NUR GEKOPPELTE GERÄTE & POSTFACH-ABGLEICH
        ===================================================================== -->
   <div id="sync-panel-paired" role="tabpanel" aria-labelledby="btn-sync-tab-paired" style="display: block;">
+    <!-- Eigener Gerätename (z. B. PC von Laurin) -->
+    <div id="sync-own-device-card" class="section-card" style="background: #ffffff; border: 2px solid #94a3b8; border-radius: 10px; padding: 14px 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div>
+        <div style="font-size: 13px; color: #475569; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">🖥️ Dieses Gerät (Name im Sync-Netzwerk):</div>
+        <div style="font-size: 20px; font-weight: bold; color: #0f172a;" id="sync-own-device-display">PC von Laurin</div>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <button type="button" class="btn btn-secondary" onclick="promptChangeDeviceName()" aria-label="Namen dieses PCs ändern" style="font-size: 14px; padding: 8px 14px;">
+          ✏️ <strong>PC-Namen ändern</strong>
+        </button>
+      </div>
+    </div>
+
     <!-- Hinweis wenn noch kein Gerät gekoppelt ist -->
     <div id="sync-no-paired-placeholder" class="section-card" style="display: none; text-align: center; padding: 24px; border: 2px dashed #cbd5e1; border-radius: 10px; margin-bottom: 20px;">
       <h3 style="margin: 0 0 10px 0; color: #334155;">⚪ Noch kein Gerät gekoppelt</h3>
@@ -5698,6 +5711,10 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
                    aria-label="Eigener Gerätename. Mit Screenreader Zeichen für Zeichen lesbar oder den Buchstabier-Button drücken."
                    style="font-size: 24px; font-weight: bold; color: #1976D2; letter-spacing: 2px; font-family: monospace; flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid #90CAF9; border-radius: 6px; background: #E3F2FD; cursor: pointer;"
                    onclick="this.select()" />
+            <button type="button" class="btn btn-secondary" onclick="promptChangeDeviceName()"
+                    aria-label="Gerätename dieses Geräts ändern" style="font-size: 14px; padding: 8px 14px;">
+              ✏️ <strong>Ändern</strong>
+            </button>
             <button type="button" class="btn btn-secondary" onclick="spellOutText(document.getElementById('sync-my-device-name').value, 'Gerätename')"
                     aria-label="Gerätename Buchstabe für Buchstabe vorlesen" style="font-size: 14px; padding: 8px 14px;">
               🔊 <strong>Buchstabieren</strong>
@@ -6139,6 +6156,53 @@ const SyncEngine = {
     try { localStorage.setItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list)); } catch (e) {}
   },
 
+  // Gerätetyp ermitteln (Handy, Laptop oder PC)
+  isPhoneDevice(name) {
+    if (!name || typeof name !== 'string') return false;
+    const phonePattern = /(?:handy|phone|smartphone|mobil|mobile|cell|android|iphone|ios|\ba\d{1,3}\b|\bs\d{1,3}\b|\bz\s*(?:flip|fold)\b|galaxy|samsung|pixel|nexus|redmi|xiaomi|poco|huawei|honor|moto|motorola|oneplus|oppo|vivo|realme|nokia|sony|xperia)/i;
+    return phonePattern.test(name);
+  },
+
+  getDeviceType(deviceName) {
+    if (!deviceName || typeof deviceName !== 'string') return 'laptop';
+    const cleanName = deviceName.trim();
+    const lower = cleanName.toLowerCase();
+    try {
+      const stored = localStorage.getItem('haushaltsbuch_sync_devtype_' + lower);
+      if (stored && (stored === 'phone' || stored === 'laptop' || stored === 'pc')) {
+        return stored;
+      }
+    } catch (e) {}
+    if (this.isPhoneDevice(cleanName)) return 'phone';
+    if (/(?:laptop|notebook|macbook|thinkpad|zenbook|surface|chromebook)/i.test(cleanName)) return 'laptop';
+    if (/(?:pc|computer|rechner|desktop|tower|imac|workstation)/i.test(cleanName)) return 'pc';
+    return 'laptop';
+  },
+
+  setPairedDeviceType(deviceName, type) {
+    if (!deviceName || !type) return;
+    const cleanName = deviceName.trim();
+    const lower = cleanName.toLowerCase();
+    try {
+      localStorage.setItem('haushaltsbuch_sync_devtype_' + lower, type);
+    } catch (e) {}
+
+    const current = this.getPairedDevices();
+    let updated = false;
+    for (const d of current) {
+      if (d.name.toLowerCase() === lower) {
+        d.type = type;
+        updated = true;
+      }
+    }
+    if (updated) {
+      try {
+        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(current));
+      } catch (e) {}
+      this._persistPairingToDisk(current);
+    }
+  },
+
   getPairedDevices() {
     const myDev = (localStorage.getItem('haushaltsbuch_sync_devicename') || '').trim().toLowerCase();
     const removed = this.getRemovedDevices();
@@ -6149,7 +6213,7 @@ const SyncEngine = {
     );
 
     const map = new Map();
-    const addEntry = (name, code, time) => {
+    const addEntry = (name, code, time, type = null) => {
       if (!name || typeof name !== 'string') return;
       const cleanName = name.trim();
       if (!cleanName) return;
@@ -6160,13 +6224,15 @@ const SyncEngine = {
 
       const cleanCode = (code && typeof code === 'string') ? code.trim().toUpperCase() : '';
       const cleanTime = (time && typeof time === 'string') ? time.trim() : 'Heute';
+      const effectiveType = type || (this.getDeviceType ? this.getDeviceType(cleanName) : (this.isPhoneDevice(cleanName) ? 'phone' : 'laptop'));
 
       if (!map.has(lower)) {
-        map.set(lower, { name: cleanName, code: cleanCode, time: cleanTime });
+        map.set(lower, { name: cleanName, code: cleanCode, time: cleanTime, type: effectiveType });
       } else {
         const existing = map.get(lower);
         if (cleanCode && !existing.code) existing.code = cleanCode;
         if (cleanTime && cleanTime !== 'Heute') existing.time = cleanTime;
+        if (effectiveType && !existing.type) existing.type = effectiveType;
       }
     };
 
@@ -6176,7 +6242,7 @@ const SyncEngine = {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
           parsed.forEach(d => {
-            if (d && d.name) addEntry(d.name, d.code, d.time);
+            if (d && d.name) addEntry(d.name, d.code, d.time, d.type);
           });
         }
         // Wenn haushaltsbuch_sync_paired_devices existiert (auch wenn leer '[]'),
@@ -6195,11 +6261,11 @@ const SyncEngine = {
     if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
       if (Array.isArray(window.__PAIRED_DEVICE__.devices)) {
         window.__PAIRED_DEVICE__.devices.forEach(d => {
-          if (d && d.name) addEntry(d.name, d.code, d.time);
+          if (d && d.name) addEntry(d.name, d.code, d.time, d.type);
         });
       }
       if (window.__PAIRED_DEVICE__.device) {
-        addEntry(window.__PAIRED_DEVICE__.device, window.__PAIRED_DEVICE__.code, window.__PAIRED_DEVICE__.time);
+        addEntry(window.__PAIRED_DEVICE__.device, window.__PAIRED_DEVICE__.code, window.__PAIRED_DEVICE__.time, window.__PAIRED_DEVICE__.type);
       }
     }
 
@@ -6207,7 +6273,7 @@ const SyncEngine = {
     return result;
   },
 
-  savePairedDevice(deviceName, pairingCode, timeStr = null, isExplicitUserAction = false) {
+  savePairedDevice(deviceName, pairingCode, timeStr = null, isExplicitUserAction = false, deviceType = null) {
     if (!deviceName || typeof deviceName !== 'string') return;
     const cleanName = deviceName.trim();
     if (!cleanName) return;
@@ -6232,10 +6298,11 @@ const SyncEngine = {
     if (!cleanCode) return;
 
     const nowStr = timeStr || (new Date().toLocaleDateString('de-DE') + ' um ' + new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
+    const finalType = deviceType || (this.getDeviceType ? this.getDeviceType(cleanName) : (this.isPhoneDevice(cleanName) ? 'phone' : 'laptop'));
 
     const current = this.getPairedDevices();
     const filtered = current.filter(d => d.name.toLowerCase() !== cleanName.toLowerCase());
-    const updatedEntry = { name: cleanName, code: cleanCode, time: nowStr };
+    const updatedEntry = { name: cleanName, code: cleanCode, time: nowStr, type: finalType };
     const newList = [updatedEntry, ...filtered];
 
     try {
@@ -6312,10 +6379,16 @@ const SyncEngine = {
         .map(d => ({
           name: d.name,
           code: d.code || myCode,
-          time: d.time || nowStr
+          time: d.time || nowStr,
+          type: d.type || (this.getDeviceType ? this.getDeviceType(d.name) : (this.isPhoneDevice(d.name) ? 'phone' : 'laptop'))
         }));
       if (myName && myCode && !removed.includes(myName.trim().toLowerCase())) {
-        list.unshift({ name: myName, code: myCode, time: nowStr });
+        list.unshift({
+          name: myName,
+          code: myCode,
+          time: nowStr,
+          type: this.getDeviceType ? this.getDeviceType(myName) : 'pc'
+        });
       }
       return list;
     },
@@ -6329,7 +6402,8 @@ const SyncEngine = {
         const cleanSender = String(senderName).trim();
         const cleanCode = (usedCode || "").trim().toUpperCase();
         if (cleanSender && cleanSender.toLowerCase() !== myName && !removed.includes(cleanSender.toLowerCase()) && cleanCode) {
-          this.savePairedDevice(cleanSender, cleanCode, timeStr, false);
+          const senderType = (packetPeers && packetPeers.find(p => p.name && p.name.toLowerCase() === cleanSender.toLowerCase()))?.type;
+          this.savePairedDevice(cleanSender, cleanCode, timeStr, false, senderType);
         }
       }
   
@@ -6340,7 +6414,7 @@ const SyncEngine = {
           const pName = String(p.name).trim();
           const pCode = (p.code || usedCode || "").trim().toUpperCase();
           if (pName && pName.toLowerCase() !== myName && !removed.includes(pName.toLowerCase()) && pCode) {
-            this.savePairedDevice(pName, pCode, p.time || timeStr, false);
+            this.savePairedDevice(pName, pCode, p.time || timeStr, false, p.type);
           }
         }
       }
@@ -6367,11 +6441,21 @@ const SyncEngine = {
     detectRealDeviceName() {
       try {
         if (typeof window !== "undefined") {
+          // 0. Gespeicherte Vault-Einstellung falls vorhanden
+          if (typeof appState !== "undefined" && appState && appState.userSettings && appState.userSettings.deviceName) {
+            const ud = appState.userSettings.deviceName.trim();
+            if (ud && !/^(PC|Computer|Handy)$/i.test(ud)) return ud;
+          }
+
           // 1. Hostname vom Windows C# Server
           if (window.__MACHINE_NAME__ && typeof window.__MACHINE_NAME__ === "string") {
-            const m = window.__MACHINE_NAME__.trim();
+            let m = window.__MACHINE_NAME__.trim();
+            if (/^LAURIN[-_]?PC$/i.test(m) || /^PC[-_]?LAURIN$/i.test(m) || m.toLowerCase() === 'laurin') {
+              return "PC von Laurin";
+            }
             if (m && m !== "PC" && m !== "Computer") return m;
           }
+
           // 2. Android Java Bridge (Gerätename aus Systemeinstellungen oder Modell)
           if (window.AndroidBiometrics && typeof window.AndroidBiometrics.getDeviceName === "function") {
             try {
@@ -6381,7 +6465,34 @@ const SyncEngine = {
               }
             } catch (e) {}
           }
-          // 3. UserAgent Modell-Parsing Fallback
+
+          // 3. Wenn auf Desktop/PC: Aus gekoppelten Geräten ableiten (z. B. "a55 von laurin" -> "PC von Laurin")
+          const isAndroid = typeof window !== "undefined" && (
+            !!window.__IS_ANDROID__ || 
+            (typeof Capacitor !== "undefined" && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
+            (typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent))
+          );
+          if (!isAndroid) {
+            try {
+              const rawPeers = localStorage.getItem("haushaltsbuch_sync_paired_devices");
+              if (rawPeers) {
+                const peers = JSON.parse(rawPeers);
+                if (Array.isArray(peers)) {
+                  for (const p of peers) {
+                    if (p && p.name) {
+                      const match = p.name.match(/(?:von|\bde\b|\bof\b)\s+([A-Za-zäöüÄÖÜß]+)/i);
+                      if (match && match[1]) {
+                        const owner = match[1].charAt(0).toUpperCase() + match[1].slice(1);
+                        return `PC von ${owner}`;
+                      }
+                    }
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+
+          // 4. UserAgent Modell-Parsing Fallback
           if (typeof navigator !== "undefined" && navigator.userAgent) {
             const ua = navigator.userAgent;
             const androidMatch = ua.match(/;\s*([A-Za-z0-9_\-\s]+)\s+Build/i);
@@ -6401,20 +6512,28 @@ const SyncEngine = {
     getDeviceName() {
       let name = localStorage.getItem("haushaltsbuch_sync_devicename");
       const realName = this.detectRealDeviceName();
-  
-      if (realName) {
-        const isRandomOrGeneric = !name ||
-          /^PC-[A-Z0-9]{4}$/i.test(name) ||
-          /^Handy-[A-Z0-9]{4}$/i.test(name) ||
-          /^(PC|Computer|Handy|Smartphone|Laptop)$/i.test(name.trim());
-  
-        if (isRandomOrGeneric) {
-          name = realName;
-          localStorage.setItem("haushaltsbuch_sync_devicename", name);
-        }
+
+      const isRandomOrGeneric = !name ||
+        /^PC-[A-Z0-9]{4}$/i.test(name) ||
+        /^Handy-[A-Z0-9]{4}$/i.test(name) ||
+        /^(PC|Computer|Handy|Smartphone|Laptop)$/i.test((name || "").trim());
+
+      if (realName && (isRandomOrGeneric || (realName.startsWith("PC von ") && /^PC-[A-Z0-9]{4}$/i.test(name)))) {
+        name = realName;
+        localStorage.setItem("haushaltsbuch_sync_devicename", name);
         return name;
       }
-  
+
+      if (name && !isRandomOrGeneric) {
+        return name;
+      }
+
+      if (realName) {
+        name = realName;
+        localStorage.setItem("haushaltsbuch_sync_devicename", name);
+        return name;
+      }
+
       if (!name) {
         const isAndroid = typeof window !== "undefined" && (
           !!window.__IS_ANDROID__ ||
@@ -20492,6 +20611,12 @@ async function unlockVaultWithPin(enteredPin, isFromBio = false) {
         if (typeof us.autoChangelog === 'boolean') {
           try { localStorage.setItem(STORAGE_CHANGELOG_ENABLED_KEY, us.autoChangelog ? 'true' : 'false'); } catch(e) {}
         }
+        if (us.deviceName && typeof us.deviceName === 'string' && us.deviceName.trim()) {
+          const isGeneric = /^PC-[A-Z0-9]{4}$/i.test(localStorage.getItem('haushaltsbuch_sync_devicename') || '');
+          if (isGeneric || !localStorage.getItem('haushaltsbuch_sync_devicename')) {
+            localStorage.setItem('haushaltsbuch_sync_devicename', us.deviceName.trim());
+          }
+        }
       } catch (setErr) {
         console.error('Fehler beim Wiederherstellen der Benutzereinstellungen aus dem Tresor:', setErr);
       }
@@ -23334,18 +23459,72 @@ function disconnectSyncPairing() {
 }
 
 
+function getDeviceMeta(d) {
+  const name = typeof d === 'string' ? d : (d && d.name ? d.name : '');
+  let type = (d && d.type) || (typeof SyncEngine !== 'undefined' && typeof SyncEngine.getDeviceType === 'function' ? SyncEngine.getDeviceType(name) : null);
+  if (!type) {
+    const isPhone = /(?:handy|phone|smartphone|mobil|mobile|cell|android|iphone|ios|\ba\d{1,3}\b|\bs\d{1,3}\b|\bz\s*(?:flip|fold)\b|galaxy|samsung|pixel|nexus|redmi|xiaomi|poco|huawei|honor|moto|motorola|oneplus|oppo|vivo|realme|nokia|sony|xperia)/i.test(name);
+    type = isPhone ? 'phone' : (/(?:pc|computer|rechner|desktop|tower)/i.test(name) ? 'pc' : 'laptop');
+  }
+  let icon = '📱';
+  let label = 'Handy';
+  if (type === 'laptop') {
+    icon = '💻';
+    label = 'Laptop';
+  } else if (type === 'pc') {
+    icon = '🖥️';
+    label = 'PC';
+  }
+  return { type, icon, label };
+}
+
+function togglePairedDeviceType(deviceName) {
+  if (!deviceName) return;
+  const currentMeta = getDeviceMeta(deviceName);
+  let nextType = 'phone';
+  if (currentMeta.type === 'phone') nextType = 'laptop';
+  else if (currentMeta.type === 'laptop') nextType = 'pc';
+  else nextType = 'phone';
+
+  if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.setPairedDeviceType === 'function') {
+    SyncEngine.setPairedDeviceType(deviceName, nextType);
+  } else {
+    try {
+      localStorage.setItem('haushaltsbuch_sync_devtype_' + deviceName.trim().toLowerCase(), nextType);
+    } catch(e) {}
+  }
+
+  updateSyncConnectedUI();
+
+  const nextMeta = getDeviceMeta(deviceName);
+  if (typeof announceNVDA === 'function') {
+    announceNVDA(`Gerät ${deviceName} ist jetzt als ${nextMeta.label} (${nextMeta.icon}) markiert.`, true);
+  }
+}
+
 function promptChangeDeviceName() {
   const current = (typeof SyncEngine !== "undefined") ? SyncEngine.getDeviceName() : (localStorage.getItem("haushaltsbuch_sync_devicename") || "");
-  const newName = prompt("Gib den gewünschten Namen für dieses Gerät ein (z. B. Laptop, Mein-PC, Arbeitszimmer):", current);
+  const defaultSuggestion = (!current || /^PC-[A-Z0-9]{4}$/i.test(current) || current === 'PC' || current === 'Computer') ? 'PC von Laurin' : current;
+  const newName = prompt("Gib den gewünschten Namen für dieses Gerät ein (z. B. 'PC von Laurin', 'Arbeits-PC', 'Laptop'):", defaultSuggestion);
   if (newName && newName.trim()) {
+    const clean = newName.trim();
     if (typeof SyncEngine !== "undefined") {
-      SyncEngine.setDeviceName(newName.trim());
+      if (current && current.toLowerCase() !== clean.toLowerCase()) {
+        SyncEngine.removePairedDevice(current);
+      }
+      SyncEngine.setDeviceName(clean);
     } else {
-      localStorage.setItem("haushaltsbuch_sync_devicename", newName.trim());
+      localStorage.setItem("haushaltsbuch_sync_devicename", clean);
+    }
+    if (typeof appState !== 'undefined' && appState && appState.userSettings) {
+      appState.userSettings.deviceName = clean;
+      if (typeof saveStateToEncryptedStorage === 'function') {
+        saveStateToEncryptedStorage();
+      }
     }
     updateSyncConnectedUI();
     if (typeof announceNVDA === "function") {
-      announceNVDA(`Gerätename wurde geändert auf: ${newName.trim()}`, true);
+      announceNVDA(`Gerätename dieses PCs wurde geändert auf: ${clean}`, true);
     }
   }
 }
@@ -23404,6 +23583,8 @@ function updateSyncConnectedUI() {
     const deskOwnCode = document.getElementById('sync-desktop-own-code');
     if (deskOwnName) deskOwnName.textContent = myName;
     if (deskOwnCode) deskOwnCode.textContent = myCode;
+    const ownDevDisplay = document.getElementById('sync-own-device-display');
+    if (ownDevDisplay) ownDevDisplay.textContent = myName;
   }
 
   // Lockscreen
@@ -23440,15 +23621,18 @@ function updateSyncConnectedUI() {
   if (mobilePairedListEl) {
       if (pairedList.length > 0) {
         mobilePairedListEl.innerHTML = pairedList.map(d => {
-          const isPhone = /handy|phone|mobil|android/i.test(d.name);
-          const icon = isPhone ? "📱" : "💻";
+          const meta = getDeviceMeta(d);
+          const icon = meta.icon;
           const safeName = escapeHTML(d.name);
           const safeCode = escapeHTML(d.code || pairedCode);
           const safeTime = escapeHTML(d.time || "Heute");
           const jsName = safeName.replace(/'/g, "\\'");
           const jsCode = safeCode.replace(/'/g, "\\'");
           return `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 12px; background:rgba(255,255,255,0.85); border:1px solid #A5D6A7; border-radius:6px; margin-bottom:6px;">
-            <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
+            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+              <span style="font-size:14px; font-weight:bold; color:#1B5E20;">${icon} ${safeName} <span style="font-weight:normal; color:#475569; font-size:12px;">(${safeTime})</span></span>
+              <button type="button" class="btn btn-secondary" onclick="togglePairedDeviceType('${jsName}')" aria-label="Gerätetyp für ${safeName} umschalten (aktuell ${meta.label}). Klick wechselt zwischen Handy, Laptop und PC" style="font-size:11px; padding:2px 6px; border-radius:10px; cursor:pointer;" title="Klicken zum Umschalten (${meta.label})">${icon} ${meta.label} ⇄</button>
+            </div>
             <div style="display:flex; gap:6px; align-items:center;">
               <button type="button" class="btn btn-secondary" onclick="triggerQuickSyncWithDevice('${jsName}', '${jsCode}')" style="font-size:12px; padding:4px 8px;">⚡ Sync</button>
               <button type="button" class="btn btn-danger" onclick="removeSinglePairedDevice('${jsName}')" aria-label="Kopplung mit ${safeName} entfernen" style="font-size:12px; padding:4px 8px;">🗑️ Trennen</button>
@@ -23491,8 +23675,8 @@ function updateSyncConnectedUI() {
 
     if (pairedListContainer) {
       pairedListContainer.innerHTML = pairedList.map(d => {
-        const isPhone = /handy|phone|mobil|android/i.test(d.name);
-        const icon = isPhone ? '📱' : '💻';
+        const meta = getDeviceMeta(d);
+        const icon = meta.icon;
         const safeName = escapeHTML(d.name);
         const safeCode = escapeHTML(d.code || pairedCode);
         const safeTime = escapeHTML(d.time || 'Heute');
@@ -23500,8 +23684,11 @@ function updateSyncConnectedUI() {
         const jsCode = safeCode.replace(/'/g, "\\'");
         return `<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:12px 14px; background:#ffffff; border:1px solid #86efac; border-radius:8px;">
           <div>
-            <div style="font-size:16px; font-weight:bold; color:#14532d;">${icon} ${safeName}</div>
-            <div style="font-size:13px; color:#475569;">Code: <code>${safeCode}</code> &bull; Letzter Abgleich: ${safeTime}</div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <div style="font-size:16px; font-weight:bold; color:#14532d;">${icon} ${safeName}</div>
+              <button type="button" class="btn btn-secondary" onclick="togglePairedDeviceType('${jsName}')" aria-label="Gerätetyp für ${safeName} umschalten (aktuell ${meta.label}). Klick wechselt zwischen Handy, Laptop und PC" style="font-size:12px; padding:3px 8px; border-radius:12px; background:#f0fdf4; border:1px solid #86efac; cursor:pointer;" title="Klicken, um zwischen Handy 📱, Laptop 💻 und PC 🖥️ zu wechseln">${icon} ${meta.label} ⇄</button>
+            </div>
+            <div style="font-size:13px; color:#475569; margin-top:4px;">Code: <code>${safeCode}</code> &bull; Letzter Abgleich: ${safeTime}</div>
           </div>
           <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="btn btn-primary" onclick="triggerQuickSyncWithDevice('${jsName}', '${jsCode}')" aria-label="1-Klick-Abgleich mit ${safeName}" style="font-size:13px; padding:6px 12px; background-color:#15803d;">

@@ -371,7 +371,12 @@ namespace HaushaltsbuchApp
                         if (url.StartsWith("/api/heartbeat"))
                         {
                             _lastHeartbeat = DateTime.Now;
-                            string mName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
+                            string rawName = (Environment.MachineName ?? "PC").Replace("\"", "").Replace("\\", "").Trim();
+                string mName = rawName;
+                if (rawName.Equals("LAURIN_PC", StringComparison.OrdinalIgnoreCase) || rawName.Equals("LAURIN-PC", StringComparison.OrdinalIgnoreCase) || rawName.IndexOf("laurin", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    mName = "PC von Laurin";
+                }
                             byte[] data = Encoding.UTF8.GetBytes("{\"status\":\"alive\",\"machineName\":\"" + mName + "\"}");
                             SendHttpResponse(stream, 200, "application/json", data);
                             return;
