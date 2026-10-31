@@ -21,7 +21,7 @@ if (typeof globalThis !== 'undefined') {
   globalThis.escapeHtml = escapeHTML;
 }
 
-const CURRENT_APP_VERSION = 'v6.9.55';
+const CURRENT_APP_VERSION = 'v6.9.56';
 
 const _nativeParseFloat = globalThis.parseFloat;
 function parseEuroInput(val) {
