@@ -375,6 +375,67 @@ const SyncEngine = {
   },
 
   // Gerätetyp ermitteln (Handy, Laptop oder PC)
+  getPersistentItem(key) {
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.getPreference === 'function') {
+        const val = window.AndroidBiometrics.getPreference(key);
+        if (val !== null && val !== undefined && typeof val === 'string' && val.length > 0) {
+          try { localStorage.setItem(key, val); } catch (e) {}
+          return val;
+        }
+      }
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  },
+
+  setPersistentItem(key, val) {
+    try {
+      if (val === null || val === undefined) {
+        localStorage.removeItem(key);
+        if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.removePreference === 'function') {
+          window.AndroidBiometrics.removePreference(key);
+        }
+      } else {
+        localStorage.setItem(key, String(val));
+        if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.setPreference === 'function') {
+          window.AndroidBiometrics.setPreference(key, String(val));
+        }
+      }
+    } catch (e) {}
+  },
+
+  removePersistentItem(key) {
+    this.setPersistentItem(key, null);
+  },
+
+  restorePersistentState() {
+    try {
+      if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.getPreference === 'function') {
+        const keys = [
+          'haushaltsbuch_sync_code',
+          'haushaltsbuch_sync_devicename',
+          'haushaltsbuch_sync_paired_devices',
+          'haushaltsbuch_sync_connected',
+          'haushaltsbuch_sync_connected_device',
+          'haushaltsbuch_sync_connected_code',
+          'haushaltsbuch_sync_connected_time',
+          'haushaltsbuch_sync_removed_devices'
+        ];
+        for (const k of keys) {
+          const nativeVal = window.AndroidBiometrics.getPreference(k);
+          const localVal = localStorage.getItem(k);
+          if (nativeVal && (!localVal || (k === 'haushaltsbuch_sync_paired_devices' && localVal === '[]' && nativeVal !== '[]'))) {
+            localStorage.setItem(k, nativeVal);
+          } else if (localVal && !nativeVal) {
+            window.AndroidBiometrics.setPreference(k, localVal);
+          }
+        }
+      }
+    } catch (e) {}
+  },
+
   isPhoneDevice(name) {
     if (!name || typeof name !== 'string') return false;
     const phonePattern = /(?:handy|phone|smartphone|mobil|mobile|cell|android|iphone|ios|\ba\d{1,3}\b|\bs\d{1,3}\b|\bz\s*(?:flip|fold)\b|galaxy|samsung|pixel|nexus|redmi|xiaomi|poco|huawei|honor|moto|motorola|oneplus|oppo|vivo|realme|nokia|sony|xperia)/i;
@@ -423,34 +484,32 @@ const SyncEngine = {
 
   cleanObsoleteTestDevices() {
     try {
-      const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
+      this.restorePersistentState();
+      const raw = this.getPersistentItem('haushaltsbuch_sync_paired_devices');
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed) || parsed.length === 0) return;
 
       const myName = (this.getDeviceName() || '').trim().toLowerCase();
-      const knownObsolete = ['pc-zr4k', 'pc-vrfx', 'pc-ppnl', 'handy-amzz'];
 
       const beforeLen = parsed.length;
       const filtered = parsed.filter(d => {
         if (!d || !d.name) return false;
         const nLower = d.name.trim().toLowerCase();
         if (nLower === myName) return false;
-        if (knownObsolete.includes(nLower)) return false;
-        if (d.code && d.code.trim().toUpperCase() === 'KH4P-XKMY-CXWY') return false;
         return true;
       });
 
       if (filtered.length !== beforeLen) {
-        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(filtered));
+        this.setPersistentItem('haushaltsbuch_sync_paired_devices', JSON.stringify(filtered));
         if (filtered.length > 0) {
-          localStorage.setItem('haushaltsbuch_sync_connected_device', filtered[0].name);
-          localStorage.setItem('haushaltsbuch_sync_connected_code', filtered[0].code);
-          localStorage.setItem('haushaltsbuch_sync_connected_time', filtered[0].time || 'Heute');
+          this.setPersistentItem('haushaltsbuch_sync_connected_device', filtered[0].name);
+          this.setPersistentItem('haushaltsbuch_sync_connected_code', filtered[0].code);
+          this.setPersistentItem('haushaltsbuch_sync_connected_time', filtered[0].time || 'Heute');
         } else {
-          localStorage.removeItem('haushaltsbuch_sync_connected_device');
-          localStorage.removeItem('haushaltsbuch_sync_connected_code');
-          localStorage.removeItem('haushaltsbuch_sync_connected_time');
+          this.removePersistentItem('haushaltsbuch_sync_connected_device');
+          this.removePersistentItem('haushaltsbuch_sync_connected_code');
+          this.removePersistentItem('haushaltsbuch_sync_connected_time');
         }
         this._persistPairingToDisk(filtered);
       }
@@ -459,9 +518,8 @@ const SyncEngine = {
 
   getPairedDevices() {
     this.cleanObsoleteTestDevices();
-    const myDev = (localStorage.getItem('haushaltsbuch_sync_devicename') || '').trim().toLowerCase();
+    const myDev = (this.getPersistentItem('haushaltsbuch_sync_devicename') || '').trim().toLowerCase();
     const removed = this.getRemovedDevices();
-    const knownObsolete = ['pc-zr4k', 'pc-vrfx', 'pc-ppnl', 'handy-amzz'];
     const isAndroid = typeof window !== 'undefined' && (
       !!window.__IS_ANDROID__ || 
       (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) || 
@@ -475,8 +533,6 @@ const SyncEngine = {
       if (!cleanName) return;
       const lower = cleanName.toLowerCase();
       if (myDev && lower === myDev) return;
-      if (knownObsolete.includes(lower)) return;
-      if (code && code.trim().toUpperCase() === 'KH4P-XKMY-CXWY') return;
       if (!isAndroid && (lower === 'computer' || lower === 'pc')) return;
       if (removed.includes(lower)) return;
 
@@ -495,7 +551,7 @@ const SyncEngine = {
     };
 
     try {
-      const raw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
+      const raw = this.getPersistentItem('haushaltsbuch_sync_paired_devices');
       if (raw !== null) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
@@ -503,17 +559,15 @@ const SyncEngine = {
             if (d && d.name) addEntry(d.name, d.code, d.time, d.type);
           });
         }
-        // Wenn haushaltsbuch_sync_paired_devices existiert (auch wenn leer '[]'),
-        // KEINEN Fallback auf alte Legacy-Einträge oder window.__PAIRED_DEVICE__ durchführen!
         return Array.from(map.values()).filter(d => !!d.code);
       }
     } catch (e) {}
 
-    const legacyDev = localStorage.getItem('haushaltsbuch_sync_connected_device');
-    const legacyCode = localStorage.getItem('haushaltsbuch_sync_connected_code');
-    const legacyTime = localStorage.getItem('haushaltsbuch_sync_connected_time');
+    const legacyDev = this.getPersistentItem('haushaltsbuch_sync_connected_device');
+    const legacyCode = this.getPersistentItem('haushaltsbuch_sync_connected_code');
+    const legacyTime = this.getPersistentItem('haushaltsbuch_sync_connected_time');
     if (legacyDev) {
-      addEntry(legacyDev, legacyCode || localStorage.getItem('haushaltsbuch_sync_code') || '', legacyTime);
+      addEntry(legacyDev, legacyCode || this.getPairingCode() || '', legacyTime);
     }
 
     if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {

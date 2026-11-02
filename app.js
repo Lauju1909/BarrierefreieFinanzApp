@@ -16069,6 +16069,9 @@ function editSyncConnection() {
 }
 
 function initLockScreenSync() {
+  if (typeof SyncEngine !== "undefined" && typeof SyncEngine.restorePersistentState === "function") {
+    SyncEngine.restorePersistentState();
+  }
   if (typeof SyncEngine === 'undefined') return;
 
   updateSyncConnectedUI();
