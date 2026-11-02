@@ -312,8 +312,8 @@ const SyncEngine = {
     if (paired.length > 0 && paired[0].code) {
       return paired[0].code;
     }
-    return localStorage.getItem('haushaltsbuch_sync_connected_code') || 
-           localStorage.getItem('haushaltsbuch_sync_code') || 
+    return this.getPersistentItem('haushaltsbuch_sync_connected_code') || 
+           this.getPersistentItem('haushaltsbuch_sync_code') || 
            (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && window.__PAIRED_DEVICE__.code) || 
            null;
   },
@@ -327,28 +327,28 @@ const SyncEngine = {
     };
     const paired = this.getPairedDevices();
     paired.forEach(d => addCode(d.code));
-    addCode(localStorage.getItem('haushaltsbuch_sync_connected_code'));
+    addCode(this.getPersistentItem('haushaltsbuch_sync_connected_code'));
     if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
       addCode(window.__PAIRED_DEVICE__.code);
       if (Array.isArray(window.__PAIRED_DEVICE__.devices)) {
         window.__PAIRED_DEVICE__.devices.forEach(d => d && addCode(d.code));
       }
     }
-    addCode(localStorage.getItem('haushaltsbuch_sync_code'));
+    addCode(this.getPersistentItem('haushaltsbuch_sync_code'));
     return Array.from(codes);
   },
 
   isPaired() {
     const paired = this.getPairedDevices();
     if (paired.length > 0) return true;
-    return !!localStorage.getItem('haushaltsbuch_sync_connected') || 
-           !!localStorage.getItem('haushaltsbuch_sync_connected_code') || 
+    return !!this.getPersistentItem('haushaltsbuch_sync_connected') || 
+           !!this.getPersistentItem('haushaltsbuch_sync_connected_code') || 
            (typeof window !== 'undefined' && window.__PAIRED_DEVICE__ && !!window.__PAIRED_DEVICE__.code);
   },
 
   getRemovedDevices() {
     try {
-      const raw = localStorage.getItem('haushaltsbuch_sync_removed_devices');
+      const raw = this.getPersistentItem('haushaltsbuch_sync_removed_devices');
       if (raw) {
         const arr = JSON.parse(raw);
         if (Array.isArray(arr)) return arr.map(s => String(s).toLowerCase());
@@ -363,7 +363,7 @@ const SyncEngine = {
     const list = this.getRemovedDevices();
     if (!list.includes(clean)) {
       list.push(clean);
-      try { localStorage.setItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list)); } catch (e) {}
+      this.setPersistentItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list));
     }
   },
 
@@ -371,20 +371,24 @@ const SyncEngine = {
     if (!deviceName) return;
     const clean = String(deviceName).trim().toLowerCase();
     const list = this.getRemovedDevices().filter(n => n !== clean);
-    try { localStorage.setItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list)); } catch (e) {}
+    this.setPersistentItem('haushaltsbuch_sync_removed_devices', JSON.stringify(list));
   },
 
   // Gerätetyp ermitteln (Handy, Laptop oder PC)
   getPersistentItem(key) {
     try {
+      const localVal = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : null;
+      if (localVal !== null && localVal !== undefined && localVal !== '') {
+        return localVal;
+      }
       if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.getPreference === 'function') {
-        const val = window.AndroidBiometrics.getPreference(key);
-        if (val !== null && val !== undefined && typeof val === 'string' && val.length > 0) {
-          try { localStorage.setItem(key, val); } catch (e) {}
-          return val;
+        const nativeVal = window.AndroidBiometrics.getPreference(key);
+        if (nativeVal !== null && nativeVal !== undefined && typeof nativeVal === 'string' && nativeVal.length > 0) {
+          try { if (typeof localStorage !== 'undefined') localStorage.setItem(key, nativeVal); } catch (e) {}
+          return nativeVal;
         }
       }
-      return localStorage.getItem(key);
+      return null;
     } catch (e) {
       return null;
     }
@@ -393,14 +397,15 @@ const SyncEngine = {
   setPersistentItem(key, val) {
     try {
       if (val === null || val === undefined) {
-        localStorage.removeItem(key);
+        if (typeof localStorage !== 'undefined') localStorage.removeItem(key);
         if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.removePreference === 'function') {
           window.AndroidBiometrics.removePreference(key);
         }
       } else {
-        localStorage.setItem(key, String(val));
+        const strVal = String(val);
+        if (typeof localStorage !== 'undefined') localStorage.setItem(key, strVal);
         if (typeof window !== 'undefined' && window.AndroidBiometrics && typeof window.AndroidBiometrics.setPreference === 'function') {
-          window.AndroidBiometrics.setPreference(key, String(val));
+          window.AndroidBiometrics.setPreference(key, strVal);
         }
       }
     } catch (e) {}
@@ -425,9 +430,9 @@ const SyncEngine = {
         ];
         for (const k of keys) {
           const nativeVal = window.AndroidBiometrics.getPreference(k);
-          const localVal = localStorage.getItem(k);
+          const localVal = (typeof localStorage !== 'undefined') ? localStorage.getItem(k) : null;
           if (nativeVal && (!localVal || (k === 'haushaltsbuch_sync_paired_devices' && localVal === '[]' && nativeVal !== '[]'))) {
-            localStorage.setItem(k, nativeVal);
+            if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
           } else if (localVal && !nativeVal) {
             window.AndroidBiometrics.setPreference(k, localVal);
           }
@@ -463,7 +468,7 @@ const SyncEngine = {
     const cleanName = deviceName.trim();
     const lower = cleanName.toLowerCase();
     try {
-      localStorage.setItem('haushaltsbuch_sync_devtype_' + lower, type);
+      this.setPersistentItem('haushaltsbuch_sync_devtype_' + lower, type);
     } catch (e) {}
 
     const current = this.getPairedDevices();
@@ -476,7 +481,7 @@ const SyncEngine = {
     }
     if (updated) {
       try {
-        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(current));
+        this.setPersistentItem('haushaltsbuch_sync_paired_devices', JSON.stringify(current));
       } catch (e) {}
       this._persistPairingToDisk(current);
     }
@@ -618,11 +623,11 @@ const SyncEngine = {
     const newList = [updatedEntry, ...filtered];
 
     try {
-      localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(newList));
-      localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-      localStorage.setItem('haushaltsbuch_sync_connected_device', cleanName);
-      localStorage.setItem('haushaltsbuch_sync_connected_code', cleanCode);
-      localStorage.setItem('haushaltsbuch_sync_connected_time', nowStr);
+      this.setPersistentItem('haushaltsbuch_sync_paired_devices', JSON.stringify(newList));
+      this.setPersistentItem('haushaltsbuch_sync_connected', 'true');
+      this.setPersistentItem('haushaltsbuch_sync_connected_device', cleanName);
+      this.setPersistentItem('haushaltsbuch_sync_connected_code', cleanCode);
+      this.setPersistentItem('haushaltsbuch_sync_connected_time', nowStr);
       // SICHERHEIT: Der eigene Kopplungscode (haushaltsbuch_sync_code) bleibt IMMER der private,
       // einzigartige Schlüssel dieses Geräts und darf NIEMALS durch den Code eines Partnergeräts überschrieben werden!
     } catch (e) {}
@@ -638,18 +643,18 @@ const SyncEngine = {
     const remaining = this.getPairedDevices().filter(d => d.name.toLowerCase() !== lower);
     try {
       if (remaining.length > 0) {
-        localStorage.setItem('haushaltsbuch_sync_paired_devices', JSON.stringify(remaining));
-        localStorage.setItem('haushaltsbuch_sync_connected', 'true');
-        localStorage.setItem('haushaltsbuch_sync_connected_device', remaining[0].name);
-        localStorage.setItem('haushaltsbuch_sync_connected_code', remaining[0].code);
-        localStorage.setItem('haushaltsbuch_sync_connected_time', remaining[0].time || 'Heute');
+        this.setPersistentItem('haushaltsbuch_sync_paired_devices', JSON.stringify(remaining));
+        this.setPersistentItem('haushaltsbuch_sync_connected', 'true');
+        this.setPersistentItem('haushaltsbuch_sync_connected_device', remaining[0].name);
+        this.setPersistentItem('haushaltsbuch_sync_connected_code', remaining[0].code);
+        this.setPersistentItem('haushaltsbuch_sync_connected_time', remaining[0].time || 'Heute');
         this._persistPairingToDisk(remaining);
       } else {
-        localStorage.setItem('haushaltsbuch_sync_paired_devices', '[]');
-        localStorage.removeItem('haushaltsbuch_sync_connected');
-        localStorage.removeItem('haushaltsbuch_sync_connected_device');
-        localStorage.removeItem('haushaltsbuch_sync_connected_code');
-        localStorage.removeItem('haushaltsbuch_sync_connected_time');
+        this.setPersistentItem('haushaltsbuch_sync_paired_devices', '[]');
+        this.removePersistentItem('haushaltsbuch_sync_connected');
+        this.removePersistentItem('haushaltsbuch_sync_connected_device');
+        this.removePersistentItem('haushaltsbuch_sync_connected_code');
+        this.removePersistentItem('haushaltsbuch_sync_connected_time');
         this._persistPairingToDisk([]);
       }
     } catch (e) {}
@@ -735,15 +740,8 @@ const SyncEngine = {
   // Sicherstellen, dass dieses Gerät einen eigenen, einzigartigen Code besitzt (nicht geclont vom Partner)
   ensureUniqueDeviceCode() {
     try {
-      let myCode = (localStorage.getItem('haushaltsbuch_sync_code') || '').trim().toUpperCase();
+      let myCode = (this.getPersistentItem('haushaltsbuch_sync_code') || '').trim();
       if (!myCode) {
-        this.generateNewPairingCode();
-        return;
-      }
-      const paired = this.getPairedDevices();
-      const isClonedFromPartner = paired.some(d => d.code && d.code.trim().toUpperCase() === myCode);
-      if (isClonedFromPartner) {
-        console.log('[SyncEngine] Eigener Kopplungscode war mit Partner identisch. Generiere neuen, sicheren Geräte-Code.');
         this.generateNewPairingCode();
       }
     } catch(e) {}
@@ -822,7 +820,7 @@ const SyncEngine = {
   
     // Gerätename ermitteln (bevorzugt den echten Namen des Geräts)
     getDeviceName() {
-      let name = localStorage.getItem("haushaltsbuch_sync_devicename");
+      let name = this.getPersistentItem("haushaltsbuch_sync_devicename");
       const realName = this.detectRealDeviceName();
 
       const isRandomOrGeneric = !name ||
@@ -865,13 +863,13 @@ const SyncEngine = {
 
   setDeviceName(newName) {
     if (newName && newName.trim()) {
-      localStorage.setItem('haushaltsbuch_sync_devicename', newName.trim());
+      this.setPersistentItem('haushaltsbuch_sync_devicename', newName.trim());
     }
   },
 
   // 2. KOPPLUNGSCODE GENERIEREN (z. B. 682-419)
   getPairingCode() {
-    let code = localStorage.getItem('haushaltsbuch_sync_code');
+    let code = this.getPersistentItem('haushaltsbuch_sync_code');
     if (!code) {
       code = this.generateNewPairingCode();
     }
@@ -887,7 +885,7 @@ const SyncEngine = {
       raw += chars[buf[i] % chars.length];
     }
     const code = `${raw.substring(0, 4)}-${raw.substring(4, 8)}-${raw.substring(8, 12)}`;
-    localStorage.setItem('haushaltsbuch_sync_code', code);
+    this.setPersistentItem('haushaltsbuch_sync_code', code);
     return code;
   },
 
