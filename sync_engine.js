@@ -431,9 +431,40 @@ const SyncEngine = {
         for (const k of keys) {
           const nativeVal = window.AndroidBiometrics.getPreference(k);
           const localVal = (typeof localStorage !== 'undefined') ? localStorage.getItem(k) : null;
-          if (nativeVal && (!localVal || (k === 'haushaltsbuch_sync_paired_devices' && localVal === '[]' && nativeVal !== '[]'))) {
-            if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
-          } else if (localVal && !nativeVal) {
+          if (nativeVal && typeof nativeVal === 'string' && nativeVal.trim()) {
+            if (k === 'haushaltsbuch_sync_paired_devices') {
+              if (!localVal || localVal === '[]' || localVal === 'null') {
+                if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
+              } else {
+                // Beide Quellen haben Geräte -> zusammenführen ohne Verlust
+                try {
+                  const nList = JSON.parse(nativeVal);
+                  const lList = JSON.parse(localVal);
+                  if (Array.isArray(nList) && Array.isArray(lList)) {
+                    const mergedMap = new Map();
+                    lList.forEach(d => { if (d && d.name) mergedMap.set(d.name.toLowerCase(), d); });
+                    nList.forEach(d => {
+                      if (d && d.name && (!mergedMap.has(d.name.toLowerCase()) || !mergedMap.get(d.name.toLowerCase()).code)) {
+                        mergedMap.set(d.name.toLowerCase(), d);
+                      }
+                    });
+                    const mergedStr = JSON.stringify(Array.from(mergedMap.values()));
+                    if (typeof localStorage !== 'undefined') localStorage.setItem(k, mergedStr);
+                    window.AndroidBiometrics.setPreference(k, mergedStr);
+                  }
+                } catch (e) {}
+              }
+            } else if (k === 'haushaltsbuch_sync_code') {
+              // Android SharedPreferences ist der unzerstörbare Master-Schlüssel für diesen Kopplungscode!
+              if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
+            } else if (k === 'haushaltsbuch_sync_devicename') {
+              if (!localVal || /^(PC|Handy)-[A-Z0-9]{4}$/i.test(localVal)) {
+                if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
+              }
+            } else if (!localVal) {
+              if (typeof localStorage !== 'undefined') localStorage.setItem(k, nativeVal);
+            }
+          } else if (localVal && (!nativeVal || !nativeVal.trim())) {
             window.AndroidBiometrics.setPreference(k, localVal);
           }
         }
@@ -2152,4 +2183,31 @@ if (typeof window !== 'undefined') {
 }
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = SyncEngine;
+}
+
+
+// Automatische Persistenz-Wiederherstellung für WebViews & Android
+if (typeof window !== 'undefined') {
+  const initSyncPersistence = () => {
+    try {
+      if (typeof SyncEngine !== 'undefined' && typeof SyncEngine.restorePersistentState === 'function') {
+        SyncEngine.restorePersistentState();
+      }
+    } catch (e) {}
+  };
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initSyncPersistence);
+    } else {
+      initSyncPersistence();
+    }
+  } else {
+    initSyncPersistence();
+  }
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('load', initSyncPersistence);
+  }
+  setTimeout(initSyncPersistence, 150);
+  setTimeout(initSyncPersistence, 600);
+  setTimeout(initSyncPersistence, 1500);
 }

@@ -5138,11 +5138,13 @@ function mergeCustomCategoriesIntoDB() {
       if (!CATEGORIES_DB[type][mainCat]) {
         CATEGORIES_DB[type][mainCat] = [];
       }
-      subList.forEach(sub => {
-        if (!CATEGORIES_DB[type][mainCat].includes(sub)) {
-          CATEGORIES_DB[type][mainCat].push(sub);
-        }
-      });
+      if (Array.isArray(subList)) {
+        subList.forEach(sub => {
+          if (sub && !CATEGORIES_DB[type][mainCat].includes(sub)) {
+            CATEGORIES_DB[type][mainCat].push(sub);
+          }
+        });
+      }
     }
   });
 }
@@ -5972,6 +5974,38 @@ function showAppNotification(message, isError = false) {
 // ----------------------------------------------------------------------------
 // 4. TASTATURKÜRZEL (1-5, T, L, ESC)
 // ----------------------------------------------------------------------------
+function isModalOpen(id) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  return el.style && el.style.display !== 'none' && el.style.display !== '';
+}
+
+function closeTopmostModal() {
+  // 1. Zuerst übergeordnete Popups / Child-Modals schließen
+  if (isModalOpen('quick-add-category-modal')) { closeQuickCategoryModal(); return true; }
+  if (isModalOpen('receipt-text-prompt-modal')) { closeReceiptTextPrompt(); return true; }
+  if (isModalOpen('receipt-viewer-modal')) { closeReceiptModal(); return true; }
+  if (isModalOpen('delete-peer-repay-modal')) { closeDeletePeerRepayModal(); return true; }
+  if (isModalOpen('delete-peer-loan-modal')) { closeDeletePeerLoanModal(); return true; }
+  if (isModalOpen('settle-peer-loan-modal')) { closeSettlePeerLoanModal(); return true; }
+  if (isModalOpen('peer-loan-repay-modal')) { closePeerLoanRepayModal(); return true; }
+  if (isModalOpen('end-or-delete-rec-modal')) { closeEndOrDeleteRecModal(); return true; }
+  if (isModalOpen('cash-counter-modal')) { closeCashCounterModal(); return true; }
+  if (isModalOpen('shopping-paste-modal')) { closeShoppingPasteModal(); return true; }
+  if (isModalOpen('shopping-book-modal')) { closeShoppingBookModal(); return true; }
+  if (isModalOpen('csv-preview-modal')) { closeCsvPreviewModal(); return true; }
+  if (isModalOpen('print-report-modal')) { closePrintReportModal(); return true; }
+  if (isModalOpen('changelog-modal')) { closeChangelogModal(); return true; }
+
+  // 2. Parent-Modals schließen (nur wenn kein Child-Modal darüber liegt)
+  if (isModalOpen('peer-loan-modal')) { closePeerLoanModal(); return true; }
+  if (isModalOpen('edit-tx-modal')) { closeEditModal(); return true; }
+  if (isModalOpen('edit-rec-modal')) { closeEditRecModal(); return true; }
+  if (isModalOpen('account-modal')) { closeAccountModal(); return true; }
+
+  return false;
+}
+
 function setupGlobalKeyboardShortcuts() {
   document.addEventListener('keydown', (e) => {
     resetInactivityTimer();
@@ -5987,19 +6021,10 @@ function setupGlobalKeyboardShortcuts() {
     );
 
     if (e.key === 'Escape') {
-      const quickCatModal = document.getElementById('quick-add-category-modal');
-      if (quickCatModal && quickCatModal.style.display !== 'none') {
-        closeQuickCategoryModal();
+      if (closeTopmostModal()) {
+        e.preventDefault();
         return;
       }
-      closeReceiptModal();
-      closeReceiptTextPrompt();
-      closeEditModal();
-      closeEditRecModal();
-      closeEndOrDeleteRecModal();
-      closeAccountModal();
-      closeCashCounterModal();
-      return;
     }
 
     // Globale Sicherheits-Tastenkombinationen (funktionieren auch außerhalb von Formularen)
@@ -6766,6 +6791,7 @@ function calculateBalancesUpToDate(targetDateStr) {
         return;
       }
       const amt = Number(tx.amount || 0);
+      if (isNaN(amt) || !isFinite(amt)) return;
       const accId = resolveTxAccId(tx.account);
       if (tx.type === 'income' && accId && balances[accId] !== undefined) {
         balances[accId] += amt;
@@ -6780,7 +6806,21 @@ function calculateBalancesUpToDate(targetDateStr) {
     }
   });
 
-  const startYear = 2025;
+  let earliestYear = 2025;
+  if (Array.isArray(appState.recurring)) {
+    appState.recurring.forEach(r => {
+      if (r && r.startYear && r.startYear < earliestYear) earliestYear = r.startYear;
+    });
+  }
+  if (Array.isArray(appState.transactions)) {
+    appState.transactions.forEach(t => {
+      if (t && t.date) {
+        const y = parseInt(t.date.substring(0, 4), 10);
+        if (!isNaN(y) && y < earliestYear) earliestYear = y;
+      }
+    });
+  }
+  const startYear = Math.min(earliestYear, targetYear);
   for (let y = startYear; y <= targetYear; y++) {
     const endM = (y === targetYear) ? targetMonth : 11;
     for (let m = 0; m <= endM; m++) {
@@ -6789,6 +6829,7 @@ function calculateBalancesUpToDate(targetDateStr) {
         const recDate = rec.date || targetDateStr;
         if (recDate <= targetDateStr) {
           const amt = Number(rec.amount || 0);
+          if (isNaN(amt) || !isFinite(amt)) return;
           const recAccId = resolveTxAccId(rec.account);
           if (rec.type === 'income' && recAccId && balances[recAccId] !== undefined) {
             balances[recAccId] += amt;
@@ -7252,17 +7293,18 @@ function initAndroidBackButton() {
 
   try {
     Capacitor.Plugins.App.addListener('backButton', () => {
-      // 1. Offenes Modal schließen
-      const modalSelectors = [
-        '#quick-add-category-modal', '#edit-tx-modal', '#settle-peer-loan-modal', '#delete-peer-loan-modal',
-        '#delete-peer-repay-modal', '#peer-loan-modal', '#peer-loan-repay-modal',
-        '#quick-cat-modal', '#cash-counter-modal', '#edit-account-modal',
-        '#delete-account-modal', '#edit-rec-modal', '#tx-detail-modal',
-        '#edit-planned-modal', '#end-or-delete-rec-modal', '#edit-budget-modal',
-        '#delete-budget-modal', '#edit-shopping-modal', '#changelog-modal',
+      // 1. Offenes Modal schließen (hierarchisch: Kind-Modals vor Eltern-Modals)
+      if (typeof closeTopmostModal === 'function' && closeTopmostModal()) {
+        announceNVDA('Fenster geschlossen.');
+        return;
+      }
+      const genericModalSelectors = [
+        '#quick-cat-modal', '#edit-account-modal', '#delete-account-modal',
+        '#tx-detail-modal', '#edit-planned-modal', '#edit-budget-modal',
+        '#delete-budget-modal', '#edit-shopping-modal',
         '#vault-reset-confirm-modal', '#receipt-fullscreen-viewer-modal', '#qr-scanner-modal'
       ];
-      for (const sel of modalSelectors) {
+      for (const sel of genericModalSelectors) {
         const m = document.querySelector(sel);
         if (m && m.style && m.style.display !== 'none' && m.style.display !== '') {
           const closeBtn = m.querySelector('.btn-close-modal, .modal-close-btn, button[onclick*="close"], button[aria-label*="schließen"], button[aria-label*="Schließen"]');
@@ -9973,7 +10015,7 @@ function onEditTxTypeChange() {
         : 'An wen verliehen? (Name der Person):';
     }
 
-    const catType = (type === 'income') ? 'inc' : 'exp';
+    const catType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
     populateEditModalCategories(catType);
   }
 }
@@ -10664,8 +10706,15 @@ async function saveEditedTransaction(e) {
     tx.isPlanned = isPlanned;
 
     if (type === 'transfer') {
-      tx.fromAccount = document.getElementById('edit-tx-from').value;
-      tx.toAccount = document.getElementById('edit-tx-to').value;
+      const fromAcc = document.getElementById('edit-tx-from').value;
+      const toAcc = document.getElementById('edit-tx-to').value;
+      if (fromAcc === toAcc) {
+        showAppNotification('Start- und Zielkonto dürfen bei einer Umbuchung nicht identisch sein.', 'warning');
+        announceNVDA('Fehler: Start- und Zielkonto dürfen bei einer Umbuchung nicht identisch sein.');
+        return;
+      }
+      tx.fromAccount = fromAcc;
+      tx.toAccount = toAcc;
       tx.account = undefined;
       tx.category = 'Umbuchung';
       tx.subcategory = '';
@@ -10869,7 +10918,7 @@ function onEditRecMainCategoryChange(preferredSub) {
   const subSel = document.getElementById('edit-rec-subcategory');
   if (!mainSel || !subSel) return;
 
-  const currentType = (type === 'income') ? 'inc' : 'exp';
+  const currentType = (type === 'income' || type === 'inc') ? 'inc' : 'exp';
   const selectedMain = mainSel.value;
   const db = CATEGORIES_DB[currentType];
   const subs = (db && db[selectedMain]) ? db[selectedMain] : ['Gesamt / Allgemein'];
@@ -11140,8 +11189,15 @@ async function saveEditedRecurring(e) {
   }
 
   if (type === 'transfer') {
-    rec.fromAccount = document.getElementById('edit-rec-from').value;
-    rec.toAccount = document.getElementById('edit-rec-to').value;
+    const fromAcc = document.getElementById('edit-rec-from').value;
+    const toAcc = document.getElementById('edit-rec-to').value;
+    if (fromAcc === toAcc) {
+      showAppNotification('Start- und Zielkonto dürfen bei einer Dauer-Umbuchung nicht identisch sein.', 'warning');
+      announceNVDA('Fehler: Start- und Zielkonto dürfen bei einer Dauer-Umbuchung nicht identisch sein.');
+      return;
+    }
+    rec.fromAccount = fromAcc;
+    rec.toAccount = toAcc;
     rec.account = undefined;
     rec.category = 'Umbuchung & Sparplan';
     rec.subcategory = '';
@@ -15847,7 +15903,7 @@ function updateSyncConnectedUI() {
   if (typeof window !== 'undefined' && window.__PAIRED_DEVICE__) {
     if (Array.isArray(window.__PAIRED_DEVICE__.devices) && typeof SyncEngine !== 'undefined' && typeof SyncEngine.savePairedDevice === 'function') {
       const existingRaw = localStorage.getItem('haushaltsbuch_sync_paired_devices');
-      if (!existingRaw) {
+      if (!existingRaw || existingRaw === '[]' || existingRaw === 'null') {
         window.__PAIRED_DEVICE__.devices.slice().reverse().forEach(d => {
           if (d && d.name && d.code) {
             SyncEngine.savePairedDevice(d.name, d.code, d.time || 'Heute', false);
