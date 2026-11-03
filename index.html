@@ -882,7 +882,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <div id="edit-tx-category-section">
   <div class="form-group">
     <label for="edit-tx-cat-search" class="field-label"><strong>Kategorie-Schnellsuche:</strong></label>
-    <input type="text" id="edit-tx-cat-search" class="large-input" placeholder="Tippe z. B. Rewe, Miete, Gehalt..." oninput="handleEditCategorySearch()">
+    <input type="text" id="edit-tx-cat-search" class="large-input" placeholder="Tippe z. B. Rewe, Miete, Gehalt..." oninput="handleEditCategorySearch()" onkeydown="handleEditCategorySearchKey(event)">
   </div>
   <div class="form-row-2">
     <div class="form-group">
@@ -2140,7 +2140,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
   </div>
   <p class="field-hint" id="quick-add-cat-hint">Füge blitzschnell eine neue Kategorie oder ein neues Geschäft hinzu, ohne die Einstellungen öffnen zu müssen:</p>
 
-  <form id="quick-add-cat-form" onsubmit="handleQuickAddCategorySubmit(event)" class="accessible-form" style="margin-top: 12px;">
+  <form id="quick-add-cat-form" onsubmit="handleQuickAddCategorySubmit(event); return false;" class="accessible-form" style="margin-top: 12px;">
     <input type="hidden" id="quick-cat-target-context" value="exp">
 
     <div class="form-row-2">
@@ -2922,7 +2922,7 @@ Beim Ändern einer Buchung kann die Unterkategorie jetzt direkt angepasst werden
 <label for="exp-cat-search" class="field-label">
 <span>🔍<strong>Kategorie oder Laden schnell suchen (z. B. Aldi, Lidl, Rewe, Miete, Netflix):</strong></span>
 </label>
-<input type="text" id="exp-cat-search" class="large-input" placeholder="Tippe z. B. 'Rewe', 'Lidl', 'Aldi', 'Netflix', 'Tanken', 'Miete'..." oninput="handleCategorySearch('exp')" autocomplete="off">
+<input type="text" id="exp-cat-search" class="large-input" placeholder="Tippe z. B. 'Rewe', 'Lidl', 'Aldi', 'Netflix', 'Tanken', 'Miete'..." oninput="handleCategorySearch('exp')" onkeydown="handleCategorySearchKey(event, 'exp')" autocomplete="off">
 </div>
 
 <div class="form-row-2">

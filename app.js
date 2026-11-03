@@ -5514,6 +5514,27 @@ function openQuickCategoryModal(context) {
 function closeQuickCategoryModal() {
   const modal = document.getElementById('quick-add-category-modal');
   if (modal) modal.style.display = 'none';
+
+  const targetCtxInput = document.getElementById('quick-cat-target-context');
+  const context = targetCtxInput ? targetCtxInput.value : 'exp';
+
+  if (context === 'edit-tx') {
+    const editModal = document.getElementById('edit-tx-modal');
+    if (editModal) editModal.style.display = 'flex';
+    const subSel = document.getElementById('edit-tx-subcategory') || document.getElementById('edit-tx-category');
+    if (subSel) setTimeout(() => subSel.focus(), 50);
+  } else if (context === 'edit-rec') {
+    const editRecModal = document.getElementById('edit-rec-modal');
+    if (editRecModal) editRecModal.style.display = 'flex';
+    const subSel = document.getElementById('edit-rec-subcategory') || document.getElementById('edit-rec-category');
+    if (subSel) setTimeout(() => subSel.focus(), 50);
+  } else if (context === 'exp') {
+    const subSel = document.getElementById('exp-subcategory') || document.getElementById('exp-category');
+    if (subSel) setTimeout(() => subSel.focus(), 50);
+  } else if (context === 'inc') {
+    const subSel = document.getElementById('inc-subcategory') || document.getElementById('inc-category');
+    if (subSel) setTimeout(() => subSel.focus(), 50);
+  }
 }
 
 function onQuickCatTypeChange() {
@@ -5579,7 +5600,10 @@ function onQuickCatModeChange() {
 }
 
 async function handleQuickAddCategorySubmit(e) {
-  e.preventDefault();
+  if (e) {
+    if (typeof e.preventDefault === 'function') e.preventDefault();
+    if (typeof e.stopPropagation === 'function') e.stopPropagation();
+  }
   const typeSel = document.getElementById('quick-cat-type');
   const modeSel = document.getElementById('quick-cat-mode');
   const targetCtxInput = document.getElementById('quick-cat-target-context');
@@ -5598,7 +5622,7 @@ async function handleQuickAddCategorySubmit(e) {
     subCatName = subInput ? subInput.value.trim() : '';
     if (!subCatName) {
       alert('Bitte gib den Namen des Geschäfts oder der Unterkategorie ein.');
-      return;
+      return false;
     }
   } else {
     const mainInput = document.getElementById('quick-cat-main-name');
@@ -5609,7 +5633,7 @@ async function handleQuickAddCategorySubmit(e) {
     if (!subCatName) subCatName = 'Gesamt / Allgemein';
     if (!mainCatName) {
       alert('Bitte gib den Namen der Hauptkategorie ein.');
-      return;
+      return false;
     }
     const icon = iconInput ? iconInput.value.trim() : '';
     if (icon && typeof CATEGORY_ICONS !== 'undefined') {
@@ -5650,6 +5674,8 @@ async function handleQuickAddCategorySubmit(e) {
       const expSub = document.getElementById('exp-subcategory');
       if (expSub) expSub.value = subCatName;
     }
+    const expSub = document.getElementById('exp-subcategory');
+    if (expSub) expSub.focus();
   } else if (context === 'inc' && type === 'inc') {
     const incMain = document.getElementById('inc-category');
     if (incMain) {
@@ -5658,14 +5684,33 @@ async function handleQuickAddCategorySubmit(e) {
       const incSub = document.getElementById('inc-subcategory');
       if (incSub) incSub.value = subCatName;
     }
+    const incSub = document.getElementById('inc-subcategory');
+    if (incSub) incSub.focus();
   } else if (context === 'edit-tx') {
+    const editModal = document.getElementById('edit-tx-modal');
+    if (editModal) editModal.style.display = 'flex';
+    const txTypeSel = document.getElementById('edit-tx-type');
+    if (txTypeSel) {
+      txTypeSel.value = (type === 'inc') ? 'income' : 'expense';
+    }
     populateEditModalCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+    const subSel = document.getElementById('edit-tx-subcategory');
+    if (subSel) subSel.focus();
   } else if (context === 'edit-rec') {
+    const editRecModal = document.getElementById('edit-rec-modal');
+    if (editRecModal) editRecModal.style.display = 'flex';
+    const recTypeSel = document.getElementById('edit-rec-type');
+    if (recTypeSel) {
+      recTypeSel.value = (type === 'inc') ? 'income' : 'expense';
+    }
     populateEditRecCategories(type === 'inc' ? 'income' : 'expense', mainCatName, subCatName);
+    const subSel = document.getElementById('edit-rec-subcategory');
+    if (subSel) subSel.focus();
   }
 
   announceNVDA('Kategorie ' + subCatName + ' unter ' + mainCatName + ' erfolgreich angelegt und ausgewählt.');
-  alert('✅ Fertig! "' + subCatName + '" (' + mainCatName + ') wurde angelegt und direkt ausgewählt.');
+  showAppNotification('✅ Fertig! "' + subCatName + '" (' + mainCatName + ') wurde angelegt und direkt ausgewählt.');
+  return false;
 }
 
 function populateCategoriesDropdowns() {
@@ -5884,6 +5929,46 @@ function announceNVDA(message, assertive = false) {
   ariaAnnouncerQueue.announce(message, assertive);
 }
 
+function showAppNotification(message, isError = false) {
+  let toast = document.getElementById('global-app-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'global-app-toast';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.style.position = 'fixed';
+    toast.style.bottom = '24px';
+    toast.style.left = '50%';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.zIndex = '999999';
+    toast.style.padding = '14px 24px';
+    toast.style.borderRadius = '8px';
+    toast.style.fontSize = '16px';
+    toast.style.fontWeight = 'bold';
+    toast.style.boxShadow = '0 6px 20px rgba(0,0,0,0.35)';
+    toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+    toast.style.maxWidth = '90vw';
+    toast.style.textAlign = 'center';
+    document.body.appendChild(toast);
+  }
+
+  toast.style.backgroundColor = isError ? '#D32F2F' : '#2E7D32';
+  toast.style.color = '#FFFFFF';
+  toast.style.border = isError ? '2px solid #B71C1C' : '2px solid #1B5E20';
+  toast.textContent = message;
+  toast.style.opacity = '1';
+  toast.style.display = 'block';
+
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => {
+      if (toast.style.opacity === '0') toast.style.display = 'none';
+    }, 300);
+  }, 3500);
+}
+
+
 // ----------------------------------------------------------------------------
 // 4. TASTATURKÜRZEL (1-5, T, L, ESC)
 // ----------------------------------------------------------------------------
@@ -5902,6 +5987,11 @@ function setupGlobalKeyboardShortcuts() {
     );
 
     if (e.key === 'Escape') {
+      const quickCatModal = document.getElementById('quick-add-category-modal');
+      if (quickCatModal && quickCatModal.style.display !== 'none') {
+        closeQuickCategoryModal();
+        return;
+      }
       closeReceiptModal();
       closeReceiptTextPrompt();
       closeEditModal();
@@ -7164,7 +7254,7 @@ function initAndroidBackButton() {
     Capacitor.Plugins.App.addListener('backButton', () => {
       // 1. Offenes Modal schließen
       const modalSelectors = [
-        '#edit-tx-modal', '#settle-peer-loan-modal', '#delete-peer-loan-modal',
+        '#quick-add-category-modal', '#edit-tx-modal', '#settle-peer-loan-modal', '#delete-peer-loan-modal',
         '#delete-peer-repay-modal', '#peer-loan-modal', '#peer-loan-repay-modal',
         '#quick-cat-modal', '#cash-counter-modal', '#edit-account-modal',
         '#delete-account-modal', '#edit-rec-modal', '#tx-detail-modal',
@@ -10176,6 +10266,59 @@ function handleEditCategorySearch() {
     }
   }
 }
+
+function handleEditCategorySearchKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();
+    const query = (e.target.value || '').trim();
+    if (!query) return false;
+
+    handleEditCategorySearch();
+
+    const subSel = document.getElementById('edit-tx-subcategory');
+    const curSub = subSel ? subSel.value : '';
+
+    if (!curSub || !curSub.toLowerCase().includes(query.toLowerCase())) {
+      openQuickCategoryModal('edit-tx');
+      const subInput = document.getElementById('quick-cat-sub-name');
+      if (subInput) {
+        subInput.value = query;
+        subInput.focus();
+      }
+    } else {
+      if (subSel) subSel.focus();
+    }
+    return false;
+  }
+}
+
+function handleCategorySearchKey(e, type) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    e.stopPropagation();
+    const query = (e.target.value || '').trim();
+    if (!query) return false;
+
+    handleCategorySearch(type);
+
+    const subSel = document.getElementById(type + '-subcategory');
+    const curSub = subSel ? subSel.value : '';
+
+    if (!curSub || !curSub.toLowerCase().includes(query.toLowerCase())) {
+      openQuickCategoryModal(type);
+      const subInput = document.getElementById('quick-cat-sub-name');
+      if (subInput) {
+        subInput.value = query;
+        subInput.focus();
+      }
+    } else {
+      if (subSel) subSel.focus();
+    }
+    return false;
+  }
+}
+
 
 function openEditModal(txId) {
   const tx = appState.transactions.find(t => t.id === txId);
@@ -14937,6 +15080,9 @@ window.closeQuickCategoryModal = closeQuickCategoryModal;
 window.onQuickCatTypeChange = onQuickCatTypeChange;
 window.onQuickCatModeChange = onQuickCatModeChange;
 window.handleQuickAddCategorySubmit = handleQuickAddCategorySubmit;
+window.handleEditCategorySearchKey = handleEditCategorySearchKey;
+window.handleCategorySearchKey = handleCategorySearchKey;
+window.showAppNotification = showAppNotification;
 window.renderPeerLoans = renderOverviewPeerLoans;
 window.renderOverviewPeerLoans = renderOverviewPeerLoans;
 window.syncCategoriesFromGitHub = syncCategoriesFromGitHub;
