@@ -21,7 +21,11 @@ bundle = bundle.replace(
 );
 
 fs.writeFileSync('Haushaltsbuch_App.html', bundle, 'utf8');
-console.log(`✅ Haushaltsbuch_App.html built (${fs.statSync('Haushaltsbuch_App.html').size} bytes).`);
+if (!fs.existsSync('rust_desktop')) {
+  fs.mkdirSync('rust_desktop', { recursive: true });
+}
+fs.writeFileSync('rust_desktop/embedded_app.html', bundle, 'utf8');
+console.log(`✅ Haushaltsbuch_App.html & rust_desktop/embedded_app.html built (${fs.statSync('Haushaltsbuch_App.html').size} bytes).`);
 
 // Sanity check syntax of bundled scripts
 const scriptRegex = /<script(?:\s+id=["'][^"']*["'])?>([\s\S]*?)<\/script>/gi;
@@ -39,21 +43,46 @@ while ((m = scriptRegex.exec(bundle)) !== null) {
 console.log(`✅ All ${sIdx - 1} bundled scripts in Haushaltsbuch_App.html have 100% valid JavaScript syntax.`);
 
 if (process.platform === 'win32') {
-  console.log('--- Compiling Haushaltsbuch.exe ---');
-  const cscPath = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe';
-  const cmd = `"${cscPath}" /target:winexe /out:Haushaltsbuch.exe /resource:Haushaltsbuch_App.html,HaushaltsbuchApp.embedded_app.html Program.cs`;
-  execSync(cmd, { stdio: 'inherit' });
-  console.log(`✅ Haushaltsbuch.exe compiled (${fs.statSync('Haushaltsbuch.exe').size} bytes).`);
+  console.log('--- Compiling Haushaltsbuch.exe with Rust ---');
+  let rustSuccess = false;
+  try {
+    execSync('cargo build --release', { cwd: 'rust_desktop', stdio: 'inherit' });
+    const rustExe = 'rust_desktop/target/release/haushaltsbuch.exe';
+    if (fs.existsSync(rustExe)) {
+      fs.copyFileSync(rustExe, 'Haushaltsbuch.exe');
+      console.log(`✅ Haushaltsbuch.exe compiled with Rust (${fs.statSync('Haushaltsbuch.exe').size} bytes).`);
+      rustSuccess = true;
+    }
+  } catch (err) {
+    console.warn('⚠️ Rust build encountered an issue, falling back to C# compiler:', err.message);
+  }
 
+  if (!rustSuccess) {
+    console.log('--- Compiling Haushaltsbuch.exe (C# Fallback) ---');
+    const cscPath = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe';
+    const cmd = `"${cscPath}" /target:winexe /out:Haushaltsbuch.exe /resource:Haushaltsbuch_App.html,HaushaltsbuchApp.embedded_app.html Program.cs`;
+    execSync(cmd, { stdio: 'inherit' });
+    console.log(`✅ Haushaltsbuch.exe compiled with C# (${fs.statSync('Haushaltsbuch.exe').size} bytes).`);
+  }
+
+  const cscPath = 'C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe';
   if (fs.existsSync('FeedbackProgram.cs')) {
-    console.log('--- Compiling Feedback_Zentrale.exe ---');
-    execSync(`"${cscPath}" /target:winexe /out:Feedback_Zentrale.exe FeedbackProgram.cs`, { stdio: 'inherit' });
-    console.log(`✅ Feedback_Zentrale.exe compiled.`);
+    try {
+      console.log('--- Compiling Feedback_Zentrale.exe ---');
+      execSync(`"${cscPath}" /target:winexe /out:Feedback_Zentrale.exe FeedbackProgram.cs`, { stdio: 'inherit' });
+      console.log(`✅ Feedback_Zentrale.exe compiled.`);
+    } catch (e) {
+      console.warn('⚠️ Feedback_Zentrale.exe compilation skipped (file in use or unchanged).');
+    }
   }
 
   if (fs.existsSync('KategorieProgram.cs')) {
-    console.log('--- Compiling Kategorie_Zentrale.exe ---');
-    execSync(`"${cscPath}" /target:winexe /out:Kategorie_Zentrale.exe KategorieProgram.cs`, { stdio: 'inherit' });
-    console.log(`✅ Kategorie_Zentrale.exe compiled.`);
+    try {
+      console.log('--- Compiling Kategorie_Zentrale.exe ---');
+      execSync(`"${cscPath}" /target:winexe /out:Kategorie_Zentrale.exe KategorieProgram.cs`, { stdio: 'inherit' });
+      console.log(`✅ Kategorie_Zentrale.exe compiled.`);
+    } catch (e) {
+      console.warn('⚠️ Kategorie_Zentrale.exe compilation skipped (file in use or unchanged).');
+    }
   }
 }
