@@ -2511,6 +2511,7 @@ function trackDeletedEntity(entityType, id) {
 // A. MONATS-BUDGETS & WARNSYSTEM
 // ----------------------------------------------------------------------------
 function ensureBudgetsInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.budgets || typeof appState.budgets !== 'object') {
     appState.budgets = {};
   }
@@ -2961,6 +2962,7 @@ function checkContractReminders() {
 let currentShoppingFilter = 'all';
 
 function ensureShoppingListInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.shoppingList || !Array.isArray(appState.shoppingList)) {
     appState.shoppingList = [];
   }
@@ -3585,6 +3587,7 @@ function bookShoppingCartAsExpense() {
 // REITER 7: WUNSCHLISTE, SPARZIELE & ANSCHAFFUNGEN
 // ----------------------------------------------------------------------------
 function ensureWishlistInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.wishlist || !Array.isArray(appState.wishlist)) {
     appState.wishlist = [];
   }
@@ -4433,6 +4436,7 @@ const DEFAULT_ACCOUNTS = [
 ];
 
 function ensureAccountsInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.accounts || !Array.isArray(appState.accounts) || appState.accounts.length === 0) {
     appState.accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS));
     if (appState.initialBalances) {
@@ -13921,6 +13925,7 @@ async function handleFulfillWishAsRecurring(wishId) {
 // SPARTÖPFE (UNTERKONTEN & SPARZIELE) & KREDIT-ACCORDION IN DER ÜBERSICHT
 // ----------------------------------------------------------------------------
 function ensureSavingPotsInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.savingPots || !Array.isArray(appState.savingPots)) {
     appState.savingPots = [];
   }
@@ -14121,6 +14126,7 @@ function renderOverviewCreditAccordion() {
 // ============================================================================
 
 function ensurePeerLoansInitialized() {
+  if (!appState) appState = { transactions: [], recurring: [], budgets: {}, shoppingList: [], wishlist: [], savingPots: [], peerLoans: [] };
   if (!appState.peerLoans || !Array.isArray(appState.peerLoans)) {
     appState.peerLoans = [];
   }

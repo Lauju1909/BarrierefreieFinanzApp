@@ -881,3 +881,136 @@ fn main() {
 
     cleanup_update_artifacts(&base_dir);
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_session_token_generation_and_uniqueness() {
+        let t1 = generate_session_token();
+        let t2 = generate_session_token();
+        assert_eq!(t1.len(), 32);
+        assert_eq!(t2.len(), 32);
+        assert_ne!(t1, t2);
+        assert!(t1.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_version_parsing_and_comparison() {
+        assert_eq!(parse_version_tuple("v6.9.63"), vec![6, 9, 63]);
+        assert!(is_newer_version("6.9.64", "6.9.63"));
+        assert!(is_newer_version("v7.0.0", "6.9.99"));
+        assert!(!is_newer_version("6.9.63", "6.9.63"));
+        assert!(!is_newer_version("6.9.60", "6.9.63"));
+    }
+
+    #[test]
+    fn test_http_server_all_endpoints_end_to_end() {
+        let temp_dir = std::env::temp_dir().join(format!("hb_rust_unit_test_{}", generate_session_token()));
+        let _ = fs::create_dir_all(&temp_dir);
+        let backup_dir = temp_dir.join("Tresor_Sicherheitskopien");
+        let _ = fs::create_dir_all(&backup_dir);
+        let vault_path = temp_dir.join("Haushaltsbuch_Daten.vault");
+        let bak_path = temp_dir.join("Haushaltsbuch_Daten.vault.bak");
+        let pairing_path = temp_dir.join("Haushaltsbuch_Kopplung.json");
+
+        let listener = TcpListener::bind("127.0.0.1:0").expect("Bind ephemeral port");
+        let port = listener.local_addr().unwrap().port();
+        let token = generate_session_token();
+
+        let state = Arc::new(AppState {
+            storage_dir: temp_dir.clone(),
+            backup_dir: backup_dir.clone(),
+            vault_path: vault_path.clone(),
+            bak_path: bak_path.clone(),
+            pairing_path: pairing_path.clone(),
+            session_token: token.clone(),
+            machine_name: "Test-PC".to_string(),
+            port,
+            last_heartbeat: Arc::new(AtomicU64::new(now_secs())),
+            is_running: Arc::new(AtomicBool::new(true)),
+        });
+
+        let server_state = Arc::clone(&state);
+        thread::spawn(move || {
+            for stream in listener.incoming().flatten() {
+                if !server_state.is_running.load(Ordering::SeqCst) {
+                    break;
+                }
+                let st = Arc::clone(&server_state);
+                handle_client(stream, st);
+            }
+        });
+
+        // 1. Test /api/heartbeat
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(b"GET /api/heartbeat HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("HTTP/1.1 200 OK"));
+        assert!(resp.contains("\"status\":\"alive\""));
+
+        // 2. Test unauthorized /api/get_vault -> 403
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(b"GET /api/get_vault HTTP/1.1\r\nHost: 127.0.0.1\r\n\r\n").unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("HTTP/1.1 403 Forbidden"));
+
+        // 3. Test authorized /api/save_vault and /api/get_vault
+        let payload = r#"{"salt":"s1","iv":"i1","vault":"encrypted_payload_123"}"#;
+        let req = format!(
+            "POST /api/save_vault HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Vault-Token: {}\r\nContent-Length: {}\r\n\r\n{}",
+            token,
+            payload.len(),
+            payload
+        );
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(req.as_bytes()).unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("HTTP/1.1 200 OK"));
+        assert!(resp.contains("\"status\":\"saved\""));
+
+        let req_get = format!(
+            "GET /api/get_vault HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Vault-Token: {}\r\n\r\n",
+            token
+        );
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(req_get.as_bytes()).unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("encrypted_payload_123"));
+
+        // 4. Test /api/save_pairing and /api/get_pairing
+        let pair_body = r#"{"deviceId":"dev_1","syncRoom":"room_abc"}"#;
+        let req_pair = format!(
+            "POST /api/save_pairing HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Vault-Token: {}\r\nContent-Length: {}\r\n\r\n{}",
+            token,
+            pair_body.len(),
+            pair_body
+        );
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(req_pair.as_bytes()).unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("\"status\":\"saved\""));
+
+        // 5. Test /api/reset_vault
+        let req_reset = format!(
+            "POST /api/reset_vault HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Vault-Token: {}\r\nContent-Length: 2\r\n\r\n{{}}",
+            token
+        );
+        let mut s = TcpStream::connect(format!("127.0.0.1:{}", port)).unwrap();
+        s.write_all(req_reset.as_bytes()).unwrap();
+        let mut resp = String::new();
+        s.read_to_string(&mut resp).unwrap();
+        assert!(resp.contains("\"status\":\"reset\""));
+        assert!(!vault_path.exists());
+
+        state.is_running.store(false, Ordering::SeqCst);
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+}
