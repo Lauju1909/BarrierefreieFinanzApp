@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-const APP_VERSION: &str = "6.9.59";
+const APP_VERSION: &str = "6.9.62";
 const BASE_PORT: u16 = 48123;
 const MAX_PORT_OFFSET: u16 = 15;
 const EMBEDDED_APP_HTML: &str = include_str!("../embedded_app.html");
@@ -88,16 +88,55 @@ fn detect_machine_name() -> String {
     "PC von Laurin".to_string()
 }
 
+fn parse_version_tuple(v: &str) -> Vec<u32> {
+    v.trim()
+        .trim_start_matches(|c: char| c == 'v' || c == 'V')
+        .split('.')
+        .filter_map(|s| s.trim().parse::<u32>().ok())
+        .collect()
+}
+
+fn is_newer_version(remote: &str, local: &str) -> bool {
+    let r_parts = parse_version_tuple(remote);
+    let l_parts = parse_version_tuple(local);
+    if r_parts.is_empty() || l_parts.is_empty() {
+        return false;
+    }
+    r_parts > l_parts
+}
+
 fn cleanup_update_artifacts(dir: &Path) {
-    let exts = [".old", ".new", ".tmp"];
+    if !dir.is_dir() {
+        return;
+    }
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                for ext in &exts {
-                    if file_name.ends_with(ext) {
-                        let _ = fs::remove_file(&path);
-                    }
+                let lower = file_name.to_lowercase();
+                // Never delete user vault, config, or assets
+                if lower.ends_with(".vault")
+                    || lower.ends_with(".bak")
+                    || lower.ends_with(".json")
+                    || lower.ends_with(".html")
+                    || lower.ends_with(".css")
+                    || lower.ends_with(".js")
+                    || lower.ends_with(".txt")
+                {
+                    continue;
+                }
+                // Don't touch the active executable
+                if lower == "haushaltsbuch.exe" {
+                    continue;
+                }
+                // Target temporary/old/new update artifacts
+                if lower.starts_with(".haushaltsbuch")
+                    || lower.starts_with("haushaltsbuch.exe.")
+                    || lower.ends_with(".old")
+                    || lower.ends_with(".new")
+                    || lower.ends_with(".tmp")
+                {
+                    let _ = fs::remove_file(&path);
                 }
             }
         }
@@ -182,7 +221,6 @@ fn ensure_legacy_vault_migrated(html_path: &Path, vault_path: &Path, backup_dir:
     }
 }
 
-#[allow(dead_code)]
 struct AppState {
     storage_dir: PathBuf,
     backup_dir: PathBuf,
@@ -193,6 +231,7 @@ struct AppState {
     machine_name: String,
     port: u16,
     last_heartbeat: Arc<AtomicU64>,
+    #[allow(dead_code)]
     is_running: Arc<AtomicBool>,
 }
 
@@ -204,7 +243,6 @@ fn now_secs() -> u64 {
 }
 
 fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
-    log_debug("handle_client: Incoming connection accepted.");
     let _ = stream.set_read_timeout(Some(Duration::from_secs(6)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(6)));
 
@@ -227,12 +265,8 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
 
     let header_end_pos = match header_end_pos {
         Some(pos) => pos,
-        None => {
-            log_debug(&format!("handle_client: No header end found, read {} bytes", request_data.len()));
-            return;
-        }
+        None => return,
     };
-    log_debug(&format!("handle_client: Header received ({} bytes)", header_end_pos));
 
     let (method, raw_url, content_length, token_header) = {
         let header_str = String::from_utf8_lossy(&request_data[..header_end_pos]);
@@ -258,12 +292,29 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
                 if let Some(val) = line.split(':').nth(1) {
                     content_length = val.trim().parse().unwrap_or(0);
                 }
-            } else if lower.starts_with("x-session-token:") {
+            } else if lower.starts_with("x-session-token:") || lower.starts_with("x-vault-token:") {
                 if let Some(val) = line.split(':').nth(1) {
                     token_header = Some(val.trim().to_string());
                 }
             }
         }
+
+        // Fallback: URL Query parameter (?token=... oder ?auth_token=...)
+        if token_header.is_none() {
+            if let Some(q_pos) = raw_url.find('?') {
+                let query = &raw_url[q_pos + 1..];
+                for pair in query.split('&') {
+                    if let Some((k, v)) = pair.split_once('=') {
+                        let k_lower = k.to_lowercase();
+                        if k_lower == "token" || k_lower == "auth_token" || k_lower == "x-vault-token" {
+                            token_header = Some(v.to_string());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         (method, raw_url, content_length, token_header)
     };
 
@@ -290,7 +341,6 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
     };
 
     let clean_url = raw_url.split('?').next().unwrap_or(&raw_url);
-    log_debug(&format!("handle_client: Request {} {}", method, clean_url));
 
     // OPTIONS preflight request
     if method == "OPTIONS" {
@@ -298,7 +348,7 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
             "HTTP/1.1 200 OK\r\n\
              Access-Control-Allow-Origin: http://127.0.0.1:{}\r\n\
              Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
-             Access-Control-Allow-Headers: Content-Type, X-Session-Token\r\n\
+             Access-Control-Allow-Headers: Content-Type, X-Session-Token, X-Vault-Token\r\n\
              Connection: close\r\n\
              Content-Length: 0\r\n\r\n",
             state.port
@@ -326,7 +376,7 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
         return;
     }
 
-    // Security check for /api/ routes (erfordert gültigen Session-Token)
+    // Security check for /api/ routes (erfordert gültigen Session-/Vault-Token)
     if clean_url.starts_with("/api/") {
         let token_match = token_header
             .as_deref()
@@ -378,7 +428,7 @@ fn handle_client(mut stream: TcpStream, state: Arc<AppState>) {
         return;
     }
 
-    // API: Save Vault
+    // API: Save Vault (Atomares Schreiben mit Rollierendem Backup)
     if clean_url.starts_with("/api/save_vault") && method == "POST" {
         state.last_heartbeat.store(now_secs(), Ordering::SeqCst);
         let trimmed_body = body.trim_matches(|c: char| c == '\u{feff}' || c == '\u{200b}' || c.is_whitespace());
@@ -532,7 +582,7 @@ fn send_http_response(
          Content-Length: {}\r\n\
          Access-Control-Allow-Origin: http://127.0.0.1:{}\r\n\
          Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n\
-         Access-Control-Allow-Headers: Content-Type, X-Session-Token\r\n\
+         Access-Control-Allow-Headers: Content-Type, X-Session-Token, X-Vault-Token\r\n\
          Connection: close\r\n\r\n",
         status,
         status_text,
@@ -598,9 +648,11 @@ fn launch_browser(url: &str, profile_dir: &Path) -> Option<Child> {
     }
 }
 
-fn check_and_apply_update_in_background(base_dir: PathBuf) {
+fn check_and_apply_update_in_background(base_dir: PathBuf, exe_path: PathBuf) {
     thread::spawn(move || {
-        thread::sleep(Duration::from_secs(3));
+        // 4 Sekunden warten, damit Browser und App ohne Netzwerk-Interferenz flüssig starten
+        thread::sleep(Duration::from_secs(4));
+
         let version_url = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main/version.json";
         let output = match Command::new("curl.exe")
             .args(["-s", "--max-time", "10", version_url])
@@ -616,12 +668,75 @@ fn check_and_apply_update_in_background(base_dir: PathBuf) {
                 if let Some(q1) = rest.find('"') {
                     if let Some(q2) = rest[q1 + 1..].find('"') {
                         let remote_ver = &rest[q1 + 1..q1 + 1 + q2];
-                        if remote_ver != APP_VERSION && !remote_ver.is_empty() {
+                        if is_newer_version(remote_ver, APP_VERSION) {
+                            log_debug(&format!(
+                                "Update verfügbar: remote={} > local={}",
+                                remote_ver, APP_VERSION
+                            ));
+
+                            // Download geschützt im AppData-Updates Verzeichnis
+                            let local_app_data = std::env::var("LOCALAPPDATA")
+                                .unwrap_or_else(|_| "C:\\Users\\Default\\AppData\\Local".to_string());
+                            let update_dir = PathBuf::from(local_app_data)
+                                .join("HaushaltsbuchBrowser")
+                                .join("Updates");
+                            let _ = fs::create_dir_all(&update_dir);
+
+                            let temp_download = update_dir.join(format!(
+                                "Haushaltsbuch_v{}.exe",
+                                remote_ver.replace('.', "_")
+                            ));
+                            if temp_download.exists() {
+                                let _ = fs::remove_file(&temp_download);
+                            }
+
                             let exe_url = "https://github.com/Lauju1909/BarrierefreieFinanzApp/releases/latest/download/Haushaltsbuch.exe";
-                            let new_exe_path = base_dir.join("Haushaltsbuch.exe.new");
-                            let _ = Command::new("curl.exe")
-                                .args(["-s", "-L", "--max-time", "60", "-o", new_exe_path.to_str().unwrap_or(""), exe_url])
+                            let curl_status = Command::new("curl.exe")
+                                .args([
+                                    "-s",
+                                    "-L",
+                                    "--max-time",
+                                    "90",
+                                    "-o",
+                                    temp_download.to_str().unwrap_or(""),
+                                    exe_url,
+                                ])
                                 .status();
+
+                            if let Ok(st) = curl_status {
+                                if st.success() && temp_download.exists() {
+                                    let file_size = fs::metadata(&temp_download)
+                                        .map(|m| m.len())
+                                        .unwrap_or(0);
+                                    if file_size > 500_000 {
+                                        // Unsichtbare temporäre Datei für den atomaren Windows-Austausch
+                                        let hidden_old = base_dir.join(".Haushaltsbuch.old.tmp");
+                                        if hidden_old.exists() {
+                                            let _ = fs::remove_file(&hidden_old);
+                                        }
+
+                                        // Laufende EXE umbenennen und neue EXE an den Zielort kopieren
+                                        if fs::rename(&exe_path, &hidden_old).is_ok() {
+                                            if fs::copy(&temp_download, &exe_path).is_ok() {
+                                                log_debug("Update erfolgreich vorbereitet!");
+                                                let _ = fs::remove_file(&temp_download);
+
+                                                // Zeitverzögerte Hintergrundbereinigung der alten EXE nach Beendigung
+                                                let hidden_old_str = hidden_old.display().to_string();
+                                                let _ = Command::new("cmd.exe")
+                                                    .args([
+                                                        "/C",
+                                                        &format!(
+                                                            "timeout /t 3 /nobreak >nul & del /f /q \"{}\" 2>nul",
+                                                            hidden_old_str
+                                                        ),
+                                                    ])
+                                                    .spawn();
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -735,7 +850,7 @@ fn main() {
         log_debug("Failed to spawn browser process or cmd start used.");
     }
 
-    check_and_apply_update_in_background(base_dir);
+    check_and_apply_update_in_background(base_dir.clone(), exe_path);
 
     // Main heartbeat loop: wait until browser closes or inactivity
     let mut checks: u32 = 0;
@@ -763,4 +878,6 @@ fn main() {
             }
         }
     }
+
+    cleanup_update_artifacts(&base_dir);
 }

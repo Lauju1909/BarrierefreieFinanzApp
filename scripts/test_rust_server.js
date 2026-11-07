@@ -7,7 +7,7 @@ console.log('--- Testing Rust Haushaltsbuch.exe Endpoints & Backward Compatibili
 
 const tempDir = path.join(__dirname, 'test_temp_rust');
 if (fs.existsSync(tempDir)) {
-  // keep tempDir
+  try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
 }
 fs.mkdirSync(tempDir, { recursive: true });
 
@@ -87,9 +87,7 @@ async function runTests() {
           break;
         }
       } catch (e) {
-        if (i === 10 && p === 48123) {
-          console.log(`Debug connect attempt on 48123: ${e.code || e.message}`);
-        }
+        // Retry
       }
     }
     if (connected) break;
@@ -125,7 +123,7 @@ async function runTests() {
   }
   console.log('✓ Security verified: Unauthorized API requests are blocked with 403.');
 
-  // 4. Test Authorized /api/get_vault
+  // 4a. Test Authorized /api/get_vault with X-Session-Token
   const authHeaders = {
     'X-Session-Token': token,
     'Content-Type': 'application/json'
@@ -134,7 +132,36 @@ async function runTests() {
   if (vaultResp.statusCode !== 200 || !vaultResp.body.includes('mock_salt_12345')) {
     throw new Error(`get_vault failed: ${vaultResp.body}`);
   }
-  console.log('✓ Authorized get_vault returned correct existing vault data.');
+  console.log('✓ Authorized get_vault returned correct existing vault data (X-Session-Token).');
+
+  // 4b. Test Authorized /api/get_vault with X-Vault-Token (as sent by app.js!)
+  const vaultTokenHeaders = {
+    'X-Vault-Token': token,
+    'Content-Type': 'application/json'
+  };
+  const vaultRespB = await httpRequest('GET', '/api/get_vault', vaultTokenHeaders);
+  if (vaultRespB.statusCode !== 200 || !vaultRespB.body.includes('mock_salt_12345')) {
+    throw new Error(`get_vault with X-Vault-Token failed: ${vaultRespB.body}`);
+  }
+  console.log('✓ Authorized get_vault returned correct existing vault data (X-Vault-Token header from app.js).');
+
+  // 4c. Test Authorized /api/get_vault with query parameter ?token=
+  const vaultRespC = await httpRequest('GET', `/api/get_vault?token=${token}`);
+  if (vaultRespC.statusCode !== 200 || !vaultRespC.body.includes('mock_salt_12345')) {
+    throw new Error(`get_vault with ?token= failed: ${vaultRespC.body}`);
+  }
+  console.log('✓ Authorized get_vault returned correct existing vault data (?token= parameter).');
+
+  // 4d. Test CORS preflight (OPTIONS)
+  const optionsResp = await httpRequest('OPTIONS', '/api/get_vault');
+  if (optionsResp.statusCode !== 200) {
+    throw new Error(`OPTIONS preflight failed: ${optionsResp.statusCode}`);
+  }
+  const allowHeaders = optionsResp.headers['access-control-allow-headers'] || '';
+  if (!allowHeaders.includes('X-Vault-Token') || !allowHeaders.includes('X-Session-Token')) {
+    throw new Error(`CORS headers missing X-Vault-Token: ${allowHeaders}`);
+  }
+  console.log('✓ CORS OPTIONS preflight verified with X-Vault-Token and X-Session-Token.');
 
   // 5. Test Authorized /api/save_vault (Atomic write + rolling backup)
   const updatedVault = JSON.stringify({
@@ -143,7 +170,7 @@ async function runTests() {
     vault: "new_encrypted_content_2026",
     updatedAt: Date.now()
   });
-  const saveResp = await httpRequest('POST', '/api/save_vault', authHeaders, updatedVault);
+  const saveResp = await httpRequest('POST', '/api/save_vault', vaultTokenHeaders, updatedVault);
   if (saveResp.statusCode !== 200 || !saveResp.body.includes('saved')) {
     throw new Error(`save_vault failed: ${saveResp.body}`);
   }
@@ -180,11 +207,11 @@ async function runTests() {
     code: "7777-8888-9999",
     time: "Heute"
   });
-  const savePairResp = await httpRequest('POST', '/api/save_pairing', authHeaders, pairingPayload);
+  const savePairResp = await httpRequest('POST', '/api/save_pairing', vaultTokenHeaders, pairingPayload);
   if (savePairResp.statusCode !== 200 || !savePairResp.body.includes('saved')) {
     throw new Error(`save_pairing failed: ${savePairResp.body}`);
   }
-  const getPairResp = await httpRequest('GET', '/api/get_pairing', authHeaders);
+  const getPairResp = await httpRequest('GET', '/api/get_pairing', vaultTokenHeaders);
   if (getPairResp.statusCode !== 200 || !getPairResp.body.includes('7777-8888-9999')) {
     throw new Error(`get_pairing failed: ${getPairResp.body}`);
   }

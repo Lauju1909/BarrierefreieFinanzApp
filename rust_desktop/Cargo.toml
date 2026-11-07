@@ -1,6 +1,6 @@
 [package]
 name = "haushaltsbuch"
-version = "6.9.59"
+version = "6.9.62"
 edition = "2021"
 
 [profile.release]

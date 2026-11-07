@@ -9,10 +9,14 @@ const targetDirs = [
 targetDirs.forEach(targetDir => {
   if (!fs.existsSync(targetDir)) return;
 
-  // Clean up loose HTML and version files so only the clean EXE remains
+  // Clean up loose HTML, version files, and any update leftovers (*.old, *.new, *.tmp)
   const filesToRemove = [
     'Haushaltsbuch_App.html',
-    'version.json'
+    'version.json',
+    'Haushaltsbuch.exe.new',
+    'Haushaltsbuch.exe.old',
+    'Haushaltsbuch.exe.tmp',
+    '.Haushaltsbuch.old.tmp'
   ];
 
   const dirsToRemove = [
@@ -38,12 +42,28 @@ targetDirs.forEach(targetDir => {
     if (fs.existsSync(dest)) {
       try {
         fs.unlinkSync(dest);
-        console.log(`Cleaned up loose file from ${targetDir}: ${file}`);
+        console.log(`Cleaned up loose/temporary file from ${targetDir}: ${file}`);
       } catch (e) {
         console.warn(`Could not remove ${dest}:`, e.message);
       }
     }
   });
+
+  // Also clean up any lingering *.old, *.new, *.tmp files in targetDir (never touching .vault or .bak)
+  try {
+    const entries = fs.readdirSync(targetDir);
+    for (const entry of entries) {
+      const lower = entry.toLowerCase();
+      if (lower.endsWith('.vault') || lower.endsWith('.bak') || lower.endsWith('.json')) continue;
+      if (lower.endsWith('.old') || lower.endsWith('.new') || lower.endsWith('.tmp') || lower.startsWith('.haushaltsbuch')) {
+        const fullP = path.join(targetDir, entry);
+        try {
+          fs.unlinkSync(fullP);
+          console.log(`Removed update artifact: ${entry}`);
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
 
   const filesToCopy = [
     'Haushaltsbuch.exe',
