@@ -10,10 +10,10 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-const APP_VERSION: &str = "6.9.62";
+const APP_VERSION: &str = "6.9.63";
 const BASE_PORT: u16 = 48123;
 const MAX_PORT_OFFSET: u16 = 15;
-const EMBEDDED_APP_HTML: &str = include_str!("../embedded_app.html");
+const EMBEDDED_APP_HTML: &str = include_str!("../Haushaltsbuch_App.html");
 
 #[repr(C)]
 struct SystemTimeWin {
