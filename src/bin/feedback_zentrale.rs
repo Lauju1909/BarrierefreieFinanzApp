@@ -1,9 +1,11 @@
 #![windows_subsystem = "windows"]
 
 use std::fs;
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 const EMBEDDED_INBOX_HTML: &str = include_str!("../../Feedback_Inbox.html");
 
 fn find_browser() -> Option<PathBuf> {
@@ -56,6 +58,7 @@ fn main() {
     } else {
         let _ = Command::new("cmd")
             .args(["/C", "start", "", &html_path.to_string_lossy()])
+            .creation_flags(CREATE_NO_WINDOW)
             .spawn();
     }
 }

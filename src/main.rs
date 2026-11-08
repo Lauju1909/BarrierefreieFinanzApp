@@ -3,6 +3,7 @@
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{Shutdown, TcpListener, TcpStream};
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -10,7 +11,8 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
-const APP_VERSION: &str = "6.9.63";
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+const APP_VERSION: &str = "6.9.66";
 const BASE_PORT: u16 = 48123;
 const MAX_PORT_OFFSET: u16 = 15;
 const EMBEDDED_APP_HTML: &str = include_str!("../Haushaltsbuch_App.html");
@@ -635,14 +637,20 @@ fn launch_browser(url: &str, profile_dir: &Path) -> Option<Child> {
         if kind == "firefox" {
             cmd.arg("-new-window").arg(url);
         } else {
+            // Blitzschneller Start ohne First-Run-Assistenten und Barrierefreiheits-Sofortanbindung für NVDA
             cmd.arg(format!("--app={}", url))
                 .arg(format!("--user-data-dir={}", profile_dir.display()))
-                .arg("--window-size=1280,880");
+                .arg("--window-size=1280,880")
+                .arg("--no-first-run")
+                .arg("--no-default-browser-check")
+                .arg("--force-renderer-accessibility");
         }
         cmd.spawn().ok()
     } else {
+        // Fallback: Standardbrowser öffnen - 100% ohne CMD-Konsolenfenster
         Command::new("cmd")
             .args(["/C", "start", "", url])
+            .creation_flags(CREATE_NO_WINDOW)
             .spawn()
             .ok()
     }
@@ -650,12 +658,13 @@ fn launch_browser(url: &str, profile_dir: &Path) -> Option<Child> {
 
 fn check_and_apply_update_in_background(base_dir: PathBuf, exe_path: PathBuf) {
     thread::spawn(move || {
-        // 4 Sekunden warten, damit Browser und App ohne Netzwerk-Interferenz flüssig starten
-        thread::sleep(Duration::from_secs(4));
+        // 10 Sekunden warten: Der Browser und die App öffnen sich sofort ohne jede Verzögerung!
+        thread::sleep(Duration::from_secs(10));
 
         let version_url = "https://raw.githubusercontent.com/Lauju1909/BarrierefreieFinanzApp/main/version.json";
         let output = match Command::new("curl.exe")
             .args(["-s", "--max-time", "10", version_url])
+            .creation_flags(CREATE_NO_WINDOW)
             .output()
         {
             Ok(out) if out.status.success() => String::from_utf8_lossy(&out.stdout).to_string(),
@@ -669,11 +678,6 @@ fn check_and_apply_update_in_background(base_dir: PathBuf, exe_path: PathBuf) {
                     if let Some(q2) = rest[q1 + 1..].find('"') {
                         let remote_ver = &rest[q1 + 1..q1 + 1 + q2];
                         if is_newer_version(remote_ver, APP_VERSION) {
-                            log_debug(&format!(
-                                "Update verfügbar: remote={} > local={}",
-                                remote_ver, APP_VERSION
-                            ));
-
                             // Download geschützt im AppData-Updates Verzeichnis
                             let local_app_data = std::env::var("LOCALAPPDATA")
                                 .unwrap_or_else(|_| "C:\\Users\\Default\\AppData\\Local".to_string());
@@ -701,6 +705,7 @@ fn check_and_apply_update_in_background(base_dir: PathBuf, exe_path: PathBuf) {
                                     temp_download.to_str().unwrap_or(""),
                                     exe_url,
                                 ])
+                                .creation_flags(CREATE_NO_WINDOW)
                                 .status();
 
                             if let Ok(st) = curl_status {
@@ -718,20 +723,9 @@ fn check_and_apply_update_in_background(base_dir: PathBuf, exe_path: PathBuf) {
                                         // Laufende EXE umbenennen und neue EXE an den Zielort kopieren
                                         if fs::rename(&exe_path, &hidden_old).is_ok() {
                                             if fs::copy(&temp_download, &exe_path).is_ok() {
-                                                log_debug("Update erfolgreich vorbereitet!");
                                                 let _ = fs::remove_file(&temp_download);
-
-                                                // Zeitverzögerte Hintergrundbereinigung der alten EXE nach Beendigung
-                                                let hidden_old_str = hidden_old.display().to_string();
-                                                let _ = Command::new("cmd.exe")
-                                                    .args([
-                                                        "/C",
-                                                        &format!(
-                                                            "timeout /t 3 /nobreak >nul & del /f /q \"{}\" 2>nul",
-                                                            hidden_old_str
-                                                        ),
-                                                    ])
-                                                    .spawn();
+                                                // Keine cmd.exe Spawn-Konsole nötig: cleanup_update_artifacts
+                                                // bereinigt .Haushaltsbuch.old.tmp sauber beim nächsten Start!
                                             }
                                         }
                                     }
@@ -899,11 +893,11 @@ mod tests {
 
     #[test]
     fn test_version_parsing_and_comparison() {
-        assert_eq!(parse_version_tuple("v6.9.63"), vec![6, 9, 63]);
-        assert!(is_newer_version("6.9.64", "6.9.63"));
+        assert_eq!(parse_version_tuple("v6.9.66"), vec![6, 9, 66]);
+        assert!(is_newer_version("6.9.67", "6.9.66"));
         assert!(is_newer_version("v7.0.0", "6.9.99"));
-        assert!(!is_newer_version("6.9.63", "6.9.63"));
-        assert!(!is_newer_version("6.9.60", "6.9.63"));
+        assert!(!is_newer_version("6.9.66", "6.9.66"));
+        assert!(!is_newer_version("6.9.60", "6.9.66"));
     }
 
     #[test]

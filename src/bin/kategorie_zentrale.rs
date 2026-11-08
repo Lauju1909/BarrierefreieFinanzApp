@@ -3,6 +3,7 @@
 use std::fs;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -10,6 +11,7 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
+const CREATE_NO_WINDOW: u32 = 0x08000000;
 const EMBEDDED_KATEGORIE_HTML: &str = include_str!("../../Kategorie_Zentrale.html");
 const EMBEDDED_CATEGORIES_JSON: &str = include_str!("../../categories.json");
 const BASE_PORT: u16 = 48190;
@@ -30,7 +32,11 @@ fn now_secs() -> u64 {
 }
 
 fn get_gh_token() -> String {
-    if let Ok(output) = Command::new("gh").args(["auth", "token"]).output() {
+    if let Ok(output) = Command::new("gh")
+        .args(["auth", "token"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
+    {
         if output.status.success() {
             let s = String::from_utf8_lossy(&output.stdout).trim().to_string();
             if !s.is_empty() {
@@ -281,7 +287,10 @@ fn main() {
             .spawn()
             .ok()
     } else {
-        let _ = Command::new("cmd").args(["/C", "start", "", &url]).spawn();
+        let _ = Command::new("cmd")
+            .args(["/C", "start", "", &url])
+            .creation_flags(CREATE_NO_WINDOW)
+            .spawn();
         None
     };
 
