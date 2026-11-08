@@ -3,6 +3,13 @@
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
   "buildDate": "2026-11-08",
   "features": [
+    "⚡ 100% Native Rust-Desktop-Engine: Vollständige Umstellung auf native, ressourcenschonende Rust-Architektur ohne Python/C# für maximale Performance und minimalen Ressourcenverbrauch",
+    "🖥️ Sofortige Fenster-Aktivierung im Vordergrund: Windows AllowSetForegroundWindow API stellt sicher, dass das Haushaltsbuch sofort sichtbar im Vordergrund geöffnet wird",
+    "🛑 Keine Konsolenfenster mehr: Vollständige Unterdrückung aller schwarzen CMD-Eingabeaufforderungen beim Start und Update durch CREATE_NO_WINDOW",
+    "🧹 Turbo-Start & Cache-Bereinigung: Bereinigung von über 250 MB temporären Chrome-Profildaten und Start mit Hochgeschwindigkeits-Flags",
+    "⌨️ Automatischer Tastatur- & Screenreader-Fokus: Sofortige Fokussierung des PIN-Eingabefelds beim Start und nach Schließen des Änderungsprotokolls",
+    "🛡️ SemVer-Update-Prüfung: Rust-basierte Versionsprüfung verhindert doppelte Download-Schleifen bei Versionsgleichheit",
+    "📜 Reaktiviertes Änderungsprotokoll-Modal: Anzeige von Neuerungen bei Updates mit direktem Fokus-Rücksprung auf die PIN-Eingabe",
     "💱 Multi-Währungs-System & Standard-Währung: Wähle in den Einstellungen (Reiter 5) deine Hauptwährung (Automatisch nach Sprache mit EUR/USD, oder manuell aus modernen & historischen Währungen wie DM, Schilling, Franc)",
     "🔴 Währungsauswahl bei Ausgaben (Reiter 2): Flexibles Erfassen von Ausgaben in Fremdwährungen mit automatischer Cent-genauer Umrechnung in die Basiswährung",
     "💱 Aufklappbarer Währungsrechner (Reiter 1): Komfortables Umrechnen beliebiger Beträge zwischen aktuellen und historischen Währungen mit 1-Klick-Tausch und NVDA-Sprachansage",

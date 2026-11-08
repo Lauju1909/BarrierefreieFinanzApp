@@ -13560,8 +13560,9 @@ function checkChangelogOnStartup() {
   const settingChk = document.getElementById('setting-auto-changelog');
   if (settingChk) settingChk.checked = isEnabled;
 
-  // Start niemals durch blockierendes Changelog-Popup verzögern
-  setLastSeenChangelogVersion(CURRENT_APP_VERSION);
+  if (isEnabled && lastSeen !== CURRENT_APP_VERSION) {
+    openChangelogModal(false);
+  }
 }
 
 function openChangelogModal(isManualOpen) {

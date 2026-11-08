@@ -27,6 +27,18 @@
 </div>
 
 <div class="changelog-content" style="max-height: 52vh; overflow-y: auto; padding-right: 8px; font-size: 16px; line-height: 1.6;">
+<div style="background: rgba(230, 81, 0, 0.08); border-left: 6px solid #e65100; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
+<h3 style="margin: 0 0 8px 0; color: #bf360c; font-size: 20px;">⚡ Neu: 100% Rust-Desktop-Engine, Blitzschneller Start &amp; Direkter Vordergrund</h3>
+<ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+<li><strong>⚡ 100% Native Rust-Desktop-Engine:</strong> Vollständige Umstellung auf native, ressourcenschonende Rust-Architektur. Keine Abhängigkeiten mehr von Python oder C#, maximale Stabilität und minimaler Speicherverbrauch.</li>
+<li><strong>🖥️ Sofortige Fenster-Aktivierung im Vordergrund:</strong> Direkte Einbindung der Windows <code>AllowSetForegroundWindow</code>-API sorgt dafür, dass sich das Anwendungsfenster beim Starten sofort in den Vordergrund schiebt und nicht mehr hinter anderen Fenstern verborgen bleibt.</li>
+<li><strong>🛑 Keine Konsolenfenster mehr:</strong> Beseitigung aller störenden schwarzen CMD- und Eingabeaufforderungs-Fenster durch saubere Prozessinitialisierung mit <code>CREATE_NO_WINDOW</code>.</li>
+<li><strong>🧹 Browser-Cache-Bereinigung &amp; Turbo-Startflags:</strong> Über 250 MB Altlasten und Telemetriedaten aus dem Chrome-Profil bereinigt. Start mit optimierten Performance-Flags ohne Hintergrundoverhead.</li>
+<li><strong>⌨️ Direkter Fokus &amp; NVDA-Bereitschaft:</strong> Automatischer Tastatur- und Screenreader-Fokus direkt auf das PIN-Eingabefeld beim Start bzw. nach dem Schließen dieses Update-Hinweises.</li>
+<li><strong>🛡️ Rust SemVer-Update-Prüfung:</strong> Zuverlässige Versionsprüfung verhindert wiederholte Downloads bereits installierter Versionen.</li>
+<li><strong>📜 Update-Hinweis reaktiviert:</strong> Dieser Hinweis erscheint wie gewünscht bei neuen Updates automatisch und kehrt nach dem Schließen direkt zum Entsperren zurück.</li>
+</ul>
+</div>
 <div style="background: rgba(0, 150, 136, 0.1); border-left: 6px solid #009688; padding: 14px 18px; border-radius: 8px; margin-bottom: 14px;">
 <h3 style="margin: 0 0 8px 0; color: #004D40; font-size: 20px;">💱 Neu: Multi-Währungs-System, Währungsauswahl bei Ausgaben &amp; Währungsrechner</h3>
 <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">

@@ -12,7 +12,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
-const APP_VERSION: &str = "6.9.66";
+const APP_VERSION: &str = "6.9.68";
 const BASE_PORT: u16 = 48123;
 const MAX_PORT_OFFSET: u16 = 15;
 const EMBEDDED_APP_HTML: &str = include_str!("../Haushaltsbuch_App.html");
@@ -930,7 +930,7 @@ mod tests {
     #[test]
     fn test_version_parsing_and_comparison() {
         assert_eq!(parse_version_tuple("v6.9.66"), vec![6, 9, 66]);
-        assert!(is_newer_version("6.9.67", "6.9.66"));
+        assert!(is_newer_version("6.9.68", "6.9.67"));
         assert!(is_newer_version("v7.0.0", "6.9.99"));
         assert!(!is_newer_version("6.9.66", "6.9.66"));
         assert!(!is_newer_version("6.9.60", "6.9.66"));

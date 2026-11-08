@@ -3,6 +3,46 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 6.9.68 (Aktuelle Version - 08. November 2026)
+--------------------------------------------------------------------------------
+
+* 100% NATIVE RUST-DESKTOP-ENGINE & TURBO-START:
+  - Vollständige Umstellung der Desktop-App auf eine hochmoderne, native Rust-
+    Architektur.
+  - Vollständiger Verzicht auf externe Runtimes (weder Python noch C# erforderlich).
+  - Minimaler Arbeitsspeicherverbrauch, sofortige Reaktionszeiten und maximale
+    Zuverlässigkeit.
+
+* WINDOWS VORDERGRUND-AKTIVIERUNG (ALLOWSETFOREGROUNDWINDOW):
+  - Direkte Einbindung der nativen Windows Win32 API.
+  - Das Anwendungsfenster schiebt sich beim Starten sofort in den Vordergrund und
+    bleibt niemals mehr hinter anderen Fenstern verborgen.
+
+* VOLLSTÄNDIGE ELIMINIERUNG VON KONSOLENFENSTERN (CREATE_NO_WINDOW):
+  - Keine störenden schwarzen CMD- oder PowerShell-Fenster mehr beim Starten oder
+    Aktualisieren der Anwendung.
+  - Alle Hintergrundprozesse starten geräuschlos ohne Eingabeaufforderung.
+
+* BROWSER-CACHE-BEREINIGUNG & TURBO-FLAGS:
+  - Über 250 MB an alten Chrome-Profildaten, Telemetrie- und Speicher-Altlasten
+    wurden bereinigt.
+  - Start mit optimierten Browser-Flags ohne Hintergrundnetzwerk-Overhead.
+
+* BARRIEREFREIER FOKUS & SCREENREADER-BEREITSCHAFT:
+  - Automatischer Fokus auf das PIN-Eingabefeld beim Start sowie nach dem Schließen
+    des Änderungsprotokolls.
+  - Vollständige NVDA- und Tastatursteuerung ohne manuelles Mausklicken.
+
+* REAKTIVIERTES ÄNDERUNGSPROTOKOLL:
+  - Bei Updates wird das informative Hinweisfenster "Was ist neu in diesem Update?"
+    wieder barrierefrei eingeblendet.
+  - Nach Bestätigung (Enter oder Schließen) landet der Fokus sofort im PIN-Feld.
+
+* RUST SEMVER-UPDATE-PRÜFUNG:
+  - Intelligente semantische Versionsprüfung verhindert wiederholte Downloads
+    bereits vorhandener Versionen.
+
+--------------------------------------------------------------------------------
 VERSION 6.9.35 (Aktuelle Version - 25. Oktober 2026)
 --------------------------------------------------------------------------------
 

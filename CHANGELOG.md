@@ -1,6 +1,32 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## ⚡ 100% Rust-Desktop-Engine, Turbo-Start & Barrierefreie Vordergrund-Aktivierung (v6.9.68)
+*Datum: 08. November 2026*
+
+### ⚡ 1. 100% Native Rust-Desktop-Engine
+- **Keine Python- oder C#-Abhängigkeiten:** Vollständiger Umstieg auf einen nativen Rust-Backend-Kern.
+- **Ressourceneffizienz:** Deutlich reduzierter RAM-Bedarf und blitzschneller Start des lokalen Vault-Servers.
+- **Sicherheits-Architektur:** Dual-Header-Token-Validierung (`X-Vault-Token` & `X-Session-Token`) schützt alle lokalen Tresor-Endpunkte.
+
+### 🖥️ 2. Sofortige Fenster-Aktivierung im Vordergrund
+- **Windows `AllowSetForegroundWindow`:** Native Win32-Integration stellt sicher, dass das Anwendungsfenster beim Starten direkt in den Vordergrund gehoben wird.
+- **Kein Verstecken:** Die Anwendung bleibt nicht hinter anderen Programmfenstern verborgen.
+
+### 🛑 3. Beseitigung aller schwarzen Konsolenfenster
+- **`CREATE_NO_WINDOW (0x08000000)`:** Alle Hilfsprozesse und Server-Aufrufe werden ohne Erzeugung eines Konsolenfensters ausgeführt.
+- **Nahtlose User Experience:** Kein störendes Flackern oder Aufpoppen von CMD-Eingabeaufforderungen.
+
+### 🧹 4. Cache-Bereinigung & Performance-Startflags
+- **250+ MB Profildaten bereinigt:** Bereinigung temporärer Chrome-Metrics- und Telemetriedateien.
+- **Optimierte Start-Flags:** Deaktivierung von Hintergrund-Updates, Default-Browser-Checks und Sync für sofortige Bereitschaft.
+
+### ⌨️ 5. Barrierefreiheit & Tastaturfokus
+- **Autofokus auf PIN-Feld:** Unmittelbare Eingabebereitschaft für Tastatur- und Screenreader-Nutzer (NVDA).
+- **Update-Modal reaktiviert:** Informiert den Nutzer bei neuen Updates transparent über Verbesserungen und übergibt den Fokus beim Schließen direkt an die PIN-Eingabe.
+
+---
+
 ## 💱 Multi-Währungs-System, Währungsauswahl bei Ausgaben & Währungsrechner (v6.9.35)
 *Datum: 25. Oktober 2026*
 
