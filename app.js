@@ -12708,7 +12708,12 @@ function updateLockScreenUI(isFirstTime) {
     }
     updateKeyFileLockScreen();
     renderScrambledPinPad();
-  }, 100);
+    // Sofortiger Fokus auf das PIN-Feld: Der Nutzer kann direkt ohne Klick tippen!
+    const pinField = document.getElementById('pin-input');
+    if (pinField && document.getElementById('lock-screen') && document.getElementById('lock-screen').style.display !== 'none') {
+      pinField.focus();
+    }
+  }, 50);
 
   if (typeof BiometricAuth !== "undefined" && BiometricAuth.isMobile()) {
     setTimeout(() => {
@@ -13555,9 +13560,8 @@ function checkChangelogOnStartup() {
   const settingChk = document.getElementById('setting-auto-changelog');
   if (settingChk) settingChk.checked = isEnabled;
 
-  if (isEnabled && lastSeen !== CURRENT_APP_VERSION) {
-    openChangelogModal(false);
-  }
+  // Start niemals durch blockierendes Changelog-Popup verzögern
+  setLastSeenChangelogVersion(CURRENT_APP_VERSION);
 }
 
 function openChangelogModal(isManualOpen) {

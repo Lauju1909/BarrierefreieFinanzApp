@@ -34,6 +34,11 @@ extern "system" {
     fn GetLocalTime(lp_system_time: *mut SystemTimeWin);
 }
 
+#[link(name = "user32")]
+extern "system" {
+    fn AllowSetForegroundWindow(dwProcessId: u32) -> i32;
+}
+
 #[link(name = "bcrypt")]
 extern "system" {
     fn BCryptGenRandom(
@@ -157,6 +162,25 @@ fn clean_loose_files(dir: &Path) {
     let profile_dirs = ["Profile", "Profile_Feedback", "Profile_Kategorien"];
     for p_name in &profile_dirs {
         let p = dir.join(p_name);
+        if p.is_dir() {
+            let _ = fs::remove_dir_all(p);
+        }
+    }
+}
+
+fn cleanup_browser_profile_bloat(profile_dir: &Path) {
+    let junk_dirs = [
+        "BrowserMetrics",
+        "optimization_guide_model_store",
+        "component_crx_cache",
+        "Crashpad",
+        "GPUPersistentCache",
+        "GrShaderCache",
+        "Safe Browsing",
+        "WasmTtsEngine",
+    ];
+    for d in &junk_dirs {
+        let p = profile_dir.join(d);
         if p.is_dir() {
             let _ = fs::remove_dir_all(p);
         }
@@ -632,17 +656,28 @@ fn find_browser() -> Option<(PathBuf, &'static str)> {
 }
 
 fn launch_browser(url: &str, profile_dir: &Path) -> Option<Child> {
+    unsafe {
+        // Windows erlauben, dass der neue Browser-Prozess sofort das Vordergrund-Fenster wird
+        AllowSetForegroundWindow(0xFFFFFFFF);
+    }
+
     if let Some((path, kind)) = find_browser() {
         let mut cmd = Command::new(path);
         if kind == "firefox" {
             cmd.arg("-new-window").arg(url);
         } else {
-            // Blitzschneller Start ohne First-Run-Assistenten und Barrierefreiheits-Sofortanbindung für NVDA
+            // Blitzschneller Start ohne First-Run-Assistenten, ohne Hintergrund-Netzwerkoverhead
+            // und mit sofortiger Barrierefreiheits-Anbindung für NVDA
             cmd.arg(format!("--app={}", url))
                 .arg(format!("--user-data-dir={}", profile_dir.display()))
                 .arg("--window-size=1280,880")
                 .arg("--no-first-run")
                 .arg("--no-default-browser-check")
+                .arg("--disable-background-networking")
+                .arg("--disable-component-update")
+                .arg("--disable-sync")
+                .arg("--disable-default-apps")
+                .arg("--disable-breakpad")
                 .arg("--force-renderer-accessibility");
         }
         cmd.spawn().ok()
@@ -764,6 +799,7 @@ fn main() {
     let local_app_data = std::env::var("LOCALAPPDATA").unwrap_or_else(|_| "C:\\Users\\Default\\AppData\\Local".to_string());
     let profile_dir = PathBuf::from(local_app_data).join("HaushaltsbuchBrowser").join("Profile");
     let _ = fs::create_dir_all(&profile_dir);
+    cleanup_browser_profile_bloat(&profile_dir);
 
     let backup_dir = base_dir.join("Tresor_Sicherheitskopien");
     let _ = fs::create_dir_all(&backup_dir);
