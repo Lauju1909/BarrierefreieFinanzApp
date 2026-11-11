@@ -12,7 +12,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const CREATE_NO_WINDOW: u32 = 0x08000000;
-const APP_VERSION: &str = "6.9.73";
+const APP_VERSION: &str = "6.9.74";
 const BASE_PORT: u16 = 48123;
 const MAX_PORT_OFFSET: u16 = 15;
 const EMBEDDED_APP_HTML: &str = include_str!("../Haushaltsbuch_App.html");
