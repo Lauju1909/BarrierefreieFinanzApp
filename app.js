@@ -17901,8 +17901,19 @@ function calculateMonthlyForecast(year, month) {
   }
 
   // Liquid balance
-  const balances = calculateBalancesUpToDate(isCurrentMonth ? today.toISOString().split('T')[0] : `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`);
-  const currentLiquidTotal = Number(balances.total || 0);
+  const targetDateStr = isCurrentMonth
+    ? `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
+    : `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+  const balances = calculateBalancesUpToDate(targetDateStr);
+  let currentLiquidTotal = Number(balances.total || 0);
+  if ((!currentLiquidTotal || isNaN(currentLiquidTotal)) && Array.isArray(appState.accounts) && appState.accounts.length > 0) {
+    let accSum = 0;
+    appState.accounts.forEach(acc => {
+      const b = balances[acc.id] !== undefined ? balances[acc.id] : (acc.initialBalance || 0);
+      accSum += Number(b || 0);
+    });
+    if (accSum > 0) currentLiquidTotal = accSum;
+  }
 
   const todayStr = isCurrentMonth ? today.toISOString().split('T')[0] : (new Date(y, m, 1) > today ? `${y}-${String(m+1).padStart(2,'0')}-01` : '9999-99-99');
   const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
