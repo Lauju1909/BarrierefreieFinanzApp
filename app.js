@@ -6909,10 +6909,10 @@ function calculateMonthStats(year, month) {
 // 9. HAUPTÜBERSICHT RENDERN MIT BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG
 // ----------------------------------------------------------------------------
 
-function updateOverviewWidgets(year, month) {
+function updateOverviewWidgets(year, month, knownTotal) {
   const y = (typeof year === 'number' && !isNaN(year)) ? year : selectedYear;
   const m = (typeof month === 'number' && !isNaN(month)) ? month : selectedMonth;
-  if (typeof renderMonthlyForecast === 'function') renderMonthlyForecast(y, m);
+  if (typeof renderMonthlyForecast === 'function') renderMonthlyForecast(y, m, knownTotal);
   if (typeof renderContractRadar === 'function') renderContractRadar();
   if (typeof renderFinanceCalendar === 'function') renderFinanceCalendar(y, m);
   if (typeof populateFilterTagDropdown === 'function') populateFilterTagDropdown();
@@ -6996,7 +6996,7 @@ function updateOverview(force = false) {
     const dParts = (selectedDateStr || '').split('-');
     const dayY = dParts.length >= 2 ? parseInt(dParts[0], 10) : selectedYear;
     const dayM = dParts.length >= 2 ? parseInt(dParts[1], 10) - 1 : selectedMonth;
-    updateOverviewWidgets(dayY, dayM);
+    updateOverviewWidgets(dayY, dayM, dayStats && dayStats.balances ? dayStats.balances.total : null);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7077,7 +7077,7 @@ function updateOverview(force = false) {
     const wbParts = (wb.mondayStr || '').split('-');
     const wy = wbParts.length >= 2 ? parseInt(wbParts[0], 10) : selectedYear;
     const wm = wbParts.length >= 2 ? parseInt(wbParts[1], 10) - 1 : selectedMonth;
-    updateOverviewWidgets(wy, wm);
+    updateOverviewWidgets(wy, wm, weekBalances ? weekBalances.total : null);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7121,7 +7121,7 @@ function updateOverview(force = false) {
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
     renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency);
-    updateOverviewWidgets(selectedYear, selectedMonth);
+    updateOverviewWidgets(selectedYear, selectedMonth, stats && stats.balances ? stats.balances.total : null);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7218,7 +7218,7 @@ function updateOverview(force = false) {
   renderBudgetsList();
   renderOverviewCreditAccordion();
   renderOverviewPeerLoans();
-  updateOverviewWidgets(selectedYear, selectedMonth);
+  updateOverviewWidgets(selectedYear, selectedMonth, periodEndBalances ? periodEndBalances.total : null);
   if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
 }
 
@@ -17882,7 +17882,7 @@ function printTaxReport() {
 // MONTHLY FORECAST & DAILY BUDGET CALCULATION
 // -------------------------------------------------------------------------
 
-function calculateMonthlyForecast(year, month) {
+function calculateMonthlyForecast(year, month, knownTotal) {
   const today = new Date();
   const y = (year !== undefined) ? year : today.getFullYear();
   const m = (month !== undefined) ? month : today.getMonth();
@@ -17900,21 +17900,41 @@ function calculateMonthlyForecast(year, month) {
     remainingDays = 0;
   }
 
-  // Multi-tier liquid balance lookup
+  // 1. Direct knownTotal from caller (e.g. stats.balances.total)
   let currentLiquidTotal = 0;
+  if (typeof knownTotal === 'number' && !isNaN(knownTotal) && knownTotal !== 0) {
+    currentLiquidTotal = knownTotal;
+  }
 
-  // Tier 1: Try calculateBalancesUpToDate
-  try {
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
-    const targetDateStr = isCurrentMonth ? todayStr : monthEndStr;
-    const balances = calculateBalancesUpToDate(targetDateStr);
-    if (balances && typeof balances.total === 'number' && !isNaN(balances.total) && balances.total !== 0) {
-      currentLiquidTotal = balances.total;
-    }
-  } catch (e) {}
+  // 2. Read directly from the rendered total balance card in DOM
+  if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && typeof document !== 'undefined') {
+    try {
+      const cardEl = document.getElementById('card-alltime-total');
+      if (cardEl && cardEl.textContent) {
+        const parsed = (typeof parseCurrencyString === 'function')
+          ? parseCurrencyString(cardEl.textContent)
+          : parseFloat(cardEl.textContent.replace(/[^0-9,-]/g, '').replace(',', '.'));
+        if (!isNaN(parsed) && parsed !== 0) {
+          currentLiquidTotal = parsed;
+        }
+      }
+    } catch (e) {}
+  }
 
-  // Tier 2: Try calculateMonthStats
+  // 3. Try calculateBalancesUpToDate
+  if (!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) {
+    try {
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+      const targetDateStr = isCurrentMonth ? todayStr : monthEndStr;
+      const balances = calculateBalancesUpToDate(targetDateStr);
+      if (balances && typeof balances.total === 'number' && !isNaN(balances.total) && balances.total !== 0) {
+        currentLiquidTotal = balances.total;
+      }
+    } catch (e) {}
+  }
+
+  // 4. Try calculateMonthStats
   if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && typeof calculateMonthStats === 'function') {
     try {
       const ms = calculateMonthStats(y, m);
@@ -17924,20 +17944,7 @@ function calculateMonthlyForecast(year, month) {
     } catch (e) {}
   }
 
-  // Tier 3: Try reading from active DOM balance card
-  if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && typeof document !== 'undefined') {
-    try {
-      const cardEl = document.getElementById('card-balance-total');
-      if (cardEl && cardEl.textContent) {
-        const parsed = (typeof parseCurrencyString === 'function') ? parseCurrencyString(cardEl.textContent) : parseFloat(cardEl.textContent.replace(/[^0-9,-]/g, '').replace(',', '.'));
-        if (!isNaN(parsed) && parsed !== 0) {
-          currentLiquidTotal = parsed;
-        }
-      }
-    } catch (e) {}
-  }
-
-  // Tier 4: Direct sum of account balances in appState
+  // 5. Direct sum of accounts
   if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && appState && Array.isArray(appState.accounts)) {
     let sum = 0;
     appState.accounts.forEach(acc => {
@@ -18002,10 +18009,10 @@ function calculateMonthlyForecast(year, month) {
   };
 }
 
-function renderMonthlyForecast(year, month) {
+function renderMonthlyForecast(year, month, knownTotal) {
   const y = (year !== undefined) ? year : selectedYear;
   const m = (month !== undefined) ? month : selectedMonth;
-  const data = calculateMonthlyForecast(y, m);
+  const data = calculateMonthlyForecast(y, m, knownTotal);
 
   const freeEl = document.getElementById('forecast-free-budget');
   const dailyEl = document.getElementById('forecast-daily-budget');
@@ -18078,7 +18085,7 @@ function scanAndDetectContracts() {
   const now = new Date();
 
   (appState.recurring || []).forEach(r => {
-    if ((r.type === 'expense' || r.isContract) && r.active !== false) {
+    if ((r.type === 'expense' || r.type === 'transfer' || r.isContract) && r.active !== false) {
       let monthlyCost = Number(r.amount || 0);
       if (r.interval === 'yearly') monthlyCost /= 12;
       else if (r.interval === 'quarterly') monthlyCost /= 3;

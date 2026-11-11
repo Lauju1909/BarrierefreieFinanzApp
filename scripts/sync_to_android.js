@@ -28,22 +28,26 @@ if (fs.existsSync(assetsDir)) {
 }
 
 // 3. Update package.json
+const verJson = JSON.parse(fs.readFileSync(path.join(srcDir, 'version.json'), 'utf8'));
+const currentVersion = verJson.version || '6.9.75';
+const patchNum = parseInt(currentVersion.split('.')[2] || '75', 10);
+
 const pkgPath = path.join(androidDir, 'package.json');
 if (fs.existsSync(pkgPath)) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  pkg.version = '6.9.70';
+  pkg.version = currentVersion;
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
-  console.log('✓ Updated package.json to 6.9.70');
+  console.log(`✓ Updated package.json to ${currentVersion}`);
 }
 
 // 4. Update build.gradle
 const gradlePath = path.join(androidDir, 'android', 'app', 'build.gradle');
 if (fs.existsSync(gradlePath)) {
   let gradle = fs.readFileSync(gradlePath, 'utf8');
-  gradle = gradle.replace(/versionCode \d+/, 'versionCode 70');
-  gradle = gradle.replace(/versionName "[^"]+"/, 'versionName "6.9.70"');
+  gradle = gradle.replace(/versionCode \d+/, `versionCode ${patchNum}`);
+  gradle = gradle.replace(/versionName "[^"]+"/, `versionName "${currentVersion}"`);
   fs.writeFileSync(gradlePath, gradle, 'utf8');
-  console.log('✓ Updated build.gradle (versionCode 70, versionName "6.9.70")');
+  console.log(`✓ Updated build.gradle (versionCode ${patchNum}, versionName "${currentVersion}")`);
 }
 
 console.log('Android sync complete!');
