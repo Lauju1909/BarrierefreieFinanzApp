@@ -7114,14 +7114,19 @@ function updateOverview(force = false) {
     renderTransactionList(stats.incomeList, 'overview-income-items-feed', lang === 'en' ? 'No income recorded in this month.' : 'Keine Einnahmen in diesem Monat erfasst.');
     renderTransactionList(stats.expenseList, 'overview-expense-items-feed', lang === 'en' ? 'No expenses recorded in this month.' : 'Keine Ausgaben in diesem Monat erfasst.');
     renderTransactionList(stats.transferList, 'overview-transfer-items-feed', lang === 'en' ? 'No transfers or savings plans recorded in this month.' : 'Keine Umbuchungen oder Sparpläne in diesem Monat erfasst.');
-    populateFilterAccountDropdown();
-    renderExpenseRankings(stats.expenseList);
-    checkLiquidityWarning(stats.balances);
-    renderBudgetsList();
-    renderOverviewCreditAccordion();
-    renderOverviewPeerLoans();
-    renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency);
-    updateOverviewWidgets(selectedYear, selectedMonth, stats && stats.balances ? stats.balances.total : null);
+    // Prognose, Vertrags-Radar & Kalender zuerst und fehlertolerant rendern,
+    // damit ein Fehler in einem anderen Widget sie nicht blockiert.
+    try {
+      updateOverviewWidgets(selectedYear, selectedMonth, stats && stats.balances ? stats.balances.total : null);
+    } catch (err) { console.error('updateOverviewWidgets fehlgeschlagen:', err); }
+    const safeRun = (label, fn) => { try { fn(); } catch (err) { console.error('Übersicht-Widget "' + label + '" fehlgeschlagen:', err); } };
+    safeRun('Konto-Filter', () => populateFilterAccountDropdown());
+    safeRun('Ranglisten', () => renderExpenseRankings(stats.expenseList));
+    safeRun('Liquiditätswarnung', () => checkLiquidityWarning(stats.balances));
+    safeRun('Budgets', () => renderBudgetsList());
+    safeRun('Kredite', () => renderOverviewCreditAccordion());
+    safeRun('Privatkredite', () => renderOverviewPeerLoans());
+    safeRun('Währungen', () => renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency));
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
