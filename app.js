@@ -21,7 +21,7 @@ if (typeof globalThis !== 'undefined') {
   globalThis.escapeHtml = escapeHTML;
 }
 
-const CURRENT_APP_VERSION = 'v6.9.69';
+const CURRENT_APP_VERSION = 'v6.9.70';
 
 const _nativeParseFloat = globalThis.parseFloat;
 function parseEuroInput(val) {
@@ -7103,6 +7103,10 @@ function updateOverview(force = false) {
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
     renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency);
+    if (typeof renderMonthlyForecast === 'function') renderMonthlyForecast(selectedYear, selectedMonth);
+    if (typeof renderContractRadar === 'function') renderContractRadar();
+    if (typeof renderFinanceCalendar === 'function') renderFinanceCalendar(selectedYear, selectedMonth);
+    if (typeof populateFilterTagDropdown === 'function') populateFilterTagDropdown();
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7646,6 +7650,8 @@ function renderTransactionList(list, containerId, emptyText) {
               ${sharedBadge}
               ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
               ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+              ${(tx.tags && tx.tags.length > 0) ? tx.tags.map(tag => `<span class="tx-tag-pill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(156, 39, 176, 0.1); color: #7B1FA2; border: 1px solid rgba(156, 39, 176, 0.3); margin-right: 4px;">${escapeHTML(tag)}</span>`).join('') : ''}
+              ${tx.isTaxDeductible ? '<span class="status-badge" style="background: rgba(76, 175, 80, 0.14); color: #2E7D32; border: 1px solid #4CAF50;">⚖️ Steuer</span>' : ''}
             </div>
           </div>
           <div class="tx-amount-col">
@@ -7674,6 +7680,8 @@ function renderTransactionList(list, containerId, emptyText) {
               ${sharedBadge}
               ${tx.receipt ? '<span class="status-badge" style="background: rgba(2, 132, 199, 0.14); color: var(--accent-action); border: 1px solid var(--accent-action);">🧾 Beleg</span>' : ''}
               ${tx.description ? `<span class="tx-note">${tx.description}</span>` : ''}
+              ${(tx.tags && tx.tags.length > 0) ? tx.tags.map(tag => `<span class="tx-tag-pill" style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(156, 39, 176, 0.1); color: #7B1FA2; border: 1px solid rgba(156, 39, 176, 0.3); margin-right: 4px;">${escapeHTML(tag)}</span>`).join('') : ''}
+              ${tx.isTaxDeductible ? '<span class="status-badge" style="background: rgba(76, 175, 80, 0.14); color: #2E7D32; border: 1px solid #4CAF50;">⚖️ Steuer</span>' : ''}
             </div>
           </div>
           <div class="tx-amount-col">
@@ -9028,6 +9036,9 @@ async function handleAddExpense(e) {
         subcategory: subcategory,
         description: desc,
         isPlanned: isPlanned,
+        tags: (typeof parseTagsInput === 'function') ? parseTagsInput(document.getElementById('exp-tags')?.value) : [],
+        isTaxDeductible: document.getElementById('exp-tax-deductible')?.checked || false,
+        taxCategory: document.getElementById('exp-tax-category')?.value || 'craftsman',
         date: date,
         createdAt: Date.now(),
         updatedAt: Date.now()
@@ -9688,10 +9699,14 @@ async function handleAddIncome(e) {
         subcategory: subcategory,
         description: desc,
         isPlanned: isPlanned,
+        tags: (typeof parseTagsInput === 'function') ? parseTagsInput(document.getElementById('inc-tags')?.value) : [],
         date: date,
         createdAt: Date.now(),
         updatedAt: Date.now()
       };
+      if (typeof learnCategoryRule === 'function') {
+        learnCategoryRule(desc || subcategory || category, category, subcategory);
+      }
       if (currentIncomeReceipt) {
         newTx.receipt = JSON.parse(JSON.stringify(currentIncomeReceipt));
       }
@@ -10508,6 +10523,14 @@ function openEditModal(txId) {
   currentEditReceipt = tx.receipt ? JSON.parse(JSON.stringify(tx.receipt)) : null;
   renderReceiptPreview('edit');
 
+  const editTagsEl = document.getElementById('edit-tx-tags');
+  if (editTagsEl) editTagsEl.value = (tx.tags || []).join(' ');
+  const editTaxChk = document.getElementById('edit-tx-tax-deductible');
+  if (editTaxChk) editTaxChk.checked = Boolean(tx.isTaxDeductible);
+  const editTaxCat = document.getElementById('edit-tx-tax-category');
+  if (editTaxCat) editTaxCat.value = tx.taxCategory || 'craftsman';
+  if (typeof toggleTaxDeductibleSection === 'function') toggleTaxDeductibleSection('edit-tx');
+
   const modal = document.getElementById('edit-tx-modal');
   modal.style.display = 'flex';
   document.getElementById('edit-tx-amount').focus();
@@ -10731,6 +10754,12 @@ async function saveEditedTransaction(e) {
     }
 
     tx.description = desc;
+    tx.tags = (typeof parseTagsInput === 'function') ? parseTagsInput(document.getElementById('edit-tx-tags')?.value) : (tx.tags || []);
+    tx.isTaxDeductible = document.getElementById('edit-tx-tax-deductible')?.checked || false;
+    tx.taxCategory = document.getElementById('edit-tx-tax-category')?.value || 'craftsman';
+    if (document.getElementById('edit-tx-learn-rule')?.checked && typeof learnCategoryRule === 'function') {
+      learnCategoryRule(desc || tx.subcategory || tx.category, tx.category, tx.subcategory);
+    }
 
     if (currentEditReceipt) {
       tx.receipt = currentEditReceipt;
@@ -13102,6 +13131,12 @@ function unlockApp() {
     console.error('Fehler beim Laden der Ansichten nach dem Entsperren:', renderErr);
   }
 
+  if (typeof initCategoryRules === 'function') initCategoryRules();
+  if (typeof loadOnlineBankingSettings === 'function') loadOnlineBankingSettings();
+  if (appState && appState.onlineBanking?.paypal?.autoSync && typeof fetchPayPalTransactions === 'function') {
+    fetchPayPalTransactions({ isAuto: true });
+  }
+
   switchView('overview');
   resetInactivityTimer();
   recordUnlockAudit();
@@ -15298,6 +15333,9 @@ function handleTxSearchFilterChange() {
   currentTxFilter.query = qInput ? qInput.value.trim().toLowerCase() : '';
   currentTxFilter.status = sSelect ? sSelect.value : 'all';
   currentTxFilter.account = aSelect ? aSelect.value : 'all';
+  const tagSel = document.getElementById('tx-filter-tag');
+  currentTxFilter.tag = tagSel ? tagSel.value : 'all';
+  if (typeof renderTagStatsBanner === 'function') renderTagStatsBanner(currentTxFilter.tag);
 
   if (clearBtn) clearBtn.style.display = currentTxFilter.query ? 'inline-block' : 'none';
 
@@ -15557,6 +15595,11 @@ function applyTxFilters(list) {
       if (!tx.isPlanned && tx.date <= todayStr) return false;
     } else if (currentTxFilter.status === 'recurring') {
       if (!tx.isRecurring) return false;
+    }
+
+    // 2b. Tag filter
+    if (currentTxFilter.tag && currentTxFilter.tag !== 'all') {
+      if (!tx.tags || !tx.tags.includes(currentTxFilter.tag)) return false;
     }
 
     // 3. Account
@@ -17490,3 +17533,1482 @@ function setAccessibleCodeValue(el, val, label) {
 // =============================================================================
 // MAGISCHER SYNC-LINK (E-MAIL, LINK & ZWISCHENABLAGE)
 // =============================================================================
+
+
+// =========================================================================
+// MULTIBANKING, TAGS, TAX, FORECAST, CONTRACT RADAR & FINANCE CALENDAR
+// =========================================================================
+
+function parseTagsInput(str) {
+  if (!str) return [];
+  if (Array.isArray(str)) return str;
+  return String(str)
+    .split(/[\s,;]+/)
+    .map(t => t.trim())
+    .filter(Boolean)
+    .map(t => t.startsWith('#') ? t.toLowerCase() : ('#' + t.toLowerCase()));
+}
+
+function getUniqueTags() {
+  const set = new Set();
+  (appState.transactions || []).forEach(t => {
+    (t.tags || []).forEach(tag => set.add(tag));
+  });
+  return Array.from(set).sort();
+}
+
+function renderTagSuggestions(prefix) {
+  const inputEl = document.getElementById(prefix + '-tags');
+  const container = document.getElementById(prefix + '-tag-suggestions');
+  if (!inputEl || !container) return;
+
+  const allTags = getUniqueTags();
+  const defaultPopular = ['#urlaub', '#steuer2026', '#geschenk', '#auto', '#renovierung', '#hobbys', '#kleidung', '#haushalt'];
+  const pool = Array.from(new Set([...allTags, ...defaultPopular]));
+
+  const currentVal = inputEl.value.toLowerCase();
+  const currentTags = parseTagsInput(currentVal);
+
+  const available = pool.filter(t => !currentTags.includes(t.toLowerCase()));
+  if (available.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = available.slice(0, 6).map(tag => `
+    <button type="button" class="btn btn-secondary" onclick="addTagToInput('${prefix}', '${tag}')" style="padding: 2px 8px; font-size: 11px; border-radius: 12px; background: rgba(156, 39, 176, 0.08); border: 1px solid rgba(156, 39, 176, 0.3); color: #7B1FA2;">
+      ${escapeHTML(tag)}
+    </button>
+  `).join('');
+}
+
+function addTagToInput(prefix, tag) {
+  const inputEl = document.getElementById(prefix + '-tags');
+  if (!inputEl) return;
+  const current = inputEl.value.trim();
+  inputEl.value = current ? `${current} ${tag}` : tag;
+  renderTagSuggestions(prefix);
+  inputEl.focus();
+}
+
+function populateFilterTagDropdown() {
+  const sel = document.getElementById('tx-filter-tag');
+  if (!sel) return;
+  const currentVal = (currentTxFilter && currentTxFilter.tag) ? currentTxFilter.tag : 'all';
+  const allTags = getUniqueTags();
+  let optHtml = '<option value="all">🏷️ Alle Tags</option>';
+  allTags.forEach(t => {
+    optHtml += `<option value="${escapeHTML(t)}">${escapeHTML(t)}</option>`;
+  });
+  sel.innerHTML = optHtml;
+  sel.value = currentVal;
+}
+
+function clearTagFilter() {
+  const sel = document.getElementById('tx-filter-tag');
+  if (sel) sel.value = 'all';
+  if (currentTxFilter) currentTxFilter.tag = 'all';
+  handleTxSearchFilterChange();
+}
+
+function renderTagStatsBanner(selectedTag) {
+  const banner = document.getElementById('tx-tag-stats-banner');
+  const textEl = document.getElementById('tx-tag-stats-text');
+  if (!banner || !textEl) return;
+
+  if (!selectedTag || selectedTag === 'all') {
+    banner.style.display = 'none';
+    return;
+  }
+
+  let count = 0;
+  let expSum = 0;
+  let incSum = 0;
+
+  (appState.transactions || []).forEach(tx => {
+    if (tx.tags && tx.tags.includes(selectedTag)) {
+      count++;
+      if (tx.type === 'expense') expSum += Number(tx.amount || 0);
+      else if (tx.type === 'income') incSum += Number(tx.amount || 0);
+    }
+  });
+
+  textEl.innerHTML = `🏷️ <strong>Schlagwort ${escapeHTML(selectedTag)}:</strong> ${count} Buchung(en) | Ausgaben: <span style="color: var(--accent-expense); font-weight: bold;">- ${formatCurrency(expSum)}</span> | Einnahmen: <span style="color: var(--accent-income); font-weight: bold;">+ ${formatCurrency(incSum)}</span>`;
+  banner.style.display = 'flex';
+}
+
+// -------------------------------------------------------------------------
+// TAX DEDUCTIBLE & REPORT ENGINE
+// -------------------------------------------------------------------------
+
+function toggleTaxDeductibleSection(prefix) {
+  const chk = document.getElementById(prefix + '-tax-deductible');
+  const sec = document.getElementById(prefix + '-tax-section');
+  if (chk && sec) {
+    sec.style.display = chk.checked ? 'block' : 'none';
+  }
+}
+
+const TAX_CATEGORIES = {
+  craftsman: { title: '🛠️ Handwerkerleistungen (§ 35a Abs. 3 EStG)', percent: 20, maxLimit: 1200, desc: 'Renovierung, Modernisierung, Montage, Reparaturen (20% der Arbeitskosten bis max. 1.200 € Steuerabzug)' },
+  household: { title: '🧹 Haushaltsnahe Dienstleistungen (§ 35a Abs. 2 EStG)', percent: 20, maxLimit: 4000, desc: 'Reinigungskraft, Gartenpflege, Winterdienst, Betreuung (20% bis max. 4.000 € Steuerabzug)' },
+  donation: { title: '❤️ Spenden & Zuwendungen (§ 10b EStG)', percent: 100, maxLimit: 0, desc: 'Spenden an gemeinnützige Organisationen, Stiftungen & Vereine (voll absetzbar bis 20% des Einkommens)' },
+  work_equipment: { title: '💼 Arbeitsmittel & Werbungskosten (§ 9 EStG)', percent: 100, maxLimit: 0, desc: 'Fachbücher, Arbeitskleidung, Computer/Laptop, Büromaterial, Fahrtkosten' },
+  medical: { title: '🩺 Außergewöhnliche Belastungen (§ 33 EStG)', percent: 100, maxLimit: 0, desc: 'Krankheitskosten, Medikamente, Brillen, Zahnersatz, Kurkosten (über zumutbarer Belastung)' },
+  special_expense: { title: '📜 Sonderausgaben & Vorsorgeaufwendungen', percent: 100, maxLimit: 0, desc: 'Versicherungsbeiträge, Haftpflicht, Unfallversicherung, Altersvorsorge' }
+};
+
+function openTaxReportModal(year) {
+  const modal = document.getElementById('tax-report-modal');
+  const heading = document.getElementById('tax-report-heading');
+  const yearSelect = document.getElementById('tax-report-year');
+  if (!modal) return;
+
+  const currentYear = year ? parseInt(year, 10) : (selectedYear || new Date().getFullYear());
+
+  if (yearSelect) {
+    const years = new Set();
+    years.add(currentYear);
+    (appState.transactions || []).forEach(t => {
+      if (t.date) years.add(parseInt(t.date.substring(0, 4), 10));
+    });
+    const sortedYears = Array.from(years).sort((a,b) => b - a);
+    yearSelect.innerHTML = sortedYears.map(y => `<option value="${y}" ${y === currentYear ? 'selected' : ''}>Steuerjahr ${y}</option>`).join('');
+  }
+
+  modal.style.display = 'flex';
+  if (heading) heading.focus();
+  renderTaxReport(currentYear);
+  announceNVDA(`Steuer-Nachweis für ${currentYear} geöffnet.`);
+}
+
+function closeTaxReportModal() {
+  const modal = document.getElementById('tax-report-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderTaxReport(year) {
+  const container = document.getElementById('tax-report-content');
+  if (!container) return;
+
+  const yNum = parseInt(year, 10);
+  const taxTransactions = (appState.transactions || []).filter(tx => {
+    if (!tx.date || parseInt(tx.date.substring(0, 4), 10) !== yNum) return false;
+    return Boolean(tx.isTaxDeductible || (tx.tags && tx.tags.includes('#steuer')));
+  });
+
+  if (taxTransactions.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 30px; color: var(--sub-text);">
+        <p style="font-size: 16px; margin: 0 0 8px 0;">Keine steuerlich relevanten Ausgaben im Jahr ${yNum} gefunden.</p>
+        <p style="font-size: 13px;">Tipp: Markiere Ausgaben beim Eintragen mit dem Häkchen <strong>„⚖️ Für Steuererklärung relevant“</strong> oder dem Schlagwort <strong>#Steuer</strong>.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const grouped = {};
+  let totalDeductibleSum = 0;
+  let totalTaxAdvantageEst = 0;
+
+  taxTransactions.forEach(tx => {
+    const catKey = tx.taxCategory || 'craftsman';
+    if (!grouped[catKey]) grouped[catKey] = [];
+    grouped[catKey].push(tx);
+    const amt = Number(tx.amount || 0);
+    totalDeductibleSum += amt;
+    const catInfo = TAX_CATEGORIES[catKey] || TAX_CATEGORIES.craftsman;
+    const advantage = (amt * (catInfo.percent / 100));
+    totalTaxAdvantageEst += advantage;
+  });
+
+  let html = `
+    <div style="background: rgba(76, 175, 80, 0.08); border-left: 6px solid #4CAF50; padding: 14px 18px; border-radius: 8px; margin-bottom: 16px;">
+      <h3 style="margin: 0 0 6px 0; color: #2E7D32; font-size: 18px;">Zusammenfassung für das Steuerjahr ${yNum}</h3>
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px;">
+        <div>
+          <span style="font-size: 12px; color: var(--sub-text);">Gesamte steuerwirksame Ausgaben:</span>
+          <div style="font-size: 22px; font-weight: bold; color: #1B5E20;">${formatCurrency(totalDeductibleSum)}</div>
+        </div>
+        <div>
+          <span style="font-size: 12px; color: var(--sub-text);">Geschätzter direkter Steuer-Vorteil:</span>
+          <div style="font-size: 22px; font-weight: bold; color: #2E7D32;">${formatCurrency(totalTaxAdvantageEst)}</div>
+        </div>
+        <div>
+          <span style="font-size: 12px; color: var(--sub-text);">Erfasste Belege &amp; Posten:</span>
+          <div style="font-size: 22px; font-weight: bold;">${taxTransactions.length} Posten</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  Object.keys(grouped).forEach(catKey => {
+    const list = grouped[catKey];
+    const catInfo = TAX_CATEGORIES[catKey] || { title: catKey, percent: 100, desc: '' };
+    const groupSum = list.reduce((s, t) => s + Number(t.amount || 0), 0);
+    const groupAdvantage = groupSum * (catInfo.percent / 100);
+
+    html += `
+      <div style="margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden;">
+        <div style="background: var(--bg-card); padding: 10px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <strong style="font-size: 15px;">${escapeHTML(catInfo.title)}</strong>
+            <div style="font-size: 12px; color: var(--sub-text);">${escapeHTML(catInfo.desc)}</div>
+          </div>
+          <div style="text-align: right;">
+            <div style="font-weight: bold; font-size: 16px; color: #2E7D32;">${formatCurrency(groupSum)}</div>
+            <div style="font-size: 11px; color: var(--sub-text);">Abzug ca. ${formatCurrency(groupAdvantage)}</div>
+          </div>
+        </div>
+        <table class="annual-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+          <thead>
+            <tr style="background: rgba(0,0,0,0.02);">
+              <th scope="col" style="padding: 6px 10px;">Datum</th>
+              <th scope="col" style="padding: 6px 10px;">Empfänger / Beschreibung</th>
+              <th scope="col" style="padding: 6px 10px;">Konto</th>
+              <th scope="col" style="padding: 6px 10px; text-align: center;">Beleg</th>
+              <th scope="col" style="padding: 6px 10px; text-align: right;">Rechnungsbetrag</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${list.map(t => `
+              <tr>
+                <td style="padding: 6px 10px;">${formatDateGerman(t.date)}</td>
+                <td style="padding: 6px 10px;"><strong>${escapeHTML(t.category || '')}</strong> ${t.description ? '– ' + escapeHTML(t.description) : ''}</td>
+                <td style="padding: 6px 10px;">${escapeHTML(formatAccountName(t.account))}</td>
+                <td style="padding: 6px 10px; text-align: center;">${t.receipt ? '✅ Vorhanden' : '⚠️ Ohne Beleg'}</td>
+                <td style="padding: 6px 10px; text-align: right; font-weight: bold;">${formatCurrency(t.amount)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function exportTaxReportCsv() {
+  const yearSelect = document.getElementById('tax-report-year');
+  const yNum = parseInt(yearSelect?.value || selectedYear || new Date().getFullYear(), 10);
+  const taxTransactions = (appState.transactions || []).filter(tx => {
+    if (!tx.date || parseInt(tx.date.substring(0, 4), 10) !== yNum) return false;
+    return Boolean(tx.isTaxDeductible || (tx.tags && tx.tags.includes('#steuer')));
+  });
+
+  if (taxTransactions.length === 0) {
+    alert('Keine steuerlichen Buchungen im gewählten Jahr zum Exportieren vorhanden.');
+    return;
+  }
+
+  let csv = 'Datum;Steuerkategorie;Kategorie;Empfaenger_Beschreibung;Konto;Betrag_EUR;Beleg_Vorhanden\r\n';
+  taxTransactions.forEach(t => {
+    const catInfo = TAX_CATEGORIES[t.taxCategory] || { title: t.taxCategory || 'Sonstiges' };
+    const dateFormatted = t.date;
+    const catTitle = (catInfo.title || '').replace(/;/g, ',');
+    const category = (t.category || '').replace(/;/g, ',');
+    const desc = (t.description || '').replace(/;/g, ',');
+    const acc = formatAccountName(t.account).replace(/;/g, ',');
+    const amt = Number(t.amount || 0).toFixed(2).replace('.', ',');
+    const hasReceipt = t.receipt ? 'Ja' : 'Nein';
+    csv += `${dateFormatted};${catTitle};${category};${desc};${acc};${amt};${hasReceipt}\r\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Steuerbericht_${yNum}_Haushaltsbuch.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  announceNVDA(`Steuerbericht für ${yNum} als CSV exportiert.`);
+}
+
+function printTaxReport() {
+  const content = document.getElementById('tax-report-content');
+  const yearSelect = document.getElementById('tax-report-year');
+  const yNum = yearSelect?.value || selectedYear || new Date().getFullYear();
+  if (!content) return;
+
+  const printWin = window.open('', '_blank');
+  printWin.document.write(`
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="utf-8">
+      <title>Steuer-Nachweis ${yNum} – Haushaltsbuch</title>
+      <style>
+        body { font-family: sans-serif; margin: 30px; color: #222; }
+        h1 { margin-bottom: 4px; font-size: 22px; }
+        .sub { color: #666; margin-bottom: 20px; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+        th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+        th { background: #f0f0f0; }
+        .text-right { text-align: right; }
+      </style>
+    </head>
+    <body>
+      <h1>⚖️ Steuer-Nachweis & Finanzamt-Bericht für das Jahr ${yNum}</h1>
+      <p class="sub">Erstellt mit dem barrierefreien Haushaltsbuch am ${new Date().toLocaleDateString('de-DE')}</p>
+      ${content.innerHTML}
+    </body>
+    </html>
+  `);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(() => { printWin.print(); }, 400);
+}
+
+// -------------------------------------------------------------------------
+// MONTHLY FORECAST & DAILY BUDGET CALCULATION
+// -------------------------------------------------------------------------
+
+function calculateMonthlyForecast(year, month) {
+  const today = new Date();
+  const y = (year !== undefined) ? year : today.getFullYear();
+  const m = (month !== undefined) ? month : today.getMonth();
+
+  const isCurrentMonth = (today.getFullYear() === y && today.getMonth() === m);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const currentDay = today.getDate();
+
+  let remainingDays = 0;
+  if (isCurrentMonth) {
+    remainingDays = Math.max(1, daysInMonth - currentDay + 1);
+  } else if (new Date(y, m, 1) > today) {
+    remainingDays = daysInMonth;
+  } else {
+    remainingDays = 0;
+  }
+
+  // Liquid balance
+  const balances = calculateBalancesUpToDate(isCurrentMonth ? today.toISOString().split('T')[0] : `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`);
+  const currentLiquidTotal = Number(balances.total || 0);
+
+  const todayStr = isCurrentMonth ? today.toISOString().split('T')[0] : (new Date(y, m, 1) > today ? `${y}-${String(m+1).padStart(2,'0')}-01` : '9999-99-99');
+  const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+
+  const recList = getRecurringTransactionsForMonth(y, m);
+  
+  let pendingExpenses = 0;
+  let pendingExpenseCount = 0;
+  let pendingIncome = 0;
+  let pendingIncomeCount = 0;
+
+  recList.forEach(r => {
+    if (r.date && r.date >= todayStr && r.date <= monthEndStr) {
+      const isAlreadyBooked = (appState.transactions || []).some(t => t.recurringId === r.recurringId && t.date === r.date);
+      if (!isAlreadyBooked) {
+        const amt = Number(r.amount || 0);
+        if (r.type === 'expense') {
+          pendingExpenses += amt;
+          pendingExpenseCount++;
+        } else if (r.type === 'income') {
+          pendingIncome += amt;
+          pendingIncomeCount++;
+        }
+      }
+    }
+  });
+
+  (appState.transactions || []).forEach(t => {
+    if (t.isPlanned && t.date && t.date >= todayStr && t.date <= monthEndStr) {
+      const amt = Number(t.amount || 0);
+      if (t.type === 'expense') {
+        pendingExpenses += amt;
+        pendingExpenseCount++;
+      } else if (t.type === 'income') {
+        pendingIncome += amt;
+        pendingIncomeCount++;
+      }
+    }
+  });
+
+  const freeBudget = currentLiquidTotal + pendingIncome - pendingExpenses;
+  const dailyBudget = remainingDays > 0 ? (freeBudget / remainingDays) : 0;
+
+  return {
+    isCurrentMonth,
+    daysInMonth,
+    remainingDays,
+    currentLiquidTotal,
+    pendingExpenses,
+    pendingExpenseCount,
+    pendingIncome,
+    pendingIncomeCount,
+    freeBudget,
+    dailyBudget
+  };
+}
+
+function renderMonthlyForecast(year, month) {
+  const y = (year !== undefined) ? year : selectedYear;
+  const m = (month !== undefined) ? month : selectedMonth;
+  const data = calculateMonthlyForecast(y, m);
+
+  const freeEl = document.getElementById('forecast-free-budget');
+  const dailyEl = document.getElementById('forecast-daily-budget');
+  const expEl = document.getElementById('forecast-pending-expenses');
+  const expCountEl = document.getElementById('forecast-pending-exp-count');
+  const incEl = document.getElementById('forecast-pending-income');
+  const incCountEl = document.getElementById('forecast-pending-inc-count');
+  const daysEl = document.getElementById('forecast-remaining-days');
+  const badgeEl = document.getElementById('forecast-status-badge');
+  const narrativeEl = document.getElementById('forecast-narrative');
+
+  if (!freeEl) return;
+
+  freeEl.textContent = formatCurrency(data.freeBudget);
+  freeEl.style.color = data.freeBudget >= 0 ? '#7B1FA2' : '#D32F2F';
+
+  if (dailyEl) {
+    dailyEl.textContent = `${formatCurrency(Math.max(0, data.dailyBudget))} / Tag`;
+    dailyEl.style.color = data.dailyBudget >= 15 ? '#1976D2' : (data.dailyBudget >= 5 ? '#F57C00' : '#D32F2F');
+  }
+
+  if (expEl) expEl.textContent = `- ${formatCurrency(data.pendingExpenses)}`;
+  if (expCountEl) expCountEl.textContent = `${data.pendingExpenseCount} Fixkosten noch fällig`;
+
+  if (incEl) incEl.textContent = `+ ${formatCurrency(data.pendingIncome)}`;
+  if (incCountEl) incCountEl.textContent = `${data.pendingIncomeCount} geplante Einnahmen`;
+
+  if (daysEl) {
+    daysEl.textContent = data.isCurrentMonth
+      ? `für die nächsten ${data.remainingDays} Tage im Monat`
+      : `für den Monat ${MONTH_NAMES[m]} ${y}`;
+  }
+
+  let statusText = '🌟 Solides Plus';
+  let statusBg = 'rgba(76, 175, 80, 0.15)';
+  let statusColor = '#2E7D32';
+  let narrative = '';
+
+  if (data.freeBudget < 0) {
+    statusText = '🛑 Defizit droht';
+    statusBg = 'rgba(244, 67, 54, 0.15)';
+    statusColor = '#D32F2F';
+    narrative = `⚠️ <strong>Achtung:</strong> Deine noch anstehenden Fixkosten (${formatCurrency(data.pendingExpenses)}) übersteigen dein aktuelles Guthaben samt erwarteten Einnahmen um <strong>${formatCurrency(Math.abs(data.freeBudget))}</strong>.`;
+  } else if (data.dailyBudget < 15 && data.dailyBudget > 0) {
+    statusText = '⚠️ Budget knapp';
+    statusBg = 'rgba(255, 152, 0, 0.15)';
+    statusColor = '#E65100';
+    narrative = `💡 Dein Restbudget beträgt <strong>${formatCurrency(data.freeBudget)}</strong>. Bei ${data.remainingDays} verbleibenden Tagen stehen dir ca. <strong>${formatCurrency(data.dailyBudget)} pro Tag</strong> zur freien Verfügung.`;
+  } else {
+    narrative = `✅ <strong>Sehr guter Stand:</strong> Nach Abzug aller noch ausstehenden Fixkosten (${formatCurrency(data.pendingExpenses)}) hast du noch <strong>${formatCurrency(data.freeBudget)}</strong> frei zur Verfügung (${formatCurrency(data.dailyBudget)} / Tag).`;
+  }
+
+  if (badgeEl) {
+    badgeEl.textContent = statusText;
+    badgeEl.style.background = statusBg;
+    badgeEl.style.color = statusColor;
+  }
+
+  if (narrativeEl) {
+    narrativeEl.innerHTML = narrative;
+  }
+}
+
+// -------------------------------------------------------------------------
+// CONTRACT RADAR & CANCELLATION ALARM ENGINE
+// -------------------------------------------------------------------------
+
+function scanAndDetectContracts() {
+  const contracts = [];
+  const now = new Date();
+
+  (appState.recurring || []).forEach(r => {
+    if (r.type === 'expense' && r.active) {
+      let monthlyCost = Number(r.amount || 0);
+      if (r.interval === 'yearly') monthlyCost /= 12;
+      else if (r.interval === 'quarterly') monthlyCost /= 3;
+      else if (r.interval === 'weekly') monthlyCost *= 4.33;
+
+      let minTerm = r.minTermDate || '';
+      let noticePeriod = r.noticePeriod || '1 Monat zum Laufzeitende';
+      let contractNumber = r.contractNumber || '';
+      let daysUntilDeadline = null;
+
+      if (minTerm) {
+        const termDate = new Date(minTerm + 'T12:00:00');
+        if (!isNaN(termDate.getTime())) {
+          const deadline = new Date(termDate.getTime() - (30 * 24 * 3600 * 1000));
+          daysUntilDeadline = Math.ceil((deadline.getTime() - now.getTime()) / (24 * 3600 * 1000));
+        }
+      }
+
+      contracts.push({
+        id: r.id,
+        name: r.name || r.category,
+        category: r.category,
+        amount: Number(r.amount || 0),
+        monthlyCost: monthlyCost,
+        interval: r.interval || 'monthly',
+        contractNumber: contractNumber,
+        minTermDate: minTerm,
+        noticePeriod: noticePeriod,
+        daysUntilDeadline: daysUntilDeadline,
+        trialActive: r.trialActive,
+        trialEndDate: r.trialEndDate,
+        hotline: r.hotline || ''
+      });
+    }
+  });
+
+  return contracts;
+}
+
+function renderContractRadar() {
+  const container = document.getElementById('overview-contracts-feed');
+  const badge = document.getElementById('contract-radar-badge');
+  if (!container) return;
+
+  const contracts = scanAndDetectContracts();
+  if (badge) badge.textContent = `${contracts.length} Verträge`;
+
+  if (contracts.length === 0) {
+    container.innerHTML = '<p class="empty-state">Noch keine aktiven Verträge oder Daueraufträge erfasst.</p>';
+    renderContractAlerts([]);
+    return;
+  }
+
+  const totalMonthlyFix = contracts.reduce((s, c) => s + c.monthlyCost, 0);
+
+  let html = `
+    <div style="background: rgba(230, 81, 0, 0.08); border-left: 5px solid #E65100; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <span style="font-size: 14px; font-weight: bold; color: #BF360C;">Gesamte monatliche Fixkosten durch Verträge:</span>
+      <span style="font-size: 18px; font-weight: bold; color: #E65100;">${formatCurrency(totalMonthlyFix)} / Monat</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+  `;
+
+  contracts.forEach(c => {
+    let alertPill = '';
+    if (c.daysUntilDeadline !== null && c.daysUntilDeadline <= 30 && c.daysUntilDeadline >= 0) {
+      alertPill = `<span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #FFEBEE; color: #C62828; font-weight: bold; border: 1px solid #FFCDD2;">⚠️ Kündigen in ${c.daysUntilDeadline} Tagen!</span>`;
+    } else if (c.trialActive && c.trialEndDate) {
+      alertPill = `<span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: #F3E5F5; color: #6A1B9A; font-weight: bold;">🎁 Testphase bis ${formatDateGerman(c.trialEndDate)}</span>`;
+    }
+
+    html += `
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; background: var(--bg-card); padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <strong style="font-size: 15px;">${escapeHTML(c.name)}</strong>
+            ${alertPill}
+          </div>
+          <div style="font-size: 12px; color: var(--sub-text); margin-top: 3px;">
+            ${formatCurrency(c.amount)} (${c.interval}) ${c.contractNumber ? '• Vertrags-Nr: ' + escapeHTML(c.contractNumber) : ''} ${c.noticePeriod ? '• Frist: ' + escapeHTML(c.noticePeriod) : ''}
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn btn-secondary" onclick="openContractCancellationModal('${c.id}')" style="font-size: 12px; padding: 5px 10px; border-color: #E65100; color: #E65100; font-weight: bold;">
+            📄 Kündigung schreiben
+          </button>
+          <button type="button" class="btn btn-secondary" onclick="openEditRecModal('${c.id}')" style="font-size: 12px; padding: 5px 10px;">
+            ✏️ Bearbeiten
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  html += '</div>';
+  container.innerHTML = html;
+
+  renderContractAlerts(contracts);
+}
+
+function renderContractAlerts(contracts) {
+  const alertContainer = document.getElementById('overview-contract-alerts');
+  if (!alertContainer) return;
+
+  const urgent = (contracts || []).filter(c => c.daysUntilDeadline !== null && c.daysUntilDeadline <= 30 && c.daysUntilDeadline >= 0);
+  if (urgent.length === 0) {
+    alertContainer.style.display = 'none';
+    alertContainer.innerHTML = '';
+    return;
+  }
+
+  alertContainer.innerHTML = urgent.map(c => `
+    <div style="padding: 10px 16px; background: #FFF3E0; border-left: 6px solid #FF9800; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;" role="alert">
+      <div>
+        <strong style="color: #E65100;">⏰ Kündigungsfrist naht: ${escapeHTML(c.name)}</strong>
+        <div style="font-size: 13px; color: #5D4037;">Die Kündigungsfrist endet in <strong>${c.daysUntilDeadline} Tagen</strong>! Falls du kündigen möchtest, jetzt reagieren:</div>
+      </div>
+      <button type="button" class="btn btn-primary" onclick="openContractCancellationModal('${c.id}')" style="background-color: #E65100; border-color: #BF360C; font-size: 12px; padding: 4px 12px;">
+        📄 Kündigung erstellen
+      </button>
+    </div>
+  `).join('');
+  alertContainer.style.display = 'flex';
+}
+
+function openContractCancellationModal(contractId) {
+  const modal = document.getElementById('contract-cancellation-modal');
+  const preview = document.getElementById('cancellation-letter-preview');
+  const heading = document.getElementById('cancellation-heading');
+  if (!modal) return;
+
+  const contracts = scanAndDetectContracts();
+  const c = contracts.find(item => item.id === contractId) || { name: 'Anbieter / Vertrag', contractNumber: '', minTermDate: '' };
+
+  const todayStrGerman = new Date().toLocaleDateString('de-DE');
+  const letter = `Absender:
+[Dein Vor- und Nachname]
+[Deine Straße und Hausnummer]
+[Deine PLZ und Ort]
+
+An:
+${c.name}
+Kundenservice / Vertragsabteilung
+
+Datum: ${todayStrGerman}
+
+Betreff: Fristgerechte Kündigung meines Vertrags (${c.name})
+${c.contractNumber ? 'Vertragsnummer / Kundennummer: ' + c.contractNumber : ''}
+
+Sehr geehrte Damen und Herren,
+
+hiermit kündige ich den oben genannten Vertrag mit Ihrem Hause fristgerecht zum nächstmöglichen Zeitpunkt${c.minTermDate ? ' (geplantes Laufzeitende: ' + formatDateGerman(c.minTermDate) + ')' : ''}.
+
+Gleichzeitig widerrufe ich die Ihnen erteilte Einzugsermächtigung (SEPA-Lastschriftmandat) mit Wirksamwerden dieser Kündigung.
+
+Bitte senden Sie mir eine schriftliche Bestätigung dieser Kündigung unter Angabe des genauen Beendigungszeitpunkts innerhalb der nächsten 14 Tage zu.
+
+Von Rückwerbeversuchen per Telefon oder Post bitte ich ausdrücklich abzusehen.
+
+Mit freundlichen Grüßen
+
+_________________________________
+[Dein Vor- und Nachname]
+`;
+
+  if (preview) preview.value = letter;
+  modal.style.display = 'flex';
+  if (heading) heading.focus();
+  announceNVDA('Kündigungsschreiben-Generator geöffnet.');
+}
+
+function closeContractCancellationModal() {
+  const modal = document.getElementById('contract-cancellation-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function copyContractCancellationLetter() {
+  const preview = document.getElementById('cancellation-letter-preview');
+  if (!preview) return;
+  preview.select();
+  try {
+    navigator.clipboard.writeText(preview.value).then(() => {
+      announceNVDA('Kündigungsschreiben erfolgreich in die Zwischenablage kopiert!');
+      alert('✅ Kündigungsschreiben wurde in die Zwischenablage kopiert! Du kannst es jetzt in eine E-Mail oder ein Textverarbeitungsprogramm einfügen.');
+    }).catch(() => {
+      document.execCommand('copy');
+      announceNVDA('Kündigungsschreiben kopiert!');
+    });
+  } catch(e) {
+    document.execCommand('copy');
+    announceNVDA('Kündigungsschreiben kopiert!');
+  }
+}
+
+// -------------------------------------------------------------------------
+// INTERACTIVE FINANCE & LIQUIDITY CALENDAR
+// -------------------------------------------------------------------------
+
+let selectedCalendarDateStr = null;
+
+function renderFinanceCalendar(year, month) {
+  const container = document.getElementById('finance-calendar-grid-container');
+  if (!container) return;
+
+  const y = (year !== undefined) ? year : selectedYear;
+  const m = (month !== undefined) ? month : selectedMonth;
+
+  const firstDay = new Date(y, m, 1);
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const startDayOfWeek = (firstDay.getDay() + 6) % 7; // 0 = Mo, 6 = So
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const dayMap = {};
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    dayMap[dStr] = { date: dStr, day: d, income: 0, expense: 0, count: 0, items: [] };
+  }
+
+  (appState.transactions || []).forEach(tx => {
+    if (tx.date && dayMap[tx.date]) {
+      const amt = Number(tx.amount || 0);
+      dayMap[tx.date].count++;
+      dayMap[tx.date].items.push(tx);
+      if (tx.type === 'income') dayMap[tx.date].income += amt;
+      else if (tx.type === 'expense') dayMap[tx.date].expense += amt;
+    }
+  });
+
+  const recList = getRecurringTransactionsForMonth(y, m);
+  recList.forEach(r => {
+    if (r.date && dayMap[r.date]) {
+      const isAlready = dayMap[r.date].items.some(t => t.recurringId === r.recurringId);
+      if (!isAlready) {
+        const amt = Number(r.amount || 0);
+        dayMap[r.date].count++;
+        dayMap[r.date].items.push(r);
+        if (r.type === 'income') dayMap[r.date].income += amt;
+        else if (r.type === 'expense') dayMap[r.date].expense += amt;
+      }
+    }
+  });
+
+  const weekHeaders = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+  let tableHtml = `
+    <table class="annual-table" style="width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed;">
+      <thead>
+        <tr>
+          ${weekHeaders.map(w => `<th scope="col" style="text-align: center; padding: 6px; font-size: 13px; background: rgba(0, 137, 123, 0.1); color: #004D40;">${w}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+  `;
+
+  let colCount = 0;
+  for (let i = 0; i < startDayOfWeek; i++) {
+    tableHtml += '<td style="background: transparent; border: none;"></td>';
+    colCount++;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const info = dayMap[dStr];
+    const isToday = (dStr === todayStr);
+    const isSelected = (dStr === selectedCalendarDateStr);
+
+    let borderStyle = isSelected ? '2px solid #004D40' : (isToday ? '2px solid #00897B' : '1px solid var(--border-color)');
+    let bgStyle = isSelected ? 'rgba(0, 137, 123, 0.2)' : (isToday ? 'rgba(0, 137, 123, 0.08)' : 'var(--bg-card)');
+
+    let pillsHtml = '';
+    if (info.expense > 0) {
+      pillsHtml += `<div style="font-size: 11px; color: #C62828; font-weight: bold;">-${formatCurrency(info.expense)}</div>`;
+    }
+    if (info.income > 0) {
+      pillsHtml += `<div style="font-size: 11px; color: #2E7D32; font-weight: bold;">+${formatCurrency(info.income)}</div>`;
+    }
+
+    tableHtml += `
+      <td style="border: ${borderStyle}; background: ${bgStyle}; border-radius: 6px; padding: 6px; height: 58px; vertical-align: top; cursor: pointer; transition: all 0.15s ease;"
+          onclick="selectCalendarDay('${dStr}')"
+          onkeydown="if(event.key==='Enter'||event.key===' ') selectCalendarDay('${dStr}')"
+          tabindex="0"
+          role="gridcell"
+          aria-label="${d}. ${MONTH_NAMES[m]} ${y}: ${info.count} Buchungen, Ausgaben ${formatCurrency(info.expense)}, Einnahmen ${formatCurrency(info.income)}">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold;">
+          <span>${d}</span>
+          ${isToday ? '<span style="font-size: 9px; padding: 1px 4px; background: #00897B; color: #fff; border-radius: 4px;">Heute</span>' : ''}
+        </div>
+        <div style="margin-top: 3px;">
+          ${pillsHtml}
+        </div>
+      </td>
+    `;
+
+    colCount++;
+    if (colCount % 7 === 0 && d < daysInMonth) {
+      tableHtml += '</tr><tr>';
+    }
+  }
+
+  while (colCount % 7 !== 0) {
+    tableHtml += '<td style="background: transparent; border: none;"></td>';
+    colCount++;
+  }
+
+  tableHtml += '</tr></tbody></table>';
+  container.innerHTML = tableHtml;
+
+  if (selectedCalendarDateStr && dayMap[selectedCalendarDateStr]) {
+    selectCalendarDay(selectedCalendarDateStr, false);
+  }
+}
+
+function selectCalendarDay(dateStr, shouldAnnounce = true) {
+  selectedCalendarDateStr = dateStr;
+  const box = document.getElementById('calendar-day-details-box');
+  if (!box) return;
+
+  const [y, m, d] = dateStr.split('-');
+  const yNum = parseInt(y, 10);
+  const mNum = parseInt(m, 10) - 1;
+
+  const txItems = (appState.transactions || []).filter(t => t.date === dateStr);
+  const recItems = getRecurringTransactionsForMonth(yNum, mNum).filter(r => r.date === dateStr);
+
+  const allItems = [...txItems];
+  recItems.forEach(r => {
+    if (!allItems.some(t => t.recurringId === r.recurringId)) {
+      allItems.push(r);
+    }
+  });
+
+  if (allItems.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = `
+      <strong>📅 ${formatDateGerman(dateStr)}:</strong>
+      <p style="margin: 4px 0 0 0; color: var(--sub-text);">Keine Buchungen oder fälligen Daueraufträge an diesem Tag.</p>
+    `;
+    if (shouldAnnounce) announceNVDA(`${formatDateGerman(dateStr)}: Keine Buchungen an diesem Tag.`);
+    return;
+  }
+
+  let listHtml = `
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <strong style="font-size: 15px; color: #004D40;">📅 Buchungen am ${formatDateGerman(dateStr)} (${allItems.length} Einträge):</strong>
+      <button type="button" class="btn btn-secondary" onclick="document.getElementById('calendar-day-details-box').style.display='none'" style="padding: 2px 8px; font-size: 11px;">Schließen</button>
+    </div>
+    <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px;">
+  `;
+
+  allItems.forEach(item => {
+    const isInc = item.type === 'income';
+    const isTrf = item.type === 'transfer';
+    const sign = isInc ? '+' : (isTrf ? '🔄' : '-');
+    const color = isInc ? 'var(--accent-income)' : (isTrf ? 'var(--accent-action)' : 'var(--accent-expense)');
+    listHtml += `
+      <li style="display: flex; justify-content: space-between; align-items: center; background: #fff; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color);">
+        <div>
+          <strong>${escapeHTML(item.category || item.name || 'Buchung')}</strong>
+          ${item.subcategory ? `<span style="font-size: 12px; color: var(--sub-text);"> › ${escapeHTML(item.subcategory)}</span>` : ''}
+          ${item.description ? `<div style="font-size: 12px; color: var(--sub-text);">${escapeHTML(item.description)}</div>` : ''}
+        </div>
+        <span style="font-weight: bold; color: ${color};">${sign} ${formatCurrency(item.amount)}</span>
+      </li>
+    `;
+  });
+
+  listHtml += '</ul>';
+  box.innerHTML = listHtml;
+  box.style.display = 'block';
+  if (shouldAnnounce) announceNVDA(`${formatDateGerman(dateStr)}: ${allItems.length} Buchungen ausgewählt.`);
+}
+
+// -------------------------------------------------------------------------
+// SMART AUTO-CATEGORIZATION & RULES ENGINE
+// -------------------------------------------------------------------------
+
+const DEFAULT_CATEGORY_RULES = [
+  { keyword: 'rewe', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Rewe' },
+  { keyword: 'lidl', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Lidl' },
+  { keyword: 'aldi', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Aldi Nord' },
+  { keyword: 'edeka', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Edeka' },
+  { keyword: 'kaufland', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Kaufland' },
+  { keyword: 'penny', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Penny' },
+  { keyword: 'netto', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Netto Marken-Discount' },
+  { keyword: 'bäckerei', category: 'Bäckerei, Café & Snacks unterwegs', subcategory: 'Bäckerei / Dorfbäcker' },
+  { keyword: 'baecker', category: 'Bäckerei, Café & Snacks unterwegs', subcategory: 'Bäckerei / Dorfbäcker' },
+  { keyword: 'getraenke', category: 'Lebensmittel, Supermarkt & Discounter', subcategory: 'Getränkemarkt / Trinkgut' },
+
+  { keyword: 'lieferando', category: 'Lieferdienste & Essen bestellen', subcategory: 'Lieferando' },
+  { keyword: 'uber eats', category: 'Lieferdienste & Essen bestellen', subcategory: 'Uber Eats' },
+  { keyword: 'mcdonalds', category: 'Restaurants, Cafés & Gastronomie', subcategory: "McDonald's" },
+  { keyword: 'burger king', category: 'Restaurants, Cafés & Gastronomie', subcategory: 'Burger King' },
+  { keyword: 'pizzeria', category: 'Restaurants, Cafés & Gastronomie', subcategory: 'Pizzeria / Italiener' },
+
+  { keyword: 'netflix', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'Netflix' },
+  { keyword: 'spotify', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'Spotify' },
+  { keyword: 'disney', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'Disney+' },
+  { keyword: 'dazn', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'DAZN' },
+  { keyword: 'audible', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'Audible' },
+  { keyword: 'youtube', category: 'Streaming, Musik, TV & Unterhaltung', subcategory: 'YouTube Premium' },
+  { keyword: 'steam', category: 'Gaming, Computer & Konsolen', subcategory: 'Steam' },
+  { keyword: 'playstation', category: 'Gaming, Computer & Konsolen', subcategory: 'PlayStation Network' },
+
+  { keyword: 'shell', category: 'Mobilität, Auto & Kraftfahrzeuge', subcategory: 'Shell' },
+  { keyword: 'aral', category: 'Mobilität, Auto & Kraftfahrzeuge', subcategory: 'Aral' },
+  { keyword: 'total', category: 'Mobilität, Auto & Kraftfahrzeuge', subcategory: 'Total' },
+  { keyword: 'esso', category: 'Mobilität, Auto & Kraftfahrzeuge', subcategory: 'Esso' },
+  { keyword: 'jet', category: 'Mobilität, Auto & Kraftfahrzeuge', subcategory: 'JET Tankstelle' },
+  { keyword: 'deutsche bahn', category: 'ÖPNV, Bahn, Bus, Flug & Reisen', subcategory: 'Deutsche Bahn (DB)' },
+  { keyword: 'db vertrieb', category: 'ÖPNV, Bahn, Bus, Flug & Reisen', subcategory: 'Deutsche Bahn (DB)' },
+  { keyword: 'flixbus', category: 'ÖPNV, Bahn, Bus, Flug & Reisen', subcategory: 'FlixBus' },
+
+  { keyword: 'stadtwerke', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Strom & Energie' },
+  { keyword: 'vattenfall', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Strom & Energie' },
+  { keyword: 'e.on', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Strom & Energie' },
+  { keyword: 'miete', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Kaltmiete' },
+  { keyword: 'rundfunk', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Rundfunkbeitrag (GEZ)' },
+  { keyword: 'gez', category: 'Miete, Wohnen & Nebenkosten', subcategory: 'Rundfunkbeitrag (GEZ)' },
+
+  { keyword: 'amazon', category: 'Shopping, Online-Kauf & Marktplätze', subcategory: 'Amazon' },
+  { keyword: 'zalando', category: 'Kleidung, Schuhe & Mode', subcategory: 'Zalando' },
+  { keyword: 'otto', category: 'Shopping, Online-Kauf & Marktplätze', subcategory: 'OTTO' },
+  { keyword: 'dm-drogerie', category: 'Drogerie, Kosmetik & Körperpflege', subcategory: 'dm-drogerie markt' },
+  { keyword: 'rossmann', category: 'Drogerie, Kosmetik & Körperpflege', subcategory: 'Rossmann' },
+  { keyword: 'apotheke', category: 'Gesundheit, Apotheke & Arzt', subcategory: 'Vor-Ort-Apotheke' },
+
+  { keyword: 'gehalt', category: 'Gehalt & Arbeitseinkommen', subcategory: 'Hauptjob Gehalt' },
+  { keyword: 'lohn', category: 'Gehalt & Arbeitseinkommen', subcategory: 'Hauptjob Gehalt' },
+  { keyword: 'kindergeld', category: 'Staatliche Leistungen & Zuschüsse', subcategory: 'Kindergeld' },
+  { keyword: 'rente', category: 'Rente & Pensionen', subcategory: 'Gesetzliche Rente' }
+];
+
+function initCategoryRules() {
+  if (!appState) return;
+  if (!appState.categoryRules || !Array.isArray(appState.categoryRules) || appState.categoryRules.length === 0) {
+    appState.categoryRules = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_RULES));
+  }
+  const countEl = document.getElementById('cat-rules-count');
+  if (countEl) countEl.textContent = appState.categoryRules.length;
+}
+
+function classifyTransactionCategory(recipient, purpose, amount, type = 'expense') {
+  initCategoryRules();
+  const searchStr = `${recipient || ''} ${purpose || ''}`.toLowerCase();
+
+  const rules = (appState && appState.categoryRules) ? appState.categoryRules : DEFAULT_CATEGORY_RULES;
+  for (const rule of rules) {
+    if (rule.keyword && searchStr.includes(rule.keyword.toLowerCase())) {
+      return {
+        category: rule.category,
+        subcategory: rule.subcategory || 'Gesamt / Allgemein',
+        confidence: 'high',
+        matchedKeyword: rule.keyword
+      };
+    }
+  }
+
+  if (type === 'income') {
+    return { category: 'Sonstige Einnahmen', subcategory: 'Gesamt / Allgemein', confidence: 'low' };
+  }
+  return { category: 'Sonstige Ausgaben & Bargeld', subcategory: 'Gesamt / Allgemein', confidence: 'low' };
+}
+
+function learnCategoryRule(keyword, category, subcategory) {
+  if (!keyword || !category) return;
+  const cleanKw = keyword.trim().toLowerCase();
+  if (cleanKw.length < 3) return;
+
+  initCategoryRules();
+  if (!appState.categoryRules) appState.categoryRules = [];
+
+  const existingIdx = appState.categoryRules.findIndex(r => r.keyword.toLowerCase() === cleanKw);
+  if (existingIdx >= 0) {
+    appState.categoryRules[existingIdx].category = category;
+    appState.categoryRules[existingIdx].subcategory = subcategory || 'Gesamt / Allgemein';
+  } else {
+    appState.categoryRules.unshift({
+      keyword: cleanKw,
+      category: category,
+      subcategory: subcategory || 'Gesamt / Allgemein',
+      learnedAt: Date.now()
+    });
+  }
+
+  const countEl = document.getElementById('cat-rules-count');
+  if (countEl) countEl.textContent = appState.categoryRules.length;
+}
+
+function openCategoryRulesModal() {
+  const modal = document.getElementById('category-rules-modal');
+  const heading = document.getElementById('cat-rules-heading');
+  const catSelect = document.getElementById('rule-category-select');
+  if (!modal) return;
+
+  initCategoryRules();
+
+  if (catSelect && typeof EXPENSE_CATEGORIES !== 'undefined') {
+    catSelect.innerHTML = Object.keys(EXPENSE_CATEGORIES).map(cat => `<option value="${escapeHTML(cat)}">${escapeHTML(cat)}</option>`).join('');
+  }
+
+  renderCategoryRulesList();
+  modal.style.display = 'flex';
+  if (heading) heading.focus();
+  announceNVDA('Auto-Kategorisierungs-Regeln geöffnet.');
+}
+
+function closeCategoryRulesModal() {
+  const modal = document.getElementById('category-rules-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderCategoryRulesList() {
+  const tbody = document.getElementById('cat-rules-tbody');
+  if (!tbody) return;
+
+  initCategoryRules();
+
+  tbody.innerHTML = (appState.categoryRules || []).map((rule, idx) => `
+    <tr>
+      <td style="padding: 6px 10px;"><strong>${escapeHTML(rule.keyword)}</strong></td>
+      <td style="padding: 6px 10px;">${escapeHTML(rule.category)}${rule.subcategory ? ' › ' + escapeHTML(rule.subcategory) : ''}</td>
+      <td style="padding: 6px 10px; text-align: right;">
+        <button type="button" class="btn btn-secondary" onclick="deleteCategoryRule(${idx})" style="padding: 2px 8px; font-size: 11px; color: #D32F2F;" title="Regel löschen">🗑️ Löschen</button>
+      </td>
+    </tr>
+  `).join('');
+
+  const countEl = document.getElementById('cat-rules-count');
+  if (countEl) countEl.textContent = (appState.categoryRules || []).length;
+}
+
+function addNewCategoryRule() {
+  const kwInput = document.getElementById('rule-keyword-input');
+  const catSelect = document.getElementById('rule-category-select');
+  if (!kwInput || !catSelect) return;
+
+  const kw = kwInput.value.trim();
+  const cat = catSelect.value;
+  if (!kw) {
+    alert('Bitte gib einen Suchbegriff ein.');
+    kwInput.focus();
+    return;
+  }
+
+  learnCategoryRule(kw, cat, 'Gesamt / Allgemein');
+  saveStateToEncryptedStorage();
+  kwInput.value = '';
+  renderCategoryRulesList();
+  announceNVDA(`Regel für ${kw} gespeichert!`);
+}
+
+function deleteCategoryRule(idx) {
+  initCategoryRules();
+  if (idx >= 0 && idx < appState.categoryRules.length) {
+    const deleted = appState.categoryRules.splice(idx, 1)[0];
+    saveStateToEncryptedStorage();
+    renderCategoryRulesList();
+    announceNVDA(`Regel für ${deleted.keyword} gelöscht.`);
+  }
+}
+
+// -------------------------------------------------------------------------
+// PAYPAL & ONLINE BANKING INTEGRATION
+// -------------------------------------------------------------------------
+
+let currentPendingPayPalTransactions = [];
+
+function togglePasswordVisibility(fieldId, btnEl) {
+  const field = document.getElementById(fieldId);
+  if (!field) return;
+  if (field.type === 'password') {
+    field.type = 'text';
+    if (btnEl) btnEl.textContent = '🔒 Verbergen';
+  } else {
+    field.type = 'password';
+    if (btnEl) btnEl.textContent = '👁️ Anzeigen';
+  }
+}
+
+function loadOnlineBankingSettings() {
+  if (!appState) return;
+  if (!appState.onlineBanking) {
+    appState.onlineBanking = {
+      paypal: { clientId: '', clientSecret: '', mode: 'live', autoSync: false, targetAccount: 'acc_paypal' },
+      fints: { blz: '', iban: '', username: '', pin: '', active: false }
+    };
+  }
+
+  const pp = appState.onlineBanking.paypal || {};
+  const cidEl = document.getElementById('paypal-client-id');
+  const secEl = document.getElementById('paypal-client-secret');
+  const modeEl = document.getElementById('paypal-api-mode');
+  const autoEl = document.getElementById('paypal-auto-sync');
+  const targetAccEl = document.getElementById('paypal-target-account');
+  const statusBadge = document.getElementById('paypal-connection-status-badge');
+
+  if (cidEl) cidEl.value = pp.clientId || '';
+  if (secEl) secEl.value = pp.clientSecret || '';
+  if (modeEl) modeEl.value = pp.mode || 'live';
+  if (autoEl) autoEl.checked = Boolean(pp.autoSync);
+
+  if (targetAccEl && appState.accounts) {
+    targetAccEl.innerHTML = appState.accounts.map(a => `<option value="${a.id}" ${a.id === (pp.targetAccount || 'acc_paypal') ? 'selected' : ''}>${escapeHTML(a.name)}</option>`).join('');
+  }
+
+  if (statusBadge) {
+    if (pp.clientId && pp.clientSecret) {
+      statusBadge.textContent = '🟢 Konfiguriert (Nur Lesen)';
+      statusBadge.style.background = '#E8F5E9';
+      statusBadge.style.color = '#2E7D32';
+    } else {
+      statusBadge.textContent = '⚪ Nicht konfiguriert';
+      statusBadge.style.background = '#ECEFF1';
+      statusBadge.style.color = '#455A64';
+    }
+  }
+
+  const ft = appState.onlineBanking.fints || {};
+  const blzEl = document.getElementById('fints-blz');
+  const ibanEl = document.getElementById('fints-iban');
+  const userEl = document.getElementById('fints-username');
+  const pinEl = document.getElementById('fints-pin');
+
+  if (blzEl) blzEl.value = ft.blz || '';
+  if (ibanEl) ibanEl.value = ft.iban || '';
+  if (userEl) userEl.value = ft.username || '';
+  if (pinEl) pinEl.value = ft.pin || '';
+}
+
+function saveOnlineBankingSettings() {
+  if (!appState) return;
+  if (!appState.onlineBanking) appState.onlineBanking = {};
+
+  const cidEl = document.getElementById('paypal-client-id');
+  const secEl = document.getElementById('paypal-client-secret');
+  const modeEl = document.getElementById('paypal-api-mode');
+  const autoEl = document.getElementById('paypal-auto-sync');
+  const targetAccEl = document.getElementById('paypal-target-account');
+
+  appState.onlineBanking.paypal = {
+    clientId: (cidEl?.value || '').trim(),
+    clientSecret: (secEl?.value || '').trim(),
+    mode: modeEl?.value || 'live',
+    autoSync: Boolean(autoEl?.checked),
+    targetAccount: targetAccEl?.value || 'acc_paypal'
+  };
+
+  const blzEl = document.getElementById('fints-blz');
+  const ibanEl = document.getElementById('fints-iban');
+  const userEl = document.getElementById('fints-username');
+  const pinEl = document.getElementById('fints-pin');
+
+  appState.onlineBanking.fints = {
+    blz: (blzEl?.value || '').trim(),
+    iban: (ibanEl?.value || '').trim(),
+    username: (userEl?.value || '').trim(),
+    pin: (pinEl?.value || '').trim(),
+    active: Boolean((ibanEl?.value || '').trim())
+  };
+
+  saveStateToEncryptedStorage();
+}
+
+async function testPayPalConnection() {
+  saveOnlineBankingSettings();
+  const pp = appState.onlineBanking?.paypal || {};
+  const feedback = document.getElementById('paypal-status-feedback');
+  const statusBadge = document.getElementById('paypal-connection-status-badge');
+
+  if (!pp.clientId || !pp.clientSecret) {
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.background = '#FFEBEE';
+      feedback.style.color = '#C62828';
+      feedback.textContent = '⚠️ Bitte gib deine PayPal Client-ID und den Secret-Key ein.';
+    }
+    announceNVDA('Fehler: PayPal Client-ID oder Secret fehlt.');
+    return;
+  }
+
+  if (feedback) {
+    feedback.style.display = 'block';
+    feedback.style.background = '#E3F2FD';
+    feedback.style.color = '#0D47A1';
+    feedback.textContent = '⏳ Verbindung zu PayPal wird geprüft...';
+  }
+
+  try {
+    const authEndpoint = pp.mode === 'sandbox'
+      ? 'https://api-m.sandbox.paypal.com/v1/oauth2/token'
+      : 'https://api-m.paypal.com/v1/oauth2/token';
+
+    const credentials = btoa(`${pp.clientId}:${pp.clientSecret}`);
+    const res = await fetch(authEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials'
+    });
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: Ungültige Zugangsdaten`);
+    }
+
+    const data = await res.json();
+    if (data.access_token) {
+      if (feedback) {
+        feedback.style.background = '#E8F5E9';
+        feedback.style.color = '#1B5E20';
+        feedback.innerHTML = `✅ <strong>Verbindung erfolgreich!</strong> Lese-Token erhalten (Gültig für ${Math.round(data.expires_in / 60)} Min). Bereit für Transaktionsabruf.`;
+      }
+      if (statusBadge) {
+        statusBadge.textContent = '🟢 Verbunden (Nur Lesen)';
+        statusBadge.style.background = '#E8F5E9';
+        statusBadge.style.color = '#2E7D32';
+      }
+      announceNVDA('PayPal Verbindung erfolgreich hergestellt.');
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.style.background = '#FFEBEE';
+      feedback.style.color = '#C62828';
+      feedback.innerHTML = `❌ <strong>Verbindung fehlgeschlagen:</strong> ${escapeHTML(err.message)}. Bitte prüfe Client-ID, Secret und Modus.`;
+    }
+    announceNVDA(`PayPal Verbindungsfehler: ${err.message}`);
+  }
+}
+
+async function fetchPayPalTransactions(options = { isAuto: false, isDemo: false }) {
+  saveOnlineBankingSettings();
+  const pp = appState.onlineBanking?.paypal || {};
+
+  if (options && options.isDemo) {
+    const today = new Date();
+    const d1 = new Date(today.getTime() - (1 * 86400000)).toISOString().split('T')[0];
+    const d2 = new Date(today.getTime() - (2 * 86400000)).toISOString().split('T')[0];
+    const d3 = new Date(today.getTime() - (4 * 86400000)).toISOString().split('T')[0];
+    const d4 = new Date(today.getTime() - (6 * 86400000)).toISOString().split('T')[0];
+
+    const demoTx = [
+      { id: 'pp_demo_1', date: d1, amount: 24.50, type: 'expense', recipient: 'Lieferando.de', purpose: 'Bestellung #48123 Pizzeria Napoli' },
+      { id: 'pp_demo_2', date: d2, amount: 9.99, type: 'expense', recipient: 'Spotify AB', purpose: 'Spotify Premium Monatsabo' },
+      { id: 'pp_demo_3', date: d3, amount: 19.99, type: 'expense', recipient: 'Valve Corporation', purpose: 'Steam Games Kauf' },
+      { id: 'pp_demo_4', date: d4, amount: 45.00, type: 'income', recipient: 'Max Mustermann', purpose: 'Geld gesendet: Kinokarten & Essen' }
+    ];
+
+    openPayPalSyncModal(demoTx);
+    return;
+  }
+
+  if (!pp.clientId || !pp.clientSecret) {
+    if (!options || !options.isAuto) {
+      alert('Bitte richte zuerst deine PayPal Client-ID und den Secret-Key in den Einstellungen ein.');
+    }
+    return;
+  }
+
+  try {
+    const authEndpoint = pp.mode === 'sandbox'
+      ? 'https://api-m.sandbox.paypal.com/v1/oauth2/token'
+      : 'https://api-m.paypal.com/v1/oauth2/token';
+
+    const credentials = btoa(`${pp.clientId}:${pp.clientSecret}`);
+    const tokenRes = await fetch(authEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${credentials}`,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: 'grant_type=client_credentials'
+    });
+
+    if (!tokenRes.ok) throw new Error('Authentifizierung bei PayPal fehlgeschlagen');
+    const tokenData = await tokenRes.json();
+    const token = tokenData.access_token;
+
+    const endDate = new Date().toISOString().split('.')[0] + 'Z';
+    const startDate = new Date(Date.now() - 30 * 86400000).toISOString().split('.')[0] + 'Z';
+
+    const reportEndpoint = pp.mode === 'sandbox'
+      ? `https://api-m.sandbox.paypal.com/v1/reporting/transactions?start_date=${startDate}&end_date=${endDate}&fields=all`
+      : `https://api-m.paypal.com/v1/reporting/transactions?start_date=${startDate}&end_date=${endDate}&fields=all`;
+
+    const txRes = await fetch(reportEndpoint, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!txRes.ok) throw new Error(`Transaktionsabruf fehlgeschlagen: HTTP ${txRes.status}`);
+    const reportData = await txRes.json();
+    const rawList = reportData.transaction_details || [];
+
+    const parsedList = [];
+    rawList.forEach(item => {
+      const info = item.transaction_info || {};
+      const payer = item.payer_info || {};
+      const amtVal = parseFloat(info.transaction_amount?.value || 0);
+      const isNegative = amtVal < 0;
+      const absAmt = Math.abs(amtVal);
+      const txId = info.transaction_id || `pp_${Date.now()}_${Math.random()}`;
+      const txDate = (info.transaction_initiation_date || new Date().toISOString()).split('T')[0];
+      const recipientName = payer.payer_name?.alternate_full_name || info.transaction_subject || 'PayPal Empfänger';
+      const purpose = info.transaction_note || info.transaction_subject || '';
+
+      const alreadyExists = (appState.transactions || []).some(t => t.paypalId === txId || (t.date === txDate && Math.abs(t.amount - absAmt) < 0.01 && t.description && t.description.includes(txId)));
+      if (!alreadyExists) {
+        parsedList.push({
+          id: txId,
+          paypalId: txId,
+          date: txDate,
+          amount: absAmt,
+          type: isNegative ? 'expense' : 'income',
+          recipient: recipientName,
+          purpose: purpose
+        });
+      }
+    });
+
+    if (parsedList.length === 0) {
+      if (!options || !options.isAuto) alert('Keine neuen PayPal-Umsätze vorhanden (alles auf dem aktuellen Stand).');
+      return;
+    }
+
+    openPayPalSyncModal(parsedList);
+
+  } catch (err) {
+    if (!options || !options.isAuto) {
+      alert(`Fehler beim Abrufen der PayPal-Umsätze: ${err.message}`);
+    }
+  }
+}
+
+function openPayPalSyncModal(txList) {
+  currentPendingPayPalTransactions = txList || [];
+  const modal = document.getElementById('paypal-sync-modal');
+  const heading = document.getElementById('paypal-sync-heading');
+  const tbody = document.getElementById('paypal-sync-tbody');
+  if (!modal) return;
+
+  if (tbody) {
+    tbody.innerHTML = currentPendingPayPalTransactions.map((tx, idx) => {
+      const cls = classifyTransactionCategory(tx.recipient, tx.purpose, tx.amount, tx.type);
+      tx.category = cls.category;
+      tx.subcategory = cls.subcategory;
+
+      const isInc = tx.type === 'income';
+      const sign = isInc ? '+' : '-';
+      const color = isInc ? 'var(--accent-income)' : 'var(--accent-expense)';
+
+      return `
+        <tr>
+          <td style="text-align: center; padding: 6px;"><input type="checkbox" class="chk-paypal-tx-row" data-idx="${idx}" checked onchange="updatePayPalSyncSummary()"></td>
+          <td style="padding: 6px 10px;">${formatDateGerman(tx.date)}</td>
+          <td style="padding: 6px 10px;">
+            <strong>${escapeHTML(tx.recipient)}</strong>
+            ${tx.purpose ? `<div style="font-size: 11px; color: var(--sub-text);">${escapeHTML(tx.purpose)}</div>` : ''}
+          </td>
+          <td style="padding: 6px 10px;">
+            <span style="font-weight: 500; color: #1976D2;">${escapeHTML(tx.category)}</span>
+            <div style="font-size: 11px; color: var(--sub-text);">${escapeHTML(tx.subcategory)}</div>
+          </td>
+          <td style="text-align: right; padding: 6px 10px; font-weight: bold; color: ${color};">${sign} ${formatCurrency(tx.amount)}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  updatePayPalSyncSummary();
+  modal.style.display = 'flex';
+  if (heading) heading.focus();
+  announceNVDA(`${currentPendingPayPalTransactions.length} PayPal Umsätze zur Übernahme gefunden.`);
+}
+
+function updatePayPalSyncSummary() {
+  const checkboxes = document.querySelectorAll('.chk-paypal-tx-row');
+  const summaryEl = document.getElementById('paypal-sync-summary');
+  let checkedCount = 0;
+  checkboxes.forEach(c => { if (c.checked) checkedCount++; });
+  if (summaryEl) {
+    summaryEl.textContent = `${checkedCount} von ${checkboxes.length} Umsätzen ausgewählt`;
+  }
+}
+
+function toggleAllPayPalSyncCheckboxes(checked) {
+  const checkboxes = document.querySelectorAll('.chk-paypal-tx-row');
+  checkboxes.forEach(c => { c.checked = checked; });
+  updatePayPalSyncSummary();
+}
+
+function closePayPalSyncModal() {
+  const modal = document.getElementById('paypal-sync-modal');
+  if (modal) modal.style.display = 'none';
+  currentPendingPayPalTransactions = [];
+}
+
+async function confirmImportPayPalTransactions() {
+  const checkboxes = document.querySelectorAll('.chk-paypal-tx-row');
+  const targetAcc = appState.onlineBanking?.paypal?.targetAccount || 'acc_paypal';
+  let importedCount = 0;
+
+  checkboxes.forEach(c => {
+    if (c.checked) {
+      const idx = parseInt(c.getAttribute('data-idx'), 10);
+      const tx = currentPendingPayPalTransactions[idx];
+      if (tx) {
+        appState.transactions.push({
+          id: `tx_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+          type: tx.type,
+          account: targetAcc,
+          amount: tx.amount,
+          category: tx.category,
+          subcategory: tx.subcategory,
+          description: `${tx.recipient}${tx.purpose ? ' – ' + tx.purpose : ''} (PayPal)`,
+          date: tx.date,
+          paypalId: tx.paypalId || tx.id,
+          tags: ['#paypal'],
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        });
+        importedCount++;
+      }
+    }
+  });
+
+  await saveStateToEncryptedStorage();
+  closePayPalSyncModal();
+  updateOverview();
+  announceNVDA(`${importedCount} PayPal-Umsätze erfolgreich ins Haushaltsbuch übernommen!`);
+  alert(`✅ ${importedCount} PayPal-Umsätze wurden erfolgreich ins Haushaltsbuch eingetragen.`);
+}
+
+function testBankConnection() {
+  saveOnlineBankingSettings();
+  const ft = appState.onlineBanking?.fints || {};
+  const feedback = document.getElementById('bank-fints-feedback');
+  const statusBadge = document.getElementById('bank-connection-status-badge');
+
+  if (!ft.iban && !ft.blz) {
+    if (feedback) {
+      feedback.style.display = 'block';
+      feedback.style.background = '#FFEBEE';
+      feedback.style.color = '#C62828';
+      feedback.textContent = '⚠️ Bitte gib deine IBAN oder Bankleitzahl (BLZ) ein.';
+    }
+    return;
+  }
+
+  if (feedback) {
+    feedback.style.display = 'block';
+    feedback.style.background = '#E8F5E9';
+    feedback.style.color = '#1B5E20';
+    feedback.innerHTML = `✅ <strong>Bankdaten gespeichert:</strong> Für deine Bank (${ft.blz || 'IBAN hinterlegt'}) ist FinTS 3.0 vorkonfiguriert. Aufgrund von 2FA/PhotoTAN kannst du Umsätze jederzeit per <strong>Kontoauszug (.csv) unten</strong> mit 1 Klick einlesen.`;
+  }
+  if (statusBadge) {
+    statusBadge.textContent = '🟢 FinTS Bereit';
+    statusBadge.style.background = '#E8F5E9';
+    statusBadge.style.color = '#2E7D32';
+  }
+  announceNVDA('Bank-Konfiguration gespeichert und bereit.');
+}
+
+window.renderTagSuggestions = renderTagSuggestions;
+window.addTagToInput = addTagToInput;
+window.clearTagFilter = clearTagFilter;
+window.toggleTaxDeductibleSection = toggleTaxDeductibleSection;
+window.openTaxReportModal = openTaxReportModal;
+window.closeTaxReportModal = closeTaxReportModal;
+window.renderTaxReport = renderTaxReport;
+window.exportTaxReportCsv = exportTaxReportCsv;
+window.printTaxReport = printTaxReport;
+window.openContractCancellationModal = openContractCancellationModal;
+window.closeContractCancellationModal = closeContractCancellationModal;
+window.copyContractCancellationLetter = copyContractCancellationLetter;
+window.selectCalendarDay = selectCalendarDay;
+window.openCategoryRulesModal = openCategoryRulesModal;
+window.closeCategoryRulesModal = closeCategoryRulesModal;
+window.addNewCategoryRule = addNewCategoryRule;
+window.deleteCategoryRule = deleteCategoryRule;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.testPayPalConnection = testPayPalConnection;
+window.fetchPayPalTransactions = fetchPayPalTransactions;
+window.openPayPalSyncModal = openPayPalSyncModal;
+window.closePayPalSyncModal = closePayPalSyncModal;
+window.toggleAllPayPalSyncCheckboxes = toggleAllPayPalSyncCheckboxes;
+window.confirmImportPayPalTransactions = confirmImportPayPalTransactions;
+window.testBankConnection = testBankConnection;
+

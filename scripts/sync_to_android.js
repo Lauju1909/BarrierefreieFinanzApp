@@ -31,19 +31,19 @@ if (fs.existsSync(assetsDir)) {
 const pkgPath = path.join(androidDir, 'package.json');
 if (fs.existsSync(pkgPath)) {
   const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-  pkg.version = '6.9.68';
+  pkg.version = '6.9.70';
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2), 'utf8');
-  console.log('✓ Updated package.json to 6.9.68');
+  console.log('✓ Updated package.json to 6.9.70');
 }
 
 // 4. Update build.gradle
 const gradlePath = path.join(androidDir, 'android', 'app', 'build.gradle');
 if (fs.existsSync(gradlePath)) {
   let gradle = fs.readFileSync(gradlePath, 'utf8');
-  gradle = gradle.replace(/versionCode \d+/, 'versionCode 68');
-  gradle = gradle.replace(/versionName "[^"]+"/, 'versionName "6.9.68"');
+  gradle = gradle.replace(/versionCode \d+/, 'versionCode 70');
+  gradle = gradle.replace(/versionName "[^"]+"/, 'versionName "6.9.70"');
   fs.writeFileSync(gradlePath, gradle, 'utf8');
-  console.log('✓ Updated build.gradle (versionCode 68, versionName "6.9.68")');
+  console.log('✓ Updated build.gradle (versionCode 70, versionName "6.9.70")');
 }
 
 console.log('Android sync complete!');

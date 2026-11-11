@@ -1,8 +1,15 @@
 {
-  "version": "6.9.69",
+  "version": "6.9.70",
   "name": "Barrierefreie Finanz-App & Haushaltsbuch",
-  "buildDate": "2026-11-08",
+  "buildDate": "2026-11-11",
   "features": [
+    "🅿️ Offizielle PayPal-Anbindung (REST-API – Nur Leserechte): Sicheres Einlesen von PayPal-Umsätzen mit Vorab-Prüfung, Duplikatschutz, automatischem Sync beim Start und Demo-Modus",
+    "⚙️ Intelligente Auto-Kategorisierung & Selbstlernende Regeln: Automatische Händlerzuordnung (Supermarkt, Tanken, Streaming, Lieferdienst) mit interaktiver Regelverwaltung in den Einstellungen",
+    "🔮 „Frei verfügbares Einkommen“ / Monats-Prognose: Berechnung des freien Restbudgets und Tagesbudgets bis Monatsende unter Einbeziehung aller noch ausstehenden Fixkosten",
+    "🔔 Fixkosten-Radar & Vertragserkennung (Kündigungswecker): Automatische Erkennung von Abos, Kündigungsfristen-Warnung und 1-Klick-Kündigungsschreiben-Generator",
+    "📅 Interaktiver Finanz- & Liquiditätskalender: Übersichtlicher Monatskalender mit Abbuchungs- und Gehaltstagen, Detailanzeige und voller NVDA-Unterstützung",
+    "🏷️ Eigene Schlagwörter / Tags (#Urlaub, #Renovierung, #Steuer): Tags vergeben, Tag-Vorschläge, globaler Tag-Filter und Gesamtsummen-Banner",
+    "⚖️ Steuer-Nachweis & Finanzamt-Bericht nach EStG: Aufschlüsselung von Handwerkerleistungen (§ 35a), Spenden (§ 10b) und Werbungskosten mit Druckansicht & CSV-Export",
     "⚡ 100% Native Rust-Desktop-Engine: Vollständige Umstellung auf native, ressourcenschonende Rust-Architektur ohne Python/C# für maximale Performance und minimalen Ressourcenverbrauch",
     "🖥️ Sofortige Fenster-Aktivierung im Vordergrund: Windows AllowSetForegroundWindow API stellt sicher, dass das Haushaltsbuch sofort sichtbar im Vordergrund geöffnet wird",
     "🛑 Keine Konsolenfenster mehr: Vollständige Unterdrückung aller schwarzen CMD-Eingabeaufforderungen beim Start und Update durch CREATE_NO_WINDOW",

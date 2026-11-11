@@ -1,6 +1,45 @@
 # 📜 Offizielles Änderungsprotokoll (Changelog)
 **Barrierefreie Finanz-App & Haushaltsbuch**
 
+## 🅿️ PayPal-Anbindung, Auto-Kategorisierung, Monats-Prognose, Vertragskalender & Steuer-Export (v6.9.70)
+*Datum: 11. November 2026*
+
+### 🅿️ 1. Offizielle PayPal-Anbindung (REST-API – Nur Leserechte)
+- **Sichere API-Integration:** Anbindung über Client-ID & Secret in den Einstellungen (Reiter 5).
+- **Striktes Leserecht:** Ausschließlich Kontobewegungen und Guthaben werden gelesen; Überweisungen oder Abbuchungen sind technisch ausgeschlossen.
+- **Transaktions-Vorschau & Duplikatschutz:** Vor der Übernahme ins Haushaltsbuch werden Umsätze übersichtlich aufgelistet und bereits vorhandene Buchungen automatisch gefiltert.
+- **Start-Sync & Demo-Modus:** Optional automatischer Abruf beim App-Start sowie Demo-Modus zum Testen realistischer Buchungen.
+
+### ⚙️ 2. Intelligente Auto-Kategorisierung & Selbstlernende Regeln
+- **Automatische Händlererkennung:** Weist bekannte Geschäfte (z. B. Rewe, Shell, Netflix, Lieferando) sofort der passenden Kategorie zu.
+- **Selbstlernend:** Jede manuelle Kategorie-Korrektur lernt das System für zukünftige Buchungen automatisch.
+- **Regel-Manager:** Interaktive Übersicht in den Einstellungen zum Einsehen, Hinzufügen und Löschen eigener Schlagwort-Regeln.
+
+### 🔮 3. „Frei verfügbares Einkommen“ / Monats-Prognose
+- **Echte Liquiditäts-Vorschau:** Zieht von den Einnahmen alle noch ausstehenden Fixkosten, Miete und Daueraufträge des Monats ab.
+- **Tages-Budget:** Zeigt auf den Cent genau, wie viel Geld pro verbleibendem Tag frei ausgegeben werden kann (z. B. 24,50 € / Tag).
+- **Ampel-Status:** Farbcodiert und NVDA-kompatibel (Solides Plus, Budget knapp, Defizit droht).
+
+### 🔔 4. Fixkosten-Radar & Vertragserkennung (Kündigungswecker)
+- **Vertrags-Übersicht:** Listet alle laufenden Verträge und Abonnements mit monatlichen Gesamtkosten auf.
+- **Kündigungsfristen-Alarm:** Warnt 30 Tage vor Ende der Kündigungsfrist automatisch im Übersichtsbereich.
+- **Kündigungsschreiben-Generator:** Erstellt mit 1 Klick ein rechtssicheres Kündigungsschreiben mit Vertragsnummer zum Kopieren in E-Mail oder Textdokument.
+
+### 📅 5. Interaktiver Finanz- & Liquiditätskalender
+- **Tagesgenaue Übersicht:** Monatskalender in Reiter 1 mit farbigen Markierungen für geplante Fixkosten, Abbuchungen und Gehaltseingänge.
+- **Detail-Ansicht:** Klick oder Tastaturnavigation (Enter) auf einen Tag öffnet die genaue Auflistung aller Buchungen dieses Datums.
+
+### 🏷️ 6. Eigene Tags / Schlagwörter (#Urlaub, #Renovierung, #Steuer)
+- **Flexible Verschlagwortung:** Tags können in allen Buchungsformularen vergeben werden.
+- **Tag-Vorschläge & Filter:** Schnellauswahl beliebter Tags und Filterung in der Übersicht samt Anzeige von Gesamtausgaben und Einnahmen.
+
+### ⚖️ 7. Steuer-Nachweis & Finanzamt-Bericht nach EStG
+- **Rechtssichere Kategorien:** Unterstützung für Handwerkerleistungen (§ 35a), haushaltsnahe Dienstleistungen, Spenden (§ 10b) und Werbungskosten (§ 9).
+- **Steuerersparnis-Rechner:** Automatische Schätzung des direkten Steuerabzugs.
+- **Druckansicht & CSV-Export:** Druckfertige Übersicht und strukturierter CSV-Export für den Steuerberater oder ELSTER.
+
+---
+
 ## ⚡ 100% Rust-Desktop-Engine, Turbo-Start & Barrierefreie Vordergrund-Aktivierung (v6.9.68)
 *Datum: 08. November 2026*
 

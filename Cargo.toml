@@ -1,6 +1,6 @@
 [package]
 name = "haushaltsbuch"
-version = "6.9.68"
+version = "6.9.70"
 edition = "2021"
 authors = ["Lauju1909"]
 description = "Barrierefreies Haushaltsbuch & Tresor-Server (100% Native Rust Edition)"

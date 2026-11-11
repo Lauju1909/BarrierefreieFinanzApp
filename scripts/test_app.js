@@ -1461,6 +1461,9 @@ if (Math.abs(toUsd - 55.22) > 0.05) {
 });
 console.log('Multi-Currency System (Modern, Historical, Expense Selection & Converter): 100% PASS!');
 
+// 19. Test Multibanking, Tags, Tax, Forecast, Contract Radar & Finance Calendar
+require('./test_smart_banking_features.js');
+
 
 console.log('\n======================================');
 console.log('ALL TESTS PASSED SUCCESSFULLY! (v6.9.7)');

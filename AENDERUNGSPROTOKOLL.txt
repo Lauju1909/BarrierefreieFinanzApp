@@ -3,6 +3,47 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+VERSION 6.9.70 (Aktuelle Version - 11. November 2026)
+--------------------------------------------------------------------------------
+
+* PAYPAL REST-API ANBINDUNG (NUR LESERECHTE):
+  - Sichere Integration der offiziellen PayPal-Entwickler-Schnittstelle in Reiter 5.
+  - Reine Leserechte (Umsätze & Guthaben abrufen, keine Zahlungen/Abbuchungen).
+  - Komfortabler Übernahme-Dialog mit Vorschau, Checkbox-Auswahl und Duplikatschutz.
+  - Optionaler automatischer Start-Sync beim Entsperren des Tresors.
+  - Demo-Modus zum Testen realistischer PayPal-Umsätze ohne Entwicklerkonto.
+
+* INTELLIGENTE AUTO-KATEGORISIERUNG & SELBSTLERNENDE REGELN:
+  - Vollautomatische Erkennung bekannter Händler (Rewe, Lidl, Shell, Netflix, Lieferando etc.).
+  - Die App lernt bei jeder manuellen Zuordnung selbstständig dazu.
+  - Dialog zur Verwaltung aller Kategorisierungs-Regeln in den Einstellungen (Reiter 5).
+
+* „FREI VERFÜGBARES EINKOMMEN“ / MONATS-PROGNOSE:
+  - Neue vorausschauende Budget-Karte in Reiter 1 (Übersicht).
+  - Berechnet das reale Restbudget nach Abzug aller noch ausstehenden Fixkosten des Monats.
+  - Zeigt die empfohlene Ausgabenquote pro Tag (z. B. 24,50 € / Tag) bis Monatsende.
+  - Visuelle und NVDA-kompatible Ampel-Statusbewertung (Solides Plus, Knapp, Defizit).
+
+* FIXKOSTEN-RADAR & VERTRAGSERKENNUNG (KÜNDIGUNGSWECKER):
+  - Automatisches Erfassen und Berechnen aller Verträge, Abos und Versicherungen.
+  - Frühwarnung bei bevorstehendem Ende von Kündigungsfristen (30 Tage vorher).
+  - 1-Klick-Generator für ein rechtssicheres Kündigungsschreiben mit Kopieren in die Zwischenablage.
+
+* INTERAKTIVER FINANZ- & LIQUIDITÄTSKALENDER:
+  - Monatskalender in Reiter 1 mit farbigen Markierungen für Ausgaben- und Einnahmentage.
+  - Detaillierte Tagesanzeige per Klick, Tastatur (Enter) und Screenreader.
+
+* EIGENE TAGS / SCHLAGWÖRTER (#Urlaub, #Renovierung, #Steuer):
+  - Schlagwörter in Ausgaben-, Einnahmen-, Umbuchungs- und Bearbeiten-Formularen.
+  - Schnellauswahl beliebter Tags per Klick.
+  - Globaler Tag-Filter in der Übersicht mit Anzeige von Buchungsanzahl und Gesamtsumme.
+
+* STEUER-NACHWEIS & FINANZAMT-BERICHT (EStG):
+  - Kennzeichnung steuerlich absetzbarer Ausgaben (§ 35a Handwerker, Spenden § 10b, Werbungskosten § 9).
+  - Professioneller Steuerbericht mit automatischer Ersparnisberechnung.
+  - Druckansicht (PDF) und CSV-Export für den Steuerberater oder ELSTER.
+
+--------------------------------------------------------------------------------
 VERSION 6.9.68 (Aktuelle Version - 08. November 2026)
 --------------------------------------------------------------------------------
 
