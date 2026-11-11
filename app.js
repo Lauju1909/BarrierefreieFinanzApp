@@ -14228,10 +14228,10 @@ function renderOverviewPeerLoans() {
   });
 
   const net = lentRemainingTotal - borrowedRemainingTotal;
+  const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
   if (totalEl) {
     if (net > 0) {
-      const lang = typeof getEffectiveLanguage === 'function' ? getEffectiveLanguage() : 'de';
-    totalEl.textContent = `+ ${formatCurrency(net)} ${lang === 'en' ? 'Claim / Receivable' : 'Forderung'}`;
+      totalEl.textContent = `+ ${formatCurrency(net)} ${lang === 'en' ? 'Claim / Receivable' : 'Forderung'}`;
       totalEl.style.color = 'var(--accent-income, #2E7D32)';
     } else if (net < 0) {
       totalEl.textContent = `- ${formatCurrency(Math.abs(net))} ${lang === 'en' ? 'Liability / Debt' : 'Verbindlichkeit'}`;
@@ -17905,9 +17905,19 @@ function calculateMonthlyForecast(year, month, knownTotal) {
     remainingDays = 0;
   }
 
-  // 1. Direct knownTotal from caller (e.g. stats.balances.total)
+  // 0. Aktueller Monat: Kontostand von HEUTE verwenden (nicht Monatsende),
+  //    sonst würden noch ausstehende Fixkosten/Einnahmen doppelt gezählt.
   let currentLiquidTotal = 0;
-  if (typeof knownTotal === 'number' && !isNaN(knownTotal) && knownTotal !== 0) {
+  if (isCurrentMonth) {
+    try {
+      const tStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+      const b0 = calculateBalancesUpToDate(tStr);
+      if (b0 && typeof b0.total === 'number' && !isNaN(b0.total)) currentLiquidTotal = b0.total;
+    } catch (e) {}
+  }
+
+  // 1. Direct knownTotal from caller (e.g. stats.balances.total) - nur für nicht-aktuelle Monate
+  if (!isCurrentMonth && typeof knownTotal === 'number' && !isNaN(knownTotal) && knownTotal !== 0) {
     currentLiquidTotal = knownTotal;
   }
 
