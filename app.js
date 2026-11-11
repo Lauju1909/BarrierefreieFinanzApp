@@ -778,7 +778,7 @@ const I18N_APP_ELEMENTS = {
   'appearance-settings-sub': { de: "Passe hier das Design und die Schriftgröße für deine Augen an:", en: "Adjust the design and font size here for your eyes:" },
   'label-settings-show-symbols': { de: "Symbole &amp; Emojis in der App anzeigen", en: "Show symbols &amp; emojis in the app" },
   'settings-symbols-hint': { de: "Wenn ausgeschaltet, wird die gesamte App ohne Symbole in reinem, klarem Text angezeigt.", en: "When turned off, the entire app is displayed without symbols in pure, clean text." },
-  'footer-text': { de: "Barrierefreie Finanzen v6.9.38 – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "Accessible Finances v6.9.38 – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-text': { de: `Barrierefreie Finanzen ${CURRENT_APP_VERSION} – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.`, en: `Accessible Finances ${CURRENT_APP_VERSION} – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA.` },
   'footer-shortcuts': { de: "Tastaturkürzel: 1= Übersicht | 2= Ausgabe | 3= Einnahme | 4= Umbuchen | 5= Einstellungen | 6= Konto-Optionen | 7= Wunschliste | T= Zu Heute | L= Sofortsperre", en: "Shortcuts: 1= Overview | 2= Expense | 3= Income | 4= Transfer | 5= Settings | 6= Accounts | 7= Wishlist | T= Today | L= Lock" },
   'today-label': { de: "Heute:", en: "Today:" },
   'changelog-modal-heading': { de: "📜 Was ist neu in diesem Update? (Änderungsprotokoll)", en: "📜 What is new in this update? (Changelog)" },
@@ -817,7 +817,7 @@ const I18N_APP_ELEMENTS = {
   'delete-peer-loan-heading': { de: "🗑️ Leihgabe löschen", en: "🗑️ Delete Loan" },
   'cash-counter-heading': { de: "🪙 Bargeld-Zählhelfer (Münzen & Scheine)", en: "🪙 Cash Counter (Coins & Bills)" },
   'lbl-today-prefix': { de: "Heute:", en: "Today:" },
-  'footer-main-text': { de: "<strong>Barrierefreie Finanzen v6.9.39</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.", en: "<strong>Accessible Finances v6.9.39</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA." },
+  'footer-main-text': { de: `<strong>Barrierefreie Finanzen ${CURRENT_APP_VERSION}</strong> – 100% Offline, AES-256 Verschlüsselung &amp; Einkaufsliste. Optimiert für NVDA.`, en: `<strong>Accessible Finances ${CURRENT_APP_VERSION}</strong> – 100% Offline, AES-256 Encryption &amp; Shopping List. Optimized for NVDA.` },
   'footer-shortcuts-text': { de: "Tastaturkürzel: <strong>1</strong>= Übersicht | <strong>2</strong>= Ausgabe | <strong>3</strong>= Einnahme | <strong>4</strong>= Umbuchen | <strong>5</strong>= Einstellungen | <strong>6</strong>= Konto-Optionen | <strong>7</strong>= Wunschliste | <strong>T</strong>= Zu Heute | <strong>L</strong>= Sofortsperre", en: "Shortcuts: <strong>1</strong>= Overview | <strong>2</strong>= Expense | <strong>3</strong>= Income | <strong>4</strong>= Transfer | <strong>5</strong>= Settings | <strong>6</strong>= Accounts | <strong>7</strong>= Wishlist | <strong>T</strong>= Today | <strong>L</strong>= Instant Lock" },
   'brand-app-title': { de: "Meine Finanzen & Haushaltsbuch", en: "My Finances & Budget Book" },
   'brand-app-tagline': { de: "🔒 AES-256 Verschlüsselt & DSGVO-Konform", en: "🔒 AES-256 Encrypted & GDPR-Compliant" },
@@ -6908,6 +6908,16 @@ function calculateMonthStats(year, month) {
 // ----------------------------------------------------------------------------
 // 9. HAUPTÜBERSICHT RENDERN MIT BEARBEITEN & LÖSCHEN FÜR JEDEN EINTRAG
 // ----------------------------------------------------------------------------
+
+function updateOverviewWidgets(year, month) {
+  const y = (typeof year === 'number' && !isNaN(year)) ? year : selectedYear;
+  const m = (typeof month === 'number' && !isNaN(month)) ? month : selectedMonth;
+  if (typeof renderMonthlyForecast === 'function') renderMonthlyForecast(y, m);
+  if (typeof renderContractRadar === 'function') renderContractRadar();
+  if (typeof renderFinanceCalendar === 'function') renderFinanceCalendar(y, m);
+  if (typeof populateFilterTagDropdown === 'function') populateFilterTagDropdown();
+}
+
 function updateOverview(force = false) {
   if (typeof renderAccountsViewList === 'function') renderAccountsViewList();
   if (!force && currentActiveView !== 'overview') return;
@@ -6983,6 +6993,10 @@ function updateOverview(force = false) {
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
     renderOverviewCurrencyBreakdown([...dayStats.incomeList, ...dayStats.expenseList], baseCurrency);
+    const dParts = (selectedDateStr || '').split('-');
+    const dayY = dParts.length >= 2 ? parseInt(dParts[0], 10) : selectedYear;
+    const dayM = dParts.length >= 2 ? parseInt(dParts[1], 10) - 1 : selectedMonth;
+    updateOverviewWidgets(dayY, dayM);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7060,6 +7074,10 @@ function updateOverview(force = false) {
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
     renderOverviewCurrencyBreakdown([...incomeList, ...expenseList], baseCurrency);
+    const wbParts = (wb.mondayStr || '').split('-');
+    const wy = wbParts.length >= 2 ? parseInt(wbParts[0], 10) : selectedYear;
+    const wm = wbParts.length >= 2 ? parseInt(wbParts[1], 10) - 1 : selectedMonth;
+    updateOverviewWidgets(wy, wm);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7103,10 +7121,7 @@ function updateOverview(force = false) {
     renderOverviewCreditAccordion();
     renderOverviewPeerLoans();
     renderOverviewCurrencyBreakdown([...stats.incomeList, ...stats.expenseList], baseCurrency);
-    if (typeof renderMonthlyForecast === 'function') renderMonthlyForecast(selectedYear, selectedMonth);
-    if (typeof renderContractRadar === 'function') renderContractRadar();
-    if (typeof renderFinanceCalendar === 'function') renderFinanceCalendar(selectedYear, selectedMonth);
-    if (typeof populateFilterTagDropdown === 'function') populateFilterTagDropdown();
+    updateOverviewWidgets(selectedYear, selectedMonth);
     if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
     return;
   }
@@ -7203,6 +7218,7 @@ function updateOverview(force = false) {
   renderBudgetsList();
   renderOverviewCreditAccordion();
   renderOverviewPeerLoans();
+  updateOverviewWidgets(selectedYear, selectedMonth);
   if (typeof applyMobileA11yLabels === 'function') applyMobileA11yLabels();
 }
 
