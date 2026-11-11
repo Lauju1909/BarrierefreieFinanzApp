@@ -17900,22 +17900,53 @@ function calculateMonthlyForecast(year, month) {
     remainingDays = 0;
   }
 
-  // Liquid balance
-  const targetDateStr = isCurrentMonth
-    ? `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`
-    : `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
-  const balances = calculateBalancesUpToDate(targetDateStr);
-  let currentLiquidTotal = Number(balances.total || 0);
-  if ((!currentLiquidTotal || isNaN(currentLiquidTotal)) && Array.isArray(appState.accounts) && appState.accounts.length > 0) {
-    let accSum = 0;
-    appState.accounts.forEach(acc => {
-      const b = balances[acc.id] !== undefined ? balances[acc.id] : (acc.initialBalance || 0);
-      accSum += Number(b || 0);
-    });
-    if (accSum > 0) currentLiquidTotal = accSum;
+  // Multi-tier liquid balance lookup
+  let currentLiquidTotal = 0;
+
+  // Tier 1: Try calculateBalancesUpToDate
+  try {
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+    const targetDateStr = isCurrentMonth ? todayStr : monthEndStr;
+    const balances = calculateBalancesUpToDate(targetDateStr);
+    if (balances && typeof balances.total === 'number' && !isNaN(balances.total) && balances.total !== 0) {
+      currentLiquidTotal = balances.total;
+    }
+  } catch (e) {}
+
+  // Tier 2: Try calculateMonthStats
+  if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && typeof calculateMonthStats === 'function') {
+    try {
+      const ms = calculateMonthStats(y, m);
+      if (ms && ms.balances && typeof ms.balances.total === 'number' && ms.balances.total !== 0) {
+        currentLiquidTotal = ms.balances.total;
+      }
+    } catch (e) {}
   }
 
-  const todayStr = isCurrentMonth ? today.toISOString().split('T')[0] : (new Date(y, m, 1) > today ? `${y}-${String(m+1).padStart(2,'0')}-01` : '9999-99-99');
+  // Tier 3: Try reading from active DOM balance card
+  if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && typeof document !== 'undefined') {
+    try {
+      const cardEl = document.getElementById('card-balance-total');
+      if (cardEl && cardEl.textContent) {
+        const parsed = (typeof parseCurrencyString === 'function') ? parseCurrencyString(cardEl.textContent) : parseFloat(cardEl.textContent.replace(/[^0-9,-]/g, '').replace(',', '.'));
+        if (!isNaN(parsed) && parsed !== 0) {
+          currentLiquidTotal = parsed;
+        }
+      }
+    } catch (e) {}
+  }
+
+  // Tier 4: Direct sum of account balances in appState
+  if ((!currentLiquidTotal || isNaN(currentLiquidTotal) || currentLiquidTotal === 0) && appState && Array.isArray(appState.accounts)) {
+    let sum = 0;
+    appState.accounts.forEach(acc => {
+      sum += Number(acc.initialBalance || 0);
+    });
+    if (sum !== 0) currentLiquidTotal = sum;
+  }
+
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   const monthEndStr = `${y}-${String(m+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
 
   const recList = getRecurringTransactionsForMonth(y, m);
@@ -18047,7 +18078,7 @@ function scanAndDetectContracts() {
   const now = new Date();
 
   (appState.recurring || []).forEach(r => {
-    if (r.type === 'expense' && r.active) {
+    if ((r.type === 'expense' || r.isContract) && r.active !== false) {
       let monthlyCost = Number(r.amount || 0);
       if (r.interval === 'yearly') monthlyCost /= 12;
       else if (r.interval === 'quarterly') monthlyCost /= 3;
